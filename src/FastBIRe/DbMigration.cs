@@ -1,17 +1,31 @@
 ﻿using Ao.Stock.Mirror;
 using DatabaseSchemaReader;
+using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
+using DatabaseSchemaReader.SqlGen;
+using System.Data;
 using System.Data.Common;
 
 namespace FastBIRe
 {
+    public enum CompareWithModifyResultTypes
+    {
+        Succeed = 0,
+        NoSuchTable = 1,
+    }
     public class DbMigration : IDisposable
     {
+        public DbMigration(DbConnection connection)
+            : this(connection, connection.Database)
+        {
+
+        }
         public DbMigration(DbConnection connection, string database)
         {
             Connection = connection;
             Reader = new DatabaseReader(connection) { Owner = database };
             TableHelper = new TableHelper(SqlType);
+            DdlGeneratorFactory = new DdlGeneratorFactory(SqlType);
             Database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
@@ -24,6 +38,8 @@ namespace FastBIRe
         public DbConnection Connection { get; }
 
         public TableHelper TableHelper { get; }
+
+        public DdlGeneratorFactory DdlGeneratorFactory { get; }
 
         public SqlType SqlType => Reader.SqlType!.Value;
 
@@ -47,6 +63,7 @@ namespace FastBIRe
                 Logger?.Invoke(string.Format(message, args));
             }
         }
+
         public ISQLDatabaseCreateAdapter? GetSQLDatabaseCreateAdapter()
         {
             switch (SqlType)
@@ -66,7 +83,31 @@ namespace FastBIRe
                     return null;
             }
         }
-       
+        public CompareWithModifyResult CompareWithModify(string tableId, Action<DatabaseTable> modify)
+        {
+            var tableOld = Reader.Table(tableId);
+            if (tableId==null)
+            {
+                return new CompareWithModifyResult { Type = CompareWithModifyResultTypes.NoSuchTable };
+            }
+            var tableNew = Reader.Table(tableId);
+            modify(tableNew);
+            var schemaOld = CloneSchema();
+            schemaOld.AddTable(tableOld);
+            var schemaNew = CloneSchema();
+            schemaNew.AddTable(tableNew);
+            return new CompareWithModifyResult
+            {
+                Type = CompareWithModifyResultTypes.Succeed,
+                Schemas = new CompareSchemas(schemaOld, schemaNew)
+            };
+        }
+
+        public DatabaseSchema CloneSchema()
+        {
+            return new DatabaseSchema(Reader.DatabaseSchema.ConnectionString, SqlType);
+        }
+
         public async Task<int> SyncIndexAsync(SyncIndexOptions options, CancellationToken token = default)
         {
             var table = Reader.Table(options.Table);
@@ -88,14 +129,14 @@ namespace FastBIRe
             if (index != null)
             {
                 var dropIndexSql = TableHelper.DropIndex(index.Name, index.TableName);
-                Log("Run drop index {0} sql\n{1}", index.Name,dropIndexSql);
+                Log("Run drop index {0} sql\n{1}", index.Name, dropIndexSql);
                 var res = await Connection.ExecuteNonQueryAsync(dropIndexSql, timeout: CommandTimeout, token: token);
                 Log("Drop index result {0}", res);
             }
             var createIndexSql = TableHelper.CreateIndex(options.IndexName, options.Table, options.Columns.ToArray());
             Log("Run drop index {0} sql\n{1}", options.IndexName, createIndexSql);
             var createRes = await Connection.ExecuteNonQueryAsync(createIndexSql, timeout: CommandTimeout, token: token);
-            Log("Create index {0} result {1}",options.IndexName, createRes);
+            Log("Create index {0} result {1}", options.IndexName, createRes);
             return createRes;
         }
         public async Task EnsureDatabaseCreatedAsync(CancellationToken token = default)

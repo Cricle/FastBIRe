@@ -1,11 +1,30 @@
 ﻿using DatabaseSchemaReader.DataSchema;
+using MySqlConnector;
 using System.Data;
 
 namespace FastBIRe.Sample
 {
+    //sqlite wal模式
     internal class Program
     {
         static void Main(string[] args)
+        {
+            RunMigration();
+        }
+        static void RunMigration()
+        {
+            using (var conn = new MySqlConnection("Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8;Database=sakila;"))
+            {
+                var mig = new DbMigration(conn);
+                var script = mig.CompareWithModify("actor", x =>
+                {
+                    var col = x.FindColumn("first_name");
+                    col.DbDataType = mig.Reader.FindDataTypesByDbType(DbType.Int32);
+                })?.Execute();
+                Console.WriteLine(script);
+            }
+        }
+        static void RunQuery()
         {
             var sqltype = SqlType.MySql;
             var t = new MergeHelper(sqltype);
