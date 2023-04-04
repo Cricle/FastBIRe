@@ -1,0 +1,3 @@
+[submodule "dbschemareader"]
+	path = dbschemareader
+	url = https://github.com/Cricle/dbschemareader
