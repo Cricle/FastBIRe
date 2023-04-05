@@ -12,18 +12,20 @@ namespace FastBIRe.Sample
         {
             RunQuery();
         }
+        static DbMigration GetDbMigration()
+        {
+            var conn = new MySqlConnection("Server=127.0.0.1;Port=3306;Uid=root;Pwd=355343;Connection Timeout=2000;Character Set=utf8;Database=sakila;");
+            return new DbMigration(conn);
+        }
         static void RunMigration()
         {
-            using (var conn = new MySqlConnection("Server=127.0.0.1;Port=3306;Uid=root;Pwd=355343;Connection Timeout=2000;Character Set=utf8;Database=sakila;"))
+            var mig = GetDbMigration();
+            var script = mig.CompareWithModify("Student", x =>
             {
-                var mig = new DbMigration(conn);
-                var script = mig.CompareWithModify("Student", x =>
-                {
-                    var col = x.FindColumn("Name");
-                    col.DbDataType = mig.Reader.FindDataTypesByDbType(DbType.Int32);
-                }).Execute();
-                Console.WriteLine(script);
-            }
+                var col = x.FindColumn("Name");
+                col.DbDataType = mig.Reader.FindDataTypesByDbType(DbType.Int32);
+            }).Execute();
+            Console.WriteLine(script);
         }
         static void RunQuery()
         {

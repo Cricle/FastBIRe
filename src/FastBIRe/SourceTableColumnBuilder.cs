@@ -1,4 +1,5 @@
 ﻿using DatabaseSchemaReader;
+using DatabaseSchemaReader.DataSchema;
 using System.Data;
 
 namespace FastBIRe
@@ -32,6 +33,22 @@ namespace FastBIRe
         public string Type(DbType dbType)
         {
             return DatabaseReader.FindDataTypesByDbType(Helper.SqlType, dbType);
+        }
+        public void FillColumns(IEnumerable<SourceTableColumnDefine> columns, DatabaseTable sourceTable,DatabaseTable destTable)
+        {
+            FillColumns(columns, sourceTable);
+            FillColumns(columns.Select(x => x.DestColumn), destTable);
+        }
+        public void FillColumns(IEnumerable<TableColumnDefine> columns,DatabaseTable table)
+        {
+            foreach (var column in columns)
+            {
+                var col = table.FindColumn(column.Field);
+                if (col!=null)
+                {
+                    column.Type = col.DbDataType;
+                }
+            }
         }
         public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null, string? destFieldType = null)
         {

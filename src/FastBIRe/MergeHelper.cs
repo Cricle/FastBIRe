@@ -83,7 +83,7 @@ namespace FastBIRe
             {
                 return $@"{Wrap(options.EffectTable)} AS {Wrap("b")} INNER JOIN {Wrap(sourceTableDefine.Table)} AS {Wrap("a")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{string.Format(x.RawFormat, $"{Wrap("b")}.{Wrap(x.Field)}")}={string.Format(x.RawFormat, $"{Wrap("a")}.{Wrap(x.Field)}")}"))}";
             }
-           return $"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")}";
+            return $"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")}";
         }
         public virtual string CompileUpdate(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
