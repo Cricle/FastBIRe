@@ -1,4 +1,5 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿using DatabaseSchemaReader;
+using DatabaseSchemaReader.DataSchema;
 using MySqlConnector;
 using System.Data;
 
@@ -35,10 +36,13 @@ namespace FastBIRe.Sample
                 builder.Method("ObsTime","ObsTime", ToRawMethod.Now,onlySet:true),
                 builder.Method("Temp","Temp", ToRawMethod.Count),
                 builder.Method("FeelsLike","FeelsLike", ToRawMethod.Count),
-                builder.Method("Cloud","Cloud", ToRawMethod.None,true,type:builder.GetRawType(DbType.Double)),
-                builder.Method("Dew","Dew", ToRawMethod.None,true,type:builder.GetRawType(DbType.Double)),
+                builder.Method("Cloud","Cloud", ToRawMethod.None,true,type:builder.Type( DbType.Double)),
+                builder.Method("Dew","Dew", ToRawMethod.None,true,type:builder.Type( DbType.Double)),
             };
-
+            t.WhereItems = new WhereItem[]
+            {
+                builder.WhereRaw("Cloud", ToRawMethod.None,"123")
+            };
             CompileOptions? options = new CompileOptions { EffectTable= "weather1_effect", IncludeEffectJoin=true };
             var def = new SourceTableDefine("weather", cols);
             var si = t.CompileInsert("weather1", def, options);

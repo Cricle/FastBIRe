@@ -29,6 +29,10 @@ namespace FastBIRe
         {
             return WhereRaw(field, method, Helper.MethodWrapper.WrapValue(value)!);
         }
+        public string Type(DbType dbType)
+        {
+            return DatabaseReader.FindDataTypesByDbType(Helper.SqlType, dbType);
+        }
         public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null, string? destFieldType = null)
         {
             var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
@@ -44,73 +48,6 @@ namespace FastBIRe
                 isGroup,
                 new TableColumnDefine(destField, destRaw, destFormat, false, destFieldType),
                 method, rawFormat, onlySet, type);
-        }
-        public string? GetRawTypeByStartSuffer(string start, object? formatArg0 = null)
-        {
-            var dataLists = DatabaseReader.GetDataTypes(DbTypeHelper.CastSqlType(Helper.SqlType));
-            var target = dataLists.FirstOrDefault(x => x.TypeName.StartsWith(start));
-            if (target == null)
-            {
-                return null;
-            }
-            return string.Format(target.CreateFormat, formatArg0);
-        }
-        public string? GetRawType(string netDataType, object? formatArg0 = null)
-        {
-            var dataLists = DatabaseReader.GetDataTypes(DbTypeHelper.CastSqlType(Helper.SqlType));
-            var target = dataLists.FirstOrDefault(x => x.NetDataType == netDataType);
-            if (target == null)
-            {
-                return null;
-            }
-            return string.Format(target.CreateFormat, formatArg0);
-        }
-        public string? GetRawType(DbType type, object? formatArg0 = null)
-        {
-            switch (type)
-            {
-                case DbType.Binary:
-                    return GetRawType("System.Byte[]", formatArg0);
-                case DbType.SByte:
-                case DbType.Byte:
-                    return GetRawType("System.Byte", formatArg0);
-                case DbType.Boolean:
-                    return GetRawType("System.Boolean", formatArg0);
-                case DbType.Currency:
-                    return GetRawType("System.Byte[]", formatArg0);
-                case DbType.Date:
-                    return GetRawType("System.DateTime", formatArg0);
-                case DbType.DateTime:
-                    return GetRawType("System.DateTime", formatArg0);
-                case DbType.Decimal:
-                    return GetRawType("System.Decimal", formatArg0);
-                case DbType.Double:
-                    return GetRawType("System.Double", formatArg0);
-                case DbType.Guid:
-                    return GetRawType("System.Guid", formatArg0);
-                case DbType.UInt16:
-                case DbType.Int16:
-                    return GetRawType("System.Int16", formatArg0);
-                case DbType.UInt32:
-                case DbType.Int32:
-                    return GetRawType("System.Int32", formatArg0);
-                case DbType.Int64:
-                case DbType.UInt64:
-                    return GetRawType("System.Int64", formatArg0);
-                case DbType.Single:
-                    return GetRawType("System.Single", formatArg0);
-                case DbType.StringFixedLength:
-                case DbType.AnsiStringFixedLength:
-                case DbType.AnsiString:
-                case DbType.String:
-                    return GetRawTypeByStartSuffer("varchar", formatArg0);
-                case DbType.DateTime2:
-                case DbType.DateTimeOffset:
-                case DbType.Time:
-                    return GetRawType("System.DateTime", formatArg0);
-                default:
-                    return null;
-            }
         }
     }
 }
