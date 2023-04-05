@@ -13,14 +13,14 @@ namespace FastBIRe.Sample
         }
         static void RunMigration()
         {
-            using (var conn = new MySqlConnection("Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8;Database=sakila;"))
+            using (var conn = new MySqlConnection("Server=127.0.0.1;Port=3306;Uid=root;Pwd=355343;Connection Timeout=2000;Character Set=utf8;Database=sakila;"))
             {
                 var mig = new DbMigration(conn);
-                var script = mig.CompareWithModify("actor", x =>
+                var script = mig.CompareWithModify("Student", x =>
                 {
-                    var col = x.FindColumn("first_name");
+                    var col = x.FindColumn("Name");
                     col.DbDataType = mig.Reader.FindDataTypesByDbType(DbType.Int32);
-                })?.Execute();
+                }).Execute();
                 Console.WriteLine(script);
             }
         }
@@ -41,20 +41,15 @@ namespace FastBIRe.Sample
                 builder.Method("a7","111aaaa7777", ToRawMethod.None,true,type:builder.GetRawType(DbType.DateTime)),
                 builder.Method("aaaa8","aaaa8", ToRawMethod.None,true,type:builder.GetRawType(DbType.String,"255")),
             };
-            CompileOptions? options = null;//new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
+            CompileOptions? options = new CompileOptions { AdditionRaw = "WHERE 1" };
             var def = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", cols);
             var si = t.CompileInsert("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
             var s = t.CompileUpdate("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
-
-            var create = new TableHelper(sqltype).CreateTable("8ae26aa2-5def-4209-98fd-1002954ba963_effect", cols.Where(x => x.IsGroup));
 
             Console.WriteLine(si);
             Console.WriteLine();
             Console.WriteLine();
             Console.WriteLine(s);
-            Console.WriteLine();
-            Console.WriteLine();
-            Console.WriteLine(create);
         }
     }
 }
