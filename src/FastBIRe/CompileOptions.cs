@@ -2,6 +2,8 @@
 {
     public record CompileOptions
     {
-        public string? AdditionRaw { get; set; }
+        public bool IncludeEffectJoin { get; set; }
+
+        public string? EffectTable { get; set; }
     }
 }

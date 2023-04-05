@@ -48,6 +48,20 @@ namespace FastBIRe
                     throw new NotSupportedException(SqlType.ToString());
             }
         }
+        public string CreateDropTable(string table)
+        {
+            return $"DROP TABLE {Wrap(table)};";
+        }
+
+        public string CreateTable(string table, IEnumerable<SourceTableColumnDefine> columns)
+        {
+            var source = @$"
+CREATE TABLE {Wrap(table)} (
+    {string.Join(",\n    ", columns.Select(x => $"{Wrap(x.Field)} {x.Type}"))},
+    PRIMARY KEY ({string.Join(",", columns.Select(x => Wrap(x.Field)))})
+);";
+            return source;
+        }
 
     }
 }

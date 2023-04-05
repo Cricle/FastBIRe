@@ -9,7 +9,7 @@ namespace FastBIRe.Sample
     {
         static void Main(string[] args)
         {
-            RunMigration();
+            RunQuery();
         }
         static void RunMigration()
         {
@@ -32,19 +32,17 @@ namespace FastBIRe.Sample
 
             var cols = new SourceTableColumnDefine[]
             {
-                builder.Method("记录时间","记录时间", ToRawMethod.Now,onlySet:true),
-                builder.Method("a1","a1", ToRawMethod.Count),
-                builder.Method("a2","a2", ToRawMethod.Count),
-                builder.Method("a3","a3", ToRawMethod.Count),
-                builder.Method("a4","a4", ToRawMethod.Count),
-                builder.Method("a5","a5", ToRawMethod.Count),
-                builder.Method("a7","111aaaa7777", ToRawMethod.None,true,type:builder.GetRawType(DbType.DateTime)),
-                builder.Method("aaaa8","aaaa8", ToRawMethod.None,true,type:builder.GetRawType(DbType.String,"255")),
+                builder.Method("ObsTime","ObsTime", ToRawMethod.Now,onlySet:true),
+                builder.Method("Temp","Temp", ToRawMethod.Count),
+                builder.Method("FeelsLike","FeelsLike", ToRawMethod.Count),
+                builder.Method("Cloud","Cloud", ToRawMethod.None,true,type:builder.GetRawType(DbType.Double)),
+                builder.Method("Dew","Dew", ToRawMethod.None,true,type:builder.GetRawType(DbType.Double)),
             };
-            CompileOptions? options = new CompileOptions { AdditionRaw = "WHERE 1" };
-            var def = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", cols);
-            var si = t.CompileInsert("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
-            var s = t.CompileUpdate("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
+
+            CompileOptions? options = new CompileOptions { EffectTable= "weather1_effect", IncludeEffectJoin=true };
+            var def = new SourceTableDefine("weather", cols);
+            var si = t.CompileInsert("weather1", def, options);
+            var s = t.CompileUpdate("weather1", def, options);
 
             Console.WriteLine(si);
             Console.WriteLine();

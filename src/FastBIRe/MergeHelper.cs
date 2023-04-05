@@ -79,12 +79,11 @@ namespace FastBIRe
         }
         private string GetTableRef(SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
-            var ret = $"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")} ";
-            if (!string.IsNullOrWhiteSpace(options?.AdditionRaw))
+            if (options != null && options.IncludeEffectJoin && options.EffectTable != null)
             {
-                ret += options!.AdditionRaw;
+                return $@"{Wrap(options.EffectTable)} AS {Wrap("b")} INNER JOIN {Wrap(sourceTableDefine.Table)} AS {Wrap("a")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{string.Format(x.RawFormat, $"{Wrap("b")}.{Wrap(x.Field)}")}={string.Format(x.RawFormat, $"{Wrap("a")}.{Wrap(x.Field)}")}"))}";
             }
-            return ret + " ";
+           return $"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")}";
         }
         public virtual string CompileUpdate(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
