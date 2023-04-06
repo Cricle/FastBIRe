@@ -1,5 +1,5 @@
-﻿using DatabaseSchemaReader.DataSchema;
-using FastBIRe.QutoMode;
+﻿using Ao.Stock.Mirror;
+using DatabaseSchemaReader.DataSchema;
 using MySqlConnector;
 using System.Data;
 
@@ -10,30 +10,29 @@ namespace FastBIRe.Sample
     {
         static void Main(string[] args)
         {
+            //CompareM();
             CompareM();
         }
-        static DbMigration GetDbMigration()
+        static DbMigration GetDbMigration(string? database)
         {
-            var conn = new MySqlConnection("Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8;Database=fe0bcae73fa74568b54eae9d7b284e7f_data;");
+            var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database)?string.Empty: $";Database={database};")}");
             conn.Open();
-            return new DbMigration(conn);
-        }
-        static void RunMigration()
-        {
-            var mig = GetDbMigration();
-            var script = mig.CompareWithModify("Student", x =>
-            {
-                var col = x.FindColumn("Name");
-                col.DbDataType = mig.Reader.FindDataTypesByDbType(DbType.Int32);
-            }).Execute();
-            Console.WriteLine(script);
+            return new DbMigration(conn) { Logger = x => Console.WriteLine(x) };
         }
         static void CompareM()
         {
-            var ser = new MigrationService(GetDbMigration());
+            using (var createMig= GetDbMigration(null))
+            {
+                createMig.EnsureDatabaseCreatedAsync("testa").GetAwaiter().GetResult();
+            }
+            var ser = new MigrationService(GetDbMigration("testa"));
             var d = ser.DbMigration.GetMergeHelper();
             var builder = new SourceTableColumnBuilder(d, "a", "b");
             var s = GetSourceDefine(builder);
+            if (!ser.DbMigration.Reader.TableExists("d7e3e404-1eb1-4c93-9956-ec66030804e0"))
+            {
+                CreateTable(ser.DbMigration, "d7e3e404-1eb1-4c93-9956-ec66030804e0");
+            }
             var str = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963",
                 new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", s),
                 builder.CloneWith(s, def =>
@@ -43,10 +42,8 @@ namespace FastBIRe.Sample
                 }));
             Console.WriteLine(str);
         }
-        static void CreateTable()
+        static void CreateTable(DbMigration mig,string tableName)
         {
-            var tableName = "test";
-            var mig = GetDbMigration();
             var migGen = mig.DdlGeneratorFactory.MigrationGenerator();
             var tb = new DatabaseTable
             {
@@ -59,7 +56,7 @@ namespace FastBIRe.Sample
                 x.AddIndex($"IDX_{tableName}_记录时间");
             });
             var script = migGen.AddTable(tb);
-            Console.WriteLine(script);
+            mig.ExecuteNonQueryAsync(script).GetAwaiter().GetResult();
         }
         static SourceTableColumnDefine[] GetSourceDefine(SourceTableColumnBuilder builder)
         {

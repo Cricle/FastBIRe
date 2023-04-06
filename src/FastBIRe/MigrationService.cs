@@ -3,7 +3,7 @@ using System.Data;
 using System.Reflection;
 using System.Text;
 
-namespace FastBIRe.QutoMode
+namespace FastBIRe
 {
     public class MigrationService
     {

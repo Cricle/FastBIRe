@@ -45,6 +45,12 @@ namespace FastBIRe
 
         public int CommandTimeout { get; set; } = 10 * 60;
 
+        public Task ExecuteNonQueryAsync(string sql,IEnumerable<KeyValuePair<string,object>>? args=null,CancellationToken token=default)
+        {
+            Log("Executing sql \n{0}", sql);
+            return Connection.ExecuteNonQueryAsync(sql, args, CommandTimeout, token);
+        }
+
         public void Dispose()
         {
             Reader.Dispose();
@@ -144,7 +150,7 @@ namespace FastBIRe
             Log("Create index {0} result {1}", options.IndexName, createRes);
             return createRes;
         }
-        public async Task EnsureDatabaseCreatedAsync(CancellationToken token = default)
+        public async Task EnsureDatabaseCreatedAsync(string database,CancellationToken token = default)
         {
             var adapter = GetSQLDatabaseCreateAdapter();
             if (adapter == null)
@@ -153,12 +159,12 @@ namespace FastBIRe
             }
             if (SqlType == SqlType.PostgreSql)
             {
-                var hasDbSql = $"SELECT 1 FROM pg_database WHERE datname = '{Database}'";
+                var hasDbSql = $"SELECT 1 FROM pg_database WHERE datname = '{database}'";
                 Log("Check db sql \n{0}", hasDbSql);
                 var hasDb = await Connection.ExecuteReadCountAsync(hasDbSql, commandTimeout: CommandTimeout, token: token);
                 if (hasDb <= 0)
                 {
-                    var createSql = adapter.GenericCreateDatabaseSql(Database);
+                    var createSql = adapter.GenericCreateDatabaseSql(database);
                     Log("Create db sql \n{0}", createSql);
                     var createRes = await Connection.ExecuteNonQueryAsync(createSql, timeout: CommandTimeout, token: token);
                     Log("Sync database result {0}", createRes);
@@ -166,7 +172,7 @@ namespace FastBIRe
             }
             else
             {
-                var createIfNotExistsSql = adapter.GenericCreateDatabaseIfNotExistsSql(Database);
+                var createIfNotExistsSql = adapter.GenericCreateDatabaseIfNotExistsSql(database);
                 Log("Create if not exists with sql \n{0}", createIfNotExistsSql);
                 var createRes = await Connection.ExecuteNonQueryAsync(createIfNotExistsSql, timeout: CommandTimeout, token: token);
                 Log("Sync database result {0}", createRes);
