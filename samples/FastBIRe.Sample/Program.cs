@@ -13,11 +13,11 @@ namespace FastBIRe.Sample
             //CompareM();
             CompareM();
         }
-        static DbMigration GetDbMigration(string? database)
+        static MigrationService GetDbMigration(string? database)
         {
             var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database)?string.Empty: $";Database={database};")}");
             conn.Open();
-            return new DbMigration(conn) { Logger = x => Console.WriteLine(x) };
+            return new MigrationService(conn) { Logger = x => Console.WriteLine(x) };
         }
         static void CompareM()
         {
@@ -25,13 +25,13 @@ namespace FastBIRe.Sample
             {
                 createMig.EnsureDatabaseCreatedAsync("testa").GetAwaiter().GetResult();
             }
-            var ser = new MigrationService(GetDbMigration("testa"));
-            var d = ser.DbMigration.GetMergeHelper();
+            var ser = GetDbMigration("testa");
+            var d = ser.GetMergeHelper();
             var builder = new SourceTableColumnBuilder(d, "a", "b");
             var s = GetSourceDefine(builder);
-            if (!ser.DbMigration.Reader.TableExists("d7e3e404-1eb1-4c93-9956-ec66030804e0"))
+            if (!ser.Reader.TableExists("d7e3e404-1eb1-4c93-9956-ec66030804e0"))
             {
-                CreateTable(ser.DbMigration, "d7e3e404-1eb1-4c93-9956-ec66030804e0");
+                CreateTable(ser, "d7e3e404-1eb1-4c93-9956-ec66030804e0");
             }
             var str = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963",
                 new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", s),

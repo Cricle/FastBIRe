@@ -8,11 +8,6 @@ using System.Data.Common;
 
 namespace FastBIRe
 {
-    public enum CompareWithModifyResultTypes
-    {
-        Succeed = 0,
-        NoSuchTable = 1,
-    }
     public class DbMigration : IDisposable
     {
         public DbMigration(DbConnection connection)

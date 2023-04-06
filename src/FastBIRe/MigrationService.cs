@@ -1,19 +1,24 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using System.Data;
+using System.Data.Common;
 using System.Reflection;
 using System.Text;
 
 namespace FastBIRe
 {
-    public class MigrationService
+    public class MigrationService: DbMigration
     {
         public const string DefaultEffectSuffix = "_effect";
 
-        public MigrationService(DbMigration dbMigration)
-        {
-            DbMigration = dbMigration;
-        }
         private string effectSuffix = DefaultEffectSuffix;
+
+        public MigrationService(DbConnection connection) : base(connection)
+        {
+        }
+
+        public MigrationService(DbConnection connection, string database) : base(connection, database)
+        {
+        }
 
         public string EffectSuffix
         {
@@ -28,11 +33,9 @@ namespace FastBIRe
             }
         }
 
-        public DbMigration DbMigration { get; }
-
         public string CreateTable(string table)
         {
-            var migGen = DbMigration.DdlGeneratorFactory.MigrationGenerator();
+            var migGen = DdlGeneratorFactory.MigrationGenerator();
             var tb = new DatabaseTable
             {
                 Name = table,
@@ -52,8 +55,8 @@ namespace FastBIRe
             var table = tableDef.Table;
             var renames = news.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x });
             var otherScripts = new StringBuilder();
-            var migGen = DbMigration.DdlGeneratorFactory.MigrationGenerator();
-            var script = DbMigration.CompareWithModify(table, x =>
+            var migGen = DdlGeneratorFactory.MigrationGenerator();
+            var script = CompareWithModify(table, x =>
             {
                 var olds = x.Columns.Select(x =>
                 {
@@ -107,7 +110,7 @@ namespace FastBIRe
             {
                 var groupColumns = tableDef.Columns.Where(x => x.IsGroup).ToList();
                 var effectTableName = destTable + EffectSuffix;
-                var refTable = DbMigration.Reader.Table(effectTableName);
+                var refTable = Reader.Table(effectTableName);
                 var hasTale = false;
                 if (refTable != null)
                 {
