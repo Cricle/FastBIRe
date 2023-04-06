@@ -42,13 +42,13 @@ namespace FastBIRe
 
         public async Task ExecuteNonQueryAsync(string sql,IEnumerable<KeyValuePair<string,object>>? args=null,CancellationToken token=default)
         {
-            if (string.IsNullOrEmpty(sql) || sql.Split('\n').All(x => string.IsNullOrEmpty(x) || x.StartsWith("--")))
+            if (string.IsNullOrEmpty(sql) || sql.Split(';').All(x => string.IsNullOrEmpty(x) || x.StartsWith("--")))
             {
                 return;
             }
             if (SqlType == SqlType.SQLite)
             {
-                foreach (var item in sql.Split('\n'))
+                foreach (var item in sql.Split(';'))
                 {
                     if (item.StartsWith("--"))
                     {

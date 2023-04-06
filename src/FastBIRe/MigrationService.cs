@@ -146,7 +146,7 @@ namespace FastBIRe
                         refTable.PrimaryKey == null ||
                         refTable.PrimaryKey.Columns.Count != refTable.Columns.Count ||
                         !refTable.PrimaryKey.Columns.SequenceEqual(refTable.Columns.Select(x => x.Name))||
-                        !groupColumns.Select(x=>x.Type).SequenceEqual(refTable.Columns.Select(x => x.DbDataType)))
+                        !groupColumns.Select(x=>x.Type).SequenceEqual(refTable.Columns.Select(x => x.DbDataType),StringComparer.OrdinalIgnoreCase))
                     {
                         otherScripts.AppendLine(migGen.DropTable(refTable));
                     }
