@@ -10,6 +10,6 @@
 
         public bool DuplicationNameReplace { get; set; }
 
-        public bool IgnoreOnSequenceEqualName { get; set; }
+        public bool IgnoreOnSequenceEqualName { get; set; } = true;
     }
 }

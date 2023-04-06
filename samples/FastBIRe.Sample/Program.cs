@@ -1,6 +1,6 @@
-﻿using Ao.Stock.Mirror;
-using DatabaseSchemaReader.DataSchema;
-using MySqlConnector;
+﻿using DatabaseSchemaReader.DataSchema;
+using Microsoft.Data.SqlClient;
+using Npgsql;
 using System.Data;
 
 namespace FastBIRe.Sample
@@ -15,13 +15,15 @@ namespace FastBIRe.Sample
         }
         static MigrationService GetDbMigration(string? database)
         {
-            var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database)?string.Empty: $";Database={database};")}");
+            var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            //var conn = new SqlConnection($"Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             conn.Open();
             return new MigrationService(conn) { Logger = x => Console.WriteLine(x) };
         }
         static void CompareM()
         {
-            using (var createMig= GetDbMigration(null))
+            using (var createMig = GetDbMigration(null))
             {
                 createMig.EnsureDatabaseCreatedAsync("testa").GetAwaiter().GetResult();
             }
@@ -33,16 +35,19 @@ namespace FastBIRe.Sample
             {
                 CreateTable(ser, "d7e3e404-1eb1-4c93-9956-ec66030804e0");
             }
+            var sourceTable = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", s);
             var str = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963",
-                new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", s),
+                sourceTable,
                 builder.CloneWith(s, def =>
                 {
                     def.Id = def.Field;
                     return def;
                 }));
-            Console.WriteLine(str);
+            ser.ExecuteNonQueryAsync(str).GetAwaiter().GetResult();
+
+            _ = ser.SyncIndexAsync("8ae26aa2-5def-4209-98fd-1002954ba963", sourceTable).Result;
         }
-        static void CreateTable(DbMigration mig,string tableName)
+        static void CreateTable(DbMigration mig, string tableName)
         {
             var migGen = mig.DdlGeneratorFactory.MigrationGenerator();
             var tb = new DatabaseTable
@@ -84,7 +89,7 @@ namespace FastBIRe.Sample
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
             var cols = GetSourceDefine(builder);
-            CompileOptions? options = new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
+            CompileOptions? options = null;// new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
             var def = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", cols);
             var si = t.CompileInsert("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
             var s = t.CompileUpdate("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);

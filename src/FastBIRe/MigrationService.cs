@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.Common;
 using System.Reflection;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
 
 namespace FastBIRe
@@ -48,7 +49,22 @@ namespace FastBIRe
             });
             return migGen.AddTable(tb);
         }
-
+        public async Task<int> SyncIndexAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null)
+        {
+            var res = await SyncIndexAsync(new SyncIndexOptions
+            {
+                Table = tableDef.Table,
+                Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.Field).ToArray(),
+                IndexName = sourceIdxName ?? $"IDX_s_{destTable}"
+            });
+            res += await SyncIndexAsync(new SyncIndexOptions
+            {
+                Table = destTable,
+                Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.DestColumn.Field).ToArray(),
+                IndexName = destIdxName ?? $"IDX_{destTable}"
+            });
+            return res;
+        }
         public string RunMigration(string destTable,SourceTableDefine tableDef, IEnumerable<SourceTableColumnDefine> oldRefs)
         {
             var news = tableDef.Columns;
@@ -81,6 +97,10 @@ namespace FastBIRe
                 }
                 foreach (var item in news)
                 {
+                    if (string.IsNullOrEmpty(item.Type))
+                    {
+                        continue;
+                    }
                     var col = x.FindColumn(item.Field);
                     if (col != null)
                     {
@@ -89,7 +109,14 @@ namespace FastBIRe
                         {
                             col.DbDataType = col.DbDataType.Remove(7,1);
                         }
-                        if (!string.Equals(col.DbDataType, item.Type, StringComparison.OrdinalIgnoreCase))
+                        var leftType = col.DbDataType;
+                        var rightType = item.Type!;
+                        if (SqlType == SqlType.PostgreSql)
+                        {
+                            leftType = leftType.ToLower().Replace("decimal", "numeric");
+                            rightType = rightType.ToLower().Replace("decimal", "numeric");
+                        }
+                        if (!string.Equals(leftType,rightType, StringComparison.OrdinalIgnoreCase))
                         {
                             col.DbDataType = item.Type;
                         }

@@ -37,7 +37,7 @@ namespace FastBIRe
             {
                 return null;
             }
-            var dataType = DatabaseReader.GetDataTypes(Helper.SqlType).FirstOrDefault(x => x.TypeName==rt);
+            var dataType = DatabaseReader.GetDataTypes(Helper.SqlType).FirstOrDefault(x =>string.Equals(x.TypeName,rt, StringComparison.OrdinalIgnoreCase));
             if (dataType==null)
             {
                 return rt;

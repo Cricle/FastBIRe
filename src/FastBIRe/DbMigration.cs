@@ -40,10 +40,32 @@ namespace FastBIRe
 
         public int CommandTimeout { get; set; } = 10 * 60;
 
-        public Task ExecuteNonQueryAsync(string sql,IEnumerable<KeyValuePair<string,object>>? args=null,CancellationToken token=default)
+        public async Task ExecuteNonQueryAsync(string sql,IEnumerable<KeyValuePair<string,object>>? args=null,CancellationToken token=default)
         {
-            Log("Executing sql \n{0}", sql);
-            return Connection.ExecuteNonQueryAsync(sql, args, CommandTimeout, token);
+            if (string.IsNullOrEmpty(sql) || sql.Split('\n').All(x => string.IsNullOrEmpty(x) || x.StartsWith("--")))
+            {
+                return;
+            }
+            if (SqlType == SqlType.SQLite)
+            {
+                foreach (var item in sql.Split('\n'))
+                {
+                    if (item.StartsWith("--"))
+                    {
+                        Log("Skip with {0}", item);
+                    }
+                    else
+                    {
+                        Log("Executing sql \n{0}", item);
+                        await Connection.ExecuteNonQueryAsync(item, args, CommandTimeout, token);
+                    }
+                }
+            }
+            else
+            {
+                Log("Executing sql \n{0}", sql);
+                await Connection.ExecuteNonQueryAsync(sql, args, CommandTimeout, token);
+            }
         }
 
         public void Dispose()
@@ -125,9 +147,9 @@ namespace FastBIRe
             var index = tableIndexs.FirstOrDefault(x => x.Name == options.IndexName);
             if (index != null && !options.DuplicationNameReplace)
             {
-                if (options.IgnoreOnSequenceEqualName &&
-                    options.Columns.Count() == tableIndexs.Count &&
-                    options.Columns.SequenceEqual(tableIndexs.Select(x => x.Name)))
+                if (options.Columns.Count() == index.Columns.Count &&
+                    options.Columns.SequenceEqual(index.Columns.Select(x => x.Name))&&
+                    options.IgnoreOnSequenceEqualName)
                 {
                     return 0;
                 }
@@ -156,8 +178,16 @@ namespace FastBIRe
             {
                 var hasDbSql = $"SELECT 1 FROM pg_database WHERE datname = '{database}'";
                 Log("Check db sql \n{0}", hasDbSql);
-                var hasDb = await Connection.ExecuteReadCountAsync(hasDbSql, commandTimeout: CommandTimeout, token: token);
-                if (hasDb <= 0)
+                var hasDb = false;
+                using (var command=Connection.CreateCommand(hasDbSql))
+                {
+                    command.CommandTimeout = CommandTimeout;
+                    using (var reader=await command.ExecuteReaderAsync(token))
+                    {
+                        hasDb = reader.Read();
+                    }
+                }
+                if (!hasDb)
                 {
                     var createSql = adapter.GenericCreateDatabaseSql(database);
                     Log("Create db sql \n{0}", createSql);
