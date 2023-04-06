@@ -42,6 +42,10 @@ namespace FastBIRe
             {
                 return rt;
             }
+            if (dbType == DbType.String && "text".Equals(rt, StringComparison.OrdinalIgnoreCase))
+            {
+                return dataType.TypeName;
+            }
             return string.Format(dataType.CreateFormat, formatArgs);
         }
         public void FillColumns(IEnumerable<SourceTableColumnDefine> columns, DatabaseTable sourceTable,DatabaseTable destTable)

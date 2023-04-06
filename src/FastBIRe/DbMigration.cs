@@ -46,26 +46,8 @@ namespace FastBIRe
             {
                 return;
             }
-            if (SqlType == SqlType.SQLite)
-            {
-                foreach (var item in sql.Split(';'))
-                {
-                    if (item.StartsWith("--"))
-                    {
-                        Log("Skip with {0}", item);
-                    }
-                    else
-                    {
-                        Log("Executing sql \n{0}", item);
-                        await Connection.ExecuteNonQueryAsync(item, args, CommandTimeout, token);
-                    }
-                }
-            }
-            else
-            {
-                Log("Executing sql \n{0}", sql);
-                await Connection.ExecuteNonQueryAsync(sql, args, CommandTimeout, token);
-            }
+            Log("Executing sql \n{0}", sql);
+            await Connection.ExecuteNonQueryAsync(sql, args, CommandTimeout, token);
         }
 
         public void Dispose()
@@ -162,7 +144,7 @@ namespace FastBIRe
                 Log("Drop index result {0}", res);
             }
             var createIndexSql = TableHelper.CreateIndex(options.IndexName, options.Table, options.Columns.ToArray());
-            Log("Run drop index {0} sql\n{1}", options.IndexName, createIndexSql);
+            Log("Run create index {0} sql\n{1}", options.IndexName, createIndexSql);
             var createRes = await Connection.ExecuteNonQueryAsync(createIndexSql, timeout: CommandTimeout, token: token);
             Log("Create index {0} result {1}", options.IndexName, createRes);
             return createRes;
