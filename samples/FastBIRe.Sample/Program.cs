@@ -1,9 +1,5 @@
-﻿using Ao.Stock.Mirror;
-using DatabaseSchemaReader.DataSchema;
-using Microsoft.Data.SqlClient;
+﻿using DatabaseSchemaReader.DataSchema;
 using Microsoft.Data.Sqlite;
-using MySqlConnector;
-using Npgsql;
 using System.Data;
 
 namespace FastBIRe.Sample
@@ -14,7 +10,7 @@ namespace FastBIRe.Sample
         static void Main(string[] args)
         {
             //CompareM();
-            CompareM();
+            RunQuery();
         }
         static MigrationService GetDbMigration(string? database)
         {
@@ -78,7 +74,7 @@ namespace FastBIRe.Sample
                 builder.Method("a3","a3", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a4","a4", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a5","a5", ToRawMethod.Count,type:builder.Type(DbType.String,255)),
-                builder.Method("a7","111aaaa7777", ToRawMethod.None,true,type:builder.Type(DbType.DateTime)),
+                builder.Method("a7","a7", ToRawMethod.None,true,type:builder.Type(DbType.DateTime)),
                 builder.Method("aaaa8","aaaa8", ToRawMethod.None,true,type:builder.Type(DbType.String,255)),
             };
             foreach (var item in defs)
@@ -89,12 +85,12 @@ namespace FastBIRe.Sample
         }
         static void RunQuery()
         {
-            var sqltype = SqlType.MySql;
+            var sqltype = SqlType.SQLite;
             var t = new MergeHelper(sqltype);
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
             var cols = GetSourceDefine(builder);
-            CompileOptions? options = null;// new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
+            CompileOptions? options =  new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
             var def = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", cols);
             var si = t.CompileInsert("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
             var s = t.CompileUpdate("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);

@@ -134,12 +134,13 @@ SET
 UPDATE
     {Wrap(destTable)}
 SET
-    {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.""{x.DestColumn.Field}"""))}
+    {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.""{x.DestColumn.Field}"""))}
 FROM (
         SELECT
             {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
         FROM {fromTable}
-		{(WhereItems == null ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + " AND ")}
+        WHERE
+		{(WhereItems == null ? string.Empty : string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + " AND ")}
         EXISTS(
             SELECT 1 AS {Wrap("___tmp")} FROM {Wrap(destTable)} AS {Wrap("c")} WHERE 
             {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.Field)} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}

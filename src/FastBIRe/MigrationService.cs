@@ -34,6 +34,8 @@ namespace FastBIRe
             }
         }
 
+        public bool EffectMode { get; set; } = true;
+
         public string CreateTable(string table)
         {
             var migGen = DdlGeneratorFactory.MigrationGenerator();
@@ -133,7 +135,7 @@ namespace FastBIRe
                     });
                 }
             }).Execute();
-            if (tableDef.Columns.Any(x => x.IsGroup))
+            if (EffectMode&&tableDef.Columns.Any(x => x.IsGroup))
             {
                 var groupColumns = tableDef.Columns.Where(x => x.IsGroup).ToList();
                 var effectTableName = destTable + EffectSuffix;
