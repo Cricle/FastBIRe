@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe", "src\FastBIRe\FastBIRe.csproj", "{88D37194-E745-44A8-9C3F-9E6D5815FDE1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe", "src\FastBIRe\FastBIRe.csproj", "{88D37194-E745-44A8-9C3F-9E6D5815FDE1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseSchemaReader", "dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj", "{4AE55B6F-4A1B-4E22-BD21-B2B4F313E9E5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{2D35BDB8-3710-4FD9-B301-2DCE4C0DA736}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.Sample", "samples\FastBIRe.Sample\FastBIRe.Sample.csproj", "{F26B60BB-8D36-4157-A04A-71DEF61F5DE5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Sample", "samples\FastBIRe.Sample\FastBIRe.Sample.csproj", "{F26B60BB-8D36-4157-A04A-71DEF61F5DE5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.QutoMode", "src\FastBIRe.QutoMode\FastBIRe.QutoMode.csproj", "{8D3C7803-05F5-4C2B-B216-981FD516BA11}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,6 +45,14 @@ Global
 		{F26B60BB-8D36-4157-A04A-71DEF61F5DE5}.net45|Any CPU.Build.0 = Debug|Any CPU
 		{F26B60BB-8D36-4157-A04A-71DEF61F5DE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F26B60BB-8D36-4157-A04A-71DEF61F5DE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D3C7803-05F5-4C2B-B216-981FD516BA11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D3C7803-05F5-4C2B-B216-981FD516BA11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D3C7803-05F5-4C2B-B216-981FD516BA11}.Net4|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D3C7803-05F5-4C2B-B216-981FD516BA11}.Net4|Any CPU.Build.0 = Debug|Any CPU
+		{8D3C7803-05F5-4C2B-B216-981FD516BA11}.net45|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D3C7803-05F5-4C2B-B216-981FD516BA11}.net45|Any CPU.Build.0 = Debug|Any CPU
+		{8D3C7803-05F5-4C2B-B216-981FD516BA11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D3C7803-05F5-4C2B-B216-981FD516BA11}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

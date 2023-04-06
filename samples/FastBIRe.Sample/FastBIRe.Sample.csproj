@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\FastBIRe.QutoMode\FastBIRe.QutoMode.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe\FastBIRe.csproj" />
   </ItemGroup>
 

@@ -30,9 +30,19 @@ namespace FastBIRe
         {
             return WhereRaw(field, method, Helper.MethodWrapper.WrapValue(value)!);
         }
-        public string Type(DbType dbType)
+        public string? Type(DbType dbType,params object[] formatArgs)
         {
-            return DatabaseReader.FindDataTypesByDbType(Helper.SqlType, dbType);
+            var rt = DatabaseReader.FindDataTypesByDbType(Helper.SqlType, dbType);
+            if (string.IsNullOrEmpty(rt))
+            {
+                return null;
+            }
+            var dataType = DatabaseReader.GetDataTypes(Helper.SqlType).FirstOrDefault(x => x.TypeName==rt);
+            if (dataType==null)
+            {
+                return rt;
+            }
+            return string.Format(dataType.CreateFormat, formatArgs);
         }
         public void FillColumns(IEnumerable<SourceTableColumnDefine> columns, DatabaseTable sourceTable,DatabaseTable destTable)
         {
@@ -50,7 +60,23 @@ namespace FastBIRe
                 }
             }
         }
-        public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null, string? destFieldType = null)
+        public IEnumerable<SourceTableColumnDefine> CloneWith(IEnumerable<SourceTableColumnDefine> sources,Func<SourceTableColumnDefine, SourceTableColumnDefine> define)
+        {
+            foreach (var item in sources)
+            {
+                var def = new SourceTableColumnDefine(item.Field, item.Raw, item.IsGroup, item.DestColumn, item.Method, item.Raw, item.OnlySet)
+                {
+                    Type = item.Type,
+                    Id = item.Id,
+                };
+                var res=define(def);
+                if (res != null)
+                {
+                    yield return def;
+                }
+            }
+        }
+        public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null, string? destFieldType = null,bool sourceNullable=true,bool destNullable=true)
         {
             var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var destFormat = string.IsNullOrEmpty(DestAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(destField);
@@ -63,8 +89,12 @@ namespace FastBIRe
             return new SourceTableColumnDefine(field,
                 raw,
                 isGroup,
-                new TableColumnDefine(destField, destRaw, destFormat, false, destFieldType),
-                method, rawFormat, onlySet, type);
+                new TableColumnDefine(destField, destRaw, destFormat, false) { Type= destFieldType ,Nullable=destNullable},
+                method, rawFormat, onlySet)
+            { 
+                Type= type,
+                Nullable= sourceNullable,
+            };
         }
     }
 }

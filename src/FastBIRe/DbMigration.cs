@@ -64,6 +64,11 @@ namespace FastBIRe
             }
         }
 
+        public MergeHelper GetMergeHelper()
+        {
+            return new MergeHelper(SqlType);
+        }
+
         public ISQLDatabaseCreateAdapter? GetSQLDatabaseCreateAdapter()
         {
             switch (SqlType)
