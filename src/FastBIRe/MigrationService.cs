@@ -69,14 +69,17 @@ namespace FastBIRe
             });
             return res;
         }
-        public string RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<SourceTableColumnDefine> oldRefs)
+        public string? RunMigration(string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
-            var news = tableDef.Columns;
-            var table = tableDef.Table;
+            var s = new StringBuilder();
+            var str = RunMigration(s, table, news, oldRefs);
+            return str + "\n" + s;
+        }
+        public string? RunMigration(StringBuilder scripts,string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
+        {
             var renames = news.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x });
-            var otherScripts = new StringBuilder();
             var migGen = DdlGeneratorFactory.MigrationGenerator();
-            var script = CompareWithModify(table, x =>
+            return CompareWithModify(table, x =>
             {
                 var olds = x.Columns.Select(x =>
                 {
@@ -95,7 +98,7 @@ namespace FastBIRe
                     {
                         col.Name = item.New.Field;
                         var s = migGen.RenameColumn(x, col, item.Old.Field);
-                        otherScripts.AppendLine(s);
+                        scripts.AppendLine(s);
                         col.Name = item.Old.Field;
                     }
                 }
@@ -137,6 +140,14 @@ namespace FastBIRe
                     });
                 }
             }).Execute();
+        }
+        public string RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<SourceTableColumnDefine> oldRefs)
+        {
+            var news = tableDef.Columns;
+            var table = tableDef.Table;
+            var otherScripts = new StringBuilder();
+            var migGen = DdlGeneratorFactory.MigrationGenerator();
+            var script = RunMigration(otherScripts, destTable, tableDef.Columns, oldRefs);
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
                 var groupColumns = tableDef.Columns.Where(x => x.IsGroup).ToList();

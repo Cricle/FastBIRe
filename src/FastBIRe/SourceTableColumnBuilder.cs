@@ -64,6 +64,22 @@ namespace FastBIRe
                 }
             }
         }
+        public IEnumerable<TableColumnDefine> CloneWith(IEnumerable<TableColumnDefine> sources, Func<TableColumnDefine, TableColumnDefine> define)
+        {
+            foreach (var item in sources)
+            {
+                var def = new TableColumnDefine(item.Field, item.Raw,item.RawFormat,item.OnlySet)
+                {
+                    Type = item.Type,
+                    Id = item.Id,
+                };
+                var res = define(def);
+                if (res != null)
+                {
+                    yield return def;
+                }
+            }
+        }
         public IEnumerable<SourceTableColumnDefine> CloneWith(IEnumerable<SourceTableColumnDefine> sources,Func<SourceTableColumnDefine, SourceTableColumnDefine> define)
         {
             foreach (var item in sources)
@@ -80,12 +96,16 @@ namespace FastBIRe
                 }
             }
         }
+        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true)
+        {
+            var destFormat = string.IsNullOrEmpty(DestAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
+            var destRaw = string.Format(destFormat, SourceAlias);
+            return new TableColumnDefine(field, destRaw, destFormat, false) { Type = type, Nullable = destNullable };
+        }
         public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null, string? destFieldType = null,bool sourceNullable=true,bool destNullable=true)
         {
             var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
-            var destFormat = string.IsNullOrEmpty(DestAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(destField);
             var sourceRaw = string.Format(sourceFormat, SourceAlias);
-            var destRaw = string.Format(destFormat, SourceAlias);
 
             var rawFormat = Helper.ToRaw(method, method == ToRawMethod.DistinctCount ? "{{0}}" : "{0}", false);
             var raw = string.Format(rawFormat, sourceRaw);
@@ -93,7 +113,7 @@ namespace FastBIRe
             return new SourceTableColumnDefine(field,
                 raw,
                 isGroup,
-                new TableColumnDefine(destField, destRaw, destFormat, false) { Type= destFieldType ,Nullable=destNullable},
+                Column(destField,destFieldType,destNullable),
                 method, rawFormat, onlySet)
             { 
                 Type= type,
