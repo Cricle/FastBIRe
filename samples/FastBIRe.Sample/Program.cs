@@ -9,53 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace FastBIRe.Sample
 {
-    //时间部分的影响表直接写入是时间部分，insert改为inner join
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <example>
-    /// INSERT INTO
-    //    `8ae26aa2-5def-4209-98fd-1002954ba963`(
-    //        `记录时间`,
-    //        `a1`,
-    //        `a2`,
-    //        `a3`,
-    //        `a4`,
-    //        `a5`,
-    //        `111aaaa7777`,
-    //        `aaaa8`
-    //    )
-    //SELECT
-    //    NOW() AS `记录时间`,
-    //    COUNT(`a`.`a1`) AS `a1`,
-    //    COUNT(`a`.`a2`) AS `a2`,
-    //    COUNT(`a`.`a3`) AS `a3`,
-    //    COUNT(`a`.`a4`) AS `a4`,
-    //    COUNT(`a`.`a5`) AS `a5`,
-    //    DATE_FORMAT(`a`.`a7`, '%Y-%m-%d %H:%i') AS `111aaaa7777`,
-    //    `a`.`aaaa8` AS `aaaa8`
-    //FROM
-    //    (
-    //        SELECT
-    //            `a`.*
-    //        FROM
-    //            `8ae26aa2-5def-4209-98fd-1002954ba963_effect` AS `b`
-    //            INNER JOIN `d7e3e404-1eb1-4c93-9956-ec66030804e0` AS `a` ON DATE_FORMAT(`b`.`a7`, '%Y-%m-%d %H:%i') = DATE_FORMAT(`a`.`a7`, '%Y-%m-%d %H:%i')
-    //            AND `b`.`aaaa8` = `a`.`aaaa8`
-    //    ) AS `a`
-    //    INNER JOIN(
-    //        SELECT
-    //            `c`.`111aaaa7777` AS `111aaaa7777`,
-    //            `c`.`aaaa8` AS `aaaa8`
-    //        FROM
-    //            `8ae26aa2-5def-4209-98fd-1002954ba963` AS `c`
-    //    ) AS `b` ON DATE_FORMAT(`a`.`a7`, '%Y-%m-%d %H:%i') = `b`.`111aaaa7777`
-    //    AND `a`.`aaaa8` = `b`.`aaaa8`
-    //    AND `b`.`111aaaa7777` IS NULL
-    //    AND `b`.`aaaa8` IS NULL
-    //GROUP BY
-    //    DATE_FORMAT(`a`.`a7`, '%Y-%m-%d %H:%i'),
-    //    `a`.`aaaa8`;
+    //时间部分的影响表直接写入是时间部分
     /// </example>
     internal class Program
     {
