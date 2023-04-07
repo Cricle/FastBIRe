@@ -4,7 +4,6 @@ using Microsoft.Data.Sqlite;
 using MySqlConnector;
 using Npgsql;
 using System.Data;
-using System.Runtime.ConstrainedExecution;
 
 namespace FastBIRe.Sample
 {
@@ -17,9 +16,9 @@ namespace FastBIRe.Sample
         }
         static MigrationService GetDbMigration(string? database)
         {
-            var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            //var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqlConnection($"Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
-            //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3307;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
             conn.Open();
@@ -104,7 +103,7 @@ namespace FastBIRe.Sample
                 builder.Column("a3",type:builder.Type(DbType.Decimal,25,5)),
                 builder.Column("a4",type:builder.Type(DbType.Decimal,25,5)),
                 builder.Column("a5",type:builder.Type(DbType.String,255)),
-                builder.Column("111aaaa7777",type:builder.Type(DbType.DateTime)),
+                builder.Column("111aaaa7777",type:builder.Type(DbType.String,255)),
                 builder.Column("aaaa8",type:builder.Type(DbType.String,255)),
             };
             foreach (var item in defs)
@@ -123,7 +122,7 @@ namespace FastBIRe.Sample
                 builder.Method("a3","a3", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a4","a4", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a5","a5", ToRawMethod.Count,type:builder.Type(DbType.String,255)),
-                builder.Method("a7","111aaaa7777", ToRawMethod.None,true,type:builder.Type(DbType.DateTime)),
+                builder.Method("a7","111aaaa7777", ToRawMethod.Minute,true,type:builder.Type(DbType.DateTime)),
                 builder.Method("aaaa8","aaaa8", ToRawMethod.None,true,type:builder.Type(DbType.String,255)),
             };
             foreach (var item in defs)
