@@ -39,10 +39,17 @@ namespace FastBIRe
         public SqlType SqlType => Reader.SqlType!.Value;
 
         public int CommandTimeout { get; set; } = 10 * 60;
-
+        public async Task ExecuteNonQueryAsync(IEnumerable<string> sqls, CancellationToken token = default)
+        {
+            foreach (var item in sqls)
+            {
+                token.ThrowIfCancellationRequested();
+                await ExecuteNonQueryAsync(item, token);
+            }
+        }
         public async Task ExecuteNonQueryAsync(string sql,CancellationToken token=default)
         {
-            if (string.IsNullOrEmpty(sql) || sql.Split(';').All(x => string.IsNullOrEmpty(x) || x.StartsWith("--")))
+            if (string.IsNullOrEmpty(sql))
             {
                 return;
             }

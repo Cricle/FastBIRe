@@ -1,6 +1,8 @@
 ﻿using DatabaseSchemaReader.DataSchema;
+using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using MySqlConnector;
+using Npgsql;
 using System.Data;
 using System.Runtime.ConstrainedExecution;
 
@@ -10,22 +12,34 @@ namespace FastBIRe.Sample
     {
         static void Main(string[] args)
         {
+            //RealTrigger();
             CompareM();
-            //RunQuery();
         }
         static MigrationService GetDbMigration(string? database)
         {
-            //var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqlConnection($"Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3307;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
-            var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
+            //var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
             conn.Open();
             return new MigrationService(conn) { Logger = x => Console.WriteLine(x) };
         }
         static void Trigger()
         {
             Console.WriteLine(new TriggerHelper().CreatePostgreSQL("d7e3e404-1eb1-4c93-9956-ec66030804e0_triggerx", "d7e3e404-1eb1-4c93-9956-ec66030804e0", "8ae26aa2-5def-4209-98fd-1002954ba963_effect",new string[] { "a7","aaaa8" }));
+        }
+        static void RealTrigger()
+        {
+            var ser = GetDbMigration("testa");
+            var d = ser.GetMergeHelper();
+            var builder = new SourceTableColumnBuilder(d, "a", "b");
+            var s = GetSourceDefine(builder);
+            var sourceTable = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", s);
+            Console.WriteLine(new RealTriggerHelper().Create(
+                "d7e3e404-1eb1-4c93-9956-ec66030804e0_triggery",
+                "8ae26aa2-5def-4209-98fd-1002954ba963", 
+                sourceTable, SqlType.PostgreSql));
         }
         static void CompareM()
         {
@@ -35,6 +49,7 @@ namespace FastBIRe.Sample
             }
             var ser = GetDbMigration("testa");
             var d = ser.GetMergeHelper();
+            ser.ImmediatelyAggregate = true;
             var builder = new SourceTableColumnBuilder(d, "a", "b");
             var s = GetSourceDefine(builder);
             var dt = GetDestDefine(builder);
@@ -57,11 +72,11 @@ namespace FastBIRe.Sample
                 }));
             ser.ExecuteNonQueryAsync(str).GetAwaiter().GetResult();
 
-            _ = ser.SyncIndexAsync("8ae26aa2-5def-4209-98fd-1002954ba963", sourceTable).Result;
+            _ = ser.SyncIndexAsync("8ae26aa2-5def-4209-98fd-1002954ba963", sourceTable).GetAwaiter().GetResult();
         }
         static void CreateTableIfNotExists(DbMigration mig, string tableName)
         {
-            if (mig.Reader.TableExists("d7e3e404-1eb1-4c93-9956-ec66030804e0"))
+            if (mig.Reader.TableExists(tableName))
             {
                 return;
             }
@@ -119,7 +134,7 @@ namespace FastBIRe.Sample
         }
         static void RunQuery()
         {
-            var sqltype = SqlType.SQLite;
+            var sqltype = SqlType.MySql;
             var t = new MergeHelper(sqltype);
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 

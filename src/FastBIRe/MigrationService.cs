@@ -38,6 +38,8 @@ namespace FastBIRe
 
         public bool EffectTrigger { get; set; } = true;
 
+        public bool ImmediatelyAggregate { get; set; }
+
         public string CreateTable(string table)
         {
             var migGen = DdlGeneratorFactory.MigrationGenerator();
@@ -69,13 +71,14 @@ namespace FastBIRe
             });
             return res;
         }
-        public string? RunMigration(string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
+        public List<string>RunMigration(string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
-            var s = new StringBuilder();
+            var s = new List<string>();
             var str = RunMigration(s, table, news, oldRefs);
-            return str + "\n" + s;
+            str.AddRange(s);
+            return str;
         }
-        public string? RunMigration(StringBuilder scripts,string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
+        public List<string> RunMigration(List<string> scripts,string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
             var renames = news.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x });
             var migGen = DdlGeneratorFactory.MigrationGenerator();
@@ -98,7 +101,7 @@ namespace FastBIRe
                     {
                         col.Name = item.New.Field;
                         var s = migGen.RenameColumn(x, col, item.Old.Field);
-                        scripts.AppendLine(s);
+                        scripts.Add(s);
                         col.Name = item.Old.Field;
                     }
                 }
@@ -141,13 +144,13 @@ namespace FastBIRe
                 }
             }).Execute();
         }
-        public string RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<SourceTableColumnDefine> oldRefs)
+        public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<SourceTableColumnDefine> oldRefs)
         {
             var news = tableDef.Columns;
             var table = tableDef.Table;
-            var otherScripts = new StringBuilder();
+            var scripts = new List<string>();
             var migGen = DdlGeneratorFactory.MigrationGenerator();
-            var script = RunMigration(otherScripts, destTable, tableDef.Columns, oldRefs);
+            var script = RunMigration(scripts, tableDef.Table, tableDef.Columns, oldRefs);
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
                 var groupColumns = tableDef.Columns.Where(x => x.IsGroup).ToList();
@@ -163,19 +166,26 @@ namespace FastBIRe
                         !refTable.PrimaryKey.Columns.SequenceEqual(refTable.Columns.Select(x => x.Name)) ||
                         !groupColumns.Select(x => x.Type).SequenceEqual(refTable.Columns.Select(x => x.DbDataType), StringComparer.OrdinalIgnoreCase))
                     {
-                        otherScripts.AppendLine(migGen.DropTable(refTable));
+                        scripts.Add(migGen.DropTable(refTable));
                     }
                     else
                     {
                         hasTale = true;
                     }
                 }
+                var triggerName = effectTableName;
+                var triggerHelper = new TriggerHelper();
+                scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
                 if (EffectTrigger)
                 {
-                    var triggerName = effectTableName;
-                    var triggerHelper = new TriggerHelper();
-                    otherScripts.AppendLine(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
-                    otherScripts.AppendLine(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x => x.Field), SqlType));
+                    scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x => x.Field), SqlType));
+                }
+                var imdtriggerName = effectTableName + "_imd";
+                var imdtriggerHelper = new RealTriggerHelper();
+                scripts.Add(imdtriggerHelper.Drop(imdtriggerName, tableDef.Table, SqlType));
+                if (ImmediatelyAggregate)
+                {
+                    scripts.Add(imdtriggerHelper.Create(imdtriggerName, destTable, tableDef, SqlType));
                 }
                 if (!hasTale)
                 {
@@ -193,10 +203,11 @@ namespace FastBIRe
                     constrain.TableName = effectTableName;
                     constrain.Columns.AddRange(groupColumns.Select(x => x.Field));
                     refTable.AddConstraint(constrain);
-                    otherScripts.AppendLine(migGen.AddTable(refTable));
+                    scripts.Add(migGen.AddTable(refTable));
                 }
             }
-            return script + "\n" + otherScripts;
+            script.AddRange(scripts);
+            return script;
         }
     }
 }

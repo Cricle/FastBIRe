@@ -8,9 +8,14 @@ namespace FastBIRe
 
         public CompareWithModifyResultTypes Type { get; set; }
 
-        public string? Execute()
+        public List<string> Execute()
         {
-            return Schemas?.Execute();
+            if (Schemas==null)
+            {
+                return new List<string>(0);
+            }
+            var result=Schemas.ExecuteResult();
+            return result.Select(x => x.Script).ToList();
         }
     }
 }
