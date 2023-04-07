@@ -12,13 +12,14 @@ namespace FastBIRe.Sample
         static void Main(string[] args)
         {
             //RealTrigger();
-            CompareM();
+            //CompareM();
+            RunQuery();
         }
         static MigrationService GetDbMigration(string? database)
         {
-            var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            //var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqlConnection($"Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
-            //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3307;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
             conn.Open();
@@ -38,7 +39,7 @@ namespace FastBIRe.Sample
             Console.WriteLine(new RealTriggerHelper().Create(
                 "d7e3e404-1eb1-4c93-9956-ec66030804e0_triggery",
                 "8ae26aa2-5def-4209-98fd-1002954ba963", 
-                sourceTable, SqlType.PostgreSql));
+                sourceTable, SqlType.MySql));
         }
         static void CompareM()
         {
@@ -48,7 +49,9 @@ namespace FastBIRe.Sample
             }
             var ser = GetDbMigration("testa");
             var d = ser.GetMergeHelper();
-            ser.ImmediatelyAggregate = true;
+            ser.ImmediatelyAggregate = false;
+            ser.EffectMode = false;
+            ser.EffectTrigger = false;
             var builder = new SourceTableColumnBuilder(d, "a", "b");
             var s = GetSourceDefine(builder);
             var dt = GetDestDefine(builder);
@@ -122,7 +125,7 @@ namespace FastBIRe.Sample
                 builder.Method("a3","a3", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a4","a4", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a5","a5", ToRawMethod.Count,type:builder.Type(DbType.String,255)),
-                builder.Method("a7","111aaaa7777", ToRawMethod.Minute,true,type:builder.Type(DbType.DateTime)),
+                builder.Method("a7","111aaaa7777", ToRawMethod.None,true,type:builder.Type(DbType.DateTime)),
                 builder.Method("aaaa8","aaaa8", ToRawMethod.None,true,type:builder.Type(DbType.String,255)),
             };
             foreach (var item in defs)
@@ -138,7 +141,7 @@ namespace FastBIRe.Sample
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
             var cols = GetSourceDefine(builder);
-            CompileOptions? options =  new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
+            CompileOptions? options = null;// new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
             var def = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", cols);
             var si = t.CompileInsert("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
             var s = t.CompileUpdate("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);

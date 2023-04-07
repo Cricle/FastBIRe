@@ -34,9 +34,9 @@ namespace FastBIRe
             }
         }
 
-        public bool EffectMode { get; set; } = true;
+        public bool EffectMode { get; set; }
 
-        public bool EffectTrigger { get; set; } = true;
+        public bool EffectTrigger { get; set; }
 
         public bool ImmediatelyAggregate { get; set; }
 
@@ -151,10 +151,13 @@ namespace FastBIRe
             var scripts = new List<string>();
             var migGen = DdlGeneratorFactory.MigrationGenerator();
             var script = RunMigration(scripts, tableDef.Table, tableDef.Columns, oldRefs);
+            var effectTableName = destTable + EffectSuffix;
+            var triggerName = effectTableName;
+            var triggerHelper = TriggerHelper.Instance;
+            scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
                 var groupColumns = tableDef.Columns.Where(x => x.IsGroup).ToList();
-                var effectTableName = destTable + EffectSuffix;
                 var refTable = Reader.Table(effectTableName);
                 var hasTale = false;
                 if (refTable != null)
@@ -173,19 +176,9 @@ namespace FastBIRe
                         hasTale = true;
                     }
                 }
-                var triggerName = effectTableName;
-                var triggerHelper = new TriggerHelper();
-                scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
                 if (EffectTrigger)
                 {
                     scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x => x.Field), SqlType));
-                }
-                var imdtriggerName = effectTableName + "_imd";
-                var imdtriggerHelper = new RealTriggerHelper();
-                scripts.Add(imdtriggerHelper.Drop(imdtriggerName, tableDef.Table, SqlType));
-                if (ImmediatelyAggregate)
-                {
-                    scripts.Add(imdtriggerHelper.Create(imdtriggerName, destTable, tableDef, SqlType));
                 }
                 if (!hasTale)
                 {
@@ -205,6 +198,13 @@ namespace FastBIRe
                     refTable.AddConstraint(constrain);
                     scripts.Add(migGen.AddTable(refTable));
                 }
+            }
+            var imdtriggerName = effectTableName + "_imd";
+            var imdtriggerHelper = RealTriggerHelper.Instance;
+            scripts.Add(imdtriggerHelper.Drop(imdtriggerName, tableDef.Table, SqlType));
+            if (ImmediatelyAggregate)
+            {
+                scripts.Add(imdtriggerHelper.Create(imdtriggerName, destTable, tableDef, SqlType));
             }
             script.AddRange(scripts);
             return script;

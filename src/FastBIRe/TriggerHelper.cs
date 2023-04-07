@@ -1,12 +1,11 @@
 ﻿using DatabaseSchemaReader.DataSchema;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FastBIRe
 {
     public class TriggerHelper
     {
+        public static readonly TriggerHelper Instance = new TriggerHelper();
+
         public string? Drop(string name, string sourceTable, SqlType sqlType)
         {
             switch (sqlType)

@@ -4,6 +4,8 @@ namespace FastBIRe
 {
     public class RealTriggerHelper
     {
+        public static readonly RealTriggerHelper Instance = new RealTriggerHelper();
+
         public const string InsertTail = "_insert";
         public const string UpdateTail = "_update";
 
