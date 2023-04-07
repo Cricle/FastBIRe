@@ -7,7 +7,7 @@ using System.Text;
 
 namespace FastBIRe
 {
-    public class MigrationService: DbMigration
+    public partial class MigrationService : DbMigration
     {
         public const string DefaultEffectSuffix = "_effect";
 
@@ -35,6 +35,8 @@ namespace FastBIRe
         }
 
         public bool EffectMode { get; set; } = true;
+
+        public bool EffectTrigger { get; set; } = true;
 
         public string CreateTable(string table)
         {
@@ -67,7 +69,7 @@ namespace FastBIRe
             });
             return res;
         }
-        public string RunMigration(string destTable,SourceTableDefine tableDef, IEnumerable<SourceTableColumnDefine> oldRefs)
+        public string RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<SourceTableColumnDefine> oldRefs)
         {
             var news = tableDef.Columns;
             var table = tableDef.Table;
@@ -109,7 +111,7 @@ namespace FastBIRe
                         //String will special
                         if (col.DbDataType.StartsWith("VARCHAR ", StringComparison.OrdinalIgnoreCase))
                         {
-                            col.DbDataType = col.DbDataType.Remove(7,1);
+                            col.DbDataType = col.DbDataType.Remove(7, 1);
                         }
                         var leftType = col.DbDataType;
                         var rightType = item.Type!;
@@ -118,7 +120,7 @@ namespace FastBIRe
                             leftType = leftType.ToLower().Replace("decimal", "numeric");
                             rightType = rightType.ToLower().Replace("decimal", "numeric");
                         }
-                        if (!string.Equals(leftType,rightType, StringComparison.OrdinalIgnoreCase))
+                        if (!string.Equals(leftType, rightType, StringComparison.OrdinalIgnoreCase))
                         {
                             col.DbDataType = item.Type;
                         }
@@ -135,7 +137,7 @@ namespace FastBIRe
                     });
                 }
             }).Execute();
-            if (EffectMode&&tableDef.Columns.Any(x => x.IsGroup))
+            if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
                 var groupColumns = tableDef.Columns.Where(x => x.IsGroup).ToList();
                 var effectTableName = destTable + EffectSuffix;
@@ -147,8 +149,8 @@ namespace FastBIRe
                         !refTable.Columns.Select(x => x.Name).SequenceEqual(groupColumns.Select(x => x.Field)) ||
                         refTable.PrimaryKey == null ||
                         refTable.PrimaryKey.Columns.Count != refTable.Columns.Count ||
-                        !refTable.PrimaryKey.Columns.SequenceEqual(refTable.Columns.Select(x => x.Name))||
-                        !groupColumns.Select(x=>x.Type).SequenceEqual(refTable.Columns.Select(x => x.DbDataType),StringComparer.OrdinalIgnoreCase))
+                        !refTable.PrimaryKey.Columns.SequenceEqual(refTable.Columns.Select(x => x.Name)) ||
+                        !groupColumns.Select(x => x.Type).SequenceEqual(refTable.Columns.Select(x => x.DbDataType), StringComparer.OrdinalIgnoreCase))
                     {
                         otherScripts.AppendLine(migGen.DropTable(refTable));
                     }
@@ -156,6 +158,13 @@ namespace FastBIRe
                     {
                         hasTale = true;
                     }
+                }
+                if (EffectTrigger)
+                {
+                    var triggerName = effectTableName;
+                    var triggerHelper = new TriggerHelper();
+                    otherScripts.AppendLine(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
+                    otherScripts.AppendLine(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x => x.Field), SqlType));
                 }
                 if (!hasTale)
                 {
@@ -179,5 +188,4 @@ namespace FastBIRe
             return script + "\n" + otherScripts;
         }
     }
-
 }

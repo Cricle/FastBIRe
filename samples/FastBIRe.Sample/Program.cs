@@ -1,26 +1,30 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using Microsoft.Data.Sqlite;
+using MySqlConnector;
 using System.Data;
 
 namespace FastBIRe.Sample
 {
-    //sqlite wal模式
     internal class Program
     {
         static void Main(string[] args)
         {
-            //CompareM();
-            RunQuery();
+            CompareM();
+            //RunQuery();
         }
         static MigrationService GetDbMigration(string? database)
         {
             //var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqlConnection($"Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
-            //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3307;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
-            var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
+            //var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
             conn.Open();
             return new MigrationService(conn) { Logger = x => Console.WriteLine(x) };
+        }
+        static void Trigger()
+        {
+            Console.WriteLine(new TriggerHelper().CreatePostgreSQL("d7e3e404-1eb1-4c93-9956-ec66030804e0_triggerx", "d7e3e404-1eb1-4c93-9956-ec66030804e0", "8ae26aa2-5def-4209-98fd-1002954ba963_effect",new string[] { "a7","aaaa8" }));
         }
         static void CompareM()
         {
@@ -64,6 +68,25 @@ namespace FastBIRe.Sample
             var script = migGen.AddTable(tb);
             mig.ExecuteNonQueryAsync(script).GetAwaiter().GetResult();
         }
+        static SourceTableColumnDefine[] GetDestDefine(SourceTableColumnBuilder builder)
+        {
+            var defs = new SourceTableColumnDefine[]
+            {
+                builder.Method("记录时间",null, ToRawMethod.Now,onlySet:true,type:builder.Type(DbType.DateTime),sourceNullable:false,destNullable:false),
+                builder.Method("a1",null, ToRawMethod.None,type:builder.Type(DbType.String,255)),
+                builder.Method("a2",null, ToRawMethod.None,type:builder.Type(DbType.Decimal,25,5)),
+                builder.Method("a3",null, ToRawMethod.None,type:builder.Type(DbType.Decimal,25,5)),
+                builder.Method("a4",null, ToRawMethod.None,type:builder.Type(DbType.Decimal,25,5)),
+                builder.Method("a5",null, ToRawMethod.None,type:builder.Type(DbType.String,255)),
+                builder.Method("111aaaa7777",null, ToRawMethod.None,true,type:builder.Type(DbType.DateTime)),
+                builder.Method("aaaa8",null, ToRawMethod.None,true,type:builder.Type(DbType.String,255)),
+            };
+            foreach (var item in defs)
+            {
+                item.Id = item.Field;
+            }
+            return defs;
+        }
         static SourceTableColumnDefine[] GetSourceDefine(SourceTableColumnBuilder builder)
         {
             var defs = new SourceTableColumnDefine[]
@@ -74,7 +97,7 @@ namespace FastBIRe.Sample
                 builder.Method("a3","a3", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a4","a4", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a5","a5", ToRawMethod.Count,type:builder.Type(DbType.String,255)),
-                builder.Method("a7","a7", ToRawMethod.None,true,type:builder.Type(DbType.DateTime)),
+                builder.Method("a7","111aaaa7777", ToRawMethod.None,true,type:builder.Type(DbType.DateTime)),
                 builder.Method("aaaa8","aaaa8", ToRawMethod.None,true,type:builder.Type(DbType.String,255)),
             };
             foreach (var item in defs)

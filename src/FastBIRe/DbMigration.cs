@@ -40,14 +40,19 @@ namespace FastBIRe
 
         public int CommandTimeout { get; set; } = 10 * 60;
 
-        public async Task ExecuteNonQueryAsync(string sql,IEnumerable<KeyValuePair<string,object>>? args=null,CancellationToken token=default)
+        public async Task ExecuteNonQueryAsync(string sql,CancellationToken token=default)
         {
             if (string.IsNullOrEmpty(sql) || sql.Split(';').All(x => string.IsNullOrEmpty(x) || x.StartsWith("--")))
             {
                 return;
             }
             Log("Executing sql \n{0}", sql);
-            await Connection.ExecuteNonQueryAsync(sql, args, CommandTimeout, token);
+            using (var command=Connection.CreateCommand())
+            {
+                command.CommandText = sql;
+                command.CommandTimeout = CommandTimeout;
+                await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            }
         }
 
         public void Dispose()
