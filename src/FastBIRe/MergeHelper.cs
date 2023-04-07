@@ -176,15 +176,14 @@ SET
             var str = $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
             str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => FastDistinctCount(x, sourceTableDefine)).Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
             str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
-            str += $"INNER JOIN (\n";
-            str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => Wrap(x.DestColumn.Field)))}\n";
-            str += $"FROM {Wrap(destTable)}) AS {Wrap("b")} ON\n";
-            str += $"{string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("b")}.{Wrap(x.DestColumn.Field)}"))}\n";
-            var noWhere = WhereItems == null||WhereItems.Any();
-            if (!noWhere)
-            {
-                str += @$"WHERE {(noWhere ? string.Empty : "(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")")}";
-            }
+            str += @$"WHERE {(WhereItems == null ? string.Empty : "(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")")}
+                {(WhereItems != null ? "AND" : string.Empty)}";
+            str += @$"
+                NOT EXISTS(
+                    SELECT 1 AS {Wrap("tmp")} 
+                    FROM {Wrap(destTable)} AS {Wrap("c")}
+                    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
+                )";
             str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))};";
             return str;
         }
