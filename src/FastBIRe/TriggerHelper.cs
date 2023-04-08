@@ -2,6 +2,7 @@
 
 namespace FastBIRe
 {
+    public record class TriggerField(string Field, string Raw);
     public class TriggerHelper
     {
         public static readonly TriggerHelper Instance = new TriggerHelper();
@@ -25,7 +26,7 @@ namespace FastBIRe
                     return null;
             }
         }
-        public string? Create(string name, string sourceTable, string targetTable, IEnumerable<string> columns,SqlType sqlType)
+        public string? Create(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns,SqlType sqlType)
         {
             switch (sqlType)
             {
@@ -45,33 +46,33 @@ namespace FastBIRe
             }
         }
 
-        public string CreateMySql(string name,string sourceTable,string targetTable,IEnumerable<string> columns)
+        public string CreateMySql(string name,string sourceTable,string targetTable,IEnumerable<TriggerField> columns)
         {
             return $@"CREATE TRIGGER `{name}` AFTER INSERT ON `{sourceTable}`
 FOR EACH ROW
 BEGIN
-	INSERT IGNORE INTO `{targetTable}`({string.Join(",", columns.Select(x=>$"`{x}`"))}) VALUES({string.Join(",", columns.Select(x => $"NEW.`{x}`"))});
+	INSERT IGNORE INTO `{targetTable}`({string.Join(",", columns.Select(x=>$"`{x.Field}`"))}) VALUES({string.Join(",", columns.Select(x => x.Raw))});
 END;
 ";
         }
-        public string CreateSqlServer(string name, string sourceTable, string targetTable, IEnumerable<string> columns)
+        public string CreateSqlServer(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
         {
             return $@"CREATE TRIGGER [{name}] ON [{sourceTable}] AFTER INSERT
 AS
 BEGIN
-    INSERT INTO [{targetTable}] ({string.Join(",", columns.Select(x => $"[{x}]"))})
-    SELECT {string.Join(",", columns.Select(x => $"new.[{x}]"))}
-    FROM INSERTED AS [new]
-    LEFT JOIN [{targetTable}] AS [t] ON {string.Join(" AND ",columns.Select(x=>$"[new].[{x}] = [t].[{x}]"))}
-    WHERE {string.Join(" AND ", columns.Select(x => $"[t].[{x}] IS NULL"))}
+    INSERT INTO [{targetTable}] ({string.Join(",", columns.Select(x => $"[{x.Field}]"))})
+    SELECT {string.Join(",", columns.Select(x => x.Raw))}
+    FROM INSERTED AS [NEW]
+    LEFT JOIN [{targetTable}] AS [t] ON {string.Join(" AND ",columns.Select(x=>$"{x.Raw} = [t].[{x}]"))}
+    WHERE {string.Join(" AND ", columns.Select(x => $"[t].[{x.Field}] IS NULL"))}
 END;
 ";
         }
-        public string CreateSqlite(string name, string sourceTable, string targetTable, IEnumerable<string> columns)
+        public string CreateSqlite(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
         {
             return $@"CREATE TRIGGER [{name}] INSERT ON [{sourceTable}]
 BEGIN
-    INSERT OR IGNORE INTO [{targetTable}] ({string.Join(",", columns.Select(x => $"[{x}]"))}) VALUES({string.Join(",", columns.Select(x => $"NEW.[{x}]"))});
+    INSERT OR IGNORE INTO [{targetTable}] ({string.Join(",", columns.Select(x => $"[{x.Field}]"))}) VALUES({string.Join(",", columns.Select(x => x.Raw))});
 END;
 ";
         }
@@ -79,12 +80,12 @@ END;
         {
             return "fun_" + name.Replace('-', '_');
         }
-        public string CreatePostgreSQL(string name, string sourceTable, string targetTable, IEnumerable<string> columns)
+        public string CreatePostgreSQL(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
         {
             var funName = GetNpgSqlFunName(name);
             return $@"CREATE FUNCTION {funName}() RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO ""{targetTable}"" ({string.Join(",", columns.Select(x => $"\"{x}\""))}) VALUES ({string.Join(",", columns.Select(x => $"NEW.\"{x}\""))})
+  INSERT INTO ""{targetTable}"" ({string.Join(",", columns.Select(x => $"\"{x.Field}\""))}) VALUES ({string.Join(",", columns.Select(x => x.Raw))})
     ON CONFLICT DO NOTHING;
   RETURN NEW;
 END;

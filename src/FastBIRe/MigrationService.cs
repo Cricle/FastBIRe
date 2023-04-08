@@ -17,7 +17,8 @@ namespace FastBIRe
         {
         }
 
-        public MigrationService(DbConnection connection, string database) : base(connection, database)
+        public MigrationService(DbConnection connection, string database) 
+            : base(connection, database)
         {
         }
 
@@ -39,6 +40,8 @@ namespace FastBIRe
         public bool EffectTrigger { get; set; }
 
         public bool ImmediatelyAggregate { get; set; }
+
+        public string? DateTimePartType { get; set; }
 
         public string CreateTable(string table)
         {
@@ -144,6 +147,23 @@ namespace FastBIRe
                 }
             }).Execute();
         }
+        private bool IsTimePart(ToRawMethod method) 
+        {
+            switch (method)
+            {
+                case ToRawMethod.Year:
+                case ToRawMethod.Month:
+                case ToRawMethod.Day:
+                case ToRawMethod.Hour:
+                case ToRawMethod.Minute:
+                case ToRawMethod.Second:
+                case ToRawMethod.Quarter:
+                case ToRawMethod.Weak:
+                    return true;
+                default:
+                    return false;
+            }
+        }
         public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<SourceTableColumnDefine> oldRefs)
         {
             var news = tableDef.Columns;
@@ -178,7 +198,15 @@ namespace FastBIRe
                 }
                 if (EffectTrigger)
                 {
-                    scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x => x.Field), SqlType));
+                    var helper = new MergeHelper(SqlType);
+                    scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
+                    {
+                        if (IsTimePart(x.Method))
+                        {
+                            return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false));
+                        }
+                        return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}");
+                    }), SqlType)!);
                 }
                 if (!hasTale)
                 {
@@ -188,7 +216,12 @@ namespace FastBIRe
                     };
                     foreach (var item in groupColumns)
                     {
-                        refTable.AddColumn(item.Field, item.Type);
+                        var type = item.Type;
+                        if (string.Equals("datetime",item.Type, StringComparison.OrdinalIgnoreCase))
+                        {
+                            type = DateTimePartType;
+                        }
+                        refTable.AddColumn(item.Field, type);
                     }
                     var constrain = new DatabaseConstraint();
                     constrain.ConstraintType = ConstraintType.PrimaryKey;
