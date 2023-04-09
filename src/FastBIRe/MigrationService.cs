@@ -83,7 +83,8 @@ namespace FastBIRe
         }
         public List<string> RunMigration(List<string> scripts,string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
-            var renames = news.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x });
+            var groupNews = news.GroupBy(x => x.Field).Select(x => x.First()).ToList();
+            var renames = groupNews.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x });
             var migGen = DdlGeneratorFactory.MigrationGenerator();
             return CompareWithModify(table, x =>
             {
@@ -108,7 +109,7 @@ namespace FastBIRe
                         col.Name = item.Old.Field;
                     }
                 }
-                foreach (var item in news)
+                foreach (var item in groupNews)
                 {
                     if (string.IsNullOrEmpty(item.Type))
                     {
@@ -135,8 +136,8 @@ namespace FastBIRe
                         }
                     }
                 }
-                var adds = news.Where(n => !olds.Any(y => y.Id == n.Id)).ToList();
-                var rms = new HashSet<string>(olds.Where(o => !news.Any(y => y.Id == o.Id)).Select(x => x.Field));
+                var adds = groupNews.Where(n => !olds.Any(y => y.Id == n.Id)).ToList();
+                var rms = new HashSet<string>(olds.Where(o => !groupNews.Any(y => y.Id == o.Id)).Select(x => x.Field));
                 x.Columns.RemoveAll(x => rms.Contains(x.Name));
                 foreach (var col in adds)
                 {
@@ -166,7 +167,7 @@ namespace FastBIRe
         }
         public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<SourceTableColumnDefine> oldRefs)
         {
-            var news = tableDef.Columns;
+            var news = tableDef.Columns.GroupBy(x=>x.Field).Select(x=>x.First()).ToList();
             var table = tableDef.Table;
             var scripts = new List<string>();
             var migGen = DdlGeneratorFactory.MigrationGenerator();
@@ -177,7 +178,7 @@ namespace FastBIRe
             scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
-                var groupColumns = tableDef.Columns.Where(x => x.IsGroup).ToList();
+                var groupColumns = news.Where(x => x.IsGroup).ToList();
                 var refTable = Reader.Table(effectTableName);
                 var hasTale = false;
                 if (refTable != null)
@@ -232,7 +233,7 @@ namespace FastBIRe
                     scripts.Add(migGen.AddTable(refTable));
                 }
             }
-            var imdtriggerName = effectTableName + "_imd";
+            var imdtriggerName = destTable + "_imd";
             var imdtriggerHelper = RealTriggerHelper.Instance;
             scripts.Add(imdtriggerHelper.Drop(imdtriggerName, tableDef.Table, SqlType));
             if (ImmediatelyAggregate)

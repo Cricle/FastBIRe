@@ -101,7 +101,7 @@ FROM
 		SELECT
             {string.Join(",\n", sourceTableDefine.Columns.Select(x => FastDistinctCount(x, sourceTableDefine)).Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}
 		FROM {fromTable}
-        {(WhereItems == null ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+        {(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
 		GROUP BY
             {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
 	) AS  {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -121,7 +121,7 @@ SET
 		SELECT
             {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
 		FROM {fromTable}
-		{(WhereItems == null ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
         GROUP BY {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
 
 ) AS {Wrap("tmp")}
@@ -140,7 +140,7 @@ FROM (
             {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
         FROM {fromTable}
         WHERE
-		{(WhereItems == null ? string.Empty : string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + " AND ")}
+		{(WhereItems == null || !WhereItems.Any() ? string.Empty : string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + " AND ")}
         EXISTS(
             SELECT 1 AS {Wrap("___tmp")} FROM {Wrap(destTable)} AS {Wrap("c")} WHERE 
             {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.Field)} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
@@ -160,7 +160,7 @@ UPDATE {Wrap(destTable)} AS {Wrap("a")}
 		SELECT
             {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}
 		FROM {fromTable}
-		{(WhereItems == null ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+		{(WhereItems == null|| !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
 		GROUP BY
             {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
 	) AS {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -176,7 +176,7 @@ SET
             var str = $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
             str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => FastDistinctCount(x, sourceTableDefine)).Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
             str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
-            str += @$"WHERE {(WhereItems == null ? string.Empty : "(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")")} {(WhereItems != null ? "AND" : string.Empty)}";
+            str += @$"WHERE {(WhereItems == null||!WhereItems.Any() ? string.Empty : "(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")")} {(WhereItems != null && WhereItems.Any() ? "AND" : string.Empty)}";
             str += @$"
                 NOT EXISTS(
                     SELECT 1 AS {Wrap("tmp")} 
@@ -194,6 +194,8 @@ SET
         {
             switch (method)
             {
+                case ToRawMethod.Year:
+                    return new MethodMetadata(KnowsMethods.Year,GetRef(fieldName, quto));
                 case ToRawMethod.Day:
                     if (SqlType == SqlType.SqlServer)
                     {
@@ -233,7 +235,7 @@ SET
                     }
                     return DataFroamt(KnowsMethods.DateFormat, fieldName, IsSQLSyntx(SqlType) ? "%Y-%m" : "yyyy-MM", quto);
                 default:
-                    throw new NotSupportedException(SqlType.ToString());
+                    throw new NotSupportedException(method.ToString());
             }
         }
 

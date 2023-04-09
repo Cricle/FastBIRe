@@ -142,7 +142,7 @@ namespace FastBIRe.Sample
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
             var cols = GetSourceDefine(builder);
-            CompileOptions? options = new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
+            CompileOptions? options = null;// new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
             var def = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", cols);
             var si = t.CompileInsert("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
             var s = t.CompileUpdate("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
