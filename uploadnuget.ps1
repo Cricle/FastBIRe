@@ -1,5 +1,5 @@
-$version="1.0.0-preview-1"
-$accessToken="oy2eekax2ascnnsvvlpa7x665a2jkkruxkshtzu3mhcp4e"
+$version="1.0.0-preview-2"
+$accessToken="oy2blj6dknoihbaote2alopztao2erfunet5yrfq7n3fqe"
 $paths=ls src | select Name
 for($x=0;$x -lt $paths.length+1; $x=$x+1)
 {

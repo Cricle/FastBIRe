@@ -100,7 +100,7 @@ END;
             var updateName = name + InsertTail;
             var insertName = name + UpdateTail;
             var helper = new MergeHelper(sqlType);
-            helper.WhereItems = table.Columns.Where(x => !x.OnlySet && x.IsGroup)
+            helper.WhereItems = table.Columns.Where(x => x.IsGroup)
                 .Select(x => new WhereItem(x.Field, x.Raw, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false)));
             var inserts = helper.CompileInsert(destTable, table);
             var updates = helper.CompileUpdate(destTable, table);
