@@ -135,51 +135,34 @@ namespace FastBIRe
 
         public async Task<int> SyncIndexAsync(SyncIndexOptions options, CancellationToken token = default)
         {
-            //Single indexs
             var table = Reader.Table(options.Table);
             if (table == null)
             {
                 return 0;
             }
-            if (options.Columns==null)
-            {
-                throw new ArgumentException("Column must not null");
-            }
-            var scripts = new List<string>();
             var tableIndexs = table.Indexes;
-            var nameCreator = options.IndexNameCreator ?? (s => $"IDX_{options.Table}_{s}");
-            var refedIndexs= new HashSet<string>();
-            foreach (var col in options.Columns)
+            var index = tableIndexs.FirstOrDefault(x => x.Name == options.IndexName);
+            if (index != null && !options.DuplicationNameReplace)
             {
-                var name = nameCreator(col);
-                var oldIndex = tableIndexs.FirstOrDefault(x => x.Name == name);
-                if (oldIndex!=null)
+                if (options.Columns.Count() == index.Columns.Count &&
+                    options.Columns.SequenceEqual(index.Columns.Select(x => x.Name)) &&
+                    options.IgnoreOnSequenceEqualName)
                 {
-                    if (oldIndex.Columns.Count != 1 || oldIndex.Columns[0].Name!=col)
-                    {
-                        scripts.Add(TableHelper.DropIndex(name, options.Table));
-                    }
-                    else
-                    {
-                        continue;
-                    }
-                }
-                scripts.Add(TableHelper.CreateIndex(name, options.Table, col));
-                refedIndexs.Add(name);
-            }
-            if (options.RemoveNotRef&&refedIndexs.Count!=0)
-            {
-                foreach (var item in refedIndexs)
-                {
-                    if (options.RemoveFilter!=null&&!options.RemoveFilter(item))
-                    {
-                        continue;
-                    }
-                    scripts.Add(TableHelper.DropIndex(item, options.Table));
+                    return 0;
                 }
             }
-            var res=await ExecuteNonQueryAsync(scripts, token);
-            return res;
+            if (index != null)
+            {
+                var dropIndexSql = TableHelper.DropIndex(index.Name, index.TableName);
+                Log("Run drop index {0} sql\n{1}", index.Name, dropIndexSql);
+                var res = await Connection.ExecuteNonQueryAsync(dropIndexSql, timeout: CommandTimeout, token: token);
+                Log("Drop index result {0}", res);
+            }
+            var createIndexSql = TableHelper.CreateIndex(options.IndexName, options.Table, options.Columns.ToArray());
+            Log("Run create index {0} sql\n{1}", options.IndexName, createIndexSql);
+            var createRes = await Connection.ExecuteNonQueryAsync(createIndexSql, timeout: CommandTimeout, token: token);
+            Log("Create index {0} result {1}", options.IndexName, createRes);
+            return createRes;
         }
         public async Task EnsureDatabaseCreatedAsync(string database,CancellationToken token = default)
         {

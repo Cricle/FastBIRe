@@ -58,22 +58,20 @@ namespace FastBIRe
             });
             return migGen.AddTable(tb);
         }
-        public async Task<int> SyncIndexAsync(string destTable, SourceTableDefine tableDef, Action<SyncIndexOptions>? optionDec=null)
+        public async Task<int> SyncIndexAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null)
         {
-            var option = new SyncIndexOptions
+            var res = await SyncIndexAsync(new SyncIndexOptions
             {
                 Table = tableDef.Table,
                 Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.Field).ToArray(),
-            };
-            optionDec?.Invoke(option);
-            var res = await SyncIndexAsync(option);
-            option = new SyncIndexOptions
+                IndexName = sourceIdxName ?? $"IDX_s_{destTable}"
+            });
+            res += await SyncIndexAsync(new SyncIndexOptions
             {
                 Table = destTable,
                 Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.DestColumn.Field).ToArray(),
-            };
-            optionDec?.Invoke(option);
-            res += await SyncIndexAsync(option);
+                IndexName = destIdxName ?? $"IDX_{destTable}"
+            });
             return res;
         }
         public List<string>RunMigration(string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
