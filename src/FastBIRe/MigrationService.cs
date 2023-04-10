@@ -88,12 +88,22 @@ namespace FastBIRe
             var migGen = DdlGeneratorFactory.MigrationGenerator();
             return CompareWithModify(table, x =>
             {
+                foreach (var item in news)
+                {
+                    var tar = x.Columns.FirstOrDefault(y => y.Name == item.Field);
+                    if (tar!=null)
+                    {
+                        tar.Length = item.Length;
+                        tar.Scale = item.Scale;
+                        tar.Precision = item.Precision;
+                    }
+                }
                 var olds = x.Columns.Select(x =>
                 {
                     var old = oldRefs.FirstOrDefault(y => y.Field == x.Name);
                     if (old != null)
                     {
-                        old.Type = x.DbDataType;
+                        old.Type = x.DbDataType;                        
                         return old;
                     }
                     return null;

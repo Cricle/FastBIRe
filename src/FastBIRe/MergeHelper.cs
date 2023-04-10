@@ -1,4 +1,5 @@
 ﻿using Ao.Stock.Querying;
+using Ao.Stock.Warehouse;
 using DatabaseSchemaReader.DataSchema;
 
 namespace FastBIRe
@@ -23,19 +24,27 @@ namespace FastBIRe
         }
         public static IMethodTranslator<object?> GetTranslator(SqlType sqlType)
         {
+            DefaultMethodTranslator<object?>? helper = null;
             switch (sqlType)
             {
                 case SqlType.MySql:
-                    return SqlMethodTranslatorHelpers<object?>.Mysql();
+                    helper= SqlMethodTranslatorHelpers<object?>.Mysql();
+                    break;
                 case SqlType.SQLite:
-                    return SqlMethodTranslatorHelpers<object?>.Sqlite();
+                    helper = SqlMethodTranslatorHelpers<object?>.Sqlite();
+                    break;
                 case SqlType.SqlServer:
-                    return SqlMethodTranslatorHelpers<object?>.SqlServer();
+                    helper = SqlMethodTranslatorHelpers<object?>.SqlServer();
+                    break;
                 case SqlType.PostgreSql:
-                    return SqlMethodTranslatorHelpers<object?>.PostgrSql();
+                    helper = SqlMethodTranslatorHelpers<object?>.PostgrSql();
+                    break;
                 default:
                     throw new NotSupportedException(sqlType.ToString());
             }
+            helper[KnowsMethods.StrLeft] = "LEFT({1},{2})";
+            helper[KnowsMethods.StrRight] = "RIGHT({1},{2})";
+            return helper;
         }
 
         public MergeHelper(SqlType sqlType, IMethodTranslator<object?> translator, IMethodWrapper methodWrapper)
@@ -60,23 +69,6 @@ namespace FastBIRe
 
         public IEnumerable<WhereItem>? WhereItems { get; set; }
 
-        private SourceTableColumnDefine FastDistinctCount(SourceTableColumnDefine define, SourceTableDefine sourceTableDefine)
-        {
-            if (define.Method != ToRawMethod.DistinctCount || SqlType != SqlType.SqlServer)
-            {
-                return define;
-            }
-            var raw = $@"
-(
-        SELECT
-            {string.Format(define.RawFormat, $"{Wrap("c")}.{Wrap(define.Field)}")}
-        FROM
-            {Wrap(sourceTableDefine.Table)} AS {Wrap("c")}
-        WHERE {(string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{string.Format(x.RawFormat, $"{Wrap("c")}.{Wrap(x.Field)}")} = {x.Raw}")))}
-)
-";
-            return new SourceTableColumnDefine(define.Field, raw, define.IsGroup, define.DestColumn, define.Method, define.RawFormat);
-        }
         private string GetTableRef(SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             if (options != null && options.IncludeEffectJoin && options.EffectTable != null)
@@ -99,7 +91,7 @@ FROM
 	{Wrap(destTable)} AS {Wrap("a")}
 	INNER JOIN (
 		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => FastDistinctCount(x, sourceTableDefine)).Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}
 		FROM {fromTable}
         {(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
 		GROUP BY
@@ -170,7 +162,7 @@ SET
         public virtual string CompileInsert(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             var str = $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
-            str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => FastDistinctCount(x, sourceTableDefine)).Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
+            str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
             str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
             str += @$"WHERE {(WhereItems == null || !WhereItems.Any() ? string.Empty : ("(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")"))} {(WhereItems == null || !WhereItems.Any() ? string.Empty: "AND")}";
             str += @$"
@@ -197,45 +189,37 @@ SET
                     {
                         return new RawMetadata($"CONVERT(VARCHAR(10), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
                     }
-                    return DataFroamt(KnowsMethods.DateFormat, fieldName, IsSQLSyntx(SqlType) ? "%Y-%m-%d" : "yyyy-MM-dd", quto);
+                    return DataFroamt(KnowsMethods.StrLeft, fieldName, 10, quto);
                 case ToRawMethod.Hour:
                     if (SqlType == SqlType.SqlServer)
                     {
                         return new RawMetadata($"CONVERT(VARCHAR(13), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
                     }
-                    return DataFroamt(KnowsMethods.DateFormat, fieldName, IsSQLSyntx(SqlType) ? "%Y-%m-%d %H" : "yyyy-MM-dd HH", quto);
+                    return DataFroamt(KnowsMethods.StrLeft, fieldName, 13, quto);
                 case ToRawMethod.Minute:
                     if (SqlType == SqlType.SqlServer)
                     {
                         return new RawMetadata($"CONVERT(VARCHAR(16), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
                     }
-                    if (SqlType == SqlType.SQLite)
-                    {
-                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H:%M", quto);
-                    }
-                    return DataFroamt(KnowsMethods.DateFormat, fieldName, IsSQLSyntx(SqlType) ? "%Y-%m-%d %H:%i" : "yyyy-MM-dd HH:mm", quto);
+                    return DataFroamt(KnowsMethods.StrLeft, fieldName, 16, quto);
                 case ToRawMethod.Second:
                     if (SqlType == SqlType.SqlServer)
                     {
                         return new RawMetadata($"CONVERT(VARCHAR(20), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
                     }
-                    if (SqlType == SqlType.SQLite)
-                    {
-                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H:%M:%S", quto);
-                    }
-                    return DataFroamt(KnowsMethods.DateFormat, fieldName, IsSQLSyntx(SqlType) ? "%Y-%m-%d %H:%i:%s" : "yyyy-MM-dd HH:mm:ss", quto);
+                    return DataFroamt(KnowsMethods.StrLeft, fieldName, 19, quto);
                 case ToRawMethod.Month:
                     if (SqlType == SqlType.SqlServer)
                     {
                         return new RawMetadata($"CONVERT(VARCHAR(7), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
                     }
-                    return DataFroamt(KnowsMethods.DateFormat, fieldName, IsSQLSyntx(SqlType) ? "%Y-%m" : "yyyy-MM", quto);
+                    return DataFroamt(KnowsMethods.StrLeft, fieldName, 7, quto);
                 default:
                     throw new NotSupportedException(method.ToString());
             }
         }
 
-        public static IQueryMetadata DataFroamt(string method, string fieldName, string format, bool quto)
+        public static IQueryMetadata DataFroamt(string method, string fieldName, object format, bool quto)
         {
             return new MethodMetadata(method,
                 GetRef(fieldName, quto),

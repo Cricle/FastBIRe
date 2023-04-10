@@ -174,8 +174,8 @@ DROP TRIGGER IF EXISTS `{name}{UpdateTail}`;";
         public string DropSqlServer(string name, string sourceTable)
         {
             return $@"
-DROP TRIGGER IF EXISTS [{name}] ON [{sourceTable}{InsertTail}];
-DROP TRIGGER IF EXISTS [{name}] ON [{sourceTable}{UpdateTail}];";
+DROP TRIGGER IF EXISTS [{name}];
+DROP TRIGGER IF EXISTS [{name}];";
         }
         public string DropSqlite(string name)
         {

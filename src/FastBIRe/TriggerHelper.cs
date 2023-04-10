@@ -102,7 +102,7 @@ EXECUTE FUNCTION {funName}();
         }
         public string DropSqlServer(string name, string sourceTable)
         {
-            return $@"DROP TRIGGER IF EXISTS [{name}] ON [{sourceTable}];";
+            return $@"DROP TRIGGER IF EXISTS [{name}];";
         }
         public string DropSqlite(string name)
         {
