@@ -22,10 +22,10 @@ namespace FastBIRe.Sample
         static MigrationService GetDbMigration(string? database)
         {
             //var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
-            var conn = new SqlConnection($"Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            //var conn = new SqlConnection($"Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=355343;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3307;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
-            //var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
+            var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
             conn.Open();
             return new MigrationService(conn) { Logger = x => Console.WriteLine(x) };
         }
@@ -137,7 +137,7 @@ namespace FastBIRe.Sample
         }
         static void RunQuery()
         {
-            var sqltype = SqlType.SqlServer;
+            var sqltype = SqlType.SQLite;
             var t = new MergeHelper(sqltype);
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 

@@ -131,8 +131,7 @@ FROM (
         SELECT
             {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
         FROM {fromTable}
-        WHERE
-		{(WhereItems == null || !WhereItems.Any() ? string.Empty : string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE "+ string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
         GROUP BY
             {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
     ) AS {Wrap("tmp")}
@@ -174,10 +173,6 @@ SET
             str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))};";
             return str;
         }
-        public static bool IsSQLSyntx(SqlType sqlType)
-        {
-            return sqlType == SqlType.MySql || sqlType == SqlType.SQLite;
-        }
         protected IQueryMetadata GetFormatString(ToRawMethod method, string fieldName, bool quto)
         {
             switch (method)
@@ -189,11 +184,19 @@ SET
                     {
                         return new RawMetadata($"CONVERT(VARCHAR(10), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
                     }
+                    if (SqlType == SqlType.SQLite)
+                    {
+                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d", quto);
+                    }
                     return DataFroamt(KnowsMethods.StrLeft, fieldName, 10, quto);
                 case ToRawMethod.Hour:
                     if (SqlType == SqlType.SqlServer)
                     {
                         return new RawMetadata($"CONVERT(VARCHAR(13), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
+                    }
+                    if (SqlType == SqlType.SQLite)
+                    {
+                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H", quto);
                     }
                     return DataFroamt(KnowsMethods.StrLeft, fieldName, 13, quto);
                 case ToRawMethod.Minute:
@@ -201,11 +204,19 @@ SET
                     {
                         return new RawMetadata($"CONVERT(VARCHAR(16), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
                     }
+                    if (SqlType == SqlType.SQLite)
+                    {
+                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H:%M", quto);
+                    }
                     return DataFroamt(KnowsMethods.StrLeft, fieldName, 16, quto);
                 case ToRawMethod.Second:
                     if (SqlType == SqlType.SqlServer)
                     {
                         return new RawMetadata($"CONVERT(VARCHAR(20), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
+                    }
+                    if (SqlType == SqlType.SQLite)
+                    {
+                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H:%M:%S", quto);
                     }
                     return DataFroamt(KnowsMethods.StrLeft, fieldName, 19, quto);
                 case ToRawMethod.Month:
