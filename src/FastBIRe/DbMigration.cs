@@ -108,6 +108,15 @@ namespace FastBIRe
                     return null;
             }
         }
+        private void CleanIdentityType(IEnumerable<DatabaseColumn> columns)
+        {
+            foreach (var item in columns)
+            {
+                item.Length = null;
+                item.Precision = null;
+                item.Scale = null;
+            }
+        }
         public CompareWithModifyResult CompareWithModify(string tableId, Action<DatabaseTable> modify)
         {
             var tableOld = Reader.Table(tableId);
@@ -116,6 +125,8 @@ namespace FastBIRe
                 return new CompareWithModifyResult { Type = CompareWithModifyResultTypes.NoSuchTable };
             }
             var tableNew = Reader.Table(tableId);
+            CleanIdentityType(tableOld.Columns);
+            CleanIdentityType(tableNew.Columns);
             modify(tableNew);
             var schemaOld = CloneSchema();
             schemaOld.AddTable(tableOld);

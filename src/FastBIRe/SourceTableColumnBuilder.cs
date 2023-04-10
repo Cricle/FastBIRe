@@ -96,27 +96,18 @@ namespace FastBIRe
                 }
             }
         }
-        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true,
-            int length = 255,
-            int precision = 25,
-            int scale = 5)
+        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true)
         {
             var destFormat = string.IsNullOrEmpty(DestAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var destRaw = string.Format(destFormat, SourceAlias);
             return new TableColumnDefine(field, destRaw, destFormat, false) 
             {
                 Type = type, 
-                Nullable = destNullable,
-                Length = length,
-                Precision = precision,
-                Scale = scale
+                Nullable = destNullable
             };
         }
         public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null, 
-            string? destFieldType = null,bool sourceNullable=true,bool destNullable=true,
-            int length = 255,
-            int precision = 25,
-            int scale = 5)
+            string? destFieldType = null,bool sourceNullable=true,bool destNullable=true)
         {
             var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var sourceRaw = string.Format(sourceFormat, SourceAlias);
@@ -127,14 +118,11 @@ namespace FastBIRe
             return new SourceTableColumnDefine(field,
                 raw,
                 isGroup,
-                Column(destField, destFieldType, destNullable,length,precision,scale),
+                Column(destField, destFieldType, destNullable),
                 method, rawFormat, onlySet)
             {
                 Type = type,
-                Nullable = sourceNullable,
-                Length=length,
-                Precision = precision,
-                Scale=scale 
+                Nullable = sourceNullable
             };
         }
     }

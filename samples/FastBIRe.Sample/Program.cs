@@ -16,14 +16,14 @@ namespace FastBIRe.Sample
         static void Main(string[] args)
         {
             //RealTrigger();
-            //CompareM();
-            RunQuery();
+            CompareM();
+            //RunQuery();
         }
         static MigrationService GetDbMigration(string? database)
         {
-            //var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqlConnection($"Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
-            var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3307;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
             conn.Open();
@@ -121,9 +121,9 @@ namespace FastBIRe.Sample
             var defs = new SourceTableColumnDefine[]
             {
                 builder.Method("记录时间","记录时间", ToRawMethod.Now,onlySet:true,type:builder.Type(DbType.DateTime),sourceNullable:false,destNullable:false),
-                builder.Method("a1","a1", ToRawMethod.Count,type:builder.Type(DbType.String,255)),
-                builder.Method("a2","a2", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
-                builder.Method("a3","a3", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
+                builder.Method("a1", "a1", ToRawMethod.Count, type : builder.Type(DbType.String, 255)),
+                builder.Method("a2", "a2", ToRawMethod.Count, type : builder.Type(DbType.Decimal, 25, 5)),
+                builder.Method("a3", "a3", ToRawMethod.Count, type : builder.Type(DbType.Decimal, 25, 5)),
                 builder.Method("a4","a4", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a5","a5", ToRawMethod.DistinctCount,type:builder.Type(DbType.String,255)),
                 builder.Method("a7","111aaaa7777", ToRawMethod.Minute,true,type:builder.Type(DbType.DateTime),destFieldType:builder.Type(DbType.String, 255)),
@@ -137,7 +137,7 @@ namespace FastBIRe.Sample
         }
         static void RunQuery()
         {
-            var sqltype = SqlType.SqlServer;
+            var sqltype = SqlType.SQLite;
             var t = new MergeHelper(sqltype);
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
