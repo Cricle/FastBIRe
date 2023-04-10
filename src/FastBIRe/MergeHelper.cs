@@ -117,7 +117,10 @@ SET
         GROUP BY {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
 
 ) AS {Wrap("tmp")}
-    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))};
+    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+AND(
+    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+);
 ";
             }
             else if (SqlType == SqlType.SQLite)
@@ -207,6 +210,10 @@ SET
                     if (SqlType == SqlType.SQLite)
                     {
                         return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H:%M", quto);
+                    }
+                    if (SqlType== SqlType.PostgreSql)
+                    {
+                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "yyyy-MM-dd HH:mm", quto);
                     }
                     return DataFroamt(KnowsMethods.StrLeft, fieldName, 16, quto);
                 case ToRawMethod.Second:
