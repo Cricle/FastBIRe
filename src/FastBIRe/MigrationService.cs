@@ -115,6 +115,10 @@ namespace FastBIRe
                     var col = x.FindColumn(item.Old.Field);
                     if (col != null && col.Name != item.New.Field)
                     {
+                        foreach (var idx in x.Indexes.Where(x => x.Columns.Any(y => y.Name == col.Name)))
+                        {
+                            scripts.Add(TableHelper.DropIndex(idx.Name, idx.TableName));
+                        }
                         col.Name = item.New.Field;
                         var s = migGen.RenameColumn(x, col, item.Old.Field);
                         scripts.Add(s);

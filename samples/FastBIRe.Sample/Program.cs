@@ -56,24 +56,24 @@ namespace FastBIRe.Sample
             ser.DateTimePartType = builder.Type(DbType.String, 255);
             var s = GetSourceDefine(builder);
             var dt = GetDestDefine(builder);
-            //CreateTableIfNotExists(ser, "8ae26aa2-5def-4209-98fd-1002954ba963");
-            //var dstr = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963", dt,
-            //    builder.CloneWith(s, def =>
-            //    {
-            //        def.Id = def.Field;
-            //        return def;
-            //    }));
-            //ser.ExecuteNonQueryAsync(dstr).GetAwaiter().GetResult();
-            //CreateTableIfNotExists(ser, "d7e3e404-1eb1-4c93-9956-ec66030804e0");
+            CreateTableIfNotExists(ser, "8ae26aa2-5def-4209-98fd-1002954ba963");
+            var dstr = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963", dt,
+                builder.CloneWith(s, def =>
+                {
+                    def.Id = def.Field;
+                    return def;
+                }));
+            ser.ExecuteNonQueryAsync(dstr).GetAwaiter().GetResult();
+            CreateTableIfNotExists(ser, "d7e3e404-1eb1-4c93-9956-ec66030804e0");
             var sourceTable = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", s);
-            //var str = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963",
-            //    sourceTable,
-            //    builder.CloneWith(s, def =>
-            //    {
-            //        def.Id = def.Field;
-            //        return def;
-            //    }));
-            //ser.ExecuteNonQueryAsync(str).GetAwaiter().GetResult();
+            var str = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963",
+                sourceTable,
+                builder.CloneWith(s, def =>
+                {
+                    def.Id = def.Field;
+                    return def;
+                }));
+            ser.ExecuteNonQueryAsync(str).GetAwaiter().GetResult();
 
             _ = ser.SyncIndexAsync("8ae26aa2-5def-4209-98fd-1002954ba963", sourceTable).GetAwaiter().GetResult();
         }
@@ -137,7 +137,7 @@ namespace FastBIRe.Sample
         }
         static void RunQuery()
         {
-            var sqltype = SqlType.MySql;
+            var sqltype = SqlType.SQLite;
             var t = new MergeHelper(sqltype);
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
