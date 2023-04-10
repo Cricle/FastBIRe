@@ -140,11 +140,7 @@ FROM (
             {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
         FROM {fromTable}
         WHERE
-		{(WhereItems == null || !WhereItems.Any() ? string.Empty : string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + " AND ")}
-        EXISTS(
-            SELECT 1 AS {Wrap("___tmp")} FROM {Wrap(sourceTableDefine.Table)} AS {Wrap("c")} WHERE 
-            {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.Field)} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
-        )
+		{(WhereItems == null || !WhereItems.Any() ? string.Empty : string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
         GROUP BY
             {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
     ) AS {Wrap("tmp")}
