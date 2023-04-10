@@ -58,23 +58,53 @@ namespace FastBIRe
             });
             return migGen.AddTable(tb);
         }
-        public async Task<int> SyncIndexAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null)
+        public Task<int> SyncIndexAutoAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null, Action<SyncIndexOptions>? optionDec = null)
         {
-            var res = await SyncIndexAsync(new SyncIndexOptions
+            if (SqlType== SqlType.MySql||SqlType== SqlType.SqlServer)
+            {
+                return SyncIndexSingleAsync(destTable, tableDef, optionDec);
+            }
+            return SyncIndexAsync(destTable, tableDef, sourceIdxName, destIdxName, optionDec);
+        }
+        public async Task<int> SyncIndexSingleAsync(string destTable, SourceTableDefine tableDef, Action<SyncIndexOptions>? optionDec = null)
+        {
+            var option = new SyncIndexOptions
+            {
+                Table = tableDef.Table,
+                Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.Field).ToArray(),
+            };
+            optionDec?.Invoke(option);
+            var res = await SyncIndexAsync(option);
+            option = new SyncIndexOptions
+            {
+                Table = destTable,
+                Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.DestColumn.Field).ToArray(),
+            };
+            optionDec?.Invoke(option);
+            res += await SyncIndexAsync(option);
+            return res;
+        }
+        public async Task<int> SyncIndexAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null, Action<SyncIndexOptions>? optionDec = null)
+        {
+            var opt = new SyncIndexOptions
             {
                 Table = tableDef.Table,
                 Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.Field).ToArray(),
                 IndexName = sourceIdxName ?? $"IDX_s_{destTable}"
-            });
-            res += await SyncIndexAsync(new SyncIndexOptions
+            };
+            optionDec?.Invoke(opt);
+            var res = await SyncIndexAsync(opt);
+            opt = new SyncIndexOptions
             {
                 Table = destTable,
                 Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.DestColumn.Field).ToArray(),
                 IndexName = destIdxName ?? $"IDX_{destTable}"
-            });
+            };
+            optionDec?.Invoke(opt);
+            res += await SyncIndexAsync(opt);
             return res;
         }
-        public List<string>RunMigration(string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
+        public List<string> RunMigration(string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
             var s = new List<string>();
             var str = RunMigration(s, table, news, oldRefs);

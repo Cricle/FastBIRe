@@ -132,7 +132,54 @@ namespace FastBIRe
         {
             return new DatabaseSchema(Reader.DatabaseSchema.ConnectionString, SqlType);
         }
-
+        public async Task<int> SyncIndexSingleAsync(SyncIndexOptions options, CancellationToken token = default)
+        {
+            //Single indexs
+            var table = Reader.Table(options.Table);
+            if (table == null)
+            {
+                return 0;
+            }
+            if (options.Columns == null)
+            {
+                throw new ArgumentException("Column must not null");
+            }
+            var scripts = new List<string>();
+            var tableIndexs = table.Indexes;
+            var nameCreator = options.IndexNameCreator ?? (s => $"IDX_{options.Table}_{s}");
+            var refedIndexs = new HashSet<string>();
+            foreach (var col in options.Columns)
+            {
+                var name = nameCreator(col);
+                var oldIndex = tableIndexs.FirstOrDefault(x => x.Name == name);
+                if (oldIndex != null)
+                {
+                    if (oldIndex.Columns.Count != 1 || oldIndex.Columns[0].Name != col)
+                    {
+                        scripts.Add(TableHelper.DropIndex(name, options.Table));
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                scripts.Add(TableHelper.CreateIndex(name, options.Table, col));
+                refedIndexs.Add(name);
+            }
+            if (options.RemoveNotRef && refedIndexs.Count != 0)
+            {
+                foreach (var item in refedIndexs)
+                {
+                    if (options.RemoveFilter != null && !options.RemoveFilter(item))
+                    {
+                        continue;
+                    }
+                    scripts.Add(TableHelper.DropIndex(item, options.Table));
+                }
+            }
+            var res = await ExecuteNonQueryAsync(scripts, token);
+            return res;
+        }
         public async Task<int> SyncIndexAsync(SyncIndexOptions options, CancellationToken token = default)
         {
             var table = Reader.Table(options.Table);

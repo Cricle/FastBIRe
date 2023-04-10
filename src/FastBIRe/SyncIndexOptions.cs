@@ -11,5 +11,11 @@
         public bool DuplicationNameReplace { get; set; }
 
         public bool IgnoreOnSequenceEqualName { get; set; } = true;
+
+        public Func<string, string>? IndexNameCreator { get; set; }
+
+        public bool RemoveNotRef { get; set; }
+
+        public Func<string, bool>? RemoveFilter { get; set; }
     }
 }
