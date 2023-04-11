@@ -107,7 +107,7 @@ namespace FastBIRe.Sample
                 builder.Column("a3",type:builder.Type(DbType.Decimal,25,5)),
                 builder.Column("a4",type:builder.Type(DbType.Decimal,25,5)),
                 builder.Column("a5",type:builder.Type(DbType.String,255)),
-                builder.Column("111aaaa7777",type:builder.Type(DbType.DateTime,255)),
+                builder.Column("111aaaa7777",type:builder.Type(DbType.String,255)),
                 builder.Column("aaaa8",type:builder.Type(DbType.String,255)),
             };
             foreach (var item in defs)
@@ -126,7 +126,7 @@ namespace FastBIRe.Sample
                 builder.Method("a3", "a3", ToRawMethod.Count, type : builder.Type(DbType.Decimal, 25, 5)),
                 builder.Method("a4","a4", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a5","a5", ToRawMethod.DistinctCount,type:builder.Type(DbType.String,255)),
-                builder.Method("a7","111aaaa7777", ToRawMethod.None,true,type:builder.Type(DbType.DateTime),destFieldType:builder.Type(DbType.DateTime, 255)),
+                builder.Method("a7","111aaaa7777", ToRawMethod.Minute,true,type:builder.Type(DbType.DateTime),destFieldType:builder.Type(DbType.String, 255)),
                 builder.Method("aaaa8","aaaa8", ToRawMethod.None,true,type:builder.Type(DbType.String,255),destFieldType:builder.Type(DbType.String, 255)),
             };
             foreach (var item in defs)
@@ -137,7 +137,7 @@ namespace FastBIRe.Sample
         }
         static void RunQuery()
         {
-            var sqltype = SqlType.SQLite;
+            var sqltype = SqlType.MySql;
             var t = new MergeHelper(sqltype);
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
