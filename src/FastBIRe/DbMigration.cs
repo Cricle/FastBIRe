@@ -170,6 +170,7 @@ namespace FastBIRe
                     }
                     else
                     {
+                        outIndexNames?.Add(name);
                         continue;
                     }
                 }

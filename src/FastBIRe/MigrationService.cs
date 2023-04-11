@@ -1,12 +1,24 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using System.Data;
 using System.Data.Common;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace FastBIRe
 {
+    internal static class MD5Helper
+    {
+        private static readonly MD5 instance = MD5.Create();
+
+        public static string ComputeHash(string input)
+        {
+            var buffer = Encoding.UTF8.GetBytes(input);
+            return Convert.ToBase64String(instance.ComputeHash(buffer));
+        }
+    }
     public partial class MigrationService : DbMigration
     {
-        public const string AutoGenIndexPrefx = "IDX_AG_";
+        public const string AutoGenIndexPrefx = "IXAG_";
         public const string DefaultEffectSuffix = "_effect";
 
         private string effectSuffix = DefaultEffectSuffix;
@@ -67,13 +79,14 @@ namespace FastBIRe
             }
             return false;
         }
-        public async Task<int> SyncIndexAutoAsync(string tableName, IEnumerable<TableColumnDefine> columns, string? idxName = null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
+        public async Task<int> SyncIndexAutoAsync(string tableName, IEnumerable<TableColumnDefine> columns, string? idxName = null,string? refTable=null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
         {
+            var tableEncod = MD5Helper.ComputeHash(refTable??tableName);
             var len = await IndexByteLenHelper.GetIndexByteLenAsync(Connection, SqlType, timeOut: CommandTimeout);//bytes
-            idxName ??= $"{AutoGenIndexPrefx}{tableName}";
+            idxName ??= $"{AutoGenIndexPrefx}{tableEncod}";
             var res = 0;
             var table = Reader.Table(tableName);
-            var needDrops = table.Indexes.Where(x=>x.Name.StartsWith(AutoGenIndexPrefx)).Select(x => x.Name).ToList();
+            var needDrops = table.Indexes.Where(x => x.Name.StartsWith(AutoGenIndexPrefx + tableEncod)).Select(x => x.Name).ToList();
             if (table != null)
             {
                 var sourceIndexSize = columns.Sum(x => x.Length);
@@ -81,7 +94,7 @@ namespace FastBIRe
                 if (sourceIndexSize > len)
                 {
                     var createdIdxs=new List<string>();
-                    res += await SyncIndexSingleAsync(tableName, cols, createdIdxs,optionDec, token: token);
+                    res += await SyncIndexSingleAsync(tableName, cols, createdIdxs,optionDec,refTable: refTable??tableName, token: token);
                     foreach (var item in createdIdxs)
                     {
                         needDrops.Remove(item);
@@ -90,7 +103,7 @@ namespace FastBIRe
                 else
                 {
                     needDrops.Remove(idxName);
-                    res += await SyncIndexAsync(tableName, cols, idxName, optionDec, token: token);
+                    res += await SyncIndexAsync(tableName, cols, idxName, optionDec, refTable: refTable ?? tableName, token: token);
                 }
             }
             if (needDrops.Count!=0)
@@ -105,32 +118,32 @@ namespace FastBIRe
         }
         public async Task<int> SyncIndexAutoAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null, Action<SyncIndexOptions>? optionDec = null,CancellationToken token=default)
         {
-            sourceIdxName ??= $"{AutoGenIndexPrefx}s_{tableDef.Table}";
-            destIdxName ??= $"{AutoGenIndexPrefx}{destTable}";
+            sourceIdxName ??= $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(destTable)}";
+            destIdxName ??= sourceIdxName;
             var groupColumns = tableDef.Columns.Where(x => x.IsGroup);
-            var res = await SyncIndexAutoAsync(tableDef.Table, groupColumns, sourceIdxName, optionDec, token: token);
-            res += await SyncIndexAutoAsync(destTable, groupColumns.Select(x=>x.DestColumn), sourceIdxName, optionDec, token: token);
+            var res = await SyncIndexAutoAsync(tableDef.Table, groupColumns, sourceIdxName,destTable, optionDec, token: token);
+            res += await SyncIndexAutoAsync(destTable, groupColumns.Select(x=>x.DestColumn), sourceIdxName, destTable, optionDec, token: token);
             return res;
         }
-        public Task<int> SyncIndexSingleAsync(string table, IEnumerable<string> columns, List<string>? outIndexNames = null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
+        public Task<int> SyncIndexSingleAsync(string table, IEnumerable<string> columns, List<string>? outIndexNames = null, Action<SyncIndexOptions>? optionDec = null,string? refTable=null, CancellationToken token = default)
         {
             var option = new SyncIndexOptions
             {
                 Table = table,
                 Columns = columns,
-                IndexNameCreator = s => $"{AutoGenIndexPrefx}{table}_{s}"
+                IndexNameCreator = s => $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(refTable??table)}_{s}"
             };
             optionDec?.Invoke(option);
             return SyncIndexSingleAsync(option, outIndexNames, token: token);
         }
-        public Task<int> SyncIndexAsync(string table, IEnumerable<string> columns, string? idxName = null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
+        public Task<int> SyncIndexAsync(string table, IEnumerable<string> columns, string? idxName = null, Action<SyncIndexOptions>? optionDec = null, string? refTable = null, CancellationToken token = default)
         {
             var opt = new SyncIndexOptions
             {
                 Table = table,
                 Columns = columns,
                 IndexName = idxName,
-                IndexNameCreator = s => $"{AutoGenIndexPrefx}{table}_{s}"
+                IndexNameCreator = s => $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(refTable ?? table)}_{s}"
             };
             optionDec?.Invoke(opt);
             return SyncIndexAsync(opt,token: token);

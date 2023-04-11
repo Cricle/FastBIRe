@@ -70,6 +70,14 @@ namespace FastBIRe.Sample
                     return def;
                 }));
             ser.ExecuteNonQueryAsync(dstr).GetAwaiter().GetResult();
+            CreateTableIfNotExists(ser, "7ae26aa2-5def-4209-98fd-1002954ba963");
+            dstr = ser.RunMigration("7ae26aa2-5def-4209-98fd-1002954ba963", dt,
+                builder.CloneWith(s, def =>
+                {
+                    def.Id = def.Field;
+                    return def;
+                }));
+            ser.ExecuteNonQueryAsync(dstr).GetAwaiter().GetResult();
             CreateTableIfNotExists(ser, "d7e3e404-1eb1-4c93-9956-ec66030804e0");
             var sourceTable = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", s);
             var str = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963",
@@ -80,8 +88,19 @@ namespace FastBIRe.Sample
                     return def;
                 }));
             ser.ExecuteNonQueryAsync(str).GetAwaiter().GetResult();
+            str = ser.RunMigration("7ae26aa2-5def-4209-98fd-1002954ba963",
+                sourceTable,
+                builder.CloneWith(s, def =>
+                {
+                    def.Id = def.Field;
+                    return def;
+                }));
+            ser.ExecuteNonQueryAsync(str).GetAwaiter().GetResult();
 
             _ = ser.SyncIndexAutoAsync("8ae26aa2-5def-4209-98fd-1002954ba963", sourceTable).GetAwaiter().GetResult();
+            sourceTable.Columns[6].DestColumn.Length = 99999;
+            sourceTable.Columns[6].Length = 99999;
+            _ = ser.SyncIndexAutoAsync("7ae26aa2-5def-4209-98fd-1002954ba963", sourceTable).GetAwaiter().GetResult();
         }
         static void CreateTableIfNotExists(DbMigration mig, string tableName)
         {
