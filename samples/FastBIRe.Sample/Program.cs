@@ -9,23 +9,23 @@ using System.Text.RegularExpressions;
 
 namespace FastBIRe.Sample
 {
-    //时间部分的影响表直接写入是时间部分
+    //影响表还是要原始类型
     /// </example>
     internal class Program
     {
         static void Main(string[] args)
         {
             //RealTrigger();
-            CompareM();
-            //RunQuery();
+            //CompareM();
+            RunQuery();
         }
         static MigrationService GetDbMigration(string? database)
         {
-            var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            //var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqlConnection($"Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3307;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
-            //var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
+            var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
             conn.Open();
             return new MigrationService(conn) { Logger = x => Console.WriteLine(x) };
         }
@@ -50,8 +50,8 @@ namespace FastBIRe.Sample
             var ser = GetDbMigration("testa");
             var d = ser.GetMergeHelper();
             ser.ImmediatelyAggregate = false;
-            ser.EffectMode = false;
-            ser.EffectTrigger = false;
+            ser.EffectMode = true;
+            ser.EffectTrigger = true;
             var builder = new SourceTableColumnBuilder(d, "a", "b");
             ser.DateTimePartType = builder.Type(DbType.String, 255);
             var s = GetSourceDefine(builder);
@@ -137,12 +137,12 @@ namespace FastBIRe.Sample
         }
         static void RunQuery()
         {
-            var sqltype = SqlType.SQLite;
+            var sqltype = SqlType.PostgreSql;
             var t = new MergeHelper(sqltype);
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
             var cols = GetSourceDefine(builder);
-            CompileOptions? options = null;// new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
+            CompileOptions? options = new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
             var def = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", cols);
             var si = t.CompileInsert("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
             var s = t.CompileUpdate("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);

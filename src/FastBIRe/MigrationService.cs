@@ -209,10 +209,11 @@ namespace FastBIRe
             var effectTableName = destTable + EffectSuffix;
             var triggerName = effectTableName;
             var triggerHelper = TriggerHelper.Instance;
+            
             scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
+            var groupColumns = news.Where(x => x.IsGroup).ToList();
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
-                var groupColumns = news.Where(x => x.IsGroup).ToList();
                 var refTable = Reader.Table(effectTableName);
                 var hasTale = false;
                 if (refTable != null)
@@ -231,18 +232,6 @@ namespace FastBIRe
                         hasTale = true;
                     }
                 }
-                if (EffectTrigger)
-                {
-                    var helper = new MergeHelper(SqlType);
-                    scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
-                    {
-                        if (IsTimePart(x.Method))
-                        {
-                            return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false));
-                        }
-                        return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}");
-                    }), SqlType)!);
-                }
                 if (!hasTale)
                 {
                     refTable = new DatabaseTable
@@ -251,12 +240,7 @@ namespace FastBIRe
                     };
                     foreach (var item in groupColumns)
                     {
-                        var type = item.Type;
-                        if (string.Equals("datetime",item.Type, StringComparison.OrdinalIgnoreCase))
-                        {
-                            type = DateTimePartType;
-                        }
-                        refTable.AddColumn(item.Field, type);
+                        refTable.AddColumn(item.Field, item.Type);
                     }
                     var constrain = new DatabaseConstraint();
                     constrain.ConstraintType = ConstraintType.PrimaryKey;
@@ -266,6 +250,18 @@ namespace FastBIRe
                     refTable.AddConstraint(constrain);
                     scripts.Add(migGen.AddTable(refTable));
                 }
+            }
+            if (EffectTrigger)
+            {
+                var helper = new MergeHelper(SqlType);
+                scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
+                {
+                    if (IsTimePart(x.Method))
+                    {
+                        return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false));
+                    }
+                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}");
+                }), SqlType)!);
             }
             var imdtriggerName = destTable + "_imd";
             var imdtriggerHelper = RealTriggerHelper.Instance;
