@@ -132,7 +132,7 @@ namespace FastBIRe.Sample
                 builder.Method("a3", "a3", ToRawMethod.Count, type : builder.Type(DbType.Decimal, 25, 5),length:30,destLength:30),
                 builder.Method("a4","a4", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5),length:30,destLength:30),
                 builder.Method("a5","a5", ToRawMethod.DistinctCount,type:builder.Type(DbType.String,255),length:255,destLength:255),
-                builder.Method("a7","111aaaa7777", ToRawMethod.Minute,true,type:builder.Type(DbType.DateTime),destFieldType:builder.Type(DbType.String, 255),length:9999,destLength:9999),
+                builder.Method("a7","111aaaa7777", ToRawMethod.Minute,true,type:builder.Type(DbType.DateTime),destFieldType:builder.Type(DbType.String, 255),length:8,destLength:255),
                 builder.Method("aaaa8","aaaa8", ToRawMethod.None,true,type:builder.Type(DbType.String,255),destFieldType:builder.Type(DbType.String, 255),length:255,destLength:255),
             };
             foreach (var item in defs)
