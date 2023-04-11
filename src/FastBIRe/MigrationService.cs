@@ -207,7 +207,7 @@ namespace FastBIRe
             var migGen = DdlGeneratorFactory.MigrationGenerator();
             var script = RunMigration(scripts, tableDef.Table, tableDef.Columns, oldRefs);
             var effectTableName = destTable + EffectSuffix;
-            var triggerName = effectTableName;
+            var triggerName = "trigger_"+effectTableName;
             var triggerHelper = TriggerHelper.Instance;
             
             scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
@@ -256,10 +256,10 @@ namespace FastBIRe
                 var helper = new MergeHelper(SqlType);
                 scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
                 {
-                    if (IsTimePart(x.Method))
-                    {
-                        return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false));
-                    }
+                    //if (IsTimePart(x.Method))
+                    //{
+                    //    return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false));
+                    //}
                     return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}");
                 }), SqlType)!);
             }

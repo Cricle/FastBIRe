@@ -73,7 +73,7 @@ namespace FastBIRe
         {
             if (options != null && options.IncludeEffectJoin && options.EffectTable != null)
             {
-                if (SqlType== SqlType.PostgreSql)
+                if (SqlType!= SqlType.SQLite)
                 {
                     return $@"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")} WHERE EXISTS( SELECT 1 FROM {Wrap(options.EffectTable)} AS {Wrap("b")} WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{string.Format(x.RawFormat, $"{Wrap("b")}.{Wrap(x.Field)}")}={string.Format(x.RawFormat, $"{Wrap("a")}.{Wrap(x.Field)}")}"))})";
                 }
@@ -170,7 +170,7 @@ SET
             var str = $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
             str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
             str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
-            str += @$"{(SqlType== SqlType.PostgreSql?"AND": "WHERE")} {(WhereItems == null || !WhereItems.Any() ? string.Empty : ("(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")"))} {(WhereItems == null || !WhereItems.Any() ? string.Empty: "AND")}";
+            str += @$"{(SqlType!= SqlType.SQLite?"AND": "WHERE")} {(WhereItems == null || !WhereItems.Any() ? string.Empty : ("(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")"))} {(WhereItems == null || !WhereItems.Any() ? string.Empty: "AND")}";
             str += @$"
                 NOT EXISTS(
                     SELECT 1 AS {Wrap("tmp")} 

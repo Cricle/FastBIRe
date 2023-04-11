@@ -51,7 +51,7 @@ namespace FastBIRe.Sample
             var d = ser.GetMergeHelper();
             ser.ImmediatelyAggregate = false;
             ser.EffectMode = true;
-            ser.EffectTrigger = true;
+            ser.EffectTrigger = false;
             var builder = new SourceTableColumnBuilder(d, "a", "b");
             ser.DateTimePartType = builder.Type(DbType.String, 255);
             var s = GetSourceDefine(builder);
@@ -107,7 +107,7 @@ namespace FastBIRe.Sample
                 builder.Column("a3",type:builder.Type(DbType.Decimal,25,5)),
                 builder.Column("a4",type:builder.Type(DbType.Decimal,25,5)),
                 builder.Column("a5",type:builder.Type(DbType.String,255)),
-                builder.Column("111aaaa7777",type:builder.Type(DbType.String,255)),
+                builder.Column("111aaaa7777",type:builder.Type(DbType.DateTime,255)),
                 builder.Column("aaaa8",type:builder.Type(DbType.String,255)),
             };
             foreach (var item in defs)
@@ -126,7 +126,7 @@ namespace FastBIRe.Sample
                 builder.Method("a3", "a3", ToRawMethod.Count, type : builder.Type(DbType.Decimal, 25, 5)),
                 builder.Method("a4","a4", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5)),
                 builder.Method("a5","a5", ToRawMethod.DistinctCount,type:builder.Type(DbType.String,255)),
-                builder.Method("a7","111aaaa7777", ToRawMethod.Minute,true,type:builder.Type(DbType.DateTime),destFieldType:builder.Type(DbType.String, 255)),
+                builder.Method("a7","111aaaa7777", ToRawMethod.None,true,type:builder.Type(DbType.DateTime),destFieldType:builder.Type(DbType.DateTime, 255)),
                 builder.Method("aaaa8","aaaa8", ToRawMethod.None,true,type:builder.Type(DbType.String,255),destFieldType:builder.Type(DbType.String, 255)),
             };
             foreach (var item in defs)
@@ -137,12 +137,12 @@ namespace FastBIRe.Sample
         }
         static void RunQuery()
         {
-            var sqltype = SqlType.PostgreSql;
+            var sqltype = SqlType.SQLite;
             var t = new MergeHelper(sqltype);
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
             var cols = GetSourceDefine(builder);
-            CompileOptions? options = new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
+            CompileOptions? options =  new CompileOptions { EffectTable = "8ae26aa2-5def-4209-98fd-1002954ba963_effect", IncludeEffectJoin = true };
             var def = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", cols);
             var si = t.CompileInsert("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
             var s = t.CompileUpdate("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);
