@@ -3,9 +3,7 @@ using DatabaseSchemaReader;
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
-using System.Data;
 using System.Data.Common;
-using System.Reflection;
 
 namespace FastBIRe
 {
@@ -19,9 +17,6 @@ namespace FastBIRe
         public DbMigration(DbConnection connection, string database)
         {
             Connection = connection;
-            Reader = new DatabaseReader(connection) { Owner = database };
-            TableHelper = new TableHelper(SqlType);
-            DdlGeneratorFactory = new DdlGeneratorFactory(SqlType);
             Database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
@@ -29,13 +24,17 @@ namespace FastBIRe
 
         public string Database { get; }
 
-        public DatabaseReader Reader { get; }
+        private DatabaseReader? reader;
+        private TableHelper? tableHelper;
+        private DdlGeneratorFactory? ddlGeneratorFactory;
+
+        public DatabaseReader Reader => reader ??= new DatabaseReader(Connection) { Owner = Database };
 
         public DbConnection Connection { get; }
 
-        public TableHelper TableHelper { get; }
+        public TableHelper TableHelper => tableHelper ??= new TableHelper(SqlType);
 
-        public DdlGeneratorFactory DdlGeneratorFactory { get; }
+        public DdlGeneratorFactory DdlGeneratorFactory => ddlGeneratorFactory ??= new DdlGeneratorFactory(SqlType);
 
         public SqlType SqlType => Reader.SqlType!.Value;
 
@@ -143,7 +142,7 @@ namespace FastBIRe
         {
             return new DatabaseSchema(Reader.DatabaseSchema.ConnectionString, SqlType);
         }
-        public async Task<int> SyncIndexSingleAsync(SyncIndexOptions options, CancellationToken token = default)
+        public async Task<int> SyncIndexSingleAsync(SyncIndexOptions options,List<string>? outIndexNames=null, CancellationToken token = default)
         {
             //Single indexs
             var table = Reader.Table(options.Table);
@@ -174,6 +173,7 @@ namespace FastBIRe
                         continue;
                     }
                 }
+                outIndexNames?.Add(name);
                 scripts.Add(TableHelper.CreateIndex(name, options.Table, col));
                 refedIndexs.Add(name);
             }

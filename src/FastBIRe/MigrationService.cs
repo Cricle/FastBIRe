@@ -1,14 +1,103 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿using Ao.Stock.Mirror;
+using DatabaseSchemaReader.DataSchema;
+using DatabaseSchemaReader.Utilities;
+using System;
+using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.ConstrainedExecution;
 using System.Text;
 
 namespace FastBIRe
 {
+    public static class IndexByteLenHelper
+    {
+        public static async Task<int> GetIndexByteLenAsync(DbConnection connection,SqlType sqlType,int timeOut=60*5,CancellationToken token=default)
+        {
+            string? sql;
+            switch (sqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    sql = SqlServer();
+                    break;
+                case SqlType.MySql:
+                    sql = MySql();
+                    break;
+                case SqlType.SQLite:
+                    sql = Sqlite();
+                    break;
+                case SqlType.PostgreSql:
+                    sql = PostgreSQL();
+                    break;
+                case SqlType.Oracle:
+                case SqlType.Db2:
+                default:
+                    throw new NotSupportedException(sqlType.ToString());
+            }
+            using (var command=connection.CreateCommand(sql))
+            {
+                command.CommandTimeout = timeOut;
+                token.ThrowIfCancellationRequested();
+                var scan = await command.ExecuteScalarAsync(token);
+                switch (sqlType)
+                {
+                    case SqlType.SqlServer:
+                    case SqlType.SqlServerCe:
+                    case SqlType.SQLite:
+                    case SqlType.PostgreSql:
+                        return Convert.ToInt32(scan);
+                    case SqlType.MySql:
+                        if (scan==null)
+                        {
+                            return 768;
+                        }
+                        return 3072;
+                    default:
+                        break;
+                }
+            }
+            return 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string SqlServer()
+        {
+            return @"SELECT
+    CASE WHEN CONVERT(NVARCHAR(128),SERVERPROPERTY('Edition')) LIKE '%Enterprise Edition%'
+        THEN 900
+        WHEN CONVERT(NVARCHAR(128),SERVERPROPERTY('Edition')) LIKE '%Developer Edition%'
+        THEN 900
+        WHEN CONVERT(NVARCHAR(128),SERVERPROPERTY('Edition')) LIKE '%Standard Edition%'
+        THEN 700
+        WHEN CONVERT(NVARCHAR(128),SERVERPROPERTY('Edition')) LIKE '%Web Edition%'
+        THEN 700
+        ELSE 400
+    END AS max_index_length;";
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string MySql()
+        {
+            //768~3072
+            return "SHOW VARIABLES LIKE 'innodb_large_prefix';";
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string Sqlite()
+        {
+            return "PRAGMA page_size;";
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string PostgreSQL()
+        {
+            return "SELECT current_setting('block_size')::int * 32767;";
+        }
+    }
     public partial class MigrationService : DbMigration
     {
+        public const string AutoGenIndexPrefx = "IDX_AG_";
         public const string DefaultEffectSuffix = "_effect";
 
         private string effectSuffix = DefaultEffectSuffix;
@@ -41,8 +130,6 @@ namespace FastBIRe
 
         public bool ImmediatelyAggregate { get; set; }
 
-        public string? DateTimePartType { get; set; }
-
         public string CreateTable(string table)
         {
             var migGen = DdlGeneratorFactory.MigrationGenerator();
@@ -58,51 +145,95 @@ namespace FastBIRe
             });
             return migGen.AddTable(tb);
         }
-        public Task<int> SyncIndexAutoAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null, Action<SyncIndexOptions>? optionDec = null)
+        private bool IsIndexAck(DatabaseIndex idx, IEnumerable<string> fields)
         {
-            if (SqlType== SqlType.MySql||SqlType== SqlType.SqlServer)
+            if (idx == null)
             {
-                return SyncIndexSingleAsync(destTable, tableDef, optionDec);
+                return false;
             }
-            return SyncIndexAsync(destTable, tableDef, sourceIdxName, destIdxName, optionDec);
+            if (idx.Columns.Count == fields.Count() &&
+                idx.Columns.Select(x => x.Name).SequenceEqual(fields))
+            {
+                return true;
+            }
+            return false;
         }
-        public async Task<int> SyncIndexSingleAsync(string destTable, SourceTableDefine tableDef, Action<SyncIndexOptions>? optionDec = null)
+        private bool IfIndexNoAckDrop(IEnumerable<DatabaseIndex> indexs, string indexName, IEnumerable<string> fields)
+        {
+            var idx = indexs.FirstOrDefault(x => x.Name == indexName);
+            if (IsIndexAck(idx,fields))
+            {
+                return false;
+            }
+            return true;
+        }
+        public async Task<int> SyncIndexAutoAsync(string tableName, IEnumerable<TableColumnDefine> columns, string? idxName = null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
+        {
+            var len = await IndexByteLenHelper.GetIndexByteLenAsync(Connection, SqlType, timeOut: CommandTimeout);//bytes
+            idxName ??= $"{AutoGenIndexPrefx}{tableName}";
+            var res = 0;
+            var table = Reader.Table(tableName);
+            var needDrops = table.Indexes.Where(x=>x.Name.StartsWith(AutoGenIndexPrefx)).Select(x => x.Name).ToList();
+            if (table != null)
+            {
+                var sourceIndexSize = columns.Sum(x => x.Length);
+                var cols = columns.Select(x => x.Field).ToList();
+                if (sourceIndexSize > len)
+                {
+                    var createdIdxs=new List<string>();
+                    res += await SyncIndexSingleAsync(tableName, cols, createdIdxs,optionDec, token: token);
+                    foreach (var item in createdIdxs)
+                    {
+                        needDrops.Remove(item);
+                    }
+                }
+                else
+                {
+                    needDrops.Remove(idxName);
+                    res += await SyncIndexAsync(tableName, cols, idxName, optionDec, token: token);
+                }
+            }
+            if (needDrops.Count!=0)
+            {
+                foreach (var item in needDrops)
+                {
+                    var sql = TableHelper.DropIndex(item, tableName);
+                    res += await ExecuteNonQueryAsync(sql, token: token);
+                }
+            }
+            return res;
+        }
+        public async Task<int> SyncIndexAutoAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null, Action<SyncIndexOptions>? optionDec = null,CancellationToken token=default)
+        {
+            sourceIdxName ??= $"{AutoGenIndexPrefx}s_{tableDef.Table}";
+            destIdxName ??= $"{AutoGenIndexPrefx}{destTable}";
+            var groupColumns = tableDef.Columns.Where(x => x.IsGroup);
+            var res = await SyncIndexAutoAsync(tableDef.Table, groupColumns, sourceIdxName, optionDec, token: token);
+            res += await SyncIndexAutoAsync(destTable, groupColumns.Select(x=>x.DestColumn), sourceIdxName, optionDec, token: token);
+            return res;
+        }
+        public Task<int> SyncIndexSingleAsync(string table, IEnumerable<string> columns, List<string>? outIndexNames = null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
         {
             var option = new SyncIndexOptions
             {
-                Table = tableDef.Table,
-                Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.Field).ToArray(),
+                Table = table,
+                Columns = columns,
+                IndexNameCreator = s => $"{AutoGenIndexPrefx}{table}_{s}"
             };
             optionDec?.Invoke(option);
-            var res = await SyncIndexAsync(option);
-            option = new SyncIndexOptions
-            {
-                Table = destTable,
-                Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.DestColumn.Field).ToArray(),
-            };
-            optionDec?.Invoke(option);
-            res += await SyncIndexAsync(option);
-            return res;
+            return SyncIndexSingleAsync(option, outIndexNames, token: token);
         }
-        public async Task<int> SyncIndexAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null, Action<SyncIndexOptions>? optionDec = null)
+        public Task<int> SyncIndexAsync(string table, IEnumerable<string> columns, string? idxName = null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
         {
             var opt = new SyncIndexOptions
             {
-                Table = tableDef.Table,
-                Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.Field).ToArray(),
-                IndexName = sourceIdxName ?? $"IDX_s_{destTable}"
+                Table = table,
+                Columns = columns,
+                IndexName = idxName,
+                IndexNameCreator = s => $"{AutoGenIndexPrefx}{table}_{s}"
             };
             optionDec?.Invoke(opt);
-            var res = await SyncIndexAsync(opt);
-            opt = new SyncIndexOptions
-            {
-                Table = destTable,
-                Columns = tableDef.Columns.Where(x => x.IsGroup).Select(x => x.DestColumn.Field).ToArray(),
-                IndexName = destIdxName ?? $"IDX_{destTable}"
-            };
-            optionDec?.Invoke(opt);
-            res += await SyncIndexAsync(opt);
-            return res;
+            return SyncIndexAsync(opt,token: token);
         }
         public List<string> RunMigration(string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {

@@ -1,6 +1,4 @@
-﻿using DatabaseSchemaReader.DataSchema;
-
-namespace FastBIRe
+﻿namespace FastBIRe
 {
     public record CompileOptions
     {
@@ -8,8 +6,9 @@ namespace FastBIRe
 
         public string? EffectTable { get; set; }
 
-        public DatabaseTable? SourceTable { get; set; }
-
-        public DatabaseTable? DestTable { get; set; }
+        public static CompileOptions EffectJoin(string effectTable)
+        {
+            return new CompileOptions { IncludeEffectJoin = true, EffectTable = effectTable };
+        }
     }
 }

@@ -96,18 +96,19 @@ namespace FastBIRe
                 }
             }
         }
-        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true)
+        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true,int length=0)
         {
             var destFormat = string.IsNullOrEmpty(DestAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var destRaw = string.Format(destFormat, SourceAlias);
             return new TableColumnDefine(field, destRaw, destFormat, false) 
             {
                 Type = type, 
-                Nullable = destNullable
+                Nullable = destNullable,
+                Length=length
             };
         }
         public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null, 
-            string? destFieldType = null,bool sourceNullable=true,bool destNullable=true)
+            string? destFieldType = null,bool sourceNullable=true,bool destNullable=true, int length = 0, int destLength = 0)
         {
             var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var sourceRaw = string.Format(sourceFormat, SourceAlias);
@@ -118,11 +119,12 @@ namespace FastBIRe
             return new SourceTableColumnDefine(field,
                 raw,
                 isGroup,
-                Column(destField, destFieldType, destNullable),
+                Column(destField, destFieldType, destNullable,destLength),
                 method, rawFormat, onlySet)
             {
                 Type = type,
-                Nullable = sourceNullable
+                Nullable = sourceNullable,
+                Length= length,
             };
         }
     }
