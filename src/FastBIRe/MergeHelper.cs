@@ -83,19 +83,22 @@ namespace FastBIRe
         }
         public virtual string CompileUpdate(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
+            var noLockSql = options?.NoLock ?? false ? GetNoLockSql() : string.Empty;
+            var noLockRestoreSql = options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
             var fromTable = GetTableRef(sourceTableDefine, options);
             if (SqlType == SqlType.SqlServer)
             {
                 return $@"
+{noLockSql}
 UPDATE
 	{Wrap(destTable)}
 SET
-    {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+    {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 FROM
 	{Wrap(destTable)} AS {Wrap("a")}
 	INNER JOIN (
 		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))} 
 		FROM {fromTable}
         {(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
 		GROUP BY
@@ -104,11 +107,13 @@ FROM
 AND(
     {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 );
+{noLockRestoreSql}
 ";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
                 return $@"
+{noLockSql}
 UPDATE
 	{Wrap(destTable)} AS {Wrap("a")}
 SET
@@ -125,11 +130,13 @@ SET
 AND(
     {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 );
+{noLockRestoreSql}
 ";
             }
             else if (SqlType == SqlType.SQLite)
             {
                 return $@"
+{noLockSql}
 UPDATE
     {Wrap(destTable)}
 SET
@@ -146,9 +153,11 @@ FROM (
 AND(
     {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $"{Wrap(destTable)}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 );
+{noLockRestoreSql}
 ";
             }
             return $@"
+{noLockSql}
 UPDATE {Wrap(destTable)} AS {Wrap("a")}
 	INNER JOIN (
 		SELECT
@@ -163,14 +172,54 @@ AND(
 )
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))};
+{noLockRestoreSql}
 ";
+        }
+        private string GetNoLockRestoreSql()
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;\n";
+                case SqlType.MySql:
+                    return "SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n";
+                case SqlType.SQLite:
+                    return "PRAGMA read_uncommitted = 0;\n";
+                case SqlType.PostgreSql:
+                    return "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ COMMITTED;\n";
+                case SqlType.Oracle:
+                case SqlType.Db2:
+                default:
+                    return string.Empty;
+            }
+        }
+        private string GetNoLockSql()
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n";
+                case SqlType.MySql:
+                    return "SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n";
+                case SqlType.SQLite:
+                    return "PRAGMA read_uncommitted = 1;\n";
+                case SqlType.PostgreSql:
+                    return "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n";
+                case SqlType.Oracle:
+                case SqlType.Db2:
+                default:
+                    return string.Empty;
+            }
         }
         public virtual string CompileInsert(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
-            var str = $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
+            var str = options?.NoLock ?? false ? GetNoLockSql() : string.Empty;
+            str += $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
             str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
             str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
-            str += @$"{(SqlType == SqlType.SqlServer || SqlType == SqlType.PostgreSql ? "AND": "WHERE")} {(WhereItems == null || !WhereItems.Any() ? string.Empty : ("(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")"))} {(WhereItems == null || !WhereItems.Any() ? string.Empty: "AND")}";
+            str += @$"{((SqlType == SqlType.SqlServer || SqlType == SqlType.PostgreSql)&&(options?.IncludeEffectJoin??false) ? "AND" : "WHERE")} {(WhereItems == null || !WhereItems.Any() ? string.Empty : ("(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")"))} {(WhereItems == null || !WhereItems.Any() ? string.Empty: "AND")}";
             str += @$"
                 NOT EXISTS(
                     SELECT 1 AS {Wrap("tmp")} 
@@ -178,6 +227,7 @@ SET
                     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
                 )";
             str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))};";
+            str+= options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
             return str;
         }
         protected IQueryMetadata GetFormatString(ToRawMethod method, string fieldName, bool quto)

@@ -295,6 +295,10 @@ namespace FastBIRe
                     scripts.Add(migGen.AddTable(refTable));
                 }
             }
+            else if(Reader.TableExists(effectTableName))
+            {
+                scripts.Add(TableHelper.CreateDropTable(effectTableName));
+            }
             if (EffectTrigger)
             {
                 var helper = new MergeHelper(SqlType);

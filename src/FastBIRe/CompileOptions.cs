@@ -6,6 +6,8 @@
 
         public string? EffectTable { get; set; }
 
+        public bool NoLock { get; set; }
+
         public static CompileOptions EffectJoin(string effectTable)
         {
             return new CompileOptions { IncludeEffectJoin = true, EffectTable = effectTable };

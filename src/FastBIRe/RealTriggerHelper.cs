@@ -15,7 +15,7 @@ namespace FastBIRe
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    return DropSqlServer(name, destTable);
+                    return DropSqlServer(name);
                 case SqlType.MySql:
                     return DropMySql(name);
                 case SqlType.SQLite:
@@ -171,11 +171,11 @@ EXECUTE FUNCTION {funName}();
 DROP TRIGGER IF EXISTS `{name}{InsertTail}`;
 DROP TRIGGER IF EXISTS `{name}{UpdateTail}`;";
         }
-        public string DropSqlServer(string name, string sourceTable)
+        public string DropSqlServer(string name)
         {
             return $@"
-DROP TRIGGER IF EXISTS [{name}];
-DROP TRIGGER IF EXISTS [{name}];";
+DROP TRIGGER IF EXISTS [{name}{InsertTail}];
+DROP TRIGGER IF EXISTS [{name}{UpdateTail}];";
         }
         public string DropSqlite(string name)
         {
