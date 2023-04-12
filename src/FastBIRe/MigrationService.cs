@@ -119,10 +119,10 @@ namespace FastBIRe
         public async Task<int> SyncIndexAutoAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null, Action<SyncIndexOptions>? optionDec = null,CancellationToken token=default)
         {
             sourceIdxName ??= $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(destTable)}";
-            destIdxName ??= sourceIdxName;
+            destIdxName ??= sourceIdxName+"_g";
             var groupColumns = tableDef.Columns.Where(x => x.IsGroup);
             var res = await SyncIndexAutoAsync(tableDef.Table, groupColumns, sourceIdxName,destTable, optionDec, token: token);
-            res += await SyncIndexAutoAsync(destTable, groupColumns.Select(x=>x.DestColumn), sourceIdxName, destTable, optionDec, token: token);
+            res += await SyncIndexAutoAsync(destTable, groupColumns.Select(x=>x.DestColumn), destIdxName, destTable, optionDec, token: token);
             return res;
         }
         public Task<int> SyncIndexSingleAsync(string table, IEnumerable<string> columns, List<string>? outIndexNames = null, Action<SyncIndexOptions>? optionDec = null,string? refTable=null, CancellationToken token = default)
