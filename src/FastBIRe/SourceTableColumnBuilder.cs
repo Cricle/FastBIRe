@@ -6,11 +6,19 @@ namespace FastBIRe
 {
     public class SourceTableColumnBuilder
     {
+        public const int DefaultStringLen = 255;
+        public const int DefaultNumberLen = 13;
+        public const int DefaultSqliteNumberLen = 16;
+        public const int DefaultDateTimeLen = 8;
+        public const int DefaultSqliteDateTimeLen = 23;
+
         public SourceTableColumnBuilder(MergeHelper helper, string? sourceAlias = null, string? destAlias = null)
         {
             Helper = helper;
             SourceAlias = sourceAlias;
             DestAlias = destAlias;
+            NumberLen = helper.SqlType == SqlType.SQLite ? DefaultSqliteNumberLen : DefaultNumberLen;
+            DateTimeLen = helper.SqlType == SqlType.SQLite ? DefaultSqliteDateTimeLen : DefaultDateTimeLen;
         }
 
         public MergeHelper Helper { get; }
@@ -18,6 +26,16 @@ namespace FastBIRe
         public string? SourceAlias { get; }
 
         public string? DestAlias { get; }
+
+        public int StringLen { get; set; } = DefaultStringLen;
+
+        public int DateTimeLen { get; set; } = DefaultDateTimeLen;
+
+        public int NumberLen { get; set; }
+
+        public int Precision { get; set; } = 25;
+
+        public int Scale { get; set; } = 5;
 
         public WhereItem WhereRaw(string field, ToRawMethod method, string rawValue)
         {
@@ -30,15 +48,15 @@ namespace FastBIRe
         {
             return WhereRaw(field, method, Helper.MethodWrapper.WrapValue(value)!);
         }
-        public string? Type(DbType dbType,params object[] formatArgs)
+        public string? Type(DbType dbType, params object[] formatArgs)
         {
             var rt = DatabaseReader.FindDataTypesByDbType(Helper.SqlType, dbType);
             if (string.IsNullOrEmpty(rt))
             {
                 return null;
             }
-            var dataType = DatabaseReader.GetDataTypes(Helper.SqlType).FirstOrDefault(x =>string.Equals(x.TypeName,rt, StringComparison.OrdinalIgnoreCase));
-            if (dataType==null)
+            var dataType = DatabaseReader.GetDataTypes(Helper.SqlType).FirstOrDefault(x => string.Equals(x.TypeName, rt, StringComparison.OrdinalIgnoreCase));
+            if (dataType == null)
             {
                 return rt;
             }
@@ -48,17 +66,17 @@ namespace FastBIRe
             }
             return string.Format(dataType.CreateFormat, formatArgs);
         }
-        public void FillColumns(IEnumerable<SourceTableColumnDefine> columns, DatabaseTable sourceTable,DatabaseTable destTable)
+        public void FillColumns(IEnumerable<SourceTableColumnDefine> columns, DatabaseTable sourceTable, DatabaseTable destTable)
         {
             FillColumns(columns, sourceTable);
             FillColumns(columns.Select(x => x.DestColumn), destTable);
         }
-        public void FillColumns(IEnumerable<TableColumnDefine> columns,DatabaseTable table)
+        public void FillColumns(IEnumerable<TableColumnDefine> columns, DatabaseTable table)
         {
             foreach (var column in columns)
             {
                 var col = table.FindColumn(column.Field);
-                if (col!=null)
+                if (col != null)
                 {
                     column.Type = col.DbDataType;
                 }
@@ -68,7 +86,7 @@ namespace FastBIRe
         {
             foreach (var item in sources)
             {
-                var def = new TableColumnDefine(item.Field, item.Raw,item.RawFormat,item.OnlySet)
+                var def = new TableColumnDefine(item.Field, item.Raw, item.RawFormat, item.OnlySet)
                 {
                     Type = item.Type,
                     Id = item.Id,
@@ -80,7 +98,7 @@ namespace FastBIRe
                 }
             }
         }
-        public IEnumerable<SourceTableColumnDefine> CloneWith(IEnumerable<SourceTableColumnDefine> sources,Func<SourceTableColumnDefine, SourceTableColumnDefine> define)
+        public IEnumerable<SourceTableColumnDefine> CloneWith(IEnumerable<SourceTableColumnDefine> sources, Func<SourceTableColumnDefine, SourceTableColumnDefine> define)
         {
             foreach (var item in sources)
             {
@@ -89,43 +107,133 @@ namespace FastBIRe
                     Type = item.Type,
                     Id = item.Id,
                 };
-                var res=define(def);
+                var res = define(def);
                 if (res != null)
                 {
                     yield return def;
                 }
             }
         }
-        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true,int length=0)
+        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true, int length = 0)
         {
             var destFormat = string.IsNullOrEmpty(DestAlias) ? Helper.Wrap(field) : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var destRaw = string.Format(destFormat, SourceAlias);
-            return new TableColumnDefine(field, destRaw, destFormat, false) 
+            return new TableColumnDefine(field, destRaw, destFormat, false)
             {
-                Type = type, 
+                Type = type,
                 Nullable = destNullable,
-                Length=length
+                Length = length
             };
         }
-        public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null, 
-            string? destFieldType = null,bool sourceNullable=true,bool destNullable=true, int length = 0, int destLength = 0)
+        public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null,
+            string? destFieldType = null, bool sourceNullable = true, bool destNullable = true, int length = 0, int destLength = 0)
         {
             var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var sourceRaw = string.Format(sourceFormat, SourceAlias);
 
-            var rawFormat = Helper.ToRaw(method, method == ToRawMethod.DistinctCount||method== ToRawMethod.Weak||method== ToRawMethod.Quarter ? "{{0}}" : "{0}", false);
+            var rawFormat = Helper.ToRaw(method, method == ToRawMethod.DistinctCount || method == ToRawMethod.Weak || method == ToRawMethod.Quarter ? "{{0}}" : "{0}", false);
             var raw = string.Format(rawFormat, sourceRaw);
 
             return new SourceTableColumnDefine(field,
                 raw,
                 isGroup,
-                Column(destField, destFieldType, destNullable,destLength),
+                Column(destField, destFieldType, destNullable, destLength),
                 method, rawFormat, onlySet)
             {
                 Type = type,
                 Nullable = sourceNullable,
-                Length= length,
+                Length = length,
             };
+        }
+
+        private static bool IsAggerMethod(ToRawMethod method)
+        {
+            switch (method)
+            {
+                case ToRawMethod.Min:
+                case ToRawMethod.Max:
+                case ToRawMethod.Count:
+                case ToRawMethod.DistinctCount:
+                case ToRawMethod.Sum:
+                case ToRawMethod.Avg:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        protected int GetDecimalByteLen(int len)
+        {
+            if (Helper.SqlType == SqlType.SqlServer || Helper.SqlType == SqlType.SqlServerCe)
+            {
+                return ((len + 1) / 2) + 1;
+            }
+            return (len / 9 + 1) * 4;
+        }
+        public SourceTableColumnDefine DateTime(string field,
+            string destField,
+            ToRawMethod method,
+            bool isGroup = false,
+            bool onlySet = false,
+            bool sourceNullable = true,
+            bool destNullable = true,
+            int? len = null)
+        {
+            var isAggerMethod = IsAggerMethod(method);
+            return Method(field,
+                destField,
+                method,
+                isGroup,
+                onlySet,
+                Type(DbType.DateTime),
+                isAggerMethod ? Type(DbType.String, len ?? StringLen) : Type(DbType.DateTime),
+                sourceNullable,
+                destNullable,
+                DateTimeLen,
+                isAggerMethod ? len ?? StringLen : DateTimeLen);
+        }
+        public SourceTableColumnDefine Decimal(string field,
+            string destField,
+            ToRawMethod method,
+            bool isGroup = false,
+            bool onlySet = false,
+            bool sourceNullable = true,
+            bool destNullable = true,
+            int? precision = null,
+            int? scale = null)
+        {
+            var isAggerMethod = IsAggerMethod(method);
+            return Method(field,
+                destField,
+                method,
+                isGroup,
+                onlySet,
+                Type(DbType.Decimal, precision ?? Precision, scale ?? Scale),
+                isAggerMethod ? Type(DbType.String, StringLen) : Type(DbType.Decimal, precision ?? Precision, scale ?? Scale),
+                sourceNullable,
+                destNullable,
+                GetDecimalByteLen(precision ?? Precision),
+                isAggerMethod ? StringLen : NumberLen);
+        }
+        public SourceTableColumnDefine String(string field,
+            string destField,
+            ToRawMethod method,
+            bool isGroup = false,
+            bool onlySet = false,
+            bool sourceNullable = true,
+            bool destNullable = true,
+            int? len = null)
+        {
+            return Method(field,
+                destField,
+                method,
+                isGroup,
+                onlySet,
+                Type(DbType.String, len ?? StringLen),
+                IsAggerMethod(method) ? Type(DbType.String, len ?? StringLen) : Type(DbType.String, len ?? StringLen),
+                sourceNullable,
+                destNullable,
+                len ?? StringLen,
+                len ?? StringLen);
         }
     }
 }

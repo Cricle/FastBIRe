@@ -156,6 +156,30 @@ AND(
 {noLockRestoreSql}
 ";
             }
+            var useTmp = SqlType == SqlType.MySql && options != null && options.IncludeEffectJoin;
+            if(useTmp)
+            {
+                return $@"
+{noLockSql}
+CREATE TEMPORARY TABLE {Wrap("tmp")} AS (
+    SELECT {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}
+    FROM {fromTable}
+    GROUP BY
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+);
+
+UPDATE {Wrap(destTable)} AS {Wrap("a")}
+	INNER JOIN {Wrap("tmp")} AS {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+AND(
+    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+)
+SET
+    {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))};
+DROP TEMPORARY TABLE {Wrap("tmp")};
+{noLockRestoreSql}
+";
+
+            }
             return $@"
 {noLockSql}
 UPDATE {Wrap(destTable)} AS {Wrap("a")}
@@ -216,9 +240,29 @@ SET
         public virtual string CompileInsert(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             var str = options?.NoLock ?? false ? GetNoLockSql() : string.Empty;
+            var useTmp = SqlType == SqlType.MySql && options != null && options.IncludeEffectJoin;
+            if (useTmp)
+            {
+                str += @$"CREATE TEMPORARY TABLE `tmp` AS (
+    SELECT
+        {Wrap("a")}.*
+    FROM
+        {Wrap(options!.EffectTable)} AS {Wrap("b")}
+        INNER JOIN {Wrap(sourceTableDefine.Table)} AS {Wrap("a")}
+        ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.Field)} = {Wrap("b")}.{Wrap(x.Field)}"))}
+);
+";
+            }
             str += $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
             str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
-            str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
+            if (useTmp)
+            {
+                str += $"FROM {Wrap("tmp")} AS {Wrap("a")}\n";
+            }
+            else
+            {
+                str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
+            }
             str += @$"{((SqlType == SqlType.SqlServer || SqlType == SqlType.PostgreSql)&&(options?.IncludeEffectJoin??false) ? "AND" : "WHERE")} {(WhereItems == null || !WhereItems.Any() ? string.Empty : ("(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")"))} {(WhereItems == null || !WhereItems.Any() ? string.Empty: "AND")}";
             str += @$"
                 NOT EXISTS(
@@ -226,8 +270,12 @@ SET
                     FROM {Wrap(destTable)} AS {Wrap("c")}
                     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
                 )";
-            str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))};";
-            str+= options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
+            str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))};\n";
+            if (useTmp)
+            {
+                str += $"DROP TEMPORARY TABLE {Wrap("tmp")};\n";
+            }
+            str += options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
             return str;
         }
         protected IQueryMetadata GetFormatString(ToRawMethod method, string fieldName, bool quto)

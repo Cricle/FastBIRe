@@ -8,6 +8,12 @@
 
         public bool NoLock { get; set; }
 
+        public CompileOptions WithNoLock(bool noLock = true)
+        {
+            NoLock = noLock;
+            return this;
+        }
+
         public static CompileOptions EffectJoin(string effectTable)
         {
             return new CompileOptions { IncludeEffectJoin = true, EffectTable = effectTable };
