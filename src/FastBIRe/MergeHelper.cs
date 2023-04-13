@@ -75,9 +75,9 @@ namespace FastBIRe
             {
                 if (SqlType== SqlType.SqlServer||SqlType== SqlType.PostgreSql)
                 {
-                    return $@"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")} WHERE EXISTS( SELECT 1 FROM {Wrap(options.EffectTable)} AS {Wrap("b")} WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{string.Format(x.RawFormat, $"{Wrap("b")}.{Wrap(x.Field)}")}={string.Format(x.RawFormat, $"{Wrap("a")}.{Wrap(x.Field)}")}"))})";
+                    return $@"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")} WHERE EXISTS( SELECT 1 FROM {Wrap(options.EffectTable)} AS {Wrap("b")} WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("b")}.{Wrap(x.Field)}.{Wrap(x.Field)}={Wrap("a")}.{Wrap(x.Field)}"))})";
                 }
-                return $@"(SELECT {Wrap("a")}.* FROM {Wrap(options.EffectTable)} AS {Wrap("b")} INNER JOIN {Wrap(sourceTableDefine.Table)} AS {Wrap("a")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{string.Format(x.RawFormat, $"{Wrap("b")}.{Wrap(x.Field)}")}={string.Format(x.RawFormat, $"{Wrap("a")}.{Wrap(x.Field)}")}"))}) AS {Wrap("a")}";
+                return $@"(SELECT {Wrap("a")}.* FROM {Wrap(options.EffectTable)} AS {Wrap("b")} INNER JOIN {Wrap(sourceTableDefine.Table)} AS {Wrap("a")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("b")}.{Wrap(x.Field)}={Wrap("a")}.{Wrap(x.Field)}"))}) AS {Wrap("a")}";
             }
             return $"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")}";
         }

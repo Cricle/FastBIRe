@@ -150,12 +150,12 @@ namespace FastBIRe
         {
             switch (method)
             {
-                case ToRawMethod.Min:
-                case ToRawMethod.Max:
-                case ToRawMethod.Count:
-                case ToRawMethod.DistinctCount:
-                case ToRawMethod.Sum:
-                case ToRawMethod.Avg:
+                case ToRawMethod.Year:
+                case ToRawMethod.Month:
+                case ToRawMethod.Day:
+                case ToRawMethod.Hour:
+                case ToRawMethod.Minute:
+                case ToRawMethod.Second:
                     return true;
                 default:
                     return false;
