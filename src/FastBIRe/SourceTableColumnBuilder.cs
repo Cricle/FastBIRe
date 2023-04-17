@@ -134,7 +134,7 @@ namespace FastBIRe
             var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var sourceRaw = string.Format(sourceFormat, SourceAlias);
 
-            var rawFormat = Helper.ToRaw(method, method == ToRawMethod.DistinctCount || method == ToRawMethod.Weak || method == ToRawMethod.Quarter ? "{{0}}" : "{0}", false);
+            var rawFormat = Helper.ToRaw(method, "{0}", false);
             var raw = string.Format(rawFormat, sourceRaw);
 
             return new SourceTableColumnDefine(field,

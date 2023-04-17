@@ -242,7 +242,7 @@ SET
                         {
                             forMatter = $"LEFT({@ref},10)";
                         }
-                        return JoinString(forMatter, " 00:00:00");
+                        return JoinString(forMatter, "' 00:00:00'");
                     }
                 case ToRawMethod.Hour:
                     {
@@ -276,7 +276,7 @@ SET
                         {
                             forMatter = $"LEFT({@ref},16)";
                         }
-                        return JoinString(forMatter, ":00:00");
+                        return JoinString(forMatter, "':00:00'");
                     }
                 case ToRawMethod.Second:
                     return @ref;
@@ -295,7 +295,7 @@ SET
                         {
                             forMatter = $"LEFT({@ref},7)";
                         }
-                        return JoinString(forMatter, "-01 00:00:00");
+                        return JoinString(forMatter, "'-01 00:00:00'");
                     }
                 default:
                     throw new NotSupportedException(method.ToString());
