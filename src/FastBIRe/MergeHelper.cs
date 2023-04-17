@@ -43,9 +43,9 @@ namespace FastBIRe
         {
             if (options != null && options.IncludeEffectJoin && options.EffectTable != null)
             {
-                if (SqlType== SqlType.SqlServer||SqlType== SqlType.PostgreSql)
+                if (SqlType== SqlType.SqlServer||SqlType== SqlType.PostgreSql||  SqlType== SqlType.SQLite)
                 {
-                    return $@"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")} WHERE EXISTS( SELECT 1 FROM {Wrap(options.EffectTable)} AS {Wrap("b")} WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("b")}.{Wrap(x.Field)}.{Wrap(x.Field)}={Wrap("a")}.{Wrap(x.Field)}"))})";
+                    return $@"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")} WHERE EXISTS( SELECT 1 FROM {Wrap(options.EffectTable)} AS {Wrap("b")} WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("b")}.{Wrap(x.Field)}={Wrap("a")}.{Wrap(x.Field)}"))})";
                 }
                 return $@"(SELECT {Wrap("a")}.* FROM {Wrap(options.EffectTable)} AS {Wrap("b")} INNER JOIN {Wrap(sourceTableDefine.Table)} AS {Wrap("a")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("b")}.{Wrap(x.Field)}={Wrap("a")}.{Wrap(x.Field)}"))}) AS {Wrap("a")}";
             }
@@ -187,16 +187,21 @@ SET
         {
             var str = $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
             str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
-            str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
-            if (SqlType == SqlType.SQLite&&sourceTableDefine.Columns.Any(x=>x.IsGroup&&x.Method== ToRawMethod.None))
+            var optSqlite = SqlType == SqlType.SQLite && sourceTableDefine.Columns.Any(x => x.IsGroup && x.Method == ToRawMethod.None);
+            if (optSqlite)
             {
-                str += $@"LEFT JOIN {Wrap(destTable)} AS {Wrap("c")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
+                str += "FROM (SELECT * ";
+            }
+            str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
+            if (optSqlite)
+            {
+                str += $@") AS {Wrap("a")} LEFT JOIN {Wrap(destTable)} AS {Wrap("c")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
                           WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup&&x.Method== ToRawMethod.None).Select(x=>$"{Wrap("c")}.{Wrap(x.DestColumn.Field)} IS NULL"))}
 ";
             }
             else
             {
-                str += @$"{((SqlType == SqlType.SqlServer || SqlType == SqlType.PostgreSql) && (options?.IncludeEffectJoin ?? false) ? "AND" : "WHERE")} {(WhereItems == null || !WhereItems.Any() ? string.Empty : ("(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")"))} {(WhereItems == null || !WhereItems.Any() ? string.Empty : "AND")}";
+                str += @$"{((SqlType == SqlType.SqlServer || SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite) && (options?.IncludeEffectJoin ?? false) ? "AND" : "WHERE")} {(WhereItems == null || !WhereItems.Any() ? string.Empty : ("(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")"))} {(WhereItems == null || !WhereItems.Any() ? string.Empty : "AND")}";
                 str += @$"
                 NOT EXISTS(
                     SELECT 1 AS {Wrap("tmp")} 
@@ -276,7 +281,7 @@ SET
                         {
                             forMatter = $"LEFT({@ref},16)";
                         }
-                        return JoinString(forMatter, "':00:00'");
+                        return JoinString(forMatter, "':00'");
                     }
                 case ToRawMethod.Second:
                     return @ref;
