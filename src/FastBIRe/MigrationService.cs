@@ -302,14 +302,12 @@ namespace FastBIRe
             if (EffectTrigger)
             {
                 var helper = new MergeHelper(SqlType);
-                scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
-                {
-                    //if (IsTimePart(x.Method))
-                    //{
-                    //    return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false));
-                    //}
-                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}");
-                }), SqlType)!);
+                scripts.Add(
+                    triggerHelper.Create(
+                        triggerName, 
+                        tableDef.Table, 
+                        effectTableName, 
+                        groupColumns.Select(x => new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}")), SqlType)!);
             }
             var imdtriggerName = destTable + "_imd";
             var imdtriggerHelper = RealTriggerHelper.Instance;

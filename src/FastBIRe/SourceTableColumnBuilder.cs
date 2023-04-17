@@ -42,7 +42,7 @@ namespace FastBIRe
 
         public WhereItem WhereRaw(string field, ToRawMethod method, string rawValue)
         {
-            var sourceRaw = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap(SourceAlias)}." + Helper.Wrap(field);
+            var sourceRaw = string.IsNullOrEmpty(SourceAlias) ? string.Empty : ($"{Helper.Wrap(SourceAlias!)}." + Helper.Wrap(field));
             var raw = Helper.ToRaw(method, sourceRaw, false);
             var val = Helper.ToRaw(method, rawValue, false);
             return new WhereItem(field, raw, val);

@@ -1,5 +1,4 @@
-﻿using Ao.Stock.Querying;
-using DatabaseSchemaReader.DataSchema;
+﻿using DatabaseSchemaReader.DataSchema;
 
 namespace FastBIRe
 {

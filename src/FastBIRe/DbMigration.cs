@@ -1,5 +1,4 @@
-﻿using Ao.Stock.Mirror;
-using DatabaseSchemaReader;
+﻿using DatabaseSchemaReader;
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
@@ -217,12 +216,12 @@ namespace FastBIRe
             {
                 var dropIndexSql = TableHelper.DropIndex(index.Name, index.TableName);
                 Log("Run drop index {0} sql\n{1}", index.Name, dropIndexSql);
-                var res = await Connection.ExecuteNonQueryAsync(dropIndexSql, timeout: CommandTimeout, token: token);
+                var res = await ExecuteNonQueryAsync(dropIndexSql, token: token);
                 Log("Drop index result {0}", res);
             }
             var createIndexSql = TableHelper.CreateIndex(options.IndexName, options.Table, options.Columns.ToArray());
             Log("Run create index {0} sql\n{1}", options.IndexName, createIndexSql);
-            var createRes = await Connection.ExecuteNonQueryAsync(createIndexSql, timeout: CommandTimeout, token: token);
+            var createRes = await ExecuteNonQueryAsync(createIndexSql, token: token);
             Log("Create index {0} result {1}", options.IndexName, createRes);
             return createRes;
         }
@@ -238,8 +237,9 @@ namespace FastBIRe
                 var hasDbSql = $"SELECT 1 FROM pg_database WHERE datname = '{database}'";
                 Log("Check db sql \n{0}", hasDbSql);
                 var hasDb = false;
-                using (var command=Connection.CreateCommand(hasDbSql))
+                using (var command=Connection.CreateCommand())
                 {
+                    command.CommandText = hasDbSql;
                     command.CommandTimeout = CommandTimeout;
                     using (var reader=await command.ExecuteReaderAsync(token))
                     {
@@ -250,7 +250,7 @@ namespace FastBIRe
                 {
                     var createSql = adapter.GenericCreateDatabaseSql(database);
                     Log("Create db sql \n{0}", createSql);
-                    var createRes = await Connection.ExecuteNonQueryAsync(createSql, timeout: CommandTimeout, token: token);
+                    var createRes = await ExecuteNonQueryAsync(createSql, token: token);
                     Log("Sync database result {0}", createRes);
                 }
             }
@@ -258,7 +258,7 @@ namespace FastBIRe
             {
                 var createIfNotExistsSql = adapter.GenericCreateDatabaseIfNotExistsSql(database);
                 Log("Create if not exists with sql \n{0}", createIfNotExistsSql);
-                var createRes = await Connection.ExecuteNonQueryAsync(createIfNotExistsSql, timeout: CommandTimeout, token: token);
+                var createRes = await ExecuteNonQueryAsync(createIfNotExistsSql, token: token);
                 Log("Sync database result {0}", createRes);
             }
         }
