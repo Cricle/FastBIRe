@@ -1,5 +1,4 @@
 ﻿using Ao.Stock.Querying;
-using Ao.Stock.Warehouse;
 using DatabaseSchemaReader.DataSchema;
 
 namespace FastBIRe
@@ -22,46 +21,18 @@ namespace FastBIRe
                     throw new NotSupportedException(sqlType.ToString());
             }
         }
-        public static IMethodTranslator<object?> GetTranslator(SqlType sqlType)
-        {
-            DefaultMethodTranslator<object?>? helper;
-            switch (sqlType)
-            {
-                case SqlType.MySql:
-                    helper= SqlMethodTranslatorHelpers<object?>.Mysql();
-                    break;
-                case SqlType.SQLite:
-                    helper = SqlMethodTranslatorHelpers<object?>.Sqlite();
-                    break;
-                case SqlType.SqlServer:
-                    helper = SqlMethodTranslatorHelpers<object?>.SqlServer();
-                    break;
-                case SqlType.PostgreSql:
-                    helper = SqlMethodTranslatorHelpers<object?>.PostgrSql();
-                    break;
-                default:
-                    throw new NotSupportedException(sqlType.ToString());
-            }
-            helper[KnowsMethods.StrLeft] = "LEFT({1},{2})";
-            helper[KnowsMethods.StrRight] = "RIGHT({1},{2})";
-            return helper;
-        }
-
-        public MergeHelper(SqlType sqlType, IMethodTranslator<object?> translator, IMethodWrapper methodWrapper)
+        public MergeHelper(SqlType sqlType, IMethodWrapper methodWrapper)
         {
             SqlType = sqlType;
-            Translator = translator;
             MethodWrapper = methodWrapper;
         }
 
         public MergeHelper(SqlType sqlType)
-            : this(sqlType, GetTranslator(sqlType), GetMethodWrapper(sqlType))
+            : this(sqlType, GetMethodWrapper(sqlType))
         {
         }
 
         public SqlType SqlType { get; }
-
-        public IMethodTranslator<object?> Translator { get; }
 
         public IMethodWrapper MethodWrapper { get; }
 
@@ -238,68 +209,103 @@ SET
             str += options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
             return str;
         }
-        protected IQueryMetadata GetFormatString(ToRawMethod method, string fieldName, bool quto)
+        private string JoinString(string left, string right)
         {
+            if (SqlType == SqlType.SQLite || SqlType == SqlType.PostgreSql)
+            {
+                return $"{left} || {right}";
+            }
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"{left} + {right}";
+            }
+            return $"CONCAT({left},{right})";
+        }
+        protected string GetFormatString(ToRawMethod method, string fieldName, bool quto)
+        {
+            var @ref = GetRef(fieldName, quto);
             switch (method)
             {
                 case ToRawMethod.Year:
-                    return new MethodMetadata(KnowsMethods.Year, GetRef(fieldName, quto), new ValueMetadata("-01-01 00:00:00"));
+                    return JoinString(@ref, "'-01-01 00:00:00'");
                 case ToRawMethod.Day:
-                    if (SqlType == SqlType.SqlServer)
                     {
-                        return new MethodMetadata(KnowsMethods.StrConcat, new RawMetadata($"CONVERT(VARCHAR(10), {(quto ? Wrap(fieldName) : fieldName)}, 120)"), new ValueMetadata(" 00:00:00"));
+                        string forMatter;
+                        if (SqlType == SqlType.SqlServer)
+                        {
+                            forMatter = $"CONVERT(VARCHAR(10),{@ref} ,120)";
+                        }
+                        else if (SqlType == SqlType.SQLite)
+                        {
+                            forMatter = $"strftime('%Y-%m-%d', {@ref})";
+                        }
+                        else
+                        {
+                            forMatter = $"LEFT({@ref},10)";
+                        }
+                        return JoinString(forMatter, " 00:00:00");
                     }
-                    if (SqlType == SqlType.SQLite)
-                    {
-                        return new RawMetadata($"strftime( '%Y-%m-%d', {(quto?MethodWrapper.Quto(fieldName):fieldName)}) || ' 00:00:00'");
-                    }
-                    return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.StrLeft, fieldName, 10, quto),new ValueMetadata(" 00:00:00"));
                 case ToRawMethod.Hour:
-                    if (SqlType == SqlType.SqlServer)
                     {
-                        return new MethodMetadata(KnowsMethods.StrConcat, new RawMetadata($"CONVERT(VARCHAR(13), {(quto ? Wrap(fieldName) : fieldName)}, 120)"), new ValueMetadata(":00:00"));
+                        string forMatter;
+                        if (SqlType == SqlType.SqlServer)
+                        {
+                            forMatter = $"CONVERT(VARCHAR(13),{@ref} ,120)";
+                        }
+                        else if (SqlType == SqlType.SQLite)
+                        {
+                            forMatter = $"strftime('%Y-%m-%d %H', {@ref})";
+                        }
+                        else
+                        {
+                            forMatter = $"LEFT({@ref},13)";
+                        }
+                        return JoinString(forMatter, ":00:00");
                     }
-                    if (SqlType == SqlType.SQLite)
-                    {
-                        return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H", quto), new ValueMetadata(":00:00"));
-                    }
-                    return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.StrLeft, fieldName, 13, quto), new ValueMetadata(":00:00"));
                 case ToRawMethod.Minute:
-                    if (SqlType == SqlType.SqlServer)
                     {
-                        return new MethodMetadata(KnowsMethods.StrConcat, new RawMetadata($"CONVERT(VARCHAR(16), {(quto ? Wrap(fieldName) : fieldName)}, 120)"), new ValueMetadata(":00"));
+                        string forMatter;
+                        if (SqlType == SqlType.SqlServer)
+                        {
+                            forMatter = $"CONVERT(VARCHAR(16),{@ref} ,120)";
+                        }
+                        else if (SqlType == SqlType.SQLite)
+                        {
+                            forMatter = $"strftime('%Y-%m-%d %H:%M', {@ref})";
+                        }
+                        else
+                        {
+                            forMatter = $"LEFT({@ref},16)";
+                        }
+                        return JoinString(forMatter, ":00:00");
                     }
-                    if (SqlType == SqlType.SQLite)
-                    {
-                        return new RawMetadata($"strftime( '%Y-%m-%d %H:%M', {(quto ? MethodWrapper.Quto(fieldName) : fieldName)}) || ':00'");
-                    }
-                    if (SqlType== SqlType.PostgreSql)
-                    {
-                        return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.DateFormat, fieldName, "yyyy-MM-dd HH:mm", quto), new ValueMetadata(":00"));
-                    }
-                    return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.StrLeft, fieldName, 16, quto), new ValueMetadata(":00"));
                 case ToRawMethod.Second:
-                    return new RawMetadata(quto ? Wrap(fieldName) : fieldName);
+                    return @ref;
                 case ToRawMethod.Month:
-                    if (SqlType == SqlType.SqlServer)
                     {
-                        return new MethodMetadata(KnowsMethods.StrConcat, new RawMetadata($"CONVERT(VARCHAR(7), {(quto ? Wrap(fieldName) : fieldName)}, 120)"), new ValueMetadata("-01 00:00:00"));
+                        string forMatter;
+                        if (SqlType == SqlType.SqlServer)
+                        {
+                            forMatter = $"CONVERT(VARCHAR(7),{@ref} ,120)";
+                        }
+                        else if (SqlType == SqlType.SQLite)
+                        {
+                            forMatter = $"strftime('%Y-%m', {@ref})";
+                        }
+                        else
+                        {
+                            forMatter = $"LEFT({@ref},7)";
+                        }
+                        return JoinString(forMatter, "-01 00:00:00");
                     }
-                    return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.StrLeft, fieldName, 7, quto), new ValueMetadata("-01 00:00:00"));
                 default:
                     throw new NotSupportedException(method.ToString());
             }
         }
 
-        public static IQueryMetadata DataFroamt(string method, string fieldName, object format, bool quto)
+        private string GetRef(string field, bool quto)
         {
-            return new MethodMetadata(method,
-                GetRef(fieldName, quto),
-                new ValueMetadata(format));
-        }
-        private static IQueryMetadata GetRef(string field, bool quto)
-        {
-            return quto ? new ValueMetadata(field, true) : new RawMetadata(field);
+            return quto ? MethodWrapper.Quto(field) : field;
         }
         public virtual string? ToRaw(ToRawMethod method, string field, bool quto)
         {
@@ -321,50 +327,66 @@ SET
                         }
                     }
                 case ToRawMethod.Min:
-                    return Translator.Translate(new MethodMetadata(KnowsMethods.Min, GetRef(field, quto)), null);
+                    return $"MIN({GetRef(field,quto)})";
                 case ToRawMethod.Max:
-                    return Translator.Translate(new MethodMetadata(KnowsMethods.Max, GetRef(field, quto)), null);
+                    return $"MAX({GetRef(field, quto)})";
                 case ToRawMethod.Count:
-                    return Translator.Translate(new MethodMetadata(KnowsMethods.Count, GetRef(field, quto)), null);
+                    return $"COUNT({GetRef(field, quto)})";
                 case ToRawMethod.DistinctCount:
-                    return Translator.Translate(new MethodMetadata(KnowsMethods.DistinctCount, GetRef(field, quto)), null);
+                    return $"COUNT(DISTINCT {GetRef(field, quto)})";
                 case ToRawMethod.Sum:
-                    return Translator.Translate(new MethodMetadata(KnowsMethods.Sum, GetRef(field, quto)), null);
+                    return $"SUM({GetRef(field, quto)})";
                 case ToRawMethod.Avg:
-                    return Translator.Translate(new MethodMetadata(KnowsMethods.Avg, GetRef(field, quto)), null);
+                    return $"AVG({GetRef(field, quto)})";
                 case ToRawMethod.Year:
                 case ToRawMethod.Month:
                 case ToRawMethod.Day:
                 case ToRawMethod.Hour:
                 case ToRawMethod.Minute:
                 case ToRawMethod.Second:
-                    {
-                        var f = GetFormatString(method, field, quto);
-                        if (f is IMethodMetadata methodMetadata)
-                        {
-                            return Translator.Translate(methodMetadata, null);
-                        }
-                        return f.ToString();
-                    }
+                   return GetFormatString(method, field, quto);
                 case ToRawMethod.Quarter:
-                    return Translator.Translate(new MethodMetadata(KnowsMethods.StrConcat,
-                            new MethodMetadata(
-                                KnowsMethods.Year,
-                                GetRef(field, quto)),
-                            new ValueMetadata("-"),
-                            new MethodMetadata(
-                                KnowsMethods.Quarter,
-                                GetRef(field, quto))), null);
+                    {
+                        string quarter;
+                        if (SqlType == SqlType.SQLite)
+                        {
+                            quarter = $"COALESCE(NULLIF((SUBSTR({GetRef(field, quto)}, 4, 2) - 1) / 3, 0), 4)";
+                        }
+                        else if (SqlType == SqlType.SqlServer)
+                        {
+                            quarter = $"DATEPART(QUARTER,{GetRef(field, quto)})";
+                        }
+                        else if (SqlType == SqlType.PostgreSql)
+                        {
+                            quarter = $"EXTRACT(QUARTER FROM {GetRef(field, quto)})";
+                        }
+                        else
+                        {
+                            quarter = $"QUARTER({GetRef(field, quto)})";
+                        }
+                        return JoinString(JoinString(ToRaw(ToRawMethod.Year, field, quto)!, "-"), quarter);
+                    }
                 case ToRawMethod.Weak:
-                    return Translator.Translate(new MethodMetadata(KnowsMethods.StrConcat,
-                            new MethodMetadata(
-                                KnowsMethods.Year,
-                                GetRef(field, quto)),
-                            new ValueMetadata("-"),
-                            new MethodMetadata(
-                                KnowsMethods.Weak,
-                                GetRef(field, quto),
-                                new ValueMetadata(1))), null);
+                    {
+                        string weak;
+                        if (SqlType == SqlType.SQLite)
+                        {
+                            weak = $"strftime('%W',{GetRef(field, quto)})";
+                        }
+                        else if (SqlType == SqlType.SqlServer)
+                        {
+                            weak = $"DATEPART(WEEK,{GetRef(field, quto)})";
+                        }
+                        else if (SqlType == SqlType.PostgreSql)
+                        {
+                            weak = $"to_char({GetRef(field, quto)},'WW')";
+                        }
+                        else
+                        {
+                            weak = $"WEEK({GetRef(field, quto)})";
+                        }
+                        return JoinString(JoinString(ToRaw(ToRawMethod.Year, field, quto)!, "-"), weak);
+                    }
                 default:
                     return quto ? MethodWrapper.WrapValue(field) : field;
             }
