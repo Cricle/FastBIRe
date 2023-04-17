@@ -7,5 +7,15 @@
         {
             return new SourceTableColumnDefine(this);
         }
+
+        public SourceTableColumnDefine AllNotNull()
+        {
+            Nullable = false;
+            if (DestColumn!=null)
+            {
+                DestColumn.Nullable = false;
+            }
+            return this;
+        }
     }
 }

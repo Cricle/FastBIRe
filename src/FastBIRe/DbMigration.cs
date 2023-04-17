@@ -87,7 +87,10 @@ namespace FastBIRe
         {
             return new MergeHelper(SqlType);
         }
-
+        public SourceTableColumnBuilder GetColumnBuilder(string? sourceAlias = "a", string? destAlias = "b")
+        {
+            return new SourceTableColumnBuilder(GetMergeHelper(),sourceAlias,destAlias);
+        }
         public ISQLDatabaseCreateAdapter? GetSQLDatabaseCreateAdapter()
         {
             switch (SqlType)

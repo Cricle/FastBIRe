@@ -24,7 +24,7 @@ namespace FastBIRe
         }
         public static IMethodTranslator<object?> GetTranslator(SqlType sqlType)
         {
-            DefaultMethodTranslator<object?>? helper = null;
+            DefaultMethodTranslator<object?>? helper;
             switch (sqlType)
             {
                 case SqlType.MySql:
@@ -217,16 +217,23 @@ SET
         {
             var str = $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
             str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
+            str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
+            if (SqlType == SqlType.SQLite&&sourceTableDefine.Columns.Any(x=>x.IsGroup&&x.Method== ToRawMethod.None))
             {
-                str += $"FROM {GetTableRef(sourceTableDefine, options)}\n";
+                str += $@"LEFT JOIN {Wrap(destTable)} AS {Wrap("c")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
+                          WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup&&x.Method== ToRawMethod.None).Select(x=>$"{Wrap("c")}.{Wrap(x.DestColumn.Field)} IS NULL"))}
+";
             }
-            str += @$"{((SqlType == SqlType.SqlServer || SqlType == SqlType.PostgreSql)&&(options?.IncludeEffectJoin??false) ? "AND" : "WHERE")} {(WhereItems == null || !WhereItems.Any() ? string.Empty : ("(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")"))} {(WhereItems == null || !WhereItems.Any() ? string.Empty: "AND")}";
-            str += @$"
+            else
+            {
+                str += @$"{((SqlType == SqlType.SqlServer || SqlType == SqlType.PostgreSql) && (options?.IncludeEffectJoin ?? false) ? "AND" : "WHERE")} {(WhereItems == null || !WhereItems.Any() ? string.Empty : ("(" + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")) + ")"))} {(WhereItems == null || !WhereItems.Any() ? string.Empty : "AND")}";
+                str += @$"
                 NOT EXISTS(
                     SELECT 1 AS {Wrap("tmp")} 
                     FROM {Wrap(destTable)} AS {Wrap("c")}
                     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
                 )";
+            }
             str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))};\n";
             str += options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
             return str;
@@ -236,57 +243,49 @@ SET
             switch (method)
             {
                 case ToRawMethod.Year:
-                    return new MethodMetadata(KnowsMethods.Year,GetRef(fieldName, quto));
+                    return new MethodMetadata(KnowsMethods.Year, GetRef(fieldName, quto), new ValueMetadata("-01-01 00:00:00"));
                 case ToRawMethod.Day:
                     if (SqlType == SqlType.SqlServer)
                     {
-                        return new RawMetadata($"CONVERT(VARCHAR(10), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
+                        return new MethodMetadata(KnowsMethods.StrConcat, new RawMetadata($"CONVERT(VARCHAR(10), {(quto ? Wrap(fieldName) : fieldName)}, 120)"), new ValueMetadata(" 00:00:00"));
                     }
                     if (SqlType == SqlType.SQLite)
                     {
-                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d", quto);
+                        return new RawMetadata($"strftime( '%Y-%m-%d', {(quto?MethodWrapper.Quto(fieldName):fieldName)}) || ' 00:00:00'");
                     }
-                    return DataFroamt(KnowsMethods.StrLeft, fieldName, 10, quto);
+                    return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.StrLeft, fieldName, 10, quto),new ValueMetadata(" 00:00:00"));
                 case ToRawMethod.Hour:
                     if (SqlType == SqlType.SqlServer)
                     {
-                        return new RawMetadata($"CONVERT(VARCHAR(13), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
+                        return new MethodMetadata(KnowsMethods.StrConcat, new RawMetadata($"CONVERT(VARCHAR(13), {(quto ? Wrap(fieldName) : fieldName)}, 120)"), new ValueMetadata(":00:00"));
                     }
                     if (SqlType == SqlType.SQLite)
                     {
-                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H", quto);
+                        return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H", quto), new ValueMetadata(":00:00"));
                     }
-                    return DataFroamt(KnowsMethods.StrLeft, fieldName, 13, quto);
+                    return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.StrLeft, fieldName, 13, quto), new ValueMetadata(":00:00"));
                 case ToRawMethod.Minute:
                     if (SqlType == SqlType.SqlServer)
                     {
-                        return new RawMetadata($"CONVERT(VARCHAR(16), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
+                        return new MethodMetadata(KnowsMethods.StrConcat, new RawMetadata($"CONVERT(VARCHAR(16), {(quto ? Wrap(fieldName) : fieldName)}, 120)"), new ValueMetadata(":00"));
                     }
                     if (SqlType == SqlType.SQLite)
                     {
-                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H:%M", quto);
+                        return new RawMetadata($"strftime( '%Y-%m-%d %H:%M', {(quto ? MethodWrapper.Quto(fieldName) : fieldName)}) || ':00'");
                     }
                     if (SqlType== SqlType.PostgreSql)
                     {
-                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "yyyy-MM-dd HH:mm", quto);
+                        return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.DateFormat, fieldName, "yyyy-MM-dd HH:mm", quto), new ValueMetadata(":00"));
                     }
-                    return DataFroamt(KnowsMethods.StrLeft, fieldName, 16, quto);
+                    return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.StrLeft, fieldName, 16, quto), new ValueMetadata(":00"));
                 case ToRawMethod.Second:
-                    if (SqlType == SqlType.SqlServer)
-                    {
-                        return new RawMetadata($"CONVERT(VARCHAR(20), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
-                    }
-                    if (SqlType == SqlType.SQLite)
-                    {
-                        return DataFroamt(KnowsMethods.DateFormat, fieldName, "%Y-%m-%d %H:%M:%S", quto);
-                    }
-                    return DataFroamt(KnowsMethods.StrLeft, fieldName, 19, quto);
+                    return new RawMetadata(quto ? Wrap(fieldName) : fieldName);
                 case ToRawMethod.Month:
                     if (SqlType == SqlType.SqlServer)
                     {
-                        return new RawMetadata($"CONVERT(VARCHAR(7), {(quto ? Wrap(fieldName) : fieldName)}, 120)");
+                        return new MethodMetadata(KnowsMethods.StrConcat, new RawMetadata($"CONVERT(VARCHAR(7), {(quto ? Wrap(fieldName) : fieldName)}, 120)"), new ValueMetadata("-01 00:00:00"));
                     }
-                    return DataFroamt(KnowsMethods.StrLeft, fieldName, 7, quto);
+                    return new MethodMetadata(KnowsMethods.StrConcat, DataFroamt(KnowsMethods.StrLeft, fieldName, 7, quto), new ValueMetadata("-01 00:00:00"));
                 default:
                     throw new NotSupportedException(method.ToString());
             }

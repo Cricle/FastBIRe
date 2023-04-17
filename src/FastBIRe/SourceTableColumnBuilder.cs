@@ -11,6 +11,7 @@ namespace FastBIRe
         public const int DefaultSqliteNumberLen = 16;
         public const int DefaultDateTimeLen = 8;
         public const int DefaultSqliteDateTimeLen = 23;
+        public const int DefaultTimeLen = 13;
 
         public SourceTableColumnBuilder(MergeHelper helper, string? sourceAlias = null, string? destAlias = null)
         {
@@ -30,6 +31,8 @@ namespace FastBIRe
         public int StringLen { get; set; } = DefaultStringLen;
 
         public int DateTimeLen { get; set; } = DefaultDateTimeLen;
+
+        public int TimeStringLen { get; set; } = DefaultTimeLen;
 
         public int NumberLen { get; set; }
 
@@ -145,7 +148,17 @@ namespace FastBIRe
                 Length = length,
             };
         }
-
+        private static bool NeedString(ToRawMethod method)
+        {
+            switch (method)
+            {
+                case ToRawMethod.Quarter:
+                case ToRawMethod.Weak:
+                    return true;
+                default:
+                    return false;
+            }
+        }
         private static bool IsAggerMethod(ToRawMethod method)
         {
             switch (method)
@@ -180,18 +193,18 @@ namespace FastBIRe
             bool destNullable = true,
             int? len = null)
         {
-            var isAggerMethod = IsAggerMethod(method);
+            var isAggerMethod = IsAggerMethod(method)&& NeedString(method);
             return Method(field,
                 destField,
                 method,
                 isGroup,
                 onlySet,
                 Type(DbType.DateTime),
-                isAggerMethod ? Type(DbType.String, len ?? StringLen) : Type(DbType.DateTime),
+                isAggerMethod ? Type(DbType.String, len ?? TimeStringLen) : Type(DbType.DateTime),
                 sourceNullable,
                 destNullable,
                 DateTimeLen,
-                isAggerMethod ? len ?? StringLen : DateTimeLen);
+                isAggerMethod ? len ?? TimeStringLen : DateTimeLen);
         }
         public SourceTableColumnDefine Decimal(string field,
             string destField,
