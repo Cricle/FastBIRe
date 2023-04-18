@@ -65,7 +65,7 @@ namespace FastBIRe
             }
             if (skip != null && take != null)
             {
-                return $"LIMIT {skip} OFFSET {take}";
+                return $"LIMIT {take} OFFSET {skip}";
             }
             if (skip != null)
             {
