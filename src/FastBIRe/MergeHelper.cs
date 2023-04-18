@@ -232,7 +232,22 @@ SET
             switch (method)
             {
                 case ToRawMethod.Year:
-                    return JoinString(@ref, "'-01-01 00:00:00'");
+                    {
+                        string forMatter;
+                        if (SqlType == SqlType.SqlServer)
+                        {
+                            forMatter = $"CONVERT(VARCHAR(4),{@ref} ,120)";
+                        }
+                        else if (SqlType == SqlType.SQLite)
+                        {
+                            forMatter = $"strftime('%Y', {@ref})";
+                        }
+                        else
+                        {
+                            forMatter = $"LEFT({@ref},4)";
+                        }
+                        return JoinString(forMatter, "'-01-01 00:00:00'");
+                    }
                 case ToRawMethod.Day:
                     {
                         string forMatter;
