@@ -280,7 +280,7 @@ SET
                         {
                             forMatter = $"LEFT({@ref},13)";
                         }
-                        return JoinString(forMatter, ":00:00");
+                        return JoinString(forMatter, "':00:00'");
                     }
                 case ToRawMethod.Minute:
                     {
@@ -384,7 +384,7 @@ SET
                         {
                             quarter = $"QUARTER({GetRef(field, quto)})";
                         }
-                        return JoinString(JoinString(ToRaw(ToRawMethod.Year, field, quto)!, "-"), quarter);
+                        return JoinString(JoinString(ToRaw(ToRawMethod.Year, field, quto)!, "'-'"), quarter);
                     }
                 case ToRawMethod.Weak:
                     {
@@ -405,7 +405,7 @@ SET
                         {
                             weak = $"WEEK({GetRef(field, quto)})";
                         }
-                        return JoinString(JoinString(ToRaw(ToRawMethod.Year, field, quto)!, "-"), weak);
+                        return JoinString(JoinString(ToRaw(ToRawMethod.Year, field, quto)!, "'-'"), weak);
                     }
                 default:
                     return quto ? MethodWrapper.WrapValue(field) : field;
