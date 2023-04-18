@@ -11,7 +11,7 @@ namespace FastBIRe
         public const int DefaultSqliteNumberLen = 16;
         public const int DefaultDateTimeLen = 8;
         public const int DefaultSqliteDateTimeLen = 23;
-        public const int DefaultTimeLen = 13;
+        public const int DefaultTimeLen = 8;
 
         public SourceTableColumnBuilder(MergeHelper helper, string? sourceAlias = null, string? destAlias = null)
         {
@@ -128,6 +128,27 @@ namespace FastBIRe
                 Length = length
             };
         }
+        public SourceTableColumnDefine Method(string field, ToRawMethod method,TableColumnDefine destColumn, bool isGroup = false, bool onlySet = false, string? type = null,
+            bool sourceNullable = true,  int length = 0)
+        {
+            var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
+            var sourceRaw = string.Format(sourceFormat, SourceAlias);
+
+            var rawFormat = Helper.ToRaw(method, "{0}", false);
+            var raw = string.Format(rawFormat, sourceRaw);
+
+            return new SourceTableColumnDefine(field,
+                raw,
+                isGroup,
+                destColumn,
+                method, rawFormat, onlySet)
+            {
+                Type = type,
+                Nullable = sourceNullable,
+                Length = length,
+            };
+        }
+
         public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null,
             string? destFieldType = null, bool sourceNullable = true, bool destNullable = true, int length = 0, int destLength = 0)
         {
@@ -176,7 +197,7 @@ namespace FastBIRe
                     return false;
             }
         }
-        protected int GetDecimalByteLen(int len)
+        public int GetDecimalByteLen(int len)
         {
             if (Helper.SqlType == SqlType.SqlServer || Helper.SqlType == SqlType.SqlServerCe)
             {
