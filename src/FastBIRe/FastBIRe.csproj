@@ -2,16 +2,17 @@
 
 	<Import Project="..\..\eng\pkg.props" />
 	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
+		<TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Ao.Stock" Version="1.1.0-preview.8" />
+		<PackageReference Include="Mig.DatabaseSchemaReader" Version="2.7.20" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
+	  <!--<ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />-->
 	</ItemGroup>
 
 </Project>

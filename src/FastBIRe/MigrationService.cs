@@ -162,6 +162,7 @@ namespace FastBIRe
             var migGen = DdlGeneratorFactory.MigrationGenerator();
             return CompareWithModify(table, x =>
             {
+                PrepareTable(x);
                 var olds = x.Columns.Select(x =>
                 {
                     var old = oldRefs.FirstOrDefault(y => y.Field == x.Name);
@@ -243,7 +244,7 @@ namespace FastBIRe
                     return false;
             }
         }
-        public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<SourceTableColumnDefine> oldRefs)
+        public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<TableColumnDefine> oldRefs)
         {
             var news = tableDef.Columns.GroupBy(x=>x.Field).Select(x=>x.First()).ToList();
             var table = tableDef.Table;

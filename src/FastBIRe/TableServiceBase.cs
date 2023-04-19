@@ -31,7 +31,7 @@
                 return x;
             }), token);
         }
-        public Task<int> MigrationAsync(string destTable, SourceTableDefine tableDefine, IEnumerable<SourceTableColumnDefine> olds, CancellationToken token = default)
+        public Task<int> MigrationAsync(string destTable, SourceTableDefine tableDefine, IEnumerable<TableColumnDefine> olds, CancellationToken token = default)
         {
             var commands = Migration.RunMigration(destTable, tableDefine, olds);
             return Migration.ExecuteNonQueryAsync(commands, token);

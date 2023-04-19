@@ -1,5 +1,6 @@
 ﻿using Ao.Stock.Querying;
 using DatabaseSchemaReader.DataSchema;
+using System.Runtime.Serialization;
 
 namespace FastBIRe
 {
@@ -52,6 +53,85 @@ namespace FastBIRe
             }
             return $"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")}";
         }
+        public string CompileUpdateSelect(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
+        {
+            var str = $"SELECT {Wrap("a")}.* ";
+            if (SqlType== SqlType.MySql)
+            {
+                str += $"FROM {Wrap(destTable)} AS {Wrap("a")} ";
+            }
+            str += CompileUpdateSelectCore(destTable, sourceTableDefine, options);
+            return str;
+        }
+        public string CompileUpdateSelectCore(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
+        {
+            var fromTable = GetTableRef(sourceTableDefine, options);
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $@"
+FROM
+	{Wrap(destTable)} AS {Wrap("a")}
+	INNER JOIN (
+		SELECT
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))} 
+		FROM {fromTable}
+        {(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+		GROUP BY
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+	) AS  {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+AND(
+    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+)
+";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $@"
+	FROM (
+		SELECT
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
+		FROM {fromTable}
+		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+        GROUP BY {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+
+) AS {Wrap("tmp")}
+    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+AND(
+    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+)
+";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $@"
+FROM (
+        SELECT
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
+        FROM {fromTable}
+		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+        GROUP BY
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+    ) AS {Wrap("tmp")}
+    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"\"{destTable}\".{Wrap(x.DestColumn.Field)} ={Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+AND(
+    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $"{Wrap(destTable)}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+)
+";
+            }
+            return $@"
+	INNER JOIN (
+		SELECT
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}
+		FROM {fromTable}
+		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+		GROUP BY
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+	) AS {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+AND(
+    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+)
+";
+        }
         public virtual string CompileUpdate(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             var noLockSql = options?.NoLock ?? false ? GetNoLockSql() : string.Empty;
@@ -65,19 +145,7 @@ UPDATE
 	{Wrap(destTable)}
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-FROM
-	{Wrap(destTable)} AS {Wrap("a")}
-	INNER JOIN (
-		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))} 
-		FROM {fromTable}
-        {(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
-		GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
-	) AS  {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-AND(
-    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-);
+{CompileUpdateSelectCore(destTable,sourceTableDefine,options)};
 {noLockRestoreSql}
 ";
             }
@@ -89,18 +157,7 @@ UPDATE
 	{Wrap(destTable)} AS {Wrap("a")}
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-	FROM (
-		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
-		FROM {fromTable}
-		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
-        GROUP BY {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
-
-) AS {Wrap("tmp")}
-    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-AND(
-    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-);
+{CompileUpdateSelectCore(destTable, sourceTableDefine, options)};
 {noLockRestoreSql}
 ";
             }
@@ -112,41 +169,20 @@ UPDATE
     {Wrap(destTable)}
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.""{x.DestColumn.Field}"""))}
-FROM (
-        SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
-        FROM {fromTable}
-		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE "+ string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
-        GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
-    ) AS {Wrap("tmp")}
-    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"\"{destTable}\".{Wrap(x.DestColumn.Field)} ={Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-AND(
-    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $"{Wrap(destTable)}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-);
+{CompileUpdateSelectCore(destTable, sourceTableDefine, options)};
 {noLockRestoreSql}
 ";
             }
             return $@"
 {noLockSql}
 UPDATE {Wrap(destTable)} AS {Wrap("a")}
-	INNER JOIN (
-		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}
-		FROM {fromTable}
-		{(WhereItems == null|| !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
-		GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
-	) AS {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-AND(
-    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-)
+{CompileUpdateSelectCore(destTable, sourceTableDefine, options)};
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))};
 {noLockRestoreSql}
 ";
         }
-        private string GetNoLockRestoreSql()
+        public string GetNoLockRestoreSql()
         {
             switch (SqlType)
             {
@@ -165,7 +201,7 @@ SET
                     return string.Empty;
             }
         }
-        private string GetNoLockSql()
+        public string GetNoLockSql()
         {
             switch (SqlType)
             {
@@ -184,10 +220,9 @@ SET
                     return string.Empty;
             }
         }
-        public virtual string CompileInsert(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
+        public virtual string CompileInsertSelect(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
-            var str = $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
-            str += $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
+            var str = $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
             var optSqlite = SqlType == SqlType.SQLite && sourceTableDefine.Columns.Any(x => x.IsGroup && x.Method == ToRawMethod.None);
             if (optSqlite)
             {
@@ -197,7 +232,7 @@ SET
             if (optSqlite)
             {
                 str += $@") AS {Wrap("a")} LEFT JOIN {Wrap(destTable)} AS {Wrap("c")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
-                          WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup&&x.Method== ToRawMethod.None).Select(x=>$"{Wrap("c")}.{Wrap(x.DestColumn.Field)} IS NULL"))}
+                          WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup && x.Method == ToRawMethod.None).Select(x => $"{Wrap("c")}.{Wrap(x.DestColumn.Field)} IS NULL"))}
 ";
             }
             else
@@ -211,6 +246,12 @@ SET
                 )";
             }
             str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))};\n";
+            return str;
+        }
+        public virtual string CompileInsert(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
+        {
+            var str = $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
+            str += CompileInsertSelect(destTable, sourceTableDefine, options);
             str += options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
             return str;
         }
@@ -226,6 +267,18 @@ SET
             }
             return $"CONCAT({left},{right})";
         }
+        public string GetYearFormatter(string @ref)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(4),{@ref} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y', {@ref})";
+            }
+            return $"LEFT({@ref},4)";
+        }
         protected string GetFormatString(ToRawMethod method, string fieldName, bool quto)
         {
             var @ref = GetRef(fieldName, quto);
@@ -233,19 +286,7 @@ SET
             {
                 case ToRawMethod.Year:
                     {
-                        string forMatter;
-                        if (SqlType == SqlType.SqlServer)
-                        {
-                            forMatter = $"CONVERT(VARCHAR(4),{@ref} ,120)";
-                        }
-                        else if (SqlType == SqlType.SQLite)
-                        {
-                            forMatter = $"strftime('%Y', {@ref})";
-                        }
-                        else
-                        {
-                            forMatter = $"LEFT({@ref},4)";
-                        }
+                        var forMatter= GetYearFormatter(@ref);
                         return JoinString(forMatter, "'-01-01 00:00:00'");
                     }
                 case ToRawMethod.Day:
@@ -384,7 +425,7 @@ SET
                         {
                             quarter = $"QUARTER({GetRef(field, quto)})";
                         }
-                        return JoinString(JoinString(ToRaw(ToRawMethod.Year, field, quto)!, "'-'"), quarter);
+                        return JoinString(JoinString(GetRef(field, quto), "'-'"), quarter);
                     }
                 case ToRawMethod.Weak:
                     {
@@ -405,7 +446,7 @@ SET
                         {
                             weak = $"WEEK({GetRef(field, quto)})";
                         }
-                        return JoinString(JoinString(ToRaw(ToRawMethod.Year, field, quto)!, "'-'"), weak);
+                        return JoinString(JoinString(GetYearFormatter(GetRef(field,quto)), "'-'"), weak);
                     }
                 default:
                     return quto ? MethodWrapper.WrapValue(field) : field;
