@@ -96,7 +96,7 @@ AND(
 ) AS {Wrap("tmp")}
     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
-    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
+    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)}::bigint != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}::bigint"))}
 )
 ";
             }
@@ -276,6 +276,10 @@ SET
             {
                 return $"strftime('%Y', {@ref})";
             }
+            else if (SqlType== SqlType.PostgreSql)
+            {
+                return $"to_char({@ref},'YYYY')";
+            }
             return $"LEFT({@ref},4)";
         }
         protected string GetFormatString(ToRawMethod method, string fieldName, bool quto)
@@ -285,6 +289,10 @@ SET
             {
                 case ToRawMethod.Year:
                     {
+                        if (SqlType == SqlType.PostgreSql)
+                        {
+                            return $"date_trunc('year',{@ref})";
+                        }
                         var forMatter = GetYearFormatter(@ref);
                         return JoinString(forMatter, "'-01-01 00:00:00'");
                     }
@@ -298,6 +306,10 @@ SET
                         else if (SqlType == SqlType.SQLite)
                         {
                             forMatter = $"strftime('%Y-%m-%d', {@ref})";
+                        }
+                        else if (SqlType == SqlType.PostgreSql)
+                        {
+                            return $"date_trunc('day',{@ref})";
                         }
                         else
                         {
@@ -316,6 +328,10 @@ SET
                         {
                             forMatter = $"strftime('%Y-%m-%d %H', {@ref})";
                         }
+                        else if (SqlType == SqlType.PostgreSql)
+                        {
+                            return $"date_trunc('hour',{@ref})";
+                        }
                         else
                         {
                             forMatter = $"LEFT({@ref},13)";
@@ -332,6 +348,10 @@ SET
                         else if (SqlType == SqlType.SQLite)
                         {
                             forMatter = $"strftime('%Y-%m-%d %H:%M', {@ref})";
+                        }
+                        else if (SqlType == SqlType.PostgreSql)
+                        {
+                            return $"date_trunc('minute',{@ref})";
                         }
                         else
                         {
@@ -351,6 +371,10 @@ SET
                         else if (SqlType == SqlType.SQLite)
                         {
                             forMatter = $"strftime('%Y-%m', {@ref})";
+                        }
+                        else if (SqlType == SqlType.PostgreSql)
+                        {
+                            return $"date_trunc('month',{@ref})";
                         }
                         else
                         {
@@ -414,7 +438,7 @@ SET
                         }
                         else if (SqlType == SqlType.SqlServer)
                         {
-                            quarter = $"DATEPART(QUARTER,{GetRef(field, quto)})";
+                            quarter = $"CONVERT(VARCHAR(2),DATEPART(QUARTER,{GetRef(field, quto)}))";
                         }
                         else if (SqlType == SqlType.PostgreSql)
                         {
@@ -435,7 +459,7 @@ SET
                         }
                         else if (SqlType == SqlType.SqlServer)
                         {
-                            weak = $"DATEPART(WEEK,{GetRef(field, quto)})";
+                            weak = $"CONVERT(VARCHAR(2),DATEPART(WEEK,{GetRef(field, quto)}))";
                         }
                         else if (SqlType == SqlType.PostgreSql)
                         {
