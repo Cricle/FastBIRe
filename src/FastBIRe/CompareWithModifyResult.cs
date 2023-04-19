@@ -10,11 +10,11 @@ namespace FastBIRe
 
         public List<string> Execute()
         {
-            if (Schemas==null)
+            if (Schemas == null)
             {
                 return new List<string>(0);
             }
-            var result=Schemas.ExecuteResult();
+            var result = Schemas.ExecuteResult();
             return result.Select(x => x.Script).ToList();
         }
     }

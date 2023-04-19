@@ -128,8 +128,8 @@ namespace FastBIRe
                 Length = length
             };
         }
-        public SourceTableColumnDefine Method(string field, ToRawMethod method,TableColumnDefine destColumn, bool isGroup = false, bool onlySet = false, string? type = null,
-            bool sourceNullable = true,  int length = 0)
+        public SourceTableColumnDefine Method(string field, ToRawMethod method, TableColumnDefine destColumn, bool isGroup = false, bool onlySet = false, string? type = null,
+            bool sourceNullable = true, int length = 0)
         {
             var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var sourceRaw = string.Format(sourceFormat, SourceAlias);
@@ -214,7 +214,7 @@ namespace FastBIRe
             bool destNullable = true,
             int? len = null)
         {
-            var isAggerMethod = IsAggerMethod(method)&& NeedString(method);
+            var isAggerMethod = IsAggerMethod(method) && NeedString(method);
             return Method(field,
                 destField,
                 method,

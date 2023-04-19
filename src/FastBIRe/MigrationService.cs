@@ -27,7 +27,7 @@ namespace FastBIRe
         {
         }
 
-        public MigrationService(DbConnection connection, string database) 
+        public MigrationService(DbConnection connection, string database)
             : base(connection, database)
         {
         }
@@ -79,9 +79,9 @@ namespace FastBIRe
             }
             return false;
         }
-        public async Task<int> SyncIndexAutoAsync(string tableName, IEnumerable<TableColumnDefine> columns, string? idxName = null,string? refTable=null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
+        public async Task<int> SyncIndexAutoAsync(string tableName, IEnumerable<TableColumnDefine> columns, string? idxName = null, string? refTable = null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
         {
-            var tableEncod = MD5Helper.ComputeHash(refTable??tableName);
+            var tableEncod = MD5Helper.ComputeHash(refTable ?? tableName);
             var len = await IndexByteLenHelper.GetIndexByteLenAsync(Connection, SqlType, timeOut: CommandTimeout);//bytes
             idxName ??= $"{AutoGenIndexPrefx}{tableEncod}";
             var res = 0;
@@ -93,8 +93,8 @@ namespace FastBIRe
                 var cols = columns.Select(x => x.Field).ToList();
                 if (sourceIndexSize > len)
                 {
-                    var createdIdxs=new List<string>();
-                    res += await SyncIndexSingleAsync(tableName, cols, createdIdxs,optionDec,refTable: refTable??tableName, token: token);
+                    var createdIdxs = new List<string>();
+                    res += await SyncIndexSingleAsync(tableName, cols, createdIdxs, optionDec, refTable: refTable ?? tableName, token: token);
                     foreach (var item in createdIdxs)
                     {
                         needDrops.Remove(item);
@@ -106,7 +106,7 @@ namespace FastBIRe
                     res += await SyncIndexAsync(tableName, cols, idxName, optionDec, refTable: refTable ?? tableName, token: token);
                 }
             }
-            if (needDrops.Count!=0)
+            if (needDrops.Count != 0)
             {
                 foreach (var item in needDrops)
                 {
@@ -116,22 +116,22 @@ namespace FastBIRe
             }
             return res;
         }
-        public async Task<int> SyncIndexAutoAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null, Action<SyncIndexOptions>? optionDec = null,CancellationToken token=default)
+        public async Task<int> SyncIndexAutoAsync(string destTable, SourceTableDefine tableDef, string? sourceIdxName = null, string? destIdxName = null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
         {
             sourceIdxName ??= $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(destTable)}";
-            destIdxName ??= sourceIdxName+"_g";
+            destIdxName ??= sourceIdxName + "_g";
             var groupColumns = tableDef.Columns.Where(x => x.IsGroup);
-            var res = await SyncIndexAutoAsync(tableDef.Table, groupColumns, sourceIdxName,destTable, optionDec, token: token);
-            res += await SyncIndexAutoAsync(destTable, groupColumns.Select(x=>x.DestColumn), destIdxName, destTable, optionDec, token: token);
+            var res = await SyncIndexAutoAsync(tableDef.Table, groupColumns, sourceIdxName, destTable, optionDec, token: token);
+            res += await SyncIndexAutoAsync(destTable, groupColumns.Select(x => x.DestColumn), destIdxName, destTable, optionDec, token: token);
             return res;
         }
-        public Task<int> SyncIndexSingleAsync(string table, IEnumerable<string> columns, List<string>? outIndexNames = null, Action<SyncIndexOptions>? optionDec = null,string? refTable=null, CancellationToken token = default)
+        public Task<int> SyncIndexSingleAsync(string table, IEnumerable<string> columns, List<string>? outIndexNames = null, Action<SyncIndexOptions>? optionDec = null, string? refTable = null, CancellationToken token = default)
         {
             var option = new SyncIndexOptions
             {
                 Table = table,
                 Columns = columns,
-                IndexNameCreator = s => $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(refTable??table)}_{s}"
+                IndexNameCreator = s => $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(refTable ?? table)}_{s}"
             };
             optionDec?.Invoke(option);
             return SyncIndexSingleAsync(option, outIndexNames, token: token);
@@ -146,7 +146,7 @@ namespace FastBIRe
                 IndexNameCreator = s => $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(refTable ?? table)}_{s}"
             };
             optionDec?.Invoke(opt);
-            return SyncIndexAsync(opt,token: token);
+            return SyncIndexAsync(opt, token: token);
         }
         public List<string> RunMigration(string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
@@ -155,7 +155,7 @@ namespace FastBIRe
             str.AddRange(s);
             return str;
         }
-        public List<string> RunMigration(List<string> scripts,string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
+        public List<string> RunMigration(List<string> scripts, string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
             var groupNews = news.GroupBy(x => x.Field).Select(x => x.First()).ToList();
             var renames = groupNews.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x });
@@ -168,7 +168,7 @@ namespace FastBIRe
                     var old = oldRefs.FirstOrDefault(y => y.Field == x.Name);
                     if (old != null)
                     {
-                        old.Type = x.DbDataType;                        
+                        old.Type = x.DbDataType;
                         return old;
                     }
                     return null;
@@ -227,7 +227,7 @@ namespace FastBIRe
                 }
             }).Execute();
         }
-        private bool IsTimePart(ToRawMethod method) 
+        private bool IsTimePart(ToRawMethod method)
         {
             switch (method)
             {
@@ -246,15 +246,15 @@ namespace FastBIRe
         }
         public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<TableColumnDefine> oldRefs)
         {
-            var news = tableDef.Columns.GroupBy(x=>x.Field).Select(x=>x.First()).ToList();
+            var news = tableDef.Columns.GroupBy(x => x.Field).Select(x => x.First()).ToList();
             var table = tableDef.Table;
             var scripts = new List<string>();
             var migGen = DdlGeneratorFactory.MigrationGenerator();
             var script = RunMigration(scripts, tableDef.Table, tableDef.Columns, oldRefs);
             var effectTableName = destTable + EffectSuffix;
-            var triggerName = "trigger_"+effectTableName;
+            var triggerName = "trigger_" + effectTableName;
             var triggerHelper = TriggerHelper.Instance;
-            
+
             scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
             var groupColumns = news.Where(x => x.IsGroup).ToList();
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
@@ -296,7 +296,7 @@ namespace FastBIRe
                     scripts.Add(migGen.AddTable(refTable));
                 }
             }
-            else if(Reader.TableExists(effectTableName))
+            else if (Reader.TableExists(effectTableName))
             {
                 scripts.Add(TableHelper.CreateDropTable(effectTableName));
             }

@@ -26,7 +26,7 @@ namespace FastBIRe
                     return null;
             }
         }
-        public string? Create(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns,SqlType sqlType)
+        public string? Create(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns, SqlType sqlType)
         {
             switch (sqlType)
             {
@@ -46,12 +46,12 @@ namespace FastBIRe
             }
         }
 
-        public string CreateMySql(string name,string sourceTable,string targetTable,IEnumerable<TriggerField> columns)
+        public string CreateMySql(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
         {
             return $@"CREATE TRIGGER `{name}` AFTER INSERT ON `{sourceTable}`
 FOR EACH ROW
 BEGIN
-	INSERT IGNORE INTO `{targetTable}`({string.Join(",", columns.Select(x=>$"`{x.Field}`"))}) VALUES({string.Join(",", columns.Select(x => x.Raw))});
+	INSERT IGNORE INTO `{targetTable}`({string.Join(",", columns.Select(x => $"`{x.Field}`"))}) VALUES({string.Join(",", columns.Select(x => x.Raw))});
 END;
 ";
         }
@@ -61,7 +61,7 @@ END;
 AS
 BEGIN
     INSERT INTO [{targetTable}] ({string.Join(",", columns.Select(x => $"[{x.Field}]"))})
-    SELECT {string.Join(",", columns.Select(x =>$"[NEW].[{x.Field}]"))}
+    SELECT {string.Join(",", columns.Select(x => $"[NEW].[{x.Field}]"))}
     FROM INSERTED AS [NEW]
     WHERE NOT EXISTS(
         SELECT 1 FROM [{targetTable}] AS [t] WHERE {string.Join(" AND ", columns.Select(x => $"[t].[{x.Field}] = [NEW].[{x.Field}]"))}
@@ -111,7 +111,7 @@ EXECUTE FUNCTION {funName}();
         }
         public string DropPostgreSQL(string name, string sourceTable)
         {
-            var funName=GetNpgSqlFunName(name);
+            var funName = GetNpgSqlFunName(name);
             return $@"
 DROP TRIGGER IF EXISTS ""{name}"" ON ""{sourceTable}"";
 DROP FUNCTION IF EXISTS {funName}();

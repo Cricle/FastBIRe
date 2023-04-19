@@ -5,7 +5,7 @@ namespace FastBIRe
 {
     public static class TruncateHelper
     {
-        public static string Sql(string table,SqlType sqlType)
+        public static string Sql(string table, SqlType sqlType)
         {
             switch (sqlType)
             {

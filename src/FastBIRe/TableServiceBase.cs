@@ -42,7 +42,7 @@
             return Migration.ExecuteNonQueryAsync(commands, token);
         }
 
-        public abstract Task<int> CreateTableIfNotExistsAsync(string tableName,CancellationToken token=default);
+        public abstract Task<int> CreateTableIfNotExistsAsync(string tableName, CancellationToken token = default);
     }
 
 }

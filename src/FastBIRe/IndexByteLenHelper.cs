@@ -7,7 +7,7 @@ namespace FastBIRe
 {
     public static class IndexByteLenHelper
     {
-        public static async Task<int> GetIndexByteLenAsync(DbConnection connection,SqlType sqlType,int timeOut=60*5,CancellationToken token=default)
+        public static async Task<int> GetIndexByteLenAsync(DbConnection connection, SqlType sqlType, int timeOut = 60 * 5, CancellationToken token = default)
         {
             string? sql;
             switch (sqlType)
@@ -30,7 +30,7 @@ namespace FastBIRe
                 default:
                     throw new NotSupportedException(sqlType.ToString());
             }
-            using (var command=connection.CreateCommand(sql))
+            using (var command = connection.CreateCommand(sql))
             {
                 command.CommandTimeout = timeOut;
                 token.ThrowIfCancellationRequested();
@@ -43,7 +43,7 @@ namespace FastBIRe
                     case SqlType.PostgreSql:
                         return Convert.ToInt32(scan);
                     case SqlType.MySql:
-                        if (scan==null)
+                        if (scan == null)
                         {
                             return 768;
                         }

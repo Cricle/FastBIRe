@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
-    public class PaggingHelper
-	{
-        public static string Sql(int? skip,int? take, SqlType sqlType)
+    public static class PaggingHelper
+    {
+        public static string Sql(int? skip, int? take, SqlType sqlType)
         {
             switch (sqlType)
             {
@@ -17,30 +17,30 @@ namespace FastBIRe
                 case SqlType.SQLite:
                     return Sqlite(skip, take);
                 case SqlType.PostgreSql:
-                    return PostgreSql(skip,take);
+                    return PostgreSql(skip, take);
                 default:
                     throw new NotSupportedException(sqlType.ToString());
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string MySql(int? skip,int? take)
+        public static string MySql(int? skip, int? take)
         {
-            if (skip==null&&take==null)
+            if (skip == null && take == null)
             {
                 return string.Empty;
             }
-            if (skip!=null&&take!=null)
+            if (skip != null && take != null)
             {
                 return $"LIMIT {skip}, {take}";
             }
-            if (skip!=null)
+            if (skip != null)
             {
                 return $"LIMIT {skip}";
             }
             return $"LIMIT 0,{skip}";
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string SqlServer(int? skip,int? take)
+        public static string SqlServer(int? skip, int? take)
         {
             if (skip == null && take == null)
             {
@@ -57,7 +57,7 @@ namespace FastBIRe
             return $"OFFSET 0 ROWS FETCH NEXT {take} ROWS ONLY";
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string Sqlite(int? skip,int? take)
+        public static string Sqlite(int? skip, int? take)
         {
             if (skip == null && take == null)
             {
@@ -74,7 +74,7 @@ namespace FastBIRe
             return $"LIMIT {take} OFFSET 0";
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string PostgreSql(int? skip,int? take)
+        public static string PostgreSql(int? skip, int? take)
         {
             if (skip == null && take == null)
             {

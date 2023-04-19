@@ -45,11 +45,11 @@ namespace FastBIRe
             foreach (var item in sqls)
             {
                 token.ThrowIfCancellationRequested();
-                res+=await ExecuteNonQueryAsync(item, token);
+                res += await ExecuteNonQueryAsync(item, token);
             }
             return res;
         }
-        public async Task<int> ExecuteNonQueryAsync(string sql,CancellationToken token=default)
+        public async Task<int> ExecuteNonQueryAsync(string sql, CancellationToken token = default)
         {
             if (string.IsNullOrEmpty(sql))
             {
@@ -89,7 +89,7 @@ namespace FastBIRe
         }
         public SourceTableColumnBuilder GetColumnBuilder(string? sourceAlias = "a", string? destAlias = "b")
         {
-            return new SourceTableColumnBuilder(GetMergeHelper(),sourceAlias,destAlias);
+            return new SourceTableColumnBuilder(GetMergeHelper(), sourceAlias, destAlias);
         }
         public ISQLDatabaseCreateAdapter? GetSQLDatabaseCreateAdapter()
         {
@@ -129,7 +129,7 @@ namespace FastBIRe
         public CompareWithModifyResult CompareWithModify(string tableId, Action<DatabaseTable> modify)
         {
             var tableOld = Reader.Table(tableId);
-            if (tableId==null)
+            if (tableId == null)
             {
                 return new CompareWithModifyResult { Type = CompareWithModifyResultTypes.NoSuchTable };
             }
@@ -154,7 +154,7 @@ namespace FastBIRe
         {
             return new DatabaseSchema(Reader.DatabaseSchema.ConnectionString, SqlType);
         }
-        public async Task<int> SyncIndexSingleAsync(SyncIndexOptions options,List<string>? outIndexNames=null, CancellationToken token = default)
+        public async Task<int> SyncIndexSingleAsync(SyncIndexOptions options, List<string>? outIndexNames = null, CancellationToken token = default)
         {
             //Single indexs
             var table = Reader.Table(options.Table);
@@ -235,7 +235,7 @@ namespace FastBIRe
             Log("Create index {0} result {1}", options.IndexName, createRes);
             return createRes;
         }
-        public async Task EnsureDatabaseCreatedAsync(string database,CancellationToken token = default)
+        public async Task EnsureDatabaseCreatedAsync(string database, CancellationToken token = default)
         {
             var adapter = GetSQLDatabaseCreateAdapter();
             if (adapter == null)
@@ -247,10 +247,10 @@ namespace FastBIRe
                 var hasDbSql = $"SELECT 1 FROM pg_database WHERE datname = '{database}'";
                 Log("Check db sql \n{0}", hasDbSql);
                 var hasDb = false;
-                using (var command=Connection.CreateCommand(hasDbSql))
+                using (var command = Connection.CreateCommand(hasDbSql))
                 {
                     command.CommandTimeout = CommandTimeout;
-                    using (var reader=await command.ExecuteReaderAsync(token))
+                    using (var reader = await command.ExecuteReaderAsync(token))
                     {
                         hasDb = reader.Read();
                     }

@@ -34,13 +34,13 @@ namespace FastBIRe
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    return CreateSqlServer(name, destTable,table,sqlType);
+                    return CreateSqlServer(name, destTable, table, sqlType);
                 case SqlType.MySql:
                     return CreateMySql(name, destTable, table, sqlType);
                 case SqlType.SQLite:
                     return CreateSqlite(name, destTable, table, sqlType);
                 case SqlType.PostgreSql:
-                    return CreatePostgreSQL(name, destTable, table  , sqlType);
+                    return CreatePostgreSQL(name, destTable, table, sqlType);
                 case SqlType.Oracle:
                 case SqlType.Db2:
                 default:
@@ -48,7 +48,7 @@ namespace FastBIRe
             }
         }
 
-        public string CreateMySql(string name,string destTable,SourceTableDefine table, SqlType sqlType)
+        public string CreateMySql(string name, string destTable, SourceTableDefine table, SqlType sqlType)
         {
             var updateName = name + InsertTail;
             var insertName = name + UpdateTail;
@@ -56,7 +56,7 @@ namespace FastBIRe
             helper.WhereItems = table.Columns.Where(x => !x.OnlySet && x.IsGroup)
                 .Select(x => new WhereItem(x.Field, x.Raw, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false)));
             var inserts = helper.CompileInsert(destTable, table);
-            var updates=helper.CompileUpdate(destTable, table);
+            var updates = helper.CompileUpdate(destTable, table);
             return $@"
 CREATE TRIGGER `{updateName}` AFTER UPDATE ON `{table.Table}`
 FOR EACH ROW
@@ -77,7 +77,7 @@ END;
             var updateName = name + InsertTail;
             var insertName = name + UpdateTail;
             var helper = new MergeHelper(sqlType);
-            var opt=new CompileOptions { EffectTable= "INSERTED", IncludeEffectJoin=true };
+            var opt = new CompileOptions { EffectTable = "INSERTED", IncludeEffectJoin = true };
             var inserts = helper.CompileInsert(destTable, table, opt);
             var updates = helper.CompileUpdate(destTable, table, opt);
             return $@"
@@ -118,7 +118,7 @@ BEGIN
 END;
 ";
         }
-        
+
         private bool IsTimePartMethod(ToRawMethod method)
         {
             switch (method)
@@ -138,7 +138,7 @@ END;
         }
         public string CreatePostgreSQL(string name, string destTable, SourceTableDefine table, SqlType sqlType)
         {
-            var updateName = name +UpdateTail;
+            var updateName = name + UpdateTail;
             var insertName = name + InsertTail;
             var funName = PostgresqlHelper.GetFunName(name);
             var helper = new MergeHelper(sqlType);
@@ -149,7 +149,7 @@ END;
             return $@"
 CREATE FUNCTION {funName}() RETURNS TRIGGER AS $$
 BEGIN
-    {string.Join("\n",table.Columns.Where(x=>x.IsGroup&& IsTimePartMethod(x.Method)).Select(x=>$"NEW.\"{x.Field}\" := TO_CHAR(NEW.\"{x.Field}\", 'yyyy-MM-dd HH24:MI');"))}
+    {string.Join("\n", table.Columns.Where(x => x.IsGroup && IsTimePartMethod(x.Method)).Select(x => $"NEW.\"{x.Field}\" := TO_CHAR(NEW.\"{x.Field}\", 'yyyy-MM-dd HH24:MI');"))}
   {inserts}
   {updates}
   RETURN NEW;

@@ -1,6 +1,5 @@
 ﻿using Ao.Stock.Querying;
 using DatabaseSchemaReader.DataSchema;
-using System.Runtime.Serialization;
 
 namespace FastBIRe
 {
@@ -45,7 +44,7 @@ namespace FastBIRe
         {
             if (options != null && options.IncludeEffectJoin && options.EffectTable != null)
             {
-                if (SqlType== SqlType.SqlServer||SqlType== SqlType.PostgreSql||  SqlType== SqlType.SQLite)
+                if (SqlType == SqlType.SqlServer || SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                 {
                     return $@"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")} WHERE EXISTS( SELECT 1 FROM {Wrap(options.EffectTable)} AS {Wrap("b")} WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("b")}.{Wrap(x.Field)}={Wrap("a")}.{Wrap(x.Field)}"))})";
                 }
@@ -56,7 +55,7 @@ namespace FastBIRe
         public string CompileUpdateSelect(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             var str = $"SELECT {Wrap("a")}.* ";
-            if (SqlType== SqlType.MySql)
+            if (SqlType == SqlType.MySql)
             {
                 str += $"FROM {Wrap(destTable)} AS {Wrap("a")} ";
             }
@@ -145,7 +144,7 @@ UPDATE
 	{Wrap(destTable)}
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
-{CompileUpdateSelectCore(destTable,sourceTableDefine,options)};
+{CompileUpdateSelectCore(destTable, sourceTableDefine, options)};
 {noLockRestoreSql}
 ";
             }
@@ -286,7 +285,7 @@ SET
             {
                 case ToRawMethod.Year:
                     {
-                        var forMatter= GetYearFormatter(@ref);
+                        var forMatter = GetYearFormatter(@ref);
                         return JoinString(forMatter, "'-01-01 00:00:00'");
                     }
                 case ToRawMethod.Day:
@@ -388,7 +387,7 @@ SET
                         }
                     }
                 case ToRawMethod.Min:
-                    return $"MIN({GetRef(field,quto)})";
+                    return $"MIN({GetRef(field, quto)})";
                 case ToRawMethod.Max:
                     return $"MAX({GetRef(field, quto)})";
                 case ToRawMethod.Count:
@@ -405,7 +404,7 @@ SET
                 case ToRawMethod.Hour:
                 case ToRawMethod.Minute:
                 case ToRawMethod.Second:
-                   return GetFormatString(method, field, quto);
+                    return GetFormatString(method, field, quto);
                 case ToRawMethod.Quarter:
                     {
                         string quarter;
@@ -446,7 +445,7 @@ SET
                         {
                             weak = $"WEEK({GetRef(field, quto)})";
                         }
-                        return JoinString(JoinString(GetYearFormatter(GetRef(field,quto)), "'-'"), weak);
+                        return JoinString(JoinString(GetYearFormatter(GetRef(field, quto)), "'-'"), weak);
                     }
                 default:
                     return quto ? MethodWrapper.WrapValue(field) : field;
