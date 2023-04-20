@@ -448,7 +448,7 @@ SET
                         {
                             quarter = $"QUARTER({GetRef(field, quto)})";
                         }
-                        return JoinString(JoinString(GetRef(field, quto), "'-'"), quarter);
+                        return JoinString(JoinString(GetYearFormatter(GetRef(field, quto)), "'-'"), quarter);
                     }
                 case ToRawMethod.Weak:
                     {
