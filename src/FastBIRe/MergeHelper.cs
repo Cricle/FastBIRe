@@ -175,7 +175,7 @@ SET
             return $@"
 {noLockSql}
 UPDATE {Wrap(destTable)} AS {Wrap("a")}
-{CompileUpdateSelectCore(destTable, sourceTableDefine, options)};
+{CompileUpdateSelectCore(destTable, sourceTableDefine, options)}
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))};
 {noLockRestoreSql}

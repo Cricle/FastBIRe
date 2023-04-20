@@ -17,8 +17,8 @@ namespace FastBIRe.Sample
         static void Main(string[] args)
         {
             //RealTrigger();
-            CompareM();
-            //RunQuery();
+            //CompareM();
+            RunQuery();
         }
         static MigrationService GetDbMigration(string? database)
         {
