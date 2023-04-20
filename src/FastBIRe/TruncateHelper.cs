@@ -39,7 +39,7 @@ namespace FastBIRe
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string Sqlite(string table)
         {
-            return $"DELETE TABLE \"{table}\";";
+            return $"DELETE FROM \"{table}\";";
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string PostgreSql(string table)
