@@ -18,6 +18,7 @@ namespace FastBIRe
     }
     public partial class MigrationService : DbMigration
     {
+        public const string AutoTimeTriggerPrefx = "AGT_";
         public const string AutoGenIndexPrefx = "IXAG_";
         public const string DefaultEffectSuffix = "_effect";
 
@@ -140,8 +141,16 @@ namespace FastBIRe
         public List<string> RunMigration(string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
             var s = new List<string>();
+            var tb = Reader.Table(table);
+            s.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(AutoTimeTriggerPrefx)).Select(x => ComputeTriggerHelper.Instance.Drop(x.Name, x.TableName, SqlType))!);
             var str = RunMigration(s, table, news, oldRefs);
             str.AddRange(s);
+            var computeField = news.Where(x => x.IsCompute).ToList();
+            if (computeField.Count!=0)
+            {
+                var key = AutoTimeTriggerPrefx + table;
+                str.Add(ComputeTriggerHelper.Instance.Create(key, table, computeField.Select(x => new TriggerField(x.Field, x.ComputeDefine)), SqlType)!);
+            }
             return str;
         }
         public List<string> RunMigration(List<string> scripts, string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
@@ -149,7 +158,8 @@ namespace FastBIRe
             var groupNews = news.GroupBy(x => x.Field).Select(x => x.First()).ToList();
             var renames = groupNews.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x });
             var migGen = DdlGeneratorFactory.MigrationGenerator();
-            return CompareWithModify(table, x =>
+            var tb = Reader.Table(table);
+            var res= CompareWithModify(table, x =>
             {
                 PrepareTable(x);
                 var olds = x.Columns.Select(x =>
@@ -220,6 +230,15 @@ namespace FastBIRe
                     });
                 }
             }).Execute();
+
+            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(AutoTimeTriggerPrefx)).Select(x => ComputeTriggerHelper.Instance.Drop(x.Name, x.TableName, SqlType))!);
+            var computeField = news.Where(x => x.IsCompute).ToList();
+            if (computeField.Count != 0)
+            {
+                var key = AutoTimeTriggerPrefx + table;
+                res.Add(ComputeTriggerHelper.Instance.Create(key, table, computeField.Select(x => new TriggerField(x.Field, x.ComputeDefine)), SqlType)!);
+            }
+            return res;
         }
         private bool IsTimePart(ToRawMethod method)
         {
@@ -247,7 +266,7 @@ namespace FastBIRe
             var script = RunMigration(scripts, tableDef.Table, tableDef.Columns, oldRefs);
             var effectTableName = destTable + EffectSuffix;
             var triggerName = "trigger_" + effectTableName;
-            var triggerHelper = TriggerHelper.Instance;
+            var triggerHelper = EffectTriggerHelper.Instance;
 
             scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
             var groupColumns = news.Where(x => x.IsGroup).ToList();

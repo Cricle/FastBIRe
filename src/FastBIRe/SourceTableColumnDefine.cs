@@ -17,5 +17,15 @@
             }
             return this;
         }
+        public new SourceTableColumnDefine Compute(string define)
+        {
+            base.Compute(define);
+            return this;
+        }
+        public new SourceTableColumnDefine Compute(SourceTableColumnBuilder builder, ToRawMethod method, string forField, string tableName="NEW")
+        {
+            base.Compute(builder, method, forField, tableName);
+            return this;
+        }
     }
 }
