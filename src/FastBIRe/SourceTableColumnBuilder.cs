@@ -47,6 +47,10 @@ namespace FastBIRe
             var val = Helper.ToRaw(method, rawValue, false);
             return new WhereItem(field, raw, val);
         }
+        public string WriteTimePart(string field, ToRawMethod method,bool quto=true)
+        {
+            return Helper.GetFormatter(Helper.GetRef(field, quto), method);
+        }
         public WhereItem Where(string field, ToRawMethod method, object value)
         {
             return WhereRaw(field, method, Helper.MethodWrapper.WrapValue(value)!);
@@ -145,7 +149,7 @@ namespace FastBIRe
             {
                 Type = type,
                 Nullable = sourceNullable,
-                Length = length,
+                Length = length
             };
         }
 

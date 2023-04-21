@@ -40,15 +40,22 @@ namespace FastBIRe
 
         public IEnumerable<WhereItem>? WhereItems { get; set; }
 
+        private string GetFormatter(SourceTableColumnDefine x)
+        {
+            var refSource = GetFormatter($"{Wrap("b")}.{Wrap(x.Field)}", x.Method);
+            var refDest = GetFormatter($"{Wrap("a")}.{Wrap(x.Field)}", x.Method);
+            return $"{refSource} = {refDest}";
+        }
+
         private string GetTableRef(SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             if (options != null && options.IncludeEffectJoin && options.EffectTable != null)
             {
                 if (SqlType == SqlType.SqlServer || SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                 {
-                    return $@"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")} WHERE EXISTS( SELECT 1 FROM {Wrap(options.EffectTable)} AS {Wrap("b")} WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("b")}.{Wrap(x.Field)}={Wrap("a")}.{Wrap(x.Field)}"))})";
+                    return $@"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")} WHERE EXISTS( SELECT 1 FROM {Wrap(options.EffectTable)} AS {Wrap("b")} WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatter(x)))})";
                 }
-                return $@"(SELECT {Wrap("a")}.* FROM {Wrap(options.EffectTable)} AS {Wrap("b")} INNER JOIN {Wrap(sourceTableDefine.Table)} AS {Wrap("a")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("b")}.{Wrap(x.Field)}={Wrap("a")}.{Wrap(x.Field)}"))}) AS {Wrap("a")}";
+                return $@"(SELECT {Wrap("a")}.* FROM {Wrap(options.EffectTable)} AS {Wrap("b")} INNER JOIN {Wrap(sourceTableDefine.Table)} AS {Wrap("a")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatter(x)))}) AS {Wrap("a")}";
             }
             return $"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")}";
         }
@@ -254,7 +261,7 @@ SET
             str += options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
             return str;
         }
-        private string JoinString(string left, string right)
+        public string JoinString(string left, string right)
         {
             if (SqlType == SqlType.SQLite || SqlType == SqlType.PostgreSql)
             {
@@ -265,6 +272,70 @@ SET
                 return $"{left} + {right}";
             }
             return $"CONCAT({left},{right})";
+        }
+        public string GetFormatter(string @ref,ToRawMethod method)
+        {
+            switch (method)
+            {
+                case ToRawMethod.Year:
+                    return GetYearFormatter(@ref);
+                case ToRawMethod.Month:
+                    return GetMonthFormatter(@ref);
+                case ToRawMethod.Day:
+                    return GetDayFormatter(@ref);
+                case ToRawMethod.Hour:
+                    return GetHourFormatter(@ref);
+                case ToRawMethod.Minute:
+                    return GetMinuteFormatter(@ref);
+                case ToRawMethod.Weak:
+                    return GetWeakFormatter(@ref);
+                case ToRawMethod.Quarter:
+                    return GetQuarterFormatter(@ref);
+                default: 
+                    return @ref;
+            }
+        }
+        public string GetQuarterFormatter(string @ref)
+        {
+            string quarter;
+            if (SqlType == SqlType.SQLite)
+            {
+                quarter = $"COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)";
+            }
+            else if (SqlType == SqlType.SqlServer)
+            {
+                quarter = $"CONVERT(VARCHAR(2),DATEPART(QUARTER,{@ref}))";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                quarter = $"EXTRACT(QUARTER FROM {@ref})";
+            }
+            else
+            {
+                quarter = $"QUARTER({@ref})";
+            }
+            return JoinString(JoinString(GetYearFormatter(@ref), "'-'"), quarter);
+        }
+        public string GetWeakFormatter(string @ref)
+        {
+            string weak ;
+            if (SqlType == SqlType.SQLite)
+            {
+                weak= $"strftime('%W',{@ref})";
+            }
+            else if (SqlType == SqlType.SqlServer)
+            {
+                weak = $"CONVERT(VARCHAR(2),DATEPART(WEEK,{@ref}))";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                weak = $"to_char({@ref},'WW')";
+            }
+            else
+            {
+                weak = $"WEEK({@ref})";
+            }
+            return JoinString(JoinString(GetYearFormatter(@ref), "'-'"), weak);
         }
         public string GetYearFormatter(string @ref)
         {
@@ -278,9 +349,85 @@ SET
             }
             else if (SqlType== SqlType.PostgreSql)
             {
-                return $"to_char({@ref},'YYYY')";
+                return $"date_trunc('year',{@ref})";
             }
             return $"LEFT({@ref},4)";
+        }
+        public string GetMonthFormatter(string @ref)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(7),{@ref} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y-%m', {@ref})";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('month',{@ref})";
+            }
+            else
+            {
+                return $"LEFT({@ref},7)";
+            }
+        }
+        public string GetDayFormatter(string @ref)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(10),{@ref} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y-%m-%d', {@ref})";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('day',{@ref})";
+            }
+            else
+            {
+                return $"LEFT({@ref},10)";
+            }
+        }
+        public string GetHourFormatter(string @ref)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(13),{@ref} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y-%m-%d %H', {@ref})";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('hour',{@ref})";
+            }
+            else
+            {
+                return $"LEFT({@ref},13)";
+            }
+        }
+        public string GetMinuteFormatter(string @ref)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(16),{@ref} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y-%m-%d %H:%M', {@ref})";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('minute',{@ref})";
+            }
+            else
+            {
+                return $"LEFT({@ref},16)";
+            }
         }
         protected string GetFormatString(ToRawMethod method, string fieldName, bool quto)
         {
@@ -289,73 +436,37 @@ SET
             {
                 case ToRawMethod.Year:
                     {
+                        var forMatter = GetYearFormatter(@ref);
                         if (SqlType == SqlType.PostgreSql)
                         {
-                            return $"date_trunc('year',{@ref})";
+                            return forMatter;
                         }
-                        var forMatter = GetYearFormatter(@ref);
                         return JoinString(forMatter, "'-01-01 00:00:00'");
                     }
                 case ToRawMethod.Day:
                     {
-                        string forMatter;
-                        if (SqlType == SqlType.SqlServer)
+                        var forMatter=GetDayFormatter(@ref);
+                        if (SqlType== SqlType.SQLite||SqlType== SqlType.PostgreSql)
                         {
-                            forMatter = $"CONVERT(VARCHAR(10),{@ref} ,120)";
-                        }
-                        else if (SqlType == SqlType.SQLite)
-                        {
-                            forMatter = $"strftime('%Y-%m-%d', {@ref})";
-                        }
-                        else if (SqlType == SqlType.PostgreSql)
-                        {
-                            return $"date_trunc('day',{@ref})";
-                        }
-                        else
-                        {
-                            forMatter = $"LEFT({@ref},10)";
+                            return forMatter;
                         }
                         return JoinString(forMatter, "' 00:00:00'");
                     }
                 case ToRawMethod.Hour:
                     {
-                        string forMatter;
-                        if (SqlType == SqlType.SqlServer)
+                        var forMatter= GetHourFormatter(@ref);
+                        if (SqlType == SqlType.PostgreSql||SqlType == SqlType.SQLite)
                         {
-                            forMatter = $"CONVERT(VARCHAR(13),{@ref} ,120)";
-                        }
-                        else if (SqlType == SqlType.SQLite)
-                        {
-                            forMatter = $"strftime('%Y-%m-%d %H', {@ref})";
-                        }
-                        else if (SqlType == SqlType.PostgreSql)
-                        {
-                            return $"date_trunc('hour',{@ref})";
-                        }
-                        else
-                        {
-                            forMatter = $"LEFT({@ref},13)";
+                            return forMatter;
                         }
                         return JoinString(forMatter, "':00:00'");
                     }
                 case ToRawMethod.Minute:
                     {
-                        string forMatter;
-                        if (SqlType == SqlType.SqlServer)
+                        var forMatter= GetMinuteFormatter(@ref);
+                        if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
-                            forMatter = $"CONVERT(VARCHAR(16),{@ref} ,120)";
-                        }
-                        else if (SqlType == SqlType.SQLite)
-                        {
-                            forMatter = $"strftime('%Y-%m-%d %H:%M', {@ref})";
-                        }
-                        else if (SqlType == SqlType.PostgreSql)
-                        {
-                            return $"date_trunc('minute',{@ref})";
-                        }
-                        else
-                        {
-                            forMatter = $"LEFT({@ref},16)";
+                            return forMatter;
                         }
                         return JoinString(forMatter, "':00'");
                     }
@@ -363,22 +474,10 @@ SET
                     return @ref;
                 case ToRawMethod.Month:
                     {
-                        string forMatter;
-                        if (SqlType == SqlType.SqlServer)
+                        var forMatter=GetMonthFormatter(@ref);
+                        if (SqlType== SqlType.SQLite)
                         {
-                            forMatter = $"CONVERT(VARCHAR(7),{@ref} ,120)";
-                        }
-                        else if (SqlType == SqlType.SQLite)
-                        {
-                            forMatter = $"strftime('%Y-%m', {@ref})";
-                        }
-                        else if (SqlType == SqlType.PostgreSql)
-                        {
-                            return $"date_trunc('month',{@ref})";
-                        }
-                        else
-                        {
-                            forMatter = $"LEFT({@ref},7)";
+                            return forMatter;
                         }
                         return JoinString(forMatter, "'-01 00:00:00'");
                     }
@@ -387,7 +486,7 @@ SET
             }
         }
 
-        private string GetRef(string field, bool quto)
+        public string GetRef(string field, bool quto)
         {
             return quto ? MethodWrapper.Quto(field) : field;
         }
@@ -431,45 +530,11 @@ SET
                     return GetFormatString(method, field, quto);
                 case ToRawMethod.Quarter:
                     {
-                        string quarter;
-                        if (SqlType == SqlType.SQLite)
-                        {
-                            quarter = $"COALESCE(NULLIF((SUBSTR({GetRef(field, quto)}, 4, 2) - 1) / 3, 0), 4)";
-                        }
-                        else if (SqlType == SqlType.SqlServer)
-                        {
-                            quarter = $"CONVERT(VARCHAR(2),DATEPART(QUARTER,{GetRef(field, quto)}))";
-                        }
-                        else if (SqlType == SqlType.PostgreSql)
-                        {
-                            quarter = $"EXTRACT(QUARTER FROM {GetRef(field, quto)})";
-                        }
-                        else
-                        {
-                            quarter = $"QUARTER({GetRef(field, quto)})";
-                        }
-                        return JoinString(JoinString(GetYearFormatter(GetRef(field, quto)), "'-'"), quarter);
+                        return GetQuarterFormatter(GetRef(field, quto));
                     }
                 case ToRawMethod.Weak:
                     {
-                        string weak;
-                        if (SqlType == SqlType.SQLite)
-                        {
-                            weak = $"strftime('%W',{GetRef(field, quto)})";
-                        }
-                        else if (SqlType == SqlType.SqlServer)
-                        {
-                            weak = $"CONVERT(VARCHAR(2),DATEPART(WEEK,{GetRef(field, quto)}))";
-                        }
-                        else if (SqlType == SqlType.PostgreSql)
-                        {
-                            weak = $"to_char({GetRef(field, quto)},'WW')";
-                        }
-                        else
-                        {
-                            weak = $"WEEK({GetRef(field, quto)})";
-                        }
-                        return JoinString(JoinString(GetYearFormatter(GetRef(field, quto)), "'-'"), weak);
+                        return GetWeakFormatter(GetRef(field, quto));
                     }
                 default:
                     return quto ? MethodWrapper.WrapValue(field) : field;

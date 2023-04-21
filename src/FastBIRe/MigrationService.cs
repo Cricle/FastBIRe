@@ -51,6 +51,8 @@ namespace FastBIRe
 
         public bool ImmediatelyAggregate { get; set; }
 
+        public IReadOnlyList<string>? NotRemoveColumns { get; set; } = new string[] { "_id", "记录时间" };
+
         public string CreateTable(string table)
         {
             var migGen = DdlGeneratorFactory.MigrationGenerator();
@@ -65,19 +67,6 @@ namespace FastBIRe
                 x.AddIndex($"IDX_{table}_记录时间");
             });
             return migGen.AddTable(tb);
-        }
-        private bool IsIndexAck(DatabaseIndex idx, IEnumerable<string> fields)
-        {
-            if (idx == null)
-            {
-                return false;
-            }
-            if (idx.Columns.Count == fields.Count() &&
-                idx.Columns.Select(x => x.Name).SequenceEqual(fields))
-            {
-                return true;
-            }
-            return false;
         }
         public async Task<int> SyncIndexAutoAsync(string tableName, IEnumerable<TableColumnDefine> columns, string? idxName = null, string? refTable = null, Action<SyncIndexOptions>? optionDec = null, CancellationToken token = default)
         {
@@ -165,6 +154,11 @@ namespace FastBIRe
                 PrepareTable(x);
                 var olds = x.Columns.Select(x =>
                 {
+                    var @new = news.FirstOrDefault(y => y.Field == x.Name);
+                    if (@new != null)
+                    {
+                        x.Tag = true;
+                    }
                     var old = oldRefs.FirstOrDefault(y => y.Field == x.Name);
                     if (old != null)
                     {
@@ -216,7 +210,7 @@ namespace FastBIRe
                     }
                 }
                 var adds = groupNews.Where(n => !olds.Any(y => y.Id == n.Id)).ToList();
-                var rms = new HashSet<string>(olds.Where(o => !groupNews.Any(y => y.Id == o.Id)).Select(x => x.Field));
+                var rms = new HashSet<string>(x.Columns.Where(x => x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name))).Select(x => x.Name));
                 x.Columns.RemoveAll(x => rms.Contains(x.Name));
                 foreach (var col in adds)
                 {
