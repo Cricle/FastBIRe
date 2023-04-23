@@ -149,16 +149,6 @@ namespace FastBIRe
             str.AddRange(s);
             return str;
         }
-        private void AddDatePart(DatabaseTable table,TableColumnDefine define)
-        {
-            var year = define.Field + DefaultDateTimePartNames.Year;
-            var builder = GetColumnBuilder();
-            var dateTimeType = builder.Type(DbType.DateTime);
-            if (table.Columns.Any(x => x.Name == define.Field && x.DbDataType == dateTimeType))
-            {
-
-            }
-        }
         public virtual IReadOnlyList<KeyValuePair<string, ToRawMethod>> GetDatePartNames(string field)
         {
             return new KeyValuePair<string, ToRawMethod>[]
