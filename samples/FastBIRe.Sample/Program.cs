@@ -132,7 +132,7 @@ namespace FastBIRe.Sample
                 builder.Column("a3",type:builder.Type(DbType.Decimal,25,5),length:30),
                 builder.Column("a4",type:builder.Type(DbType.Decimal,25,5),length:30),
                 builder.Column("a5",type:builder.Type(DbType.String,255),length:255),
-                builder.Column("111aaaa7777",type:builder.Type(DbType.String,255),length:255).SetExpandDateTime(true),
+                builder.Column("111aaaa7777",type:builder.Type(DbType.DateTime),length:255).SetExpandDateTime(true),
                 builder.Column("aaaa8",type:builder.Type(DbType.String,255),length:255),
             };
             foreach (var item in defs)
