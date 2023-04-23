@@ -19,6 +19,7 @@ namespace FastBIRe
     }
     public partial class MigrationService : DbMigration
     {
+        public const string SystemPrefx = "__$";
         public const string AutoTimeTriggerPrefx = "AGT_";
         public const string AutoGenIndexPrefx = "IXAG_";
         public const string DefaultEffectSuffix = "_effect";
@@ -158,24 +159,34 @@ namespace FastBIRe
 
             }
         }
-        public virtual IEnumerable<KeyValuePair<string, ToRawMethod>> GetDatePartNames(string field)
+        public virtual IReadOnlyList<KeyValuePair<string, ToRawMethod>> GetDatePartNames(string field)
         {
-            yield return new KeyValuePair<string,ToRawMethod>("@"+field + DefaultDateTimePartNames.Year, ToRawMethod.Year);
-            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Month, ToRawMethod.Month);
-            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Day, ToRawMethod.Day);
-            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Hour, ToRawMethod.Hour);
-            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Minute, ToRawMethod.Minute);
-            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Quarter, ToRawMethod.Quarter);
-            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Weak, ToRawMethod.Weak);
+            return new KeyValuePair<string, ToRawMethod>[]
+            {
+                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Year, ToRawMethod.Year),
+                new KeyValuePair<string, ToRawMethod>(SystemPrefx+ field + DefaultDateTimePartNames.Month, ToRawMethod.Month),
+                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Day, ToRawMethod.Day),
+                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Hour, ToRawMethod.Hour),
+                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Minute, ToRawMethod.Minute),
+                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Quarter, ToRawMethod.Quarter),
+                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Weak, ToRawMethod.Weak),
+            };
         }
-        public virtual void AddDateTimePartColumns(DatabaseTable table,string field)
+        public virtual IReadOnlyList<KeyValuePair<string, ToRawMethod>> AddDateTimePartColumns(DatabaseTable table,string field)
         {
             var builder = GetColumnBuilder();
             var dateTimeType=builder.Type(DbType.DateTime);
-            foreach (var item in GetDatePartNames(field))
+            var parts = GetDatePartNames(field);
+            var ret=new List<KeyValuePair<string, ToRawMethod>>();
+            foreach (var item in parts)
             {
-                table.AddColumn(item.Key, dateTimeType, x => x.Nullable = true);
+                if (!table.Columns.Any(x => x.Name == item.Key))
+                {
+                    table.AddColumn(item.Key, dateTimeType, x => x.Nullable = true);
+                    ret.Add(item);
+                }
             }
+            return ret;
         }
         public List<string> RunMigration(List<string> scripts, string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
@@ -183,6 +194,7 @@ namespace FastBIRe
             var renames = groupNews.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x });
             var migGen = DdlGeneratorFactory.MigrationGenerator();
             var tb = Reader.Table(table);
+            var helper = GetMergeHelper();
             var res= CompareWithModify(table, x =>
             {
                 PrepareTable(x);
@@ -201,15 +213,19 @@ namespace FastBIRe
                     }
                     return null;
                 }).Where(x => x != null).ToList();
+                foreach (var item in renames.Where(x=>x.Old.ExpandDateTime!=x.New.ExpandDateTime&&!x.Old.ExpandDateTime))
+                {
+                    x.Columns.RemoveAll(x => x.Name.StartsWith(SystemPrefx + item.Old.Field));
+                }
                 foreach (var item in news)
                 {
-                    if (!item.ExpandDateTime)
+                    if (item.ExpandDateTime)
                     {
-                        x.Columns.RemoveAll(x => x.Name.StartsWith("@" + item.Field));
-                    }
-                    else
-                    {
-                        AddDateTimePartColumns(x, item.Field);
+                        var res = AddDateTimePartColumns(x, item.Field);
+                        foreach (var r in res)
+                        {
+                            scripts.Add($"UPDATE {helper.Wrap(x.Name)} SET {helper.Wrap(r.Key)} = {helper.ToRaw(r.Value, item.Field, true)};");
+                        }
                     }
                 }
                 foreach (var item in renames)
@@ -255,7 +271,7 @@ namespace FastBIRe
                     }
                 }
                 var adds = groupNews.Where(n => !olds.Any(y => y.Id == n.Id)).ToList();
-                var rms = new HashSet<string>(x.Columns.Where(x => !x.Name.StartsWith("@")&&x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name))).Select(x => x.Name));
+                var rms = new HashSet<string>(x.Columns.Where(x => !x.Name.StartsWith(SystemPrefx)&&x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name))).Select(x => x.Name));
                 x.Columns.RemoveAll(x => rms.Contains(x.Name));
                 foreach (var col in adds)
                 {
@@ -271,7 +287,6 @@ namespace FastBIRe
             if (computeField.Count != 0)
             {
                 var key = AutoTimeTriggerPrefx + table;
-                var helper = GetMergeHelper();
                 var triggers = new List<TriggerField>();
                 foreach (var item in computeField)
                 {
