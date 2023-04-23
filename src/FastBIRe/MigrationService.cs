@@ -1,6 +1,7 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -157,6 +158,25 @@ namespace FastBIRe
 
             }
         }
+        public virtual IEnumerable<KeyValuePair<string, ToRawMethod>> GetDatePartNames(string field)
+        {
+            yield return new KeyValuePair<string,ToRawMethod>("@"+field + DefaultDateTimePartNames.Year, ToRawMethod.Year);
+            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Month, ToRawMethod.Month);
+            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Day, ToRawMethod.Day);
+            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Hour, ToRawMethod.Hour);
+            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Minute, ToRawMethod.Minute);
+            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Quarter, ToRawMethod.Quarter);
+            yield return new KeyValuePair<string, ToRawMethod>("@" + field + DefaultDateTimePartNames.Weak, ToRawMethod.Weak);
+        }
+        public virtual void AddDateTimePartColumns(DatabaseTable table,string field)
+        {
+            var builder = GetColumnBuilder();
+            var dateTimeType=builder.Type(DbType.DateTime);
+            foreach (var item in GetDatePartNames(field))
+            {
+                table.AddColumn(item.Key, dateTimeType, x => x.Nullable = true);
+            }
+        }
         public List<string> RunMigration(List<string> scripts, string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
             var groupNews = news.GroupBy(x => x.Field).Select(x => x.First()).ToList();
@@ -181,12 +201,15 @@ namespace FastBIRe
                     }
                     return null;
                 }).Where(x => x != null).ToList();
-                var expends = x.Columns.Where(x => x.Name.StartsWith("@")).ToList();
                 foreach (var item in news)
                 {
-                    if (item.ExpandDateTime)
+                    if (!item.ExpandDateTime)
                     {
-                        expends.RemoveAll(x => x.Name.StartsWith("@" + item.Field));
+                        x.Columns.RemoveAll(x => x.Name.StartsWith("@" + item.Field));
+                    }
+                    else
+                    {
+                        AddDateTimePartColumns(x, item.Field);
                     }
                 }
                 foreach (var item in renames)
@@ -248,7 +271,16 @@ namespace FastBIRe
             if (computeField.Count != 0)
             {
                 var key = AutoTimeTriggerPrefx + table;
-                res.Add(ComputeTriggerHelper.Instance.Create(key, table, computeField.Select(x => new TriggerField(x.Field, x.ComputeDefine)), SqlType)!);
+                var helper = GetMergeHelper();
+                var triggers = new List<TriggerField>();
+                foreach (var item in computeField)
+                {
+                    foreach (var part in GetDatePartNames(item.Field))
+                    {
+                        triggers.Add(new TriggerField(part.Key, helper.ToRaw(part.Value, $"NEW.{item.Field}",false)!));
+                    }
+                }
+                res.Add(ComputeTriggerHelper.Instance.Create(key, table, triggers, SqlType)!);
             }
             return res;
         }

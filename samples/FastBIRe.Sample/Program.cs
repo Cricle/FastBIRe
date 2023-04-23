@@ -17,14 +17,14 @@ namespace FastBIRe.Sample
         static void Main(string[] args)
         {
             //RealTrigger();
-            //CompareM();
-            RunQuery();
+            CompareM();
+            //RunQuery();
         }
         static MigrationService GetDbMigration(string? database)
         {
             //var conn = new NpgsqlConnection($"Host=192.168.1.95;Port=5432;Username=postgres;Password=syc123{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqlConnection($"Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
-            var conn = new MySqlConnection($"Server=192.168.1.95;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+            var conn = new MySqlConnection($"Server=127.0.0.1;Port=3306;Uid=root;Pwd=355343;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new MySqlConnection($"Server=192.168.1.95;Port=3307;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
             //var conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
             conn.Open();
@@ -132,7 +132,7 @@ namespace FastBIRe.Sample
                 builder.Column("a3",type:builder.Type(DbType.Decimal,25,5),length:30),
                 builder.Column("a4",type:builder.Type(DbType.Decimal,25,5),length:30),
                 builder.Column("a5",type:builder.Type(DbType.String,255),length:255),
-                builder.Column("111aaaa7777",type:builder.Type(DbType.String,255),length:255),
+                builder.Column("111aaaa7777",type:builder.Type(DbType.String,255),length:255).SetExpandDateTime(true),
                 builder.Column("aaaa8",type:builder.Type(DbType.String,255),length:255),
             };
             foreach (var item in defs)
