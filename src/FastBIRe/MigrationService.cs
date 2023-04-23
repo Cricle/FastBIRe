@@ -145,13 +145,17 @@ namespace FastBIRe
             s.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(AutoTimeTriggerPrefx)).Select(x => ComputeTriggerHelper.Instance.Drop(x.Name, x.TableName, SqlType))!);
             var str = RunMigration(s, table, news, oldRefs);
             str.AddRange(s);
-            var computeField = news.Where(x => x.IsCompute).ToList();
-            if (computeField.Count!=0)
-            {
-                var key = AutoTimeTriggerPrefx + table;
-                str.Add(ComputeTriggerHelper.Instance.Create(key, table, computeField.Select(x => new TriggerField(x.Field, x.ComputeDefine)), SqlType)!);
-            }
             return str;
+        }
+        private void AddDatePart(DatabaseTable table,TableColumnDefine define)
+        {
+            var year = define.Field + DefaultDateTimePartNames.Year;
+            var builder = GetColumnBuilder();
+            var dateTimeType = builder.Type(DbType.DateTime);
+            if (table.Columns.Any(x => x.Name == define.Field && x.DbDataType == dateTimeType))
+            {
+
+            }
         }
         public List<string> RunMigration(List<string> scripts, string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
@@ -177,6 +181,14 @@ namespace FastBIRe
                     }
                     return null;
                 }).Where(x => x != null).ToList();
+                var expends = x.Columns.Where(x => x.Name.StartsWith("@")).ToList();
+                foreach (var item in news)
+                {
+                    if (item.ExpandDateTime)
+                    {
+                        expends.RemoveAll(x => x.Name.StartsWith("@" + item.Field));
+                    }
+                }
                 foreach (var item in renames)
                 {
                     var col = x.FindColumn(item.Old.Field);
@@ -220,7 +232,7 @@ namespace FastBIRe
                     }
                 }
                 var adds = groupNews.Where(n => !olds.Any(y => y.Id == n.Id)).ToList();
-                var rms = new HashSet<string>(x.Columns.Where(x => x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name))).Select(x => x.Name));
+                var rms = new HashSet<string>(x.Columns.Where(x => !x.Name.StartsWith("@")&&x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name))).Select(x => x.Name));
                 x.Columns.RemoveAll(x => rms.Contains(x.Name));
                 foreach (var col in adds)
                 {
@@ -232,7 +244,7 @@ namespace FastBIRe
             }).Execute();
 
             res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(AutoTimeTriggerPrefx)).Select(x => ComputeTriggerHelper.Instance.Drop(x.Name, x.TableName, SqlType))!);
-            var computeField = news.Where(x => x.IsCompute).ToList();
+            var computeField = news.Where(x => x.ExpandDateTime).ToList();
             if (computeField.Count != 0)
             {
                 var key = AutoTimeTriggerPrefx + table;

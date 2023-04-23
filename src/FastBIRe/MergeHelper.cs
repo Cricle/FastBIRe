@@ -547,3 +547,9 @@ SET
         }
     }
 }
+#if false
+SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY),'%Y-%m-%d')--mysql
+SELECT DATEADD(wk, DATEDIFF(wk, 0, GETDATE()), 0) AS Monday;--sqlserver
+SELECT date('now', 'weekday 0', '-6 day');--sqlite
+SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:00'::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL;--pgsql
+#endif

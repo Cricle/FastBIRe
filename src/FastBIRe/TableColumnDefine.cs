@@ -10,18 +10,11 @@
 
         public int Length { get; set; }
 
-        public string? ComputeDefine { get; set; }
+        public bool ExpandDateTime { get; set; }
 
-        public bool IsCompute => !string.IsNullOrEmpty(ComputeDefine);
-
-        public TableColumnDefine Compute(string define)
+        public TableColumnDefine SetExpandDateTime(bool expand = true)
         {
-            ComputeDefine = define;
-            return this;
-        }
-        public TableColumnDefine Compute(SourceTableColumnBuilder builder,ToRawMethod method, string forField, string tableName = "NEW")
-        {
-            ComputeDefine = builder.WriteTimePart($"{tableName}.{builder.Helper.Wrap(forField)}", method,false);
+            ExpandDateTime = expand;
             return this;
         }
     }
