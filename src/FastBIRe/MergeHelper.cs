@@ -505,7 +505,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                 case ToRawMethod.Month:
                     {
                         var forMatter=GetMonthFormatter(@ref);
-                        if (SqlType== SqlType.SQLite)
+                        if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
                             return forMatter;
                         }

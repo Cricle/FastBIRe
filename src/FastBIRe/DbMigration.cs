@@ -82,10 +82,11 @@ namespace FastBIRe
                 Logger?.Invoke(string.Format(message, args));
             }
         }
+        private MergeHelper? helper;
 
         public MergeHelper GetMergeHelper()
         {
-            return new MergeHelper(SqlType);
+            return helper ??= new MergeHelper(SqlType);
         }
         public SourceTableColumnBuilder GetColumnBuilder(string? sourceAlias = "a", string? destAlias = "b")
         {
