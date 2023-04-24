@@ -113,7 +113,7 @@ END;
         $$ LANGUAGE plpgsql;
         ";
             yield return $@"
-        CREATE TRIGGER ""{name}{Insert}"" AFTER INSERT ON ""{sourceTable}""
+        CREATE TRIGGER ""{name}{Insert}"" BEFORE INSERT ON ""{sourceTable}""
         FOR EACH ROW
         EXECUTE FUNCTION {funName}{Insert}();
         ";
@@ -125,7 +125,7 @@ END;
         $$ LANGUAGE plpgsql;
         ";
             yield return $@"
-        CREATE TRIGGER ""{name}{Update}"" AFTER INSERT ON ""{sourceTable}""
+        CREATE TRIGGER ""{name}{Update}"" BEFORE INSERT ON ""{sourceTable}""
         FOR EACH ROW
         EXECUTE FUNCTION {funName}{Update}();
         ";
