@@ -290,7 +290,7 @@ namespace FastBIRe
             }).Execute();
 
             var key = AutoTimeTriggerPrefx + table;
-            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(key)).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name, SqlType))!);
+            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(key)).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name,x.TableName, SqlType))!);
             var computeField = news.Where(x => x.ExpandDateTime).ToList();
             if (computeField.Count != 0)
             {
@@ -299,11 +299,12 @@ namespace FastBIRe
                 {
                     foreach (var part in DefaultDateTimePartNames.GetDatePartNames(item.Field))
                     {
-                        triggers.Add(new TriggerField(part.Key, helper.ToRaw(part.Value, $"NEW.{helper.Wrap(item.Field)}",false)!));
+                        triggers.Add(new TriggerField(part.Key, 
+                            helper.ToRaw(part.Value, $"{(SqlType== SqlType.SqlServer?string.Empty: "NEW.")}{helper.Wrap(item.Field)}",false)!,item.Type));
                     }
                 }
                 var id = IdColumnFetcher(table);
-                res.Add(ComputeTriggerHelper.Instance.Create(key, table, triggers, id, SqlType)!);
+                res.AddRange(ComputeTriggerHelper.Instance.Create(key, table, triggers, id, SqlType)!);
             }
             return res;
         }
@@ -401,7 +402,7 @@ namespace FastBIRe
                     //{
                     //    return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false));
                     //}
-                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}");
+                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}",x.Type);
                 }), SqlType)!);
             }
             var imdtriggerName = destTable + "_imd";

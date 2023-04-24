@@ -326,11 +326,11 @@ SET
             }
             else if (SqlType == SqlType.SqlServer)
             {
-                return $"CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM  {@ref}),1) + interval QUARTER({@ref})*3-3 month),'%Y-%m-'),'01')";
+                return $"DATEADD(qq, DATEDIFF(qq, 0, {@ref}), 0)";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                return $"date_trunc('quarter', {@ref}::TIMESTAMP);";
+                return $"date_trunc('quarter', {@ref}::TIMESTAMP)";
             }
             return $"CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM {@ref}),1) + interval QUARTER({@ref})*3-3 month),'%Y-%m-'),'01')";
 #if false
