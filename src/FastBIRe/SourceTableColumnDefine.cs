@@ -1,9 +1,9 @@
-﻿using System.Data;
-
-namespace FastBIRe
+﻿namespace FastBIRe
 {
     public static class DefaultDateTimePartNames
     {
+        public const string SystemPrefx = "__$";
+
         public const string Year = "_year";
         public const string Month = "_month";
         public const string Day = "_day";
@@ -11,6 +11,24 @@ namespace FastBIRe
         public const string Minute = "_minute";
         public const string Quarter = "_quarter";
         public const string Weak = "_weak";
+
+        public static string CombineField(string field,string part)
+        {
+            return SystemPrefx + field + part;
+        }
+        public static IReadOnlyList<KeyValuePair<string, ToRawMethod>> GetDatePartNames(string field)
+        {
+            return new KeyValuePair<string, ToRawMethod>[]
+            {
+                new KeyValuePair<string, ToRawMethod>(CombineField(field,Year), ToRawMethod.Year),
+                new KeyValuePair<string, ToRawMethod>(CombineField(field,Month), ToRawMethod.Month),
+                new KeyValuePair<string, ToRawMethod>(CombineField(field,Day), ToRawMethod.Day),
+                new KeyValuePair<string, ToRawMethod>(CombineField(field,Hour), ToRawMethod.Hour),
+                new KeyValuePair<string, ToRawMethod>(CombineField(field,Minute), ToRawMethod.Minute),
+                new KeyValuePair<string, ToRawMethod>(CombineField(field,Quarter), ToRawMethod.Quarter),
+                new KeyValuePair<string, ToRawMethod>(CombineField(field,Weak), ToRawMethod.Weak),
+            };
+        }
     }
     public record SourceTableColumnDefine: TableColumnDefine
     {

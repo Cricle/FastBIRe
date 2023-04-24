@@ -1,7 +1,23 @@
 ﻿namespace FastBIRe
 {
-    public record TableColumnDefine(string Field, string Raw, string RawFormat, bool OnlySet = false)
+    public record TableColumnDefine
     {
+        public TableColumnDefine(string field, string raw, string rawFormat, bool onlySet = false)
+        {
+            Field = field;
+            Raw = raw;
+            RawFormat = rawFormat;
+            OnlySet = onlySet;
+        }
+
+        public string? Field { get; set; }
+
+        public string? Raw { get; set; }
+
+        public string? RawFormat { get; set; }
+
+        public bool OnlySet { get; set; }
+
         public string? Type { get; set; }
 
         public string? Id { get; set; }

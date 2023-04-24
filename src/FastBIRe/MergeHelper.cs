@@ -298,45 +298,58 @@ SET
         }
         public string GetQuarterFormatter(string @ref)
         {
-            string quarter;
             if (SqlType == SqlType.SQLite)
             {
-                quarter = $"COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)";
+                return $@"
+    STRFTIME('%Y', {@ref})||'-'||(CASE 
+        WHEN COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4) < 10 
+        THEN '0' || COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)
+        ELSE COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)
+    END)||'-01'
+";
             }
             else if (SqlType == SqlType.SqlServer)
             {
-                quarter = $"CONVERT(VARCHAR(2),DATEPART(QUARTER,{@ref}))";
+                return $"CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM  {@ref}),1) + interval QUARTER({@ref})*3-3 month),'%Y-%m-'),'01')";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                quarter = $"EXTRACT(QUARTER FROM {@ref})";
+                return $"date_trunc('quarter', {@ref}::TIMESTAMP);";
             }
-            else
-            {
-                quarter = $"QUARTER({@ref})";
-            }
-            return JoinString(JoinString(GetYearFormatter(@ref), "'-'"), quarter);
+            return $"CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM {@ref}),1) + interval QUARTER({@ref})*3-3 month),'%Y-%m-'),'01')";
+#if false
+select CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM  '2023-12-24'),1) + interval QUARTER('2023-12-24')*3-3 month),'%Y-%m-'),'01'); --mysql
+SELECT DATEADD(qq, DATEDIFF(qq, 0, '2023-010-23'), 0);--sqlserver
+SELECT STRFTIME('%Y', '2023-04-24')||'-'||(CASE 
+        WHEN COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4) < 10 
+        THEN '0' || COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4)
+        ELSE COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4)
+    END)||'-01'; --sqlite
+SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
+#endif
         }
         public string GetWeakFormatter(string @ref)
         {
-            string weak ;
             if (SqlType == SqlType.SQLite)
             {
-                weak= $"strftime('%W',{@ref})";
+                return $"DATE_FORMAT(DATE_SUB({@ref}, INTERVAL WEEKDAY({@ref}) DAY),'%Y-%m-%d')";
             }
             else if (SqlType == SqlType.SqlServer)
             {
-                weak = $"CONVERT(VARCHAR(2),DATEPART(WEEK,{@ref}))";
+                return $"DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {@ref}, 120) - 1), 0)";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                weak = $"to_char({@ref},'WW')";
+                return $"{@ref}::timestamp - ((EXTRACT(DOW FROM {@ref}::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL";
             }
-            else
-            {
-                weak = $"WEEK({@ref})";
-            }
-            return JoinString(JoinString(GetYearFormatter(@ref), "'-'"), weak);
+            return $"DATE_FORMAT(DATE_SUB({@ref}, INTERVAL WEEKDAY({@ref}) DAY),'%Y-%m-%d')";
+
+#if false
+SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY),'%Y-%m-%d')--mysql
+SELECT DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, '2023-04-24', 120) - 1), 0);--sqlserver
+SELECT date('now', 'weekday 0', '-6 day');--sqlite
+SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:00'::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL;--pgsql
+#endif
         }
         public string GetYearFormatter(string @ref)
         {
@@ -547,9 +560,3 @@ SET
         }
     }
 }
-#if false
-SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY),'%Y-%m-%d')--mysql
-SELECT DATEADD(wk, DATEDIFF(wk, 0, GETDATE()), 0) AS Monday;--sqlserver
-SELECT date('now', 'weekday 0', '-6 day');--sqlite
-SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:00'::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL;--pgsql
-#endif

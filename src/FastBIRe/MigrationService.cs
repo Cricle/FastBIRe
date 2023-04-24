@@ -19,7 +19,6 @@ namespace FastBIRe
     }
     public partial class MigrationService : DbMigration
     {
-        public const string SystemPrefx = "__$";
         public const string AutoTimeTriggerPrefx = "AGT_";
         public const string AutoGenIndexPrefx = "IXAG_";
         public const string DefaultEffectSuffix = "_effect";
@@ -112,7 +111,51 @@ namespace FastBIRe
         {
             sourceIdxName ??= $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(destTable)}";
             destIdxName ??= sourceIdxName + "_g";
-            var groupColumns = tableDef.Columns.Where(x => x.IsGroup);
+            var groupColumns = new List<SourceTableColumnDefine>();
+            var helper = GetMergeHelper();
+            foreach (var item in tableDef.Columns)
+            {
+                if (item.IsGroup)
+                {
+                    if (item.ExpandDateTime)
+                    {
+                        var clone = item.Copy();
+                        switch (item.Method)
+                        {
+                            case ToRawMethod.Year:
+                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Year);
+                                break;
+                            case ToRawMethod.Month:
+                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Month);
+                                break;
+                            case ToRawMethod.Day:
+                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Day);
+                                break;
+                            case ToRawMethod.Hour:
+                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Hour);
+                                break;
+                            case ToRawMethod.Minute:
+                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Minute);
+                                break;
+                            case ToRawMethod.Quarter:
+                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Quarter);
+                                break;
+                            case ToRawMethod.Weak:
+                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Weak);
+                                break;
+                            default:
+                                groupColumns.Add(item);
+                                continue;
+                        }
+                        clone.Raw = clone.RawFormat = helper.Wrap(clone.Field);
+                        groupColumns.Add(clone);
+                    }
+                    else
+                    {
+                        groupColumns.Add(item);
+                    }
+                }
+            }
             var res = await SyncIndexAutoAsync(tableDef.Table, groupColumns, sourceIdxName, destTable, optionDec, token: token);
             res += await SyncIndexAutoAsync(destTable, groupColumns.Select(x => x.DestColumn), destIdxName, destTable, optionDec, token: token);
             return res;
@@ -149,24 +192,11 @@ namespace FastBIRe
             str.AddRange(s);
             return str;
         }
-        public virtual IReadOnlyList<KeyValuePair<string, ToRawMethod>> GetDatePartNames(string field)
-        {
-            return new KeyValuePair<string, ToRawMethod>[]
-            {
-                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Year, ToRawMethod.Year),
-                new KeyValuePair<string, ToRawMethod>(SystemPrefx+ field + DefaultDateTimePartNames.Month, ToRawMethod.Month),
-                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Day, ToRawMethod.Day),
-                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Hour, ToRawMethod.Hour),
-                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Minute, ToRawMethod.Minute),
-                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Quarter, ToRawMethod.Quarter),
-                new KeyValuePair<string, ToRawMethod>(SystemPrefx + field + DefaultDateTimePartNames.Weak, ToRawMethod.Weak),
-            };
-        }
         public virtual IReadOnlyList<KeyValuePair<string, ToRawMethod>> AddDateTimePartColumns(DatabaseTable table,string field)
         {
             var builder = GetColumnBuilder();
             var dateTimeType=builder.Type(DbType.DateTime);
-            var parts = GetDatePartNames(field);
+            var parts = DefaultDateTimePartNames.GetDatePartNames(field);
             var ret=new List<KeyValuePair<string, ToRawMethod>>();
             foreach (var item in parts)
             {
@@ -205,7 +235,7 @@ namespace FastBIRe
                 }).Where(x => x != null).ToList();
                 foreach (var item in renames.Where(x=>x.Old.ExpandDateTime!=x.New.ExpandDateTime&&!x.Old.ExpandDateTime))
                 {
-                    x.Columns.RemoveAll(x => x.Name.StartsWith(SystemPrefx + item.Old.Field));
+                    x.Columns.RemoveAll(x => x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx + item.Old.Field));
                 }
                 foreach (var item in news)
                 {
@@ -261,7 +291,7 @@ namespace FastBIRe
                     }
                 }
                 var adds = groupNews.Where(n => !olds.Any(y => y.Id == n.Id)).ToList();
-                var rms = new HashSet<string>(x.Columns.Where(x => !x.Name.StartsWith(SystemPrefx)&&x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name))).Select(x => x.Name));
+                var rms = new HashSet<string>(x.Columns.Where(x => !x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx)&&x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name))).Select(x => x.Name));
                 x.Columns.RemoveAll(x => rms.Contains(x.Name));
                 foreach (var col in adds)
                 {
@@ -280,7 +310,7 @@ namespace FastBIRe
                 var triggers = new List<TriggerField>();
                 foreach (var item in computeField)
                 {
-                    foreach (var part in GetDatePartNames(item.Field))
+                    foreach (var part in DefaultDateTimePartNames.GetDatePartNames(item.Field))
                     {
                         triggers.Add(new TriggerField(part.Key, helper.ToRaw(part.Value, $"NEW.{item.Field}",false)!));
                     }
