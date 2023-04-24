@@ -50,7 +50,7 @@ namespace FastBIRe
             }
             var refSource = GetFormatter($"{Wrap("b")}.{Wrap(x.Field)}", x.Method);
             var refDest = GetFormatter($"{Wrap("a")}.{Wrap(x.Field)}", x.Method);
-            return $"{Wrap("a")}.{refSource} = {refDest}";
+            return $"{refSource} = {refDest}";
         }
         private string GetFormatterSelect(SourceTableColumnDefine x)
         {

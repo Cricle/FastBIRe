@@ -41,7 +41,7 @@ namespace FastBIRe
                 case SqlType.SQLite:
                     return CreateSqlite(name, sourceTable, columns,idColumn);
                 case SqlType.PostgreSql:
-                    return CreatePostgreSQL(name, sourceTable, columns,idColumn);
+                    return CreatePostgreSQL(name, sourceTable, columns);
                 case SqlType.Oracle:
                 case SqlType.Db2:
                 default:
@@ -98,13 +98,9 @@ END;
     
         ";
         }
-        private string GetNpgSqlFunName(string name)
+        public IEnumerable<string> CreatePostgreSQL(string name, string sourceTable, IEnumerable<TriggerField> columns)
         {
-            return "fun_" + name.Replace('-', '_');
-        }
-        public IEnumerable<string> CreatePostgreSQL(string name, string sourceTable, IEnumerable<TriggerField> columns,string idColumn)
-        {
-            var funName = GetNpgSqlFunName(name);
+            var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name);
             yield return $@"CREATE FUNCTION {funName}{Insert}() RETURNS TRIGGER AS $$
         BEGIN
               {string.Join("\n", columns.Select(x => $"NEW.\"{x.Field}\" = {x.Raw};"))}
@@ -144,7 +140,7 @@ END;
         }
         public string DropPostgreSQLRaw(string name, string sourceTable)
         {
-            var funName = GetNpgSqlFunName(name);
+            var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name);
             return $@"
         DROP TRIGGER IF EXISTS ""{name}"" ON ""{sourceTable}"";
         DROP FUNCTION IF EXISTS {funName}();
@@ -161,7 +157,7 @@ END;
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    return DropSqlServer(name, sourceTable);
+                    return DropSqlServer(name);
                 case SqlType.MySql:
                     return DropMySql(name);
                 case SqlType.SQLite:
@@ -230,13 +226,9 @@ BEGIN
 END;
 ";
         }
-        private string GetNpgSqlFunName(string name)
-        {
-            return "fun_" + name.Replace('-', '_');
-        }
         public string CreatePostgreSQL(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
         {
-            var funName = GetNpgSqlFunName(name);
+            var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name);
             return $@"CREATE FUNCTION {funName}() RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO ""{targetTable}"" ({string.Join(",", columns.Select(x => $"\"{x.Field}\""))}) VALUES ({string.Join(",", columns.Select(x => x.Raw))})
@@ -254,7 +246,7 @@ EXECUTE FUNCTION {funName}();
         {
             return $@"DROP TRIGGER IF EXISTS `{name}`;";
         }
-        public string DropSqlServer(string name, string sourceTable)
+        public string DropSqlServer(string name)
         {
             return $@"DROP TRIGGER IF EXISTS [{name}];";
         }
@@ -264,11 +256,18 @@ EXECUTE FUNCTION {funName}();
         }
         public string DropPostgreSQL(string name, string sourceTable)
         {
-            var funName = GetNpgSqlFunName(name);
+            var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name);
             return $@"
 DROP TRIGGER IF EXISTS ""{name}"" ON ""{sourceTable}"";
 DROP FUNCTION IF EXISTS {funName}();
 ";
+        }
+    }
+    public static class PostgreSQLTriggerHelper
+    {
+        public static string GetNpgSqlFunName(string name)
+        {
+            return "fun_" + name.Replace('-', '_');
         }
     }
 }
