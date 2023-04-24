@@ -327,13 +327,25 @@ namespace FastBIRe
             var triggerHelper = EffectTriggerHelper.Instance;
 
             scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
-            var groupColumns = news.Where(x => x.IsGroup).ToList();
+            var groupColumns = news.Where(x => x.IsGroup).Select(x=>x.Copy()).ToList();
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
+                foreach (var item in groupColumns)
+                {
+                    if (item.ExpandDateTime)
+                    {
+                        var field = DefaultDateTimePartNames.GetField(item.Method, item.Field, out var ok);
+                        if (ok)
+                        {
+                            item.Field = field;
+                        }
+                    }
+                }
                 var refTable = Reader.Table(effectTableName);
                 var hasTale = false;
                 if (refTable != null)
                 {
+                    //FIXME: 判断要看expand
                     if (refTable.Columns.Count != groupColumns.Count ||
                         !refTable.Columns.Select(x => x.Name).SequenceEqual(groupColumns.Select(x => x.Field)) ||
                         refTable.PrimaryKey == null ||
@@ -356,13 +368,7 @@ namespace FastBIRe
                     };
                     foreach (var item in groupColumns)
                     {
-                        var name = item.Field;
-                        if (item.ExpandDateTime)
-                        {
-                            var field = DefaultDateTimePartNames.GetField(item.Method, item.Field, out var ok);
-                            name = ok ? field : name;
-                        }
-                        refTable.AddColumn(name, item.Type);
+                        refTable.AddColumn(item.Field, item.Type);
                     }
                     var constrain = new DatabaseConstraint();
                     constrain.ConstraintType = ConstraintType.PrimaryKey;
