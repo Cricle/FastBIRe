@@ -212,19 +212,27 @@ namespace FastBIRe
                     }
                     return null;
                 }).Where(x => x != null).ToList();
-                foreach (var item in renames.Where(x=>x.Old.ExpandDateTime!=x.New.ExpandDateTime&&!x.Old.ExpandDateTime))
-                {
-                    x.Columns.RemoveAll(x => x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx + item.Old.Field));
-                }
+                var partColumns = new HashSet<string>(x.Columns.Where(x => x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx)).Select(x=>x.Name));
                 foreach (var item in news)
                 {
                     if (item.ExpandDateTime)
                     {
+                        foreach (var name in DefaultDateTimePartNames.GetDatePartNames(item.Field))
+                        {
+                            partColumns.Remove(name.Key);
+                        }
                         var res = AddDateTimePartColumns(x, item.Field);
                         foreach (var r in res)
                         {
                             scripts.Add($"UPDATE {helper.Wrap(x.Name)} SET {helper.Wrap(r.Key)} = {helper.ToRaw(r.Value, item.Field, true)};");
                         }
+                    }
+                }
+                if (partColumns.Count!=0)
+                {
+                    foreach (var item in partColumns)
+                    {
+                        x.Columns.RemoveAll(x => x.Name == item);
                     }
                 }
                 foreach (var item in renames)

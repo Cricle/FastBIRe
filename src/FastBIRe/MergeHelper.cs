@@ -52,7 +52,18 @@ namespace FastBIRe
             var refDest = GetFormatter($"{Wrap("a")}.{Wrap(x.Field)}", x.Method);
             return $"{Wrap("a")}.{refSource} = {refDest}";
         }
-
+        private string GetFormatterSelect(SourceTableColumnDefine x)
+        {
+            if (x.ExpandDateTime)
+            {
+                var sourceField = DefaultDateTimePartNames.GetField(x.Method, x.Field, out var sourceOk);
+                if (sourceOk)
+                {
+                    return $"{Wrap("a")}.{Wrap(sourceField)}";
+                }
+            }
+            return x.Raw;
+        }
         private string GetTableRef(SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             if (options != null && options.IncludeEffectJoin && options.EffectTable != null)
@@ -85,11 +96,11 @@ FROM
 	{Wrap(destTable)} AS {Wrap("a")}
 	INNER JOIN (
 		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))} 
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))} 
 		FROM {fromTable}
         {(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
 		GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
 	) AS  {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
     {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -101,10 +112,10 @@ AND(
                 return $@"
 	FROM (
 		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS \"{x.DestColumn.Field}\""))}
 		FROM {fromTable}
 		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
-        GROUP BY {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+        GROUP BY {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
 
 ) AS {Wrap("tmp")}
     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -118,11 +129,11 @@ AND(
                 return $@"
 FROM (
         SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS \"{x.DestColumn.Field}\""))}
         FROM {fromTable}
 		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
         GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
     ) AS {Wrap("tmp")}
     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"\"{destTable}\".{Wrap(x.DestColumn.Field)} ={Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
@@ -133,11 +144,11 @@ AND(
             return $@"
 	INNER JOIN (
 		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))}
 		FROM {fromTable}
 		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
 		GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
 	) AS {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
     {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -234,7 +245,7 @@ SET
         }
         public virtual string CompileInsertSelect(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
-            var str = $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
+            var str = $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))}\n";
             var optSqlite = SqlType == SqlType.SQLite && sourceTableDefine.Columns.Any(x => x.IsGroup && x.Method == ToRawMethod.None);
             if (optSqlite)
             {
@@ -254,10 +265,10 @@ SET
                 NOT EXISTS(
                     SELECT 1 AS {Wrap("tmp")} 
                     FROM {Wrap(destTable)} AS {Wrap("c")}
-                    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
+                    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{GetFormatterSelect(x)} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
                 )";
             }
-            str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))};\n";
+            str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))};\n";
             return str;
         }
         public virtual string CompileInsert(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)

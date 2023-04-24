@@ -5,6 +5,9 @@ namespace FastBIRe
     public record class TriggerField(string Field, string Raw);
     public class ComputeTriggerHelper
     {
+        public const string Update = "_update";
+        public const string Insert = "_insert";
+
         public static readonly ComputeTriggerHelper Instance = new ComputeTriggerHelper();
 
         public string? Drop(string name, string sourceTable, SqlType sqlType)
@@ -47,10 +50,15 @@ namespace FastBIRe
         }
         public string CreateMySql(string name, string sourceTable, IEnumerable<TriggerField> columns)
         {
-            return $@"CREATE TRIGGER `{name}` BEFORE INSERT ON `{sourceTable}`
+            return $@"CREATE TRIGGER `{name}{Insert}` BEFORE INSERT ON `{sourceTable}`
 FOR EACH ROW
 BEGIN
     {string.Join("\n",columns.Select(x=>$"SET NEW.`{x.Field}` = {x.Raw};"))}
+END;
+CREATE TRIGGER `{name}{Update}` BEFORE UPDATE ON `{sourceTable}`
+FOR EACH ROW
+BEGIN
+    {string.Join("\n", columns.Select(x => $"SET NEW.`{x.Field}` = {x.Raw};"))}
 END;
 ";
         }
@@ -98,7 +106,9 @@ END;
         //        }
         public string DropMySql(string name)
         {
-            return $@"DROP TRIGGER IF EXISTS `{name}`;";
+            return $@"DROP TRIGGER IF EXISTS `{name}{Update}`;
+DROP TRIGGER IF EXISTS `{name}{Insert}`;
+";
         }
         //        public string DropSqlServer(string name, string sourceTable)
         //        {
