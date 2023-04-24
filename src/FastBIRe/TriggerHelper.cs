@@ -10,6 +10,25 @@ namespace FastBIRe
 
         public static readonly ComputeTriggerHelper Instance = new ComputeTriggerHelper();
 
+        public string? DropRaw(string name, SqlType sqlType)
+        {
+            switch (sqlType)
+            {
+                //case SqlType.SqlServerCe:
+                //case SqlType.SqlServer:
+                //    return DropSqlServer(name, sourceTable);
+                case SqlType.MySql:
+                    return DropMySqlRaw(name);
+                //case SqlType.SQLite:
+                //    return DropSqlite(name);
+                //case SqlType.PostgreSql:
+                //    return DropPostgreSQL(name, sourceTable);
+                //case SqlType.Oracle:
+                //case SqlType.Db2:
+                default:
+                    return null;
+            }
+        }
         public string? Drop(string name, string sourceTable, SqlType sqlType)
         {
             switch (sqlType)
@@ -109,6 +128,10 @@ END;
             return $@"DROP TRIGGER IF EXISTS `{name}{Update}`;
 DROP TRIGGER IF EXISTS `{name}{Insert}`;
 ";
+        }
+        public string DropMySqlRaw(string name)
+        {
+            return $@"DROP TRIGGER IF EXISTS `{name}`;";
         }
         //        public string DropSqlServer(string name, string sourceTable)
         //        {

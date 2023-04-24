@@ -81,6 +81,7 @@
         public new SourceTableColumnDefine SetExpandDateTime(bool expand=true)
         {
             base.SetExpandDateTime(expand);
+            DestColumn.SetExpandDateTime(expand);
             return this;
         }
         public SourceTableColumnDefine AllNotNull()

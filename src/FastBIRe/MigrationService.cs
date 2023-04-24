@@ -289,11 +289,11 @@ namespace FastBIRe
                 }
             }).Execute();
 
-            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(AutoTimeTriggerPrefx)).Select(x => ComputeTriggerHelper.Instance.Drop(x.Name, x.TableName, SqlType))!);
+            var key = AutoTimeTriggerPrefx + table;
+            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(key)).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name, SqlType))!);
             var computeField = news.Where(x => x.ExpandDateTime).ToList();
             if (computeField.Count != 0)
             {
-                var key = AutoTimeTriggerPrefx + table;
                 var triggers = new List<TriggerField>();
                 foreach (var item in computeField)
                 {
