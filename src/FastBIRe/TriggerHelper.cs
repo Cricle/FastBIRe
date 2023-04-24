@@ -208,10 +208,15 @@ AS
 BEGIN
     INSERT INTO [{targetTable}] ({string.Join(",", columns.Select(x => $"[{x.Field}]"))})
     SELECT {string.Join(",", columns.Select(x =>x.Raw))}
-    FROM (SELECT {string.Join(",", columns.Select(x => $"[{x.Field}]"))} FROM INSERTED GROUP BY {string.Join(",", columns.Select(x => $"[{x.Field}]"))}) AS [NEW]
-    WHERE NOT EXISTS(
-        SELECT 1 FROM [{targetTable}] AS [t] WHERE {string.Join(" AND ", columns.Select(x => $"{string.Format(x.RawFormat,$"[t].[{x.Field}]")} = {x.Raw}"))}
-    )
+    FROM (
+        SELECT {string.Join(",", columns.Select(x => $"{string.Format(x.RawFormat, $"[NEW].[{x.Field}]")} AS [{x.Field}]"))} 
+        FROM INSERTED AS [NEW] 
+        GROUP BY {string.Join(",", columns.Select(x => string.Format(x.RawFormat, $"[NEW].[{x.Field}]")))}
+        HAVING NOT EXISTS(
+            SELECT 1 FROM [{targetTable}] AS [t] 
+            WHERE {string.Join(" AND ", columns.Select(x => $"{string.Format(x.RawFormat, $"[t].[{x.Field}]")} = {string.Format(x.RawFormat, $"[NEW].[{x.Field}]")}"))}
+        )
+    ) AS [NEW];
 END;
 ";
         }
