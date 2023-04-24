@@ -108,6 +108,7 @@ END;
             yield return $@"CREATE FUNCTION {funName}{Insert}() RETURNS TRIGGER AS $$
         BEGIN
               {string.Join("\n", columns.Select(x => $"NEW.\"{x.Field}\" = {x.Raw};"))}
+              RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
         ";
@@ -119,6 +120,7 @@ END;
             yield return $@"CREATE FUNCTION {funName}{Update}() RETURNS TRIGGER AS $$
         BEGIN
             {string.Join("\n", columns.Select(x => $"NEW.\"{x.Field}\" = {x.Raw};"))}
+              RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
         ";
