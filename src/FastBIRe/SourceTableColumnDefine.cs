@@ -29,6 +29,30 @@
                 new KeyValuePair<string, ToRawMethod>(CombineField(field,Weak), ToRawMethod.Weak),
             };
         }
+        public static string GetField(ToRawMethod method, string field, out bool ok)
+        {
+            ok = true;
+            switch (method)
+            {
+                case ToRawMethod.Year:
+                    return CombineField(field, Year);
+                case ToRawMethod.Month:
+                    return CombineField(field, Month);
+                case ToRawMethod.Day:
+                    return CombineField(field, Day);
+                case ToRawMethod.Hour:
+                    return CombineField(field, Hour);
+                case ToRawMethod.Minute:
+                    return CombineField(field, Minute);
+                case ToRawMethod.Quarter:
+                    return CombineField(field, Quarter);
+                case ToRawMethod.Weak:
+                    return CombineField(field, Weak);
+                default:
+                    ok = false;
+                    return field;
+            }
+        }
     }
     public record SourceTableColumnDefine: TableColumnDefine
     {

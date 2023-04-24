@@ -43,9 +43,14 @@ namespace FastBIRe
 
         private string GetFormatter(SourceTableColumnDefine x)
         {
+            var sourceField = DefaultDateTimePartNames.GetField(x.Method, x.Field, out var sourceOk);
+            if (sourceOk)
+            {
+                return $"{Wrap("a")}.{Wrap(sourceField)} = {Wrap("b")}.{Wrap(sourceField)}";
+            }
             var refSource = GetFormatter($"{Wrap("b")}.{Wrap(x.Field)}", x.Method);
             var refDest = GetFormatter($"{Wrap("a")}.{Wrap(x.Field)}", x.Method);
-            return $"{refSource} = {refDest}";
+            return $"{Wrap("a")}.{refSource} = {refDest}";
         }
 
         private string GetTableRef(SourceTableDefine sourceTableDefine, CompileOptions? options = null)

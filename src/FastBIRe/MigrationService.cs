@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -120,34 +121,12 @@ namespace FastBIRe
                     if (item.ExpandDateTime)
                     {
                         var clone = item.Copy();
-                        switch (item.Method)
+                        var field = DefaultDateTimePartNames.GetField(clone.Method, clone.Field, out var ok);
+                        if (ok)
                         {
-                            case ToRawMethod.Year:
-                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Year);
-                                break;
-                            case ToRawMethod.Month:
-                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Month);
-                                break;
-                            case ToRawMethod.Day:
-                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Day);
-                                break;
-                            case ToRawMethod.Hour:
-                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Hour);
-                                break;
-                            case ToRawMethod.Minute:
-                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Minute);
-                                break;
-                            case ToRawMethod.Quarter:
-                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Quarter);
-                                break;
-                            case ToRawMethod.Weak:
-                                clone.Field = DefaultDateTimePartNames.CombineField(item.Field, DefaultDateTimePartNames.Weak);
-                                break;
-                            default:
-                                groupColumns.Add(item);
-                                continue;
+                            clone.Field = field;
+                            clone.Raw = clone.RawFormat = helper.Wrap(clone.Field);
                         }
-                        clone.Raw = clone.RawFormat = helper.Wrap(clone.Field);
                         groupColumns.Add(clone);
                     }
                     else
@@ -377,7 +356,13 @@ namespace FastBIRe
                     };
                     foreach (var item in groupColumns)
                     {
-                        refTable.AddColumn(item.Field, item.Type);
+                        var name = item.Field;
+                        if (item.ExpandDateTime)
+                        {
+                            var field = DefaultDateTimePartNames.GetField(item.Method, item.Field, out var ok);
+                            name = ok ? field : name;
+                        }
+                        refTable.AddColumn(name, item.Type);
                     }
                     var constrain = new DatabaseConstraint();
                     constrain.ConstraintType = ConstraintType.PrimaryKey;
