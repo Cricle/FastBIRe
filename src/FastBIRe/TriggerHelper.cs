@@ -2,7 +2,7 @@
 
 namespace FastBIRe
 {
-    public record class TriggerField(string Field, string Raw,string Type);
+    public record class TriggerField(string Field, string Raw,string Type,string RawFormat);
     public class ComputeTriggerHelper
     {
         public const string Update = "_update";
@@ -207,10 +207,10 @@ END;
 AS
 BEGIN
     INSERT INTO [{targetTable}] ({string.Join(",", columns.Select(x => $"[{x.Field}]"))})
-    SELECT {string.Join(",", columns.Select(x => $"[NEW].[{x.Field}]"))}
-    FROM INSERTED AS [NEW]
+    SELECT {string.Join(",", columns.Select(x =>x.Raw))}
+    FROM (SELECT {string.Join(",", columns.Select(x => $"[{x.Field}]"))} FROM INSERTED GROUP BY {string.Join(",", columns.Select(x => $"[{x.Field}]"))}) AS [NEW]
     WHERE NOT EXISTS(
-        SELECT 1 FROM [{targetTable}] AS [t] WHERE {string.Join(" AND ", columns.Select(x => $"[t].[{x.Field}] = [NEW].[{x.Field}]"))}
+        SELECT 1 FROM [{targetTable}] AS [t] WHERE {string.Join(" AND ", columns.Select(x => $"{string.Format(x.RawFormat,$"[t].[{x.Field}]")} = {x.Raw}"))}
     )
 END;
 ";

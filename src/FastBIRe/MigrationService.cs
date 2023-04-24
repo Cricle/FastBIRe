@@ -8,16 +8,6 @@ using System.Text;
 
 namespace FastBIRe
 {
-    internal static class MD5Helper
-    {
-        private static readonly MD5 instance = MD5.Create();
-
-        public static string ComputeHash(string input)
-        {
-            var buffer = Encoding.UTF8.GetBytes(input);
-            return Convert.ToBase64String(instance.ComputeHash(buffer));
-        }
-    }
     public partial class MigrationService : DbMigration
     {
         public const string AutoTimeTriggerPrefx = "AGT_";
@@ -300,7 +290,7 @@ namespace FastBIRe
                     foreach (var part in DefaultDateTimePartNames.GetDatePartNames(item.Field))
                     {
                         triggers.Add(new TriggerField(part.Key, 
-                            helper.ToRaw(part.Value, $"{(SqlType== SqlType.SqlServer?string.Empty: "NEW.")}{helper.Wrap(item.Field)}",false)!,item.Type));
+                            helper.ToRaw(part.Value, $"{(SqlType== SqlType.SqlServer?string.Empty: "NEW.")}{helper.Wrap(item.Field)}",false)!,item.Type,item.RawFormat));
                     }
                 }
                 var id = IdColumnFetcher(table);
@@ -340,17 +330,6 @@ namespace FastBIRe
             var groupColumns = news.Where(x => x.IsGroup).Select(x=>x.Copy()).ToList();
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
-                foreach (var item in groupColumns)
-                {
-                    if (item.ExpandDateTime)
-                    {
-                        var field = DefaultDateTimePartNames.GetField(item.Method, item.Field, out var ok);
-                        if (ok)
-                        {
-                            item.Field = field;
-                        }
-                    }
-                }
                 var refTable = Reader.Table(effectTableName);
                 var hasTale = false;
                 if (refTable != null)
@@ -398,11 +377,11 @@ namespace FastBIRe
                 var helper = new MergeHelper(SqlType);
                 scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
                 {
-                    //if (IsTimePart(x.Method))
-                    //{
-                    //    return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false));
-                    //}
-                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}",x.Type);
+                    if (IsTimePart(x.Method))
+                    {
+                        return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false),x.Type, x.RawFormat);
+                    }
+                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}", x.Type, x.RawFormat);
                 }), SqlType)!);
             }
             var imdtriggerName = destTable + "_imd";
