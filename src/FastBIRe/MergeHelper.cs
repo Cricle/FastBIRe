@@ -321,7 +321,7 @@ SET
         WHEN COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4) < 10 
         THEN '0' || COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)
         ELSE COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)
-    END)||'-01'
+    END)||'-01 00:00:00'
 ";
             }
             else if (SqlType == SqlType.SqlServer)
@@ -348,7 +348,7 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         {
             if (SqlType == SqlType.SQLite)
             {
-                return $"DATE_FORMAT(DATE_SUB({@ref}, INTERVAL WEEKDAY({@ref}) DAY),'%Y-%m-%d')";
+                return $"date({@ref}, 'weekday 0', '-6 day')||' 00:00:00'";
             }
             else if (SqlType == SqlType.SqlServer)
             {
@@ -375,7 +375,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y', {@ref})";
+                return $"strftime('%Y-01-01 00:00:00', {@ref})";
             }
             else if (SqlType== SqlType.PostgreSql)
             {
@@ -391,7 +391,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m', {@ref})";
+                return $"strftime('%Y-%m-01 00:00:00', {@ref})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -410,7 +410,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m-%d', {@ref})";
+                return $"strftime('%Y-%m-%d 00:00:00', {@ref})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -429,7 +429,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m-%d %H', {@ref})";
+                return $"strftime('%Y-%m-%d %H:00:00', {@ref})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -448,7 +448,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m-%d %H:%M', {@ref})";
+                return $"strftime('%Y-%m-%d %H:%M:00', {@ref})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -467,7 +467,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                 case ToRawMethod.Year:
                     {
                         var forMatter = GetYearFormatter(@ref);
-                        if (SqlType == SqlType.PostgreSql)
+                        if (SqlType == SqlType.PostgreSql|| SqlType == SqlType.SQLite)
                         {
                             return forMatter;
                         }

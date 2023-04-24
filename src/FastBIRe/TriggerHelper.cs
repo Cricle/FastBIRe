@@ -19,8 +19,8 @@ namespace FastBIRe
                 //    return DropSqlServer(name, sourceTable);
                 case SqlType.MySql:
                     return DropMySqlRaw(name);
-                //case SqlType.SQLite:
-                //    return DropSqlite(name);
+                case SqlType.SQLite:
+                    return DropSqliteRaw(name);
                 //case SqlType.PostgreSql:
                 //    return DropPostgreSQL(name, sourceTable);
                 //case SqlType.Oracle:
@@ -29,26 +29,7 @@ namespace FastBIRe
                     return null;
             }
         }
-        public string? Drop(string name, string sourceTable, SqlType sqlType)
-        {
-            switch (sqlType)
-            {
-                //case SqlType.SqlServerCe:
-                //case SqlType.SqlServer:
-                //    return DropSqlServer(name, sourceTable);
-                case SqlType.MySql:
-                    return DropMySql(name);
-                //case SqlType.SQLite:
-                //    return DropSqlite(name);
-                //case SqlType.PostgreSql:
-                //    return DropPostgreSQL(name, sourceTable);
-                //case SqlType.Oracle:
-                //case SqlType.Db2:
-                default:
-                    return null;
-            }
-        }
-        public string? Create(string name, string sourceTable, IEnumerable<TriggerField> columns, SqlType sqlType)
+        public string? Create(string name, string sourceTable, IEnumerable<TriggerField> columns,string idColumn, SqlType sqlType)
         {
             switch (sqlType)
             {
@@ -57,8 +38,8 @@ namespace FastBIRe
                 //    return CreateSqlServer(name, sourceTable, targetTable, columns);
                 case SqlType.MySql:
                     return CreateMySql(name, sourceTable, columns);
-                //case SqlType.SQLite:
-                //    return CreateSqlite(name, sourceTable, targetTable, columns);
+                case SqlType.SQLite:
+                    return CreateSqlite(name, sourceTable, columns,idColumn);
                 //case SqlType.PostgreSql:
                 //    return CreatePostgreSQL(name, sourceTable, targetTable, columns);
                 //case SqlType.Oracle:
@@ -95,14 +76,22 @@ END;
         //END;
         //";
         //        }
-        //        public string CreateSqlite(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
-        //        {
-        //            return $@"CREATE TRIGGER [{name}] INSERT ON [{sourceTable}]
-        //BEGIN
-        //    INSERT OR IGNORE INTO [{targetTable}] ({string.Join(",", columns.Select(x => $"[{x.Field}]"))}) VALUES({string.Join(",", columns.Select(x => x.Raw))});
-        //END;
-        //";
-        //        }
+        public string CreateSqlite(string name, string sourceTable, IEnumerable<TriggerField> columns,string idColumn)
+        {
+            return $@"
+        CREATE TRIGGER [{name}{Insert}] AFTER INSERT ON [{sourceTable}]
+        BEGIN
+            UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"`{x.Field}` = {x.Raw}"))}
+            WHERE [{idColumn}]=NEW.[{idColumn}];
+        END;
+        CREATE TRIGGER [{name}{Update}] AFTER UPDATE ON [{sourceTable}]
+        BEGIN
+            UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"`{x.Field}` = {x.Raw}"))}
+            WHERE [{idColumn}]=NEW.[{idColumn}];
+        END;
+    
+        ";
+        }
         //        private string GetNpgSqlFunName(string name)
         //        {
         //            return "fun_" + name.Replace('-', '_');
@@ -123,13 +112,11 @@ END;
         //EXECUTE FUNCTION {funName}();
         //";
         //        }
-        public string DropMySql(string name)
-        {
-            return $@"DROP TRIGGER IF EXISTS `{name}{Update}`;
-DROP TRIGGER IF EXISTS `{name}{Insert}`;
-";
-        }
         public string DropMySqlRaw(string name)
+        {
+            return $@"DROP TRIGGER IF EXISTS `{name}`;";
+        }
+        public string DropSqliteRaw(string name)
         {
             return $@"DROP TRIGGER IF EXISTS `{name}`;";
         }

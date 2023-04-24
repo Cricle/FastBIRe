@@ -56,6 +56,8 @@ namespace FastBIRe
 
         public IReadOnlyList<string>? NotRemoveColumns { get; set; } = new string[] { "_id", "记录时间" };
 
+        public Func<string, string> IdColumnFetcher { get; set; } = s => "_id";
+
         public string CreateTable(string table)
         {
             var migGen = DdlGeneratorFactory.MigrationGenerator();
@@ -165,8 +167,6 @@ namespace FastBIRe
         public List<string> RunMigration(string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
             var s = new List<string>();
-            var tb = Reader.Table(table);
-            s.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(AutoTimeTriggerPrefx)).Select(x => ComputeTriggerHelper.Instance.Drop(x.Name, x.TableName, SqlType))!);
             var str = RunMigration(s, table, news, oldRefs);
             str.AddRange(s);
             return str;
@@ -299,10 +299,11 @@ namespace FastBIRe
                 {
                     foreach (var part in DefaultDateTimePartNames.GetDatePartNames(item.Field))
                     {
-                        triggers.Add(new TriggerField(part.Key, helper.ToRaw(part.Value, $"NEW.{item.Field}",false)!));
+                        triggers.Add(new TriggerField(part.Key, helper.ToRaw(part.Value, $"NEW.{helper.Wrap(item.Field)}",false)!));
                     }
                 }
-                res.Add(ComputeTriggerHelper.Instance.Create(key, table, triggers, SqlType)!);
+                var id = IdColumnFetcher(table);
+                res.Add(ComputeTriggerHelper.Instance.Create(key, table, triggers, id, SqlType)!);
             }
             return res;
         }
