@@ -3,7 +3,6 @@ using DatabaseSchemaReader.DataSchema;
 
 namespace FastBIRe
 {
-    //添加普通字段添加年月日时分秒然后用触发器保证他们的一致性,更新和改表也需要
     public class MergeHelper
     {
         public static IMethodWrapper GetMethodWrapper(SqlType sqlType)
