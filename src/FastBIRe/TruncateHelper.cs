@@ -29,7 +29,7 @@ namespace FastBIRe
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string MySql(string table)
         {
-            return $"TRUNCATE TABLE `{table}`;";
+            return $"DELETE TABLE `{table}`;";
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string SqlServer(string table)

@@ -7,7 +7,7 @@ namespace FastBIRe.MinSample
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.SqlServer;
+            var sqlType = SqlType.MySql;
             var dbName = "testc";
             const string 归档 = "guidang";
             const string 聚合 = "juhe";
@@ -26,18 +26,18 @@ namespace FastBIRe.MinSample
 
             var mr = conn.GetMergeHelper();
             CompileOptions opt = CompileOptions.EffectJoin("juhe_effect");
-            var insert = mr.CompileInsert(聚合, table, opt);
-            var update = mr.CompileUpdate(聚合, table, opt);
-            var tr = TruncateHelper.Sql(opt?.EffectTable, sqlType);
 
             Console.BackgroundColor = ConsoleColor.Green;
             Console.WriteLine("===============");
             Console.ResetColor();
             Console.WriteLine();
+            var insert = mr.CompileInsert(聚合, table, opt);
             Console.WriteLine(insert);
             Console.WriteLine();
+            var update = mr.CompileUpdate(聚合, table, opt);
             Console.WriteLine(update);
             Console.WriteLine();
+            var tr = TruncateHelper.Sql(opt?.EffectTable, sqlType);
             Console.WriteLine(tr);
         }
         static List<SourceTableColumnDefine> GetSourceDefine(SourceTableColumnBuilder builder)
