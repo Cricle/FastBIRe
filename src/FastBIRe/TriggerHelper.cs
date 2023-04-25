@@ -68,6 +68,7 @@ END;
             yield return $@"CREATE TRIGGER [{name}{Insert}] ON [{sourceTable}] AFTER INSERT
         AS
         BEGIN
+            SET NOCOUNT ON;
             UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"[{x.Field}] = {x.Raw}"))}
             WHERE [{sourceTable}].[{idColumn}] IN(SELECT [{idColumn}] FROM INSERTED);
         END;
@@ -75,6 +76,7 @@ END;
             yield return $@"CREATE TRIGGER [{name}{Update}] ON [{sourceTable}] AFTER UPDATE
         AS
         BEGIN
+            SET NOCOUNT ON;
             UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"[{x.Field}] = {x.Raw}"))}
             WHERE [{sourceTable}].[{idColumn}] IN(SELECT [{idColumn}] FROM INSERTED);
         END;
