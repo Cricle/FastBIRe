@@ -47,10 +47,6 @@ namespace FastBIRe
             var val = Helper.ToRaw(method, rawValue, false);
             return new WhereItem(field, raw, val);
         }
-        public string WriteTimePart(string field, ToRawMethod method,bool quto=true)
-        {
-            return Helper.GetFormatter(Helper.GetRef(field, quto), method);
-        }
         public WhereItem Where(string field, ToRawMethod method, object value)
         {
             return WhereRaw(field, method, Helper.MethodWrapper.WrapValue(value)!);
@@ -215,21 +211,19 @@ namespace FastBIRe
             bool isGroup = false,
             bool onlySet = false,
             bool sourceNullable = true,
-            bool destNullable = true,
-            int? len = null)
+            bool destNullable = true)
         {
-            var isAggerMethod = IsAggerMethod(method) && NeedString(method);
             return Method(field,
                 destField,
                 method,
                 isGroup,
                 onlySet,
                 Type(DbType.DateTime),
-                isAggerMethod ? Type(DbType.String, len ?? TimeStringLen) : Type(DbType.DateTime),
+                Type(DbType.DateTime),
                 sourceNullable,
                 destNullable,
                 DateTimeLen,
-                isAggerMethod ? len ?? TimeStringLen : DateTimeLen);
+                DateTimeLen);
         }
         public SourceTableColumnDefine Decimal(string field,
             string destField,

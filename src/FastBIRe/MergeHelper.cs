@@ -42,11 +42,27 @@ namespace FastBIRe
 
         private string GetFormatter(SourceTableColumnDefine x)
         {
+            var sourceField = DefaultDateTimePartNames.GetField(x.Method, x.Field, out var sourceOk);
+            if (sourceOk)
+            {
+                return $"{Wrap("a")}.{Wrap(sourceField)} = {Wrap("b")}.{Wrap(x.Field)}";
+            }
             var refSource = GetFormatter($"{Wrap("b")}.{Wrap(x.Field)}", x.Method);
             var refDest = GetFormatter($"{Wrap("a")}.{Wrap(x.Field)}", x.Method);
             return $"{refSource} = {refDest}";
         }
-
+        private string GetFormatterSelect(SourceTableColumnDefine x)
+        {
+            if (x.ExpandDateTime)
+            {
+                var sourceField = DefaultDateTimePartNames.GetField(x.Method, x.Field, out var sourceOk);
+                if (sourceOk)
+                {
+                    return $"{Wrap("a")}.{Wrap(sourceField)}";
+                }
+            }
+            return x.Raw;
+        }
         private string GetTableRef(SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             if (options != null && options.IncludeEffectJoin && options.EffectTable != null)
@@ -79,11 +95,11 @@ FROM
 	{Wrap(destTable)} AS {Wrap("a")}
 	INNER JOIN (
 		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))} 
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))} 
 		FROM {fromTable}
         {(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
 		GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
 	) AS  {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
     {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -95,10 +111,10 @@ AND(
                 return $@"
 	FROM (
 		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS \"{x.DestColumn.Field}\""))}
 		FROM {fromTable}
 		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
-        GROUP BY {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+        GROUP BY {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
 
 ) AS {Wrap("tmp")}
     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -112,11 +128,11 @@ AND(
                 return $@"
 FROM (
         SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS \"{x.DestColumn.Field}\""))}
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS \"{x.DestColumn.Field}\""))}
         FROM {fromTable}
 		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
         GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
     ) AS {Wrap("tmp")}
     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"\"{destTable}\".{Wrap(x.DestColumn.Field)} ={Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
@@ -127,11 +143,11 @@ AND(
             return $@"
 	INNER JOIN (
 		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))}
 		FROM {fromTable}
 		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
 		GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))}
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
 	) AS {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
     {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -228,7 +244,7 @@ SET
         }
         public virtual string CompileInsertSelect(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
-            var str = $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{x.Raw} AS {Wrap(x.DestColumn.Field)}"))}\n";
+            var str = $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))}\n";
             var optSqlite = SqlType == SqlType.SQLite && sourceTableDefine.Columns.Any(x => x.IsGroup && x.Method == ToRawMethod.None);
             if (optSqlite)
             {
@@ -248,10 +264,10 @@ SET
                 NOT EXISTS(
                     SELECT 1 AS {Wrap("tmp")} 
                     FROM {Wrap(destTable)} AS {Wrap("c")}
-                    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{x.Raw} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
+                    WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{GetFormatterSelect(x)} = {Wrap("c")}.{Wrap(x.DestColumn.Field)}"))}
                 )";
             }
-            str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => x.Raw))};\n";
+            str += $"GROUP BY {string.Join(",", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))};\n";
             return str;
         }
         public virtual string CompileInsert(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
@@ -297,45 +313,58 @@ SET
         }
         public string GetQuarterFormatter(string @ref)
         {
-            string quarter;
             if (SqlType == SqlType.SQLite)
             {
-                quarter = $"COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)";
+                return $@"
+    STRFTIME('%Y', {@ref})||'-'||(CASE 
+        WHEN COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4) < 10 
+        THEN '0' || COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)
+        ELSE COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)
+    END)||'-01 00:00:00'
+";
             }
             else if (SqlType == SqlType.SqlServer)
             {
-                quarter = $"CONVERT(VARCHAR(2),DATEPART(QUARTER,{@ref}))";
+                return $"DATEADD(qq, DATEDIFF(qq, 0, {@ref}), 0)";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                quarter = $"EXTRACT(QUARTER FROM {@ref})";
+                return $"date_trunc('quarter', {@ref}::TIMESTAMP)";
             }
-            else
-            {
-                quarter = $"QUARTER({@ref})";
-            }
-            return JoinString(JoinString(GetYearFormatter(@ref), "'-'"), quarter);
+            return $"CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM {@ref}),1) + interval QUARTER({@ref})*3-3 month),'%Y-%m-'),'01')";
+#if false
+select CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM  '2023-12-24'),1) + interval QUARTER('2023-12-24')*3-3 month),'%Y-%m-'),'01'); --mysql
+SELECT DATEADD(qq, DATEDIFF(qq, 0, '2023-010-23'), 0);--sqlserver
+SELECT STRFTIME('%Y', '2023-04-24')||'-'||(CASE 
+        WHEN COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4) < 10 
+        THEN '0' || COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4)
+        ELSE COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4)
+    END)||'-01'; --sqlite
+SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
+#endif
         }
         public string GetWeakFormatter(string @ref)
         {
-            string weak ;
             if (SqlType == SqlType.SQLite)
             {
-                weak= $"strftime('%W',{@ref})";
+                return $"date({@ref}, 'weekday 0', '-6 day')||' 00:00:00'";
             }
             else if (SqlType == SqlType.SqlServer)
             {
-                weak = $"CONVERT(VARCHAR(2),DATEPART(WEEK,{@ref}))";
+                return $"DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {@ref}, 120) - 1), 0)";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                weak = $"to_char({@ref},'WW')";
+                return $"{@ref}::timestamp - ((EXTRACT(DOW FROM {@ref}::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL";
             }
-            else
-            {
-                weak = $"WEEK({@ref})";
-            }
-            return JoinString(JoinString(GetYearFormatter(@ref), "'-'"), weak);
+            return $"DATE_FORMAT(DATE_SUB({@ref}, INTERVAL WEEKDAY({@ref}) DAY),'%Y-%m-%d')";
+
+#if false
+SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY),'%Y-%m-%d')--mysql
+SELECT DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, '2023-04-24', 120) - 1), 0);--sqlserver
+SELECT date('now', 'weekday 0', '-6 day');--sqlite
+SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:00'::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL;--pgsql
+#endif
         }
         public string GetYearFormatter(string @ref)
         {
@@ -345,7 +374,7 @@ SET
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y', {@ref})";
+                return $"strftime('%Y-01-01 00:00:00', {@ref})";
             }
             else if (SqlType== SqlType.PostgreSql)
             {
@@ -361,7 +390,7 @@ SET
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m', {@ref})";
+                return $"strftime('%Y-%m-01 00:00:00', {@ref})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -380,7 +409,7 @@ SET
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m-%d', {@ref})";
+                return $"strftime('%Y-%m-%d 00:00:00', {@ref})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -399,7 +428,7 @@ SET
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m-%d %H', {@ref})";
+                return $"strftime('%Y-%m-%d %H:00:00', {@ref})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -418,7 +447,7 @@ SET
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m-%d %H:%M', {@ref})";
+                return $"strftime('%Y-%m-%d %H:%M:00', {@ref})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -437,7 +466,7 @@ SET
                 case ToRawMethod.Year:
                     {
                         var forMatter = GetYearFormatter(@ref);
-                        if (SqlType == SqlType.PostgreSql)
+                        if (SqlType == SqlType.PostgreSql|| SqlType == SqlType.SQLite)
                         {
                             return forMatter;
                         }
@@ -475,7 +504,7 @@ SET
                 case ToRawMethod.Month:
                     {
                         var forMatter=GetMonthFormatter(@ref);
-                        if (SqlType== SqlType.SQLite)
+                        if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
                             return forMatter;
                         }

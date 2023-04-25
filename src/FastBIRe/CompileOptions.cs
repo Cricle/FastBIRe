@@ -8,6 +8,8 @@
 
         public bool NoLock { get; set; }
 
+        public bool UseExpandField { get; set; }
+
         public CompileOptions WithNoLock(bool noLock = true)
         {
             NoLock = noLock;

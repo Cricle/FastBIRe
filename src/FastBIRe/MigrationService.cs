@@ -1,23 +1,16 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace FastBIRe
 {
-    internal static class MD5Helper
-    {
-        private static readonly MD5 instance = MD5.Create();
-
-        public static string ComputeHash(string input)
-        {
-            var buffer = Encoding.UTF8.GetBytes(input);
-            return Convert.ToBase64String(instance.ComputeHash(buffer));
-        }
-    }
     public partial class MigrationService : DbMigration
     {
+        public const string AutoTimeTriggerPrefx = "AGT_";
         public const string AutoGenIndexPrefx = "IXAG_";
         public const string DefaultEffectSuffix = "_effect";
 
@@ -52,6 +45,8 @@ namespace FastBIRe
         public bool ImmediatelyAggregate { get; set; }
 
         public IReadOnlyList<string>? NotRemoveColumns { get; set; } = new string[] { "_id", "记录时间" };
+
+        public Func<string, string> IdColumnFetcher { get; set; } = s => "_id";
 
         public string CreateTable(string table)
         {
@@ -109,7 +104,29 @@ namespace FastBIRe
         {
             sourceIdxName ??= $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(destTable)}";
             destIdxName ??= sourceIdxName + "_g";
-            var groupColumns = tableDef.Columns.Where(x => x.IsGroup);
+            var groupColumns = new List<SourceTableColumnDefine>();
+            var helper = GetMergeHelper();
+            foreach (var item in tableDef.Columns)
+            {
+                if (item.IsGroup)
+                {
+                    if (item.ExpandDateTime)
+                    {
+                        var clone = item.Copy();
+                        var field = DefaultDateTimePartNames.GetField(clone.Method, clone.Field, out var ok);
+                        if (ok)
+                        {
+                            clone.Field = field;
+                            clone.Raw = clone.RawFormat = helper.Wrap(clone.Field);
+                        }
+                        groupColumns.Add(clone);
+                    }
+                    else
+                    {
+                        groupColumns.Add(item);
+                    }
+                }
+            }
             var res = await SyncIndexAutoAsync(tableDef.Table, groupColumns, sourceIdxName, destTable, optionDec, token: token);
             res += await SyncIndexAutoAsync(destTable, groupColumns.Select(x => x.DestColumn), destIdxName, destTable, optionDec, token: token);
             return res;
@@ -144,12 +161,30 @@ namespace FastBIRe
             str.AddRange(s);
             return str;
         }
+        public virtual IReadOnlyList<KeyValuePair<string, ToRawMethod>> AddDateTimePartColumns(DatabaseTable table,string field)
+        {
+            var builder = GetColumnBuilder();
+            var dateTimeType=builder.Type(DbType.DateTime);
+            var parts = DefaultDateTimePartNames.GetDatePartNames(field);
+            var ret=new List<KeyValuePair<string, ToRawMethod>>();
+            foreach (var item in parts)
+            {
+                if (!table.Columns.Any(x => x.Name == item.Key))
+                {
+                    table.AddColumn(item.Key, dateTimeType, x => x.Nullable = true);
+                    ret.Add(item);
+                }
+            }
+            return ret;
+        }
         public List<string> RunMigration(List<string> scripts, string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
             var groupNews = news.GroupBy(x => x.Field).Select(x => x.First()).ToList();
             var renames = groupNews.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x });
             var migGen = DdlGeneratorFactory.MigrationGenerator();
-            return CompareWithModify(table, x =>
+            var tb = Reader.Table(table);
+            var helper = GetMergeHelper();
+            var res= CompareWithModify(table, x =>
             {
                 PrepareTable(x);
                 var olds = x.Columns.Select(x =>
@@ -167,6 +202,29 @@ namespace FastBIRe
                     }
                     return null;
                 }).Where(x => x != null).ToList();
+                var partColumns = new HashSet<string>(x.Columns.Where(x => x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx)).Select(x=>x.Name));
+                foreach (var item in news)
+                {
+                    if (item.ExpandDateTime)
+                    {
+                        foreach (var name in DefaultDateTimePartNames.GetDatePartNames(item.Field))
+                        {
+                            partColumns.Remove(name.Key);
+                        }
+                        var res = AddDateTimePartColumns(x, item.Field);
+                        foreach (var r in res)
+                        {
+                            scripts.Add($"UPDATE {helper.Wrap(x.Name)} SET {helper.Wrap(r.Key)} = {helper.ToRaw(r.Value, item.Field, true)};");
+                        }
+                    }
+                }
+                if (partColumns.Count!=0)
+                {
+                    foreach (var item in partColumns)
+                    {
+                        x.Columns.RemoveAll(x => x.Name == item);
+                    }
+                }
                 foreach (var item in renames)
                 {
                     var col = x.FindColumn(item.Old.Field);
@@ -210,7 +268,7 @@ namespace FastBIRe
                     }
                 }
                 var adds = groupNews.Where(n => !olds.Any(y => y.Id == n.Id)).ToList();
-                var rms = new HashSet<string>(x.Columns.Where(x => x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name))).Select(x => x.Name));
+                var rms = new HashSet<string>(x.Columns.Where(x => !x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx)&&x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name))).Select(x => x.Name));
                 x.Columns.RemoveAll(x => rms.Contains(x.Name));
                 foreach (var col in adds)
                 {
@@ -220,6 +278,25 @@ namespace FastBIRe
                     });
                 }
             }).Execute();
+
+            var key = AutoTimeTriggerPrefx + table;
+            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(key)).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name,x.TableName, SqlType))!);
+            var computeField = news.Where(x => x.ExpandDateTime).ToList();
+            if (computeField.Count != 0)
+            {
+                var triggers = new List<TriggerField>();
+                foreach (var item in computeField)
+                {
+                    foreach (var part in DefaultDateTimePartNames.GetDatePartNames(item.Field))
+                    {
+                        triggers.Add(new TriggerField(part.Key, 
+                            helper.ToRaw(part.Value, $"{(SqlType== SqlType.SqlServer?string.Empty: "NEW.")}{helper.Wrap(item.Field)}",false)!,item.Type,item.RawFormat));
+                    }
+                }
+                var id = IdColumnFetcher(table);
+                res.AddRange(ComputeTriggerHelper.Instance.Create(key, table, triggers, id, SqlType)!);
+            }
+            return res;
         }
         private bool IsTimePart(ToRawMethod method)
         {
@@ -247,16 +324,17 @@ namespace FastBIRe
             var script = RunMigration(scripts, tableDef.Table, tableDef.Columns, oldRefs);
             var effectTableName = destTable + EffectSuffix;
             var triggerName = "trigger_" + effectTableName;
-            var triggerHelper = TriggerHelper.Instance;
+            var triggerHelper = EffectTriggerHelper.Instance;
 
             scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
-            var groupColumns = news.Where(x => x.IsGroup).ToList();
+            var groupColumns = news.Where(x => x.IsGroup).Select(x=>x.Copy()).ToList();
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
                 var refTable = Reader.Table(effectTableName);
                 var hasTale = false;
                 if (refTable != null)
                 {
+                    //FIXME: 判断要看expand
                     if (refTable.Columns.Count != groupColumns.Count ||
                         !refTable.Columns.Select(x => x.Name).SequenceEqual(groupColumns.Select(x => x.Field)) ||
                         refTable.PrimaryKey == null ||
@@ -299,11 +377,11 @@ namespace FastBIRe
                 var helper = new MergeHelper(SqlType);
                 scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
                 {
-                    //if (IsTimePart(x.Method))
-                    //{
-                    //    return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false));
-                    //}
-                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}");
+                    if (IsTimePart(x.Method))
+                    {
+                        return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false),x.Type, x.RawFormat);
+                    }
+                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}", x.Type, x.RawFormat);
                 }), SqlType)!);
             }
             var imdtriggerName = destTable + "_imd";

@@ -47,14 +47,29 @@ namespace FastBIRe
                     return null;
             }
         }
-
+        private IEnumerable<WhereItem> GetWhereItems(SourceTableDefine table, SqlType sqlType)
+        {
+            var helper = new MergeHelper(sqlType);
+            foreach (var item in table.Columns.Where(x => !x.OnlySet && x.IsGroup))
+            {
+                if (item.ExpandDateTime)
+                {
+                    var field = DefaultDateTimePartNames.GetField(item.Method, item.Field, out var ok);
+                    if (ok)
+                    {
+                        yield return new WhereItem(item.Field, helper.Wrap(field), helper.ToRaw(item.Method, $"NEW.{helper.Wrap(item.Field)}", false));
+                        continue;
+                    }
+                }
+                yield return new WhereItem(item.Field, item.Raw, helper.ToRaw(item.Method, $"NEW.{helper.Wrap(item.Field)}", false));
+            }
+        }
         public string CreateMySql(string name, string destTable, SourceTableDefine table, SqlType sqlType)
         {
             var updateName = name + InsertTail;
             var insertName = name + UpdateTail;
             var helper = new MergeHelper(sqlType);
-            helper.WhereItems = table.Columns.Where(x => !x.OnlySet && x.IsGroup)
-                .Select(x => new WhereItem(x.Field, x.Raw, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false)));
+            helper.WhereItems = GetWhereItems(table,sqlType);
             var inserts = helper.CompileInsert(destTable, table);
             var updates = helper.CompileUpdate(destTable, table);
             return $@"
@@ -84,12 +99,14 @@ END;
 CREATE TRIGGER [{insertName}] ON [{table.Table}] AFTER INSERT
 AS
 BEGIN
+    SET NOCOUNT ON;
     {inserts}
     {updates}
 END;
 CREATE TRIGGER [{updateName}] ON [{table.Table}] AFTER UPDATE
 AS
 BEGIN
+    SET NOCOUNT ON;
     {inserts}
     {updates}
 END;
@@ -100,8 +117,7 @@ END;
             var updateName = name + InsertTail;
             var insertName = name + UpdateTail;
             var helper = new MergeHelper(sqlType);
-            helper.WhereItems = table.Columns.Where(x => x.IsGroup)
-                .Select(x => new WhereItem(x.Field, x.Raw, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false)));
+            helper.WhereItems = GetWhereItems(table, sqlType);
             var inserts = helper.CompileInsert(destTable, table);
             var updates = helper.CompileUpdate(destTable, table);
             return $@"
@@ -142,8 +158,7 @@ END;
             var insertName = name + InsertTail;
             var funName = PostgresqlHelper.GetFunName(name);
             var helper = new MergeHelper(sqlType);
-            helper.WhereItems = table.Columns.Where(x => !x.OnlySet && x.IsGroup)
-                .Select(x => new WhereItem(x.Field, x.Raw, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false)));
+            helper.WhereItems = GetWhereItems(table, sqlType);
             var inserts = helper.CompileInsert(destTable, table);
             var updates = helper.CompileUpdate(destTable, table);
             return $@"
