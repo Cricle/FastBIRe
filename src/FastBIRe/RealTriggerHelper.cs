@@ -99,12 +99,14 @@ END;
 CREATE TRIGGER [{insertName}] ON [{table.Table}] AFTER INSERT
 AS
 BEGIN
+    SET NOCOUNT ON;
     {inserts}
     {updates}
 END;
 CREATE TRIGGER [{updateName}] ON [{table.Table}] AFTER UPDATE
 AS
 BEGIN
+    SET NOCOUNT ON;
     {inserts}
     {updates}
 END;

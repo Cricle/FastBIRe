@@ -206,6 +206,7 @@ END;
             return $@"CREATE TRIGGER [{name}] ON [{sourceTable}] AFTER INSERT
 AS
 BEGIN
+    SET NOCOUNT ON;
     INSERT INTO [{targetTable}] ({string.Join(",", columns.Select(x => $"[{x.Field}]"))})
     SELECT {string.Join(",", columns.Select(x =>x.Raw))}
     FROM (
