@@ -5,6 +5,14 @@ namespace FastBIRe
 {
     public class MergeHelper
     {
+        public static string Wrap(SqlType sqlType,string field)
+        {
+            return GetMethodWrapper(sqlType).Quto(field);
+        }
+        public static string? WrapValue<T>(SqlType sqlType, T value)
+        {
+            return GetMethodWrapper(sqlType).WrapValue(value);
+        }
         public static IMethodWrapper GetMethodWrapper(SqlType sqlType)
         {
             switch (sqlType)

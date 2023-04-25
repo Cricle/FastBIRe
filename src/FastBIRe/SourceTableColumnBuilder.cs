@@ -11,7 +11,6 @@ namespace FastBIRe
         public const int DefaultSqliteNumberLen = 16;
         public const int DefaultDateTimeLen = 8;
         public const int DefaultSqliteDateTimeLen = 23;
-        public const int DefaultTimeLen = 8;
 
         public SourceTableColumnBuilder(MergeHelper helper, string? sourceAlias = null, string? destAlias = null)
         {
@@ -31,8 +30,6 @@ namespace FastBIRe
         public int StringLen { get; set; } = DefaultStringLen;
 
         public int DateTimeLen { get; set; } = DefaultDateTimeLen;
-
-        public int TimeStringLen { get; set; } = DefaultTimeLen;
 
         public int NumberLen { get; set; }
 
