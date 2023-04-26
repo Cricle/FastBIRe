@@ -79,7 +79,7 @@ namespace FastBIRe
                 {
                     return $@"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")} WHERE EXISTS( SELECT 1 FROM {Wrap(options.EffectTable)} AS {Wrap("b")} WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatter(x)))})";
                 }
-                return $@"(SELECT {Wrap("a")}.* FROM {Wrap(options.EffectTable)} AS {Wrap("b")} INNER JOIN {Wrap(sourceTableDefine.Table)} AS {Wrap("a")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatter(x)))}) AS {Wrap("a")}";
+                return $@"{Wrap(options.EffectTable)} AS {Wrap("b")} INNER JOIN {Wrap(sourceTableDefine.Table)} AS {Wrap("a")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatter(x)))}";
             }
             return $"{Wrap(sourceTableDefine.Table)} AS {Wrap("a")}";
         }
