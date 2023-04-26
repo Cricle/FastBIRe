@@ -27,6 +27,7 @@ namespace FastBIRe
         private DatabaseReader? reader;
         private TableHelper? tableHelper;
         private DdlGeneratorFactory? ddlGeneratorFactory;
+        private IMigrationGenerator? migrationGenerator;
 
         public DatabaseReader Reader => reader ??= new DatabaseReader(Connection) { Owner = Database };
 
@@ -35,6 +36,8 @@ namespace FastBIRe
         public TableHelper TableHelper => tableHelper ??= new TableHelper(SqlType);
 
         public DdlGeneratorFactory DdlGeneratorFactory => ddlGeneratorFactory ??= new DdlGeneratorFactory(SqlType);
+
+        public IMigrationGenerator MigrationGenerator => migrationGenerator ??= DdlGeneratorFactory.MigrationGenerator();
 
         public SqlType SqlType => Reader.SqlType!.Value;
 
