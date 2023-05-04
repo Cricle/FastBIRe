@@ -13,8 +13,8 @@ namespace FastBIRe.MinSample
             const string 聚合 = "juhe";
             await ConnectionProvider.EnsureDatabaseCreatedAsync(sqlType, dbName);
             var conn = ConnectionProvider.GetDbMigration(sqlType, dbName);
-            conn.EffectMode = true;
-            conn.EffectTrigger = true;
+            conn.EffectMode = false;
+            conn.EffectTrigger = false;
             var builder = conn.GetColumnBuilder();
             var table = new SourceTableDefine(归档, GetSourceDefine(builder));
             var tableSer = new TableService(conn);
