@@ -1,5 +1,6 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using rsa;
+using System;
 
 namespace FastBIRe.MinSample
 {
@@ -7,6 +8,8 @@ namespace FastBIRe.MinSample
     {
         static async Task Main(string[] args)
         {
+            Console.WriteLine(Convert.ToBase64String(Guid.NewGuid().ToByteArray()));
+            Console.WriteLine(Guid.NewGuid().ToString("N"));
             var sqlType = SqlType.MySql;
             var dbName = "testc";
             const string 归档 = "guidang";
