@@ -6,7 +6,7 @@
 
         string Name { get; }
 
-        string Version { get; }
+        Version Version { get; }
 
         DateTime CreateTime { get; }
     }
