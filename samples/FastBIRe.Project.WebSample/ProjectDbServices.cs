@@ -1,9 +1,22 @@
 ﻿using FastBIRe.Project.Accesstor;
+using FastBIRe.Project.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 
 namespace FastBIRe.Project.WebSample
 {
+    public readonly struct CreateDbContextResult
+    {
+        public readonly SchoolDbContext? DbContext;
+
+        public readonly IProject<string> Project;
+
+        public CreateDbContextResult(SchoolDbContext? dbContext, IProject<string> project)
+        {
+            DbContext = dbContext;
+            Project = project;
+        }
+    }
     public class ProjectDbServices
     {
         public ProjectDbServices(IProjectAccesstor<IProjectAccesstContext<string>, string> projectAccesstor)
@@ -24,7 +37,7 @@ namespace FastBIRe.Project.WebSample
 
         public DbContextOptions BaseOption { get; }
 
-        public async Task<SchoolDbContext?> CreateDbContextAsync(string id, CancellationToken token = default)
+        public async Task<CreateDbContextResult> CreateDbContextAsync(string id, CancellationToken token = default)
         {
             var project = await ProjectAccesstor.GetProjectAsync(new ProjectAccesstContext<string>(id), token);
             if (project != null)
@@ -37,9 +50,9 @@ namespace FastBIRe.Project.WebSample
                     await ctx.Database.EnsureCreatedAsync();
                     await ctx.Database.MigrateAsync();
                 }
-                return ctx;
+                return new CreateDbContextResult(ctx, project);
             }
-            return null;
+            return default;
         }
     }
 }

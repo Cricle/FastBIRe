@@ -1,7 +1,4 @@
-
 using FastBIRe.Project.Accesstor;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 
 namespace FastBIRe.Project.WebSample
@@ -25,8 +22,10 @@ namespace FastBIRe.Project.WebSample
                 });
                 opt.AddSecurityRequirement(new OpenApiSecurityRequirement {
                 {
-                    new OpenApiSecurityScheme{
-                        Reference =new OpenApiReference{
+                    new OpenApiSecurityScheme
+                    {
+                        Reference =new OpenApiReference
+                        {
                             Type = ReferenceType.SecurityScheme,
                             Id ="projId"
                         }
@@ -38,9 +37,14 @@ namespace FastBIRe.Project.WebSample
             builder.Services.AddScoped(ser =>
             {
                 var httpContext = ser.GetRequiredService<IHttpContextAccessor>();
-                var pjId=httpContext.HttpContext.Request.Headers["projId"].ToString();
+                var pjId=httpContext.HttpContext!.Request.Headers["projId"].ToString();
                 var accesstor = ser.GetRequiredService<ProjectDbServices>();
-                return accesstor.CreateDbContextAsync(pjId).GetAwaiter().GetResult();
+                var res= accesstor.CreateDbContextAsync(pjId).GetAwaiter().GetResult()!;
+                if (res.Project!=null)
+                {
+                    httpContext.HttpContext.Features.Set(res.Project);
+                }
+                return res.DbContext!;
             });
             builder.Services.AddSingleton<ProjectDbServices>();
             builder.Services.AddSingleton<IProjectAccesstor<IProjectAccesstContext<string>, string>>(p =>
@@ -55,9 +59,6 @@ namespace FastBIRe.Project.WebSample
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
-            app.UseAuthorization();
-
 
             app.MapControllers();
 
