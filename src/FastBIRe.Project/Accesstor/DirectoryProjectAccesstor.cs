@@ -47,7 +47,7 @@ namespace FastBIRe.Project.Accesstor
         }
     }
 #endif
-    public abstract class DirectoryProjectAccesstor<TInput, TId> : IProjectAccesstor<TInput, TId>
+    public abstract class DirectoryProjectAccesstor<TInput, TId> : ProjectAccesstorBase<TInput, TId>
         where TInput : IProjectAccesstContext<TId>
     {
         protected DirectoryProjectAccesstor(string path, string extensions)
@@ -79,14 +79,14 @@ namespace FastBIRe.Project.Accesstor
             return Directory.EnumerateFiles(Root, keyword == null ? $"*{keyword}*.{Extensions}" : $"*.{Extensions}", SearchOption.AllDirectories);
         }
 
-        public virtual Task<IReadOnlyList<IProject<TId>>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default)
+        public override Task<IReadOnlyList<IProject<TId>>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var res = EnumerableProjectFile(null).Select(ConvertToProject).Where(x => x != null).ToList();
             return Task.FromResult<IReadOnlyList<IProject<TId>>>(res!);
         }
 
-        public virtual Task<int> CleanProjectAsync(TInput? input,CancellationToken cancellationToken = default)
+        protected override Task<int> OnCleanProjectAsync(TInput? input,CancellationToken cancellationToken = default)
         {
             var del = 0;
             foreach (var item in EnumerableProjectFile(null))
@@ -97,7 +97,7 @@ namespace FastBIRe.Project.Accesstor
             return Task.FromResult(del);
         }
 
-        public virtual async Task<bool> CreateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default)
+        protected override async Task<bool> OnCreateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var path = GetFilePath(input);
@@ -110,7 +110,7 @@ namespace FastBIRe.Project.Accesstor
             return true;
         }
 
-        public virtual Task<bool> DeleteProjectAsync(TInput input, CancellationToken cancellationToken = default)
+        protected override Task<bool> OnDeleteProjectAsync(TInput input, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var path = GetFilePath(input);
@@ -122,13 +122,13 @@ namespace FastBIRe.Project.Accesstor
             return Task.FromResult(false);
         }
 
-        public virtual Task<IProject<TId>?> GetProjectAsync(TInput input, CancellationToken cancellationToken = default)
+        protected override Task<IProject<TId>?> OnGetProjectAsync(TInput input, CancellationToken cancellationToken = default)
         {
             var path = GetFilePath(input);
             return Task.FromResult(ConvertToProject(path));
         }
 
-        public virtual Task<bool> ProjectExistsAsync(TInput input, CancellationToken cancellationToken = default)
+        public override Task<bool> ProjectExistsAsync(TInput input, CancellationToken cancellationToken = default)
         {
             var path = GetFilePath(input);
             return Task.FromResult(File.Exists(path));
