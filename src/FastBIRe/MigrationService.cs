@@ -188,7 +188,7 @@ namespace FastBIRe
         public List<string> RunMigration(List<string> scripts, string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
             var groupNews = news.GroupBy(x => x.Field).Select(x => x.First()).ToList();
-            var renames = groupNews.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x });
+            var renames = groupNews.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x,IsRename=x.Field!=y.Field });
             var migGen = DdlGeneratorFactory.MigrationGenerator();
             var tb = Reader.Table(table);
             var helper = GetMergeHelper();
@@ -276,7 +276,11 @@ namespace FastBIRe
                     }
                 }
                 var adds = groupNews.Where(n => !olds.Any(y => y.Id == n.Id)).ToList();
-                var rms = new HashSet<string>(x.Columns.Where(x => !x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx)&&x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name))).Select(x => x.Name));
+                var rms = new HashSet<string>(
+                    x.Columns.Where(x => !x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx)&&x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name)))
+                    .Select(x => x.Name)
+                    .Where(x=>!news.Any(y=>y.Field==x))
+                    .Where(x=> !renames.Any(y=>y.IsRename&&y.Old.Field==x)));
                 x.Columns.RemoveAll(x => rms.Contains(x.Name));
                 foreach (var col in adds)
                 {

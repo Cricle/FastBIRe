@@ -46,18 +46,19 @@ namespace FastBIRe.MinSample
             var defs = new List<SourceTableColumnDefine>
             {
                 builder.DateTime("记录时间","记录时间", ToRawMethod.Now,onlySet:true).AllNotNull(),
-                builder.String("a1", "a1", ToRawMethod.Count).SetIndex("a",1),
-                builder.Decimal("a2", "a2", ToRawMethod.Count).SetIndex("a",0),
+                builder.String("a2", "a1", ToRawMethod.Count),
+                builder.Decimal("a2", "a2", ToRawMethod.Count),
                 builder.Decimal("a3", "a3", ToRawMethod.Count),
                 builder.Decimal("a4","a4", ToRawMethod.Count),
                 builder.String("a5", "a5", ToRawMethod.DistinctCount),
                 builder.DateTime("a7","111aaaa7777", ToRawMethod.Minute,isGroup:true).SetExpandDateTime(true,true),
                 builder.String("aaaa8","aaaa8", ToRawMethod.None,true),
             };
-            foreach (var item in defs)
+            for (int i = 0; i < defs.Count; i++)
             {
-                item.Id = item.Field;
-                item.DestColumn.Id = item.DestColumn.Field;
+                var item = defs[i];
+                item.Id = i.ToString();
+                item.DestColumn.Id = i.ToString();
             }
             return defs;
         }
