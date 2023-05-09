@@ -28,6 +28,20 @@
 
         public bool ExpandDateTime { get; set; }
 
+        public string? IndexGroup { get; set; }
+
+        public int IndexOrder { get; set; }
+
+        public bool Desc { get; set; }
+
+        public TableColumnDefine SetIndex(string group,int order=0,bool desc=false)
+        {
+            IndexGroup = group;
+            IndexOrder = order;
+            Desc = desc;
+            return this;
+        }
+
         public TableColumnDefine SetExpandDateTime(bool expand = true)
         {
             ExpandDateTime = expand;

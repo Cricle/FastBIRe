@@ -191,7 +191,7 @@ namespace FastBIRe
                     }
                 }
                 outIndexNames?.Add(name);
-                scripts.Add(TableHelper.CreateIndex(name, options.Table, col));
+                scripts.Add(TableHelper.CreateIndex(name, options.Table, new[] { col } ));
                 refedIndexs.Add(name);
             }
             if (options.RemoveNotRef && refedIndexs.Count != 0)

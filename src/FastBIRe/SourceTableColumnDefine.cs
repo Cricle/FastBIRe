@@ -78,6 +78,12 @@
         {
             return new SourceTableColumnDefine(this);
         }
+        public new SourceTableColumnDefine SetIndex(string group, int order = 0, bool desc = false)
+        {
+            base.SetIndex(group,order,desc);
+            return this;
+        }
+
         public SourceTableColumnDefine SetExpandDateTime(bool expand = true, bool destExpand = false)
         {
             base.SetExpandDateTime(expand);

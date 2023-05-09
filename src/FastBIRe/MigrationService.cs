@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 
 namespace FastBIRe
 {
@@ -12,6 +13,7 @@ namespace FastBIRe
     {
         public const string AutoTimeTriggerPrefx = "AGT_";
         public const string AutoGenIndexPrefx = "IXAG_";
+        public const string AutoGenForceIndexPrefx = "IXFG_";
         public const string DefaultEffectSuffix = "_effect";
 
         private string effectSuffix = DefaultEffectSuffix;
@@ -177,6 +179,12 @@ namespace FastBIRe
             }
             return ret;
         }
+        public static string MakeForceIndexName(string table,IEnumerable<string> columns,IEnumerable<bool> orders)
+        {
+            var tableMd5 = MD5Helper.ComputeHash(table);
+            var colsMd5 = MD5Helper.ComputeHash(string.Join("_", columns.Concat(orders.Select(x => x ? "1" : "0"))));
+            return $"{AutoGenForceIndexPrefx}_{tableMd5}_{colsMd5}";
+        }
         public List<string> RunMigration(List<string> scripts, string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
             var groupNews = news.GroupBy(x => x.Field).Select(x => x.First()).ToList();
@@ -276,6 +284,24 @@ namespace FastBIRe
                     {
                         x.Nullable = col.Nullable;
                     });
+                }
+                var alls = new HashSet<string>(x.Indexes.Where(y => y.Name.StartsWith(AutoGenForceIndexPrefx)).Select(y=>y.Name));
+                foreach (var item in news.Where(x=>!string.IsNullOrEmpty(x.IndexGroup)).GroupBy(x=>x.IndexGroup))
+                {
+                    var fields = item.OrderBy(y => y.IndexOrder).Select(y => y.Field).ToArray();
+                    var idxName = MakeForceIndexName(x.Name, fields, item.OrderBy(y => y.IndexOrder).Select(x=>x.Desc));
+                    if (!x.Indexes.Any(y => y.Name == idxName))
+                    {
+                        scripts.Add(TableHelper.CreateIndex(idxName, table, fields, item.OrderBy(y => y.IndexOrder).Select(y => y.Desc).ToArray()));
+                    }
+                    alls.Remove(idxName);
+                }
+                if (alls.Count!=0)
+                {
+                    foreach (var item in alls)
+                    {
+                        scripts.Add(TableHelper.DropIndex(item,x.Name));
+                    }
                 }
             }).Execute();
 

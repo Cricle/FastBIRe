@@ -11,9 +11,22 @@ namespace FastBIRe
 
         public SqlType SqlType { get; }
 
-        public string CreateIndex(string name, string table, params string[] fields)
+        public string CreateIndex(string name, string table, string[] fields, bool[]? descs=null)
         {
-            return $"CREATE INDEX {Wrap(name)} ON {Wrap(table)} ({string.Join(",", fields.Select(x => Wrap(x)))});";
+            var fs=new List<string>();
+            for (int i = 0; i < fields.Length; i++)
+            {
+                var field = fields[i];
+                if (descs==null||descs.Length<i)
+                {
+                    fs.Add(Wrap(field));
+                }
+                else
+                {
+                    fs.Add($"{Wrap(field)} {(descs[i]?"DESC":"ASC")}");
+                }
+            }
+            return $"CREATE INDEX {Wrap(name)} ON {Wrap(table)} ({string.Join(",", fs)});";
         }
 
         private string Wrap(string input)

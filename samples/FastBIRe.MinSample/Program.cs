@@ -46,8 +46,8 @@ namespace FastBIRe.MinSample
             var defs = new List<SourceTableColumnDefine>
             {
                 builder.DateTime("记录时间","记录时间", ToRawMethod.Now,onlySet:true).AllNotNull(),
-                builder.String("a1", "a1", ToRawMethod.Count),
-                builder.Decimal("a2", "a2", ToRawMethod.Count),
+                builder.String("a1", "a1", ToRawMethod.Count).SetIndex("a",1),
+                builder.Decimal("a2", "a2", ToRawMethod.Count).SetIndex("a",0),
                 builder.Decimal("a3", "a3", ToRawMethod.Count),
                 builder.Decimal("a4","a4", ToRawMethod.Count),
                 builder.String("a5", "a5", ToRawMethod.DistinctCount),
