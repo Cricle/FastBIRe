@@ -345,13 +345,17 @@ namespace FastBIRe
                     return false;
             }
         }
-        public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<TableColumnDefine> oldRefs)
+        public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<TableColumnDefine> oldRefs,bool syncSource)
         {
             var news = tableDef.Columns.GroupBy(x => x.Field).Select(x => x.First()).ToList();
             var table = tableDef.Table;
             var scripts = new List<string>();
             var migGen = DdlGeneratorFactory.MigrationGenerator();
-            var script = RunMigration(scripts, tableDef.Table, tableDef.Columns, oldRefs);
+            var script = new List<string>();
+            if (syncSource)
+            {
+                script = RunMigration(scripts, tableDef.Table, tableDef.Columns, oldRefs);
+            }
             var effectTableName = destTable + EffectSuffix;
             var triggerName = "trigger_" + effectTableName;
             var triggerHelper = EffectTriggerHelper.Instance;
