@@ -29,9 +29,7 @@ namespace FastBIRe
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string MySql(string table)
         {
-            return @$"SET SESSION sql_log_bin=0;
-DELETE FROM `{table}`;
-SET SESSION sql_log_bin=1;";
+            return @$"DELETE FROM `{table}`;";
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string SqlServer(string table)
