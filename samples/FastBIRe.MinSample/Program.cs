@@ -22,7 +22,7 @@ namespace FastBIRe.MinSample
             await tableSer.CreateTableIfNotExistsAsync(聚合);
             await tableSer.MigrationAsync(聚合, table.DestColumn);
             await tableSer.CreateTableIfNotExistsAsync(归档);
-            await tableSer.MigrationAsync(聚合, table);
+            await tableSer.MigrationAsync(聚合, table, false);
             await tableSer.SyncIndexAsync(聚合, table);
 
             var mr = conn.GetMergeHelper();
