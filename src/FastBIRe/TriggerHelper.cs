@@ -1,8 +1,9 @@
 ﻿using DatabaseSchemaReader.DataSchema;
+using System.Data.Common;
 
 namespace FastBIRe
 {
-    public record class TriggerField(string Field, string Raw,string Type,string RawFormat);
+    public record class TriggerField(string Field, string Raw,string Target,string Type,string RawFormat);
     public class ComputeTriggerHelper
     {
         public const string Update = "_update";
@@ -50,83 +51,79 @@ namespace FastBIRe
         }
         public IEnumerable<string> CreateMySql(string name, string sourceTable, IEnumerable<TriggerField> columns)
         {
-            yield return $@"CREATE TRIGGER `{name}{Insert}` BEFORE INSERT ON `{sourceTable}`
+            string GenSql(bool update)
+            {
+                return $@"CREATE TRIGGER `{name}{(update?Insert:Update)}` BEFORE {(update ? "INSERT" : "UPDATE")} ON `{sourceTable}`
 FOR EACH ROW
 BEGIN
+    IF {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"NEW.`{x}` IS NOT NULL"))} THEN
     {string.Join("\n", columns.Select(x => $"SET NEW.`{x.Field}` = {x.Raw};"))}
+    END IF;
 END;
 ";
-            yield return $@"CREATE TRIGGER `{name}{Update}` BEFORE UPDATE ON `{sourceTable}`
-FOR EACH ROW
-BEGIN
-    {string.Join("\n", columns.Select(x => $"SET NEW.`{x.Field}` = {x.Raw};"))}
-END;
-";
+            }
+            yield return GenSql(false);
+            yield return GenSql(true);
         }
         public IEnumerable<string> CreateSqlServer(string name, string sourceTable, IEnumerable<TriggerField> columns, string idColumn)
         {
-            yield return $@"CREATE TRIGGER [{name}{Insert}] ON [{sourceTable}] AFTER INSERT
+            string GenSql(bool update)
+            {
+                return $@"CREATE TRIGGER [{name}{(update ? Insert : Update)}] ON [{sourceTable}] AFTER {(update ? "INSERT" : "UPDATE")}
         AS
         BEGIN
             SET NOCOUNT ON;
             UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"[{x.Field}] = {x.Raw}"))}
-            WHERE [{sourceTable}].[{idColumn}] IN(SELECT [{idColumn}] FROM INSERTED);
+            WHERE [{sourceTable}].[{idColumn}] IN(SELECT [{idColumn}] FROM INSERTED WHERE {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"[{x}] IS NOT NULL"))});
         END;
-        ";
-            yield return $@"CREATE TRIGGER [{name}{Update}] ON [{sourceTable}] AFTER UPDATE
-        AS
-        BEGIN
-            SET NOCOUNT ON;
-            UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"[{x.Field}] = {x.Raw}"))}
-            WHERE [{sourceTable}].[{idColumn}] IN(SELECT [{idColumn}] FROM INSERTED);
-        END;
-        ";
+";
+            }
+            yield return GenSql(false);
+            yield return GenSql(true);
         }
         public IEnumerable<string> CreateSqlite(string name, string sourceTable, IEnumerable<TriggerField> columns,string idColumn)
         {
-            yield return $@"
-        CREATE TRIGGER [{name}{Insert}] AFTER INSERT ON [{sourceTable}]
+            string GenSql(bool update)
+            {
+                return $@"CREATE TRIGGER [{name}{(update ? Insert : Update)}] AFTER {(update ? "INSERT" : "UPDATE")} ON [{sourceTable}]
+        WHEN {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"[NEW].[{x}] IS NOT NULL"))}
         BEGIN
-            UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"`{x.Field}` = {x.Raw}"))}
+            UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"[{x.Field}] = {x.Raw}"))}
             WHERE [{idColumn}]=NEW.[{idColumn}];
         END;
-        ";
-            yield return $@"
-        CREATE TRIGGER [{name}{Update}] AFTER UPDATE ON [{sourceTable}]
-        BEGIN
-            UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"`{x.Field}` = {x.Raw}"))}
-            WHERE [{idColumn}]=NEW.[{idColumn}];
-        END;
-    
-        ";
+";
+            }
+            yield return GenSql(false);
+            yield return GenSql(true);
         }
         public IEnumerable<string> CreatePostgreSQL(string name, string sourceTable, IEnumerable<TriggerField> columns)
         {
-            var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name);
-            yield return $@"CREATE FUNCTION {funName}{Insert}() RETURNS TRIGGER AS $$
+            IEnumerable<string> GenSql(bool update)
+            {
+                var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name);
+                yield return $@"CREATE OR REPLACE FUNCTION {funName}{(update ? Insert : Update)}() RETURNS TRIGGER AS $$
         BEGIN
+              IF {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"NEW.\"{x}\" IS NOT NULL"))} THEN
               {string.Join("\n", columns.Select(x => $"NEW.\"{x.Field}\" = {x.Raw};"))}
+              END IF;
               RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
         ";
-            yield return $@"
-        CREATE TRIGGER ""{name}{Insert}"" BEFORE INSERT ON ""{sourceTable}""
+                yield return $@"
+        CREATE OR REPLACE TRIGGER ""{name}{(update ? Insert : Update)}"" BEFORE {(update ? "INSERT" : "UPDATE")} ON ""{sourceTable}""
         FOR EACH ROW
-        EXECUTE FUNCTION {funName}{Insert}();
+        EXECUTE FUNCTION {funName}{(update ? Insert : Update)}();
         ";
-            yield return $@"CREATE FUNCTION {funName}{Update}() RETURNS TRIGGER AS $$
-        BEGIN
-            {string.Join("\n", columns.Select(x => $"NEW.\"{x.Field}\" = {x.Raw};"))}
-              RETURN NEW;
-        END;
-        $$ LANGUAGE plpgsql;
-        ";
-            yield return $@"
-        CREATE TRIGGER ""{name}{Update}"" BEFORE INSERT ON ""{sourceTable}""
-        FOR EACH ROW
-        EXECUTE FUNCTION {funName}{Update}();
-        ";
+            }
+            foreach (var item in GenSql(false))
+            {
+                yield return item;
+            }
+            foreach (var item in GenSql(true))
+            {
+                yield return item;
+            }
         }
         public string DropMySqlRaw(string name)
         {
@@ -156,7 +153,7 @@ END;
 
         public static readonly EffectTriggerHelper Instance = new EffectTriggerHelper();
 
-        public string? Drop(string name, string sourceTable, SqlType sqlType)
+        public string[] Drop(string name, string sourceTable, SqlType sqlType)
         {
             switch (sqlType)
             {
@@ -172,10 +169,10 @@ END;
                 case SqlType.Oracle:
                 case SqlType.Db2:
                 default:
-                    return null;
+                    return Array.Empty<string>();
             }
         }
-        public string? Create(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns, SqlType sqlType)
+        public string[] Create(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns, SqlType sqlType)
         {
             switch (sqlType)
             {
@@ -191,30 +188,35 @@ END;
                 case SqlType.Oracle:
                 case SqlType.Db2:
                 default:
-                    return null;
+                    return Array.Empty<string>();
             }
         }
 
-        public string CreateMySql(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
+        public string[] CreateMySql(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
         {
-            string GenSql(string n,bool update)
+            string GenSql(bool update)
             {
-                return $@"CREATE TRIGGER `{n}{(update?Update:Insert)}` AFTER {(update? "UPDATE": "INSERT")} ON `{sourceTable}`
+                return $@"CREATE TRIGGER `{name}{(update?Update:Insert)}` AFTER {(update? "UPDATE": "INSERT")} ON `{sourceTable}`
 FOR EACH ROW
 BEGIN
+    IF {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"NEW.`{x}` IS NOT NULL"))} THEN
 	INSERT IGNORE INTO `{targetTable}`({string.Join(",", columns.Select(x => $"`{x.Field}`"))}) VALUES({string.Join(",", columns.Select(x => x.Raw))});
+    END IF;
 END;
 ";
             }
-            return $@"{GenSql(name,false)}
-{GenSql(name, true)}
-";
-        }
-        public string CreateSqlServer(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
-        {
-            string GenSql(string n, bool update)
+            return new string[]
             {
-                return $@"CREATE TRIGGER [{n}{(update ? Update : Insert)}] ON [{sourceTable}] AFTER {(update ? "UPDATE" : "INSERT")}
+                GenSql(false),
+                GenSql(true)
+            };
+
+        }
+        public string[] CreateSqlServer(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
+        {
+            string GenSql(bool update)
+            {
+                return $@"CREATE TRIGGER [{name}{(update ? Update : Insert)}] ON [{sourceTable}] AFTER {(update ? "UPDATE" : "INSERT")}
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -223,6 +225,7 @@ BEGIN
     FROM (
         SELECT {string.Join(",", columns.Select(x => $"{string.Format(x.RawFormat, $"[NEW].[{x.Field}]")} AS [{x.Field}]"))} 
         FROM INSERTED AS [NEW] 
+        WHERE {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"[NEW].[{x}] IS NOT NULL"))}
         GROUP BY {string.Join(",", columns.Select(x => string.Format(x.RawFormat, $"[NEW].[{x.Field}]")))}
         HAVING NOT EXISTS(
             SELECT 1 FROM [{targetTable}] AS [t] 
@@ -232,70 +235,89 @@ BEGIN
 END;
 ";
             }
-            return $@"{GenSql(name, false)}
-{GenSql(name, true)}
-";
-        }
-        public string CreateSqlite(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
-        {
-            string GenSql(string n, bool update)
+            return new string[]
             {
-                return $@"CREATE TRIGGER [{n}{(update ? Update : Insert)}] {(update ? "UPDATE" : "INSERT")} ON [{sourceTable}]
+                GenSql(false),
+                GenSql(true)
+            };
+        }
+        public string[] CreateSqlite(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
+        {
+            string GenSql(bool update)
+            {
+                return $@"CREATE TRIGGER [{name}{(update ? Update : Insert)}] {(update ? "UPDATE" : "INSERT")} ON [{sourceTable}]
+WHEN {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"[NEW].[{x}] IS NOT NULL"))}
 BEGIN
     INSERT OR IGNORE INTO [{targetTable}] ({string.Join(",", columns.Select(x => $"[{x.Field}]"))}) VALUES({string.Join(",", columns.Select(x => x.Raw))});
 END;
 ";
             }
-            return $@"{GenSql(name, false)}
-{GenSql(name, true)}
-";
-        }
-        public string CreatePostgreSQL(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
-        {
-            string GenSql(string n, bool update)
+            return new string[]
             {
-                var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(n+(update ? Update : Insert));
-                return $@"CREATE FUNCTION {funName}() RETURNS TRIGGER AS $$
+                GenSql(false), 
+                GenSql(true)
+            };
+        }
+        public string[] CreatePostgreSQL(string name, string sourceTable, string targetTable, IEnumerable<TriggerField> columns)
+        {
+            string GenSql(bool update)
+            {
+                var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name +(update ? Update : Insert));
+                return $@"CREATE OR REPLACE FUNCTION {funName}() RETURNS TRIGGER AS $$
 BEGIN
+  IF {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"NEW.\"{x}\" IS NOT NULL"))} THEN
   INSERT INTO ""{targetTable}"" ({string.Join(",", columns.Select(x => $"\"{x.Field}\""))}) VALUES ({string.Join(",", columns.Select(x => x.Raw))})
     ON CONFLICT DO NOTHING;
+  END IF;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER ""{n + (update ? Update : Insert)}"" AFTER {(update ? "UPDATE" : "INSERT")} ON ""{sourceTable}""
+CREATE OR REPLACE TRIGGER ""{name + (update ? Update : Insert)}"" AFTER {(update ? "UPDATE" : "INSERT")} ON ""{sourceTable}""
 FOR EACH ROW
 EXECUTE FUNCTION {funName}();
 ";
             }
             var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name);
-            return $@"{GenSql(name, false)}
-{GenSql(name, true)}
-";
+            return new string[]
+            {
+                GenSql(false),
+                GenSql(true)
+            };
         }
-        public string DropMySql(string name)
+        public string[] DropMySql(string name)
         {
-            return $@"DROP TRIGGER IF EXISTS `{name}{Insert}`;
-DROP TRIGGER IF EXISTS `{name}{Update}`;";
+            return new string[]
+            {
+                $@"DROP TRIGGER IF EXISTS `{name}{Insert}`;",
+                $@"DROP TRIGGER IF EXISTS `{name}{Update}`;"
+            };
         }
-        public string DropSqlServer(string name)
+        public string[] DropSqlServer(string name)
         {
-            return $@"DROP TRIGGER IF EXISTS [{name}{Insert}];
-DROP TRIGGER IF EXISTS [{name}{Update}];";
+            return new string[]
+            {
+                $@"DROP TRIGGER IF EXISTS [{name}{Insert}];",
+                $@"DROP TRIGGER IF EXISTS [{name}{Update}];"
+            };
         }
-        public string DropSqlite(string name)
+        public string[] DropSqlite(string name)
         {
-            return $@"DROP TRIGGER IF EXISTS [{name}{Insert}];
-DROP TRIGGER IF EXISTS [{name}{Update}];";
+            return new string[]
+            {
+                $@"DROP TRIGGER IF EXISTS [{name}{Insert}];",
+                $@"DROP TRIGGER IF EXISTS [{name}{Update}];"
+            };
         }
-        public string DropPostgreSQL(string name, string sourceTable)
+        public string[] DropPostgreSQL(string name, string sourceTable)
         {
-            return $@"
-DROP TRIGGER IF EXISTS ""{name}{Insert}"" ON ""{sourceTable}"";
-DROP FUNCTION IF EXISTS {PostgreSQLTriggerHelper.GetNpgSqlFunName(name+Insert)}();
-DROP TRIGGER IF EXISTS ""{name}{Update}"" ON ""{sourceTable}"";
-DROP FUNCTION IF EXISTS {PostgreSQLTriggerHelper.GetNpgSqlFunName(name + Update)}();
-";
+            return new string[]
+            {
+                $@"DROP TRIGGER IF EXISTS ""{name}{Insert}"" ON ""{sourceTable}"";",
+                $@"DROP FUNCTION IF EXISTS {PostgreSQLTriggerHelper.GetNpgSqlFunName(name+Insert)}();",
+                $@"DROP TRIGGER IF EXISTS ""{name}{Update}"" ON ""{sourceTable}"";",
+                $@"DROP FUNCTION IF EXISTS {PostgreSQLTriggerHelper.GetNpgSqlFunName(name+Update)}();",
+            };
         }
     }
     public static class PostgreSQLTriggerHelper

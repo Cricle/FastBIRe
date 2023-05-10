@@ -15,6 +15,10 @@ namespace FastBIRe.Project
         {
             return pools.TryAdd(key, pool);
         }
+        public DbConnectionPool GetOrAdd(TKey key, Func<TKey, DbConnectionPool> creator)
+        {
+            return pools.GetOrAdd(key, creator);
+        }
 
         public bool Remove(TKey key)
         {

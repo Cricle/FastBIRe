@@ -310,7 +310,7 @@ namespace FastBIRe
             }).Execute();
 
             var key = AutoTimeTriggerPrefx + table;
-            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(key)).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name,x.TableName, SqlType))!);
+            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(key)).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name, x.TableName, SqlType))!);
             var computeField = news.Where(x => x.ExpandDateTime).ToList();
             if (computeField.Count != 0)
             {
@@ -320,7 +320,7 @@ namespace FastBIRe
                     foreach (var part in DefaultDateTimePartNames.GetDatePartNames(item.Field))
                     {
                         triggers.Add(new TriggerField(part.Key, 
-                            helper.ToRaw(part.Value, $"{(SqlType== SqlType.SqlServer?string.Empty: "NEW.")}{helper.Wrap(item.Field)}",false)!,item.Type,item.RawFormat));
+                            helper.ToRaw(part.Value, $"{(SqlType== SqlType.SqlServer?string.Empty: "NEW.")}{helper.Wrap(item.Field)}",false)!, item.Field, item.Type,item.RawFormat));
                     }
                 }
                 var id = IdColumnFetcher(table);
@@ -360,7 +360,7 @@ namespace FastBIRe
             var triggerName = "trigger_" + effectTableName;
             var triggerHelper = EffectTriggerHelper.Instance;
 
-            scripts.Add(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
+            scripts.AddRange(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
             var groupColumns = news.Where(x => x.IsGroup).Select(x=>x.Copy()).ToList();
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
@@ -409,13 +409,13 @@ namespace FastBIRe
             if (EffectTrigger)
             {
                 var helper = new MergeHelper(SqlType);
-                scripts.Add(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
+                scripts.AddRange(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
                 {
                     if (IsTimePart(x.Method))
                     {
-                        return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false),x.Type, x.RawFormat);
+                        return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false), x.Field, x.Type, x.RawFormat);
                     }
-                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}", x.Type, x.RawFormat);
+                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}", x.Field, x.Type, x.RawFormat);
                 }), SqlType)!);
             }
             var imdtriggerName = destTable + "_imd";
