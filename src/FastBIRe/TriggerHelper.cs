@@ -56,9 +56,7 @@ namespace FastBIRe
                 return $@"CREATE TRIGGER `{name}{(update?Insert:Update)}` BEFORE {(update ? "INSERT" : "UPDATE")} ON `{sourceTable}`
 FOR EACH ROW
 BEGIN
-    IF {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"NEW.`{x}` IS NOT NULL"))} THEN
-    {string.Join("\n", columns.Select(x => $"SET NEW.`{x.Field}` = {x.Raw};"))}
-    END IF;
+    {string.Join("\n", columns.Select(x => $"SET NEW.`{x.Field}` = CASE WHEN `NEW`.`{x.Target}` IS NULL THEN NULL ELSE {x.Raw} END;"))}
 END;
 ";
             }
@@ -75,6 +73,8 @@ END;
             SET NOCOUNT ON;
             UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"[{x.Field}] = {x.Raw}"))}
             WHERE [{sourceTable}].[{idColumn}] IN(SELECT [{idColumn}] FROM INSERTED WHERE {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"[{x}] IS NOT NULL"))});
+            UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"[{x.Field}] = NULL"))}
+            WHERE [{sourceTable}].[{idColumn}] IN(SELECT [{idColumn}] FROM INSERTED WHERE {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"[{x}] IS NULL"))});
         END;
 ";
             }
@@ -86,9 +86,8 @@ END;
             string GenSql(bool update)
             {
                 return $@"CREATE TRIGGER [{name}{(update ? Insert : Update)}] AFTER {(update ? "INSERT" : "UPDATE")} ON [{sourceTable}]
-        WHEN {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"[NEW].[{x}] IS NOT NULL"))}
         BEGIN
-            UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"[{x.Field}] = {x.Raw}"))}
+            UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"[{x.Field}] = CASE WHEN NEW.[{x.Target}] IS NULL THEN NULL ELSE {x.Raw} END"))}
             WHERE [{idColumn}]=NEW.[{idColumn}];
         END;
 ";
@@ -103,9 +102,7 @@ END;
                 var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name);
                 yield return $@"CREATE OR REPLACE FUNCTION {funName}{(update ? Insert : Update)}() RETURNS TRIGGER AS $$
         BEGIN
-              IF {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"NEW.\"{x}\" IS NOT NULL"))} THEN
-              {string.Join("\n", columns.Select(x => $"NEW.\"{x.Field}\" = {x.Raw};"))}
-              END IF;
+              {string.Join("\n", columns.Select(x => $"NEW.\"{x.Field}\" = CASE WHEN NEW.\"{x.Target}\" IS NULL THEN NULL ELSE {x.Raw} END;"))}
               RETURN NEW;
         END;
         $$ LANGUAGE plpgsql;
