@@ -192,6 +192,7 @@ namespace FastBIRe
             var migGen = DdlGeneratorFactory.MigrationGenerator();
             var tb = Reader.Table(table);
             var helper = GetMergeHelper();
+            var scriptBefore = new List<string>();
             var res= CompareWithModify(table, x =>
             {
                 PrepareTable(x);
@@ -233,6 +234,7 @@ namespace FastBIRe
                         x.Columns.RemoveAll(x => x.Name == item);
                     }
                 }
+                var existsingIndexs=new HashSet<string>(x.Indexes.Select(x=>x.Name));
                 foreach (var item in renames)
                 {
                     var col = x.FindColumn(item.Old.Field);
@@ -240,7 +242,8 @@ namespace FastBIRe
                     {
                         foreach (var idx in x.Indexes.Where(x => x.Columns.Any(y => y.Name == col.Name)))
                         {
-                            scripts.Add(TableHelper.DropIndex(idx.Name, idx.TableName));
+                            scriptBefore.Add(TableHelper.DropIndex(idx.Name, idx.TableName));
+                            existsingIndexs.Remove(idx.Name);
                         }
                         col.Name = item.New.Field;
                         var s = migGen.RenameColumn(x, col, item.Old.Field);
@@ -272,6 +275,12 @@ namespace FastBIRe
                         if (!string.Equals(leftType, rightType, StringComparison.OrdinalIgnoreCase))
                         {
                             col.DbDataType = item.Type;
+
+                            foreach (var idx in x.Indexes.Where(x => existsingIndexs.Contains(x.Name)&&x.Columns.Any(y => y.Name == col.Name)))
+                            {
+                                scriptBefore.Add(TableHelper.DropIndex(idx.Name, idx.TableName));
+                                existsingIndexs.Remove(idx.Name);
+                            }
                         }
                     }
                 }
@@ -308,7 +317,7 @@ namespace FastBIRe
                     }
                 }
             }).Execute();
-
+            res = scriptBefore.Concat(res).ToList();
             var key = AutoTimeTriggerPrefx + table;
             res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(key)).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name, x.TableName, SqlType))!);
             var computeField = news.Where(x => x.ExpandDateTime).ToList();
