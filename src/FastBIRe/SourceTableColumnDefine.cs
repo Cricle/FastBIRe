@@ -10,7 +10,7 @@
         public const string Hour = "_hour";
         public const string Minute = "_minute";
         public const string Quarter = "_quarter";
-        public const string Weak = "_weak";
+        public const string Week = "_week";
 
         public static string CombineField(string field,string part)
         {
@@ -26,7 +26,7 @@
                 new KeyValuePair<string, ToRawMethod>(CombineField(field,Hour), ToRawMethod.Hour),
                 new KeyValuePair<string, ToRawMethod>(CombineField(field,Minute), ToRawMethod.Minute),
                 new KeyValuePair<string, ToRawMethod>(CombineField(field,Quarter), ToRawMethod.Quarter),
-                new KeyValuePair<string, ToRawMethod>(CombineField(field,Weak), ToRawMethod.Weak),
+                new KeyValuePair<string, ToRawMethod>(CombineField(field,Week), ToRawMethod.Week),
             };
         }
         public static string GetField(ToRawMethod method, string field, out bool ok)
@@ -46,8 +46,8 @@
                     return CombineField(field, Minute);
                 case ToRawMethod.Quarter:
                     return CombineField(field, Quarter);
-                case ToRawMethod.Weak:
-                    return CombineField(field, Weak);
+                case ToRawMethod.Week:
+                    return CombineField(field, Week);
                 default:
                     ok = false;
                     return field;
@@ -63,7 +63,7 @@
             Raw = raw;
             IsGroup = isGroup;
             DestColumn = destColumn;
-            Method = method;
+            Method = method;  
             RawFormat = rawFormat;
             OnlySet = onlySet;
         }

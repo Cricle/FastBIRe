@@ -171,7 +171,7 @@ namespace FastBIRe
             switch (method)
             {
                 case ToRawMethod.Quarter:
-                case ToRawMethod.Weak:
+                case ToRawMethod.Week:
                     return true;
                 default:
                     return false;
@@ -187,7 +187,7 @@ namespace FastBIRe
                 case ToRawMethod.Hour:
                 case ToRawMethod.Minute:
                 case ToRawMethod.Second:
-                case ToRawMethod.Weak:
+                case ToRawMethod.Week:
                 case ToRawMethod.Quarter:
                     return true;
                 default:

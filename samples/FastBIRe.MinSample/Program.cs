@@ -8,7 +8,7 @@ namespace FastBIRe.MinSample
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.MySql;
+            var sqlType = SqlType.PostgreSql;
             var dbName = "testc";
             const string 归档 = "guidang";
             const string 聚合 = "juhe";
@@ -21,6 +21,8 @@ namespace FastBIRe.MinSample
             var tableSer = new TableService(conn);
             await tableSer.CreateTableIfNotExistsAsync(聚合);
             await tableSer.MigrationAsync(聚合, table.DestColumn);
+            await tableSer.CreateTableIfNotExistsAsync(归档);
+            await tableSer.MigrationAsync(归档,table.Columns);
             await tableSer.CreateTableIfNotExistsAsync(归档);
             await tableSer.MigrationAsync(聚合, table, false);
             await tableSer.SyncIndexAsync(聚合, table);

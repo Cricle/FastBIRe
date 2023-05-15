@@ -348,7 +348,7 @@ namespace FastBIRe
                 case ToRawMethod.Minute:
                 case ToRawMethod.Second:
                 case ToRawMethod.Quarter:
-                case ToRawMethod.Weak:
+                case ToRawMethod.Week:
                     return true;
                 default:
                     return false;

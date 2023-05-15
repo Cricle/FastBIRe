@@ -16,7 +16,7 @@
         Minute,
         Second,
         Quarter,
-        Weak,
+        Week,
         Now
     }
 }

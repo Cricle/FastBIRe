@@ -116,6 +116,19 @@ AND(
             }
             else if (SqlType == SqlType.PostgreSql)
             {
+                string GetConvertMethod(ToRawMethod method)
+                {
+                    switch (method)
+                    {
+                        case ToRawMethod.Count:
+                        case ToRawMethod.DistinctCount:
+                        case ToRawMethod.Sum:
+                        case ToRawMethod.Avg:
+                            return "::bigint";
+                        default:
+                            return string.Empty;
+                    }
+                }
                 return $@"
 	FROM (
 		SELECT
@@ -127,7 +140,7 @@ AND(
 ) AS {Wrap("tmp")}
     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
-    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)}::bigint != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}::bigint"))}
+    {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)}{GetConvertMethod(x.Method)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}{GetConvertMethod(x.Method)}"))}
 )
 ";
             }
@@ -311,8 +324,8 @@ SET
                     return GetHourFormatter(@ref);
                 case ToRawMethod.Minute:
                     return GetMinuteFormatter(@ref);
-                case ToRawMethod.Weak:
-                    return GetWeakFormatter(@ref);
+                case ToRawMethod.Week:
+                    return GetWeekFormatter(@ref);
                 case ToRawMethod.Quarter:
                     return GetQuarterFormatter(@ref);
                 default: 
@@ -351,7 +364,7 @@ SELECT STRFTIME('%Y', '2023-04-24')||'-'||(CASE
 SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
 #endif
         }
-        public string GetWeakFormatter(string @ref)
+        public string GetWeekFormatter(string @ref)
         {
             if (SqlType == SqlType.SQLite)
             {
@@ -363,7 +376,7 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                return $"{@ref}::timestamp - ((EXTRACT(DOW FROM {@ref}::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL";
+                return $"date_trunc('day',{@ref}::timestamp) - ((EXTRACT(DOW FROM {@ref}::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL";
             }
             return $"DATE_FORMAT(DATE_SUB({@ref}, INTERVAL WEEKDAY({@ref}) DAY),'%Y-%m-%d')";
 
@@ -569,9 +582,9 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                     {
                         return GetQuarterFormatter(GetRef(field, quto));
                     }
-                case ToRawMethod.Weak:
+                case ToRawMethod.Week:
                     {
-                        return GetWeakFormatter(GetRef(field, quto));
+                        return GetWeekFormatter(GetRef(field, quto));
                     }
                 default:
                     return quto ? MethodWrapper.WrapValue(field) : field;

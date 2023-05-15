@@ -65,7 +65,7 @@ namespace FastBIRe
       WHEN '04' THEN '10'
     END||
     '-01'";
-                case ToRawMethod.Weak:
+                case ToRawMethod.Week:
                     return $"(date_trunc('week', to_date('2022-01', 'YYYY-W')) + interval '1 week')::TIMESTAMP";
                 default:
                     return null;
@@ -92,7 +92,7 @@ namespace FastBIRe
       WHEN '04' THEN '10'
     END||
     '-01'";
-                case ToRawMethod.Weak:
+                case ToRawMethod.Week:
                     return $"date(substr({name},1,4)||'-01-01', 'weekday 1', '+'||((substr({name},6)-1)*7)||' day')";
                 default:
                     return null;
@@ -119,7 +119,7 @@ namespace FastBIRe
       WHEN '04' THEN '10'
     END+
     '-01';";
-                case ToRawMethod.Weak:
+                case ToRawMethod.Week:
                     return $"DATEADD(WEEK, CAST(RIGHT({name}, 2) AS int), DATEADD(YEAR, CAST(LEFT({name}, 4) AS int) - 1900, 0)) - DATEPART(WEEKDAY, DATEADD(YEAR, CAST(LEFT({name}, 4) AS int) - 1900, -1)) + 1";
                 default:
                     return null;
@@ -148,7 +148,7 @@ namespace FastBIRe
     END,
     '-01'
   )";
-                case ToRawMethod.Weak:
+                case ToRawMethod.Week:
                     return $"STR_TO_DATE(CONCAT(SUBSTRING({name}, 1, 4 ), '-W', SUBSTRING( {name}, 6 ), '-1' ), '%X-W%V-%w' )";
                 default:
                     return null;
