@@ -549,7 +549,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                         switch (SqlType)
                         {
                             case SqlType.SQLite:
-                                return "datetime('now')";
+                                return "strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime')";
                             case SqlType.SqlServer:
                                 return "GETDATE()";
                             case SqlType.PostgreSql:
