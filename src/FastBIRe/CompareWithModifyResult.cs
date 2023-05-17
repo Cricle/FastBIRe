@@ -110,7 +110,7 @@ namespace FastBIRe
                     return NormalSupplement(helper, name, GetMissDatePart(type)!);
                 case ToRawMethod.Quarter:
                     return $@"
-  SELECT LEFT({name},4)+
+  LEFT({name},4)+
     '-'+
     CASE RIGHT({name},2)
       WHEN '01' THEN '01'
