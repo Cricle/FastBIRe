@@ -86,7 +86,7 @@ namespace FastBIRe.Sample
                 {
                     def.Id = def.Field;
                     return def;
-                }));
+                }), true);
             ser.ExecuteNonQueryAsync(str).GetAwaiter().GetResult();
             str = ser.RunMigration("7ae26aa2-5def-4209-98fd-1002954ba963",
                 sourceTable,
@@ -94,7 +94,7 @@ namespace FastBIRe.Sample
                 {
                     def.Id = def.Field;
                     return def;
-                }));
+                }),true);
             ser.ExecuteNonQueryAsync(str).GetAwaiter().GetResult();
 
             _ = ser.SyncIndexAutoAsync("8ae26aa2-5def-4209-98fd-1002954ba963", sourceTable).GetAwaiter().GetResult();
