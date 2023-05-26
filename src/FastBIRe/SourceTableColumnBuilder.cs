@@ -19,13 +19,26 @@ namespace FastBIRe
             DestAlias = destAlias;
             NumberLen = helper.SqlType == SqlType.SQLite ? DefaultSqliteNumberLen : DefaultNumberLen;
             DateTimeLen = helper.SqlType == SqlType.SQLite ? DefaultSqliteDateTimeLen : DefaultDateTimeLen;
+
+            if (!string.IsNullOrEmpty(sourceAlias))
+            {
+                SourceAliasQuto = helper.Wrap(sourceAlias!);
+            }
+            if (!string.IsNullOrEmpty(destAlias))
+            {
+                DestAliasQuto = helper.Wrap(destAlias!);
+            }
         }
 
         public MergeHelper Helper { get; }
 
         public string? SourceAlias { get; }
 
+        public string? SourceAliasQuto { get; }
+
         public string? DestAlias { get; }
+
+        public string? DestAliasQuto { get; }
 
         public int StringLen { get; set; } = DefaultStringLen;
 
@@ -145,7 +158,25 @@ namespace FastBIRe
                 Length = length
             };
         }
+        public SourceTableColumnDefine MethodRaw(string field, string destField, string rawFormat, bool isGroup = false, bool onlySet = false, string? type = null,
+            string? destFieldType = null, bool sourceNullable = true, bool destNullable = true, int length = 0, int destLength = 0)
+        {
+            var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
+            var sourceRaw = string.Format(sourceFormat, SourceAlias);
 
+            var raw = string.Format(rawFormat, sourceRaw);
+
+            return new SourceTableColumnDefine(field,
+                raw,
+                isGroup,
+                Column(destField, destFieldType, destNullable, destLength),
+                ToRawMethod.Unknow, rawFormat, onlySet)
+            {
+                Type = type,
+                Nullable = sourceNullable,
+                Length = length,
+            };
+        }
         public SourceTableColumnDefine Method(string field, string destField, ToRawMethod method, bool isGroup = false, bool onlySet = false, string? type = null,
             string? destFieldType = null, bool sourceNullable = true, bool destNullable = true, int length = 0, int destLength = 0)
         {
@@ -261,6 +292,71 @@ namespace FastBIRe
                 onlySet,
                 Type(DbType.String, len ?? StringLen),
                 IsAggerMethod(method) ? Type(DbType.String, len ?? StringLen) : Type(DbType.String, len ?? StringLen),
+                sourceNullable,
+                destNullable,
+                len ?? StringLen,
+                len ?? StringLen);
+        }
+
+        public SourceTableColumnDefine DateTimeRaw(string field,
+            string destField,
+            string rawFormat,
+            bool isGroup = false,
+            bool onlySet = false,
+            bool sourceNullable = true,
+            bool destNullable = true)
+        {
+            return MethodRaw(field,
+                destField,
+                rawFormat,
+                isGroup,
+                onlySet,
+                Type(DbType.DateTime),
+                Type(DbType.DateTime),
+                sourceNullable,
+                destNullable,
+                DateTimeLen,
+                DateTimeLen);
+        }
+        public SourceTableColumnDefine DecimalRaw(string field,
+            string destField,
+            string rawFormat,
+            bool isGroup = false,
+            bool onlySet = false,
+            bool sourceNullable = true,
+            bool destNullable = true,
+            int? precision = null,
+            int? scale = null,
+            bool needString=true)
+        {
+            return MethodRaw(field,
+                destField,
+                rawFormat,
+                isGroup,
+                onlySet,
+                Type(DbType.Decimal, precision ?? Precision, scale ?? Scale),
+                needString ? Type(DbType.String, StringLen) : Type(DbType.Decimal, precision ?? Precision, scale ?? Scale),
+                sourceNullable,
+                destNullable,
+                GetDecimalByteLen(precision ?? Precision),
+                needString ? StringLen : NumberLen);
+        }
+        public SourceTableColumnDefine StringRaw(string field,
+            string destField,
+            string rawFormat,
+            bool isGroup = false,
+            bool onlySet = false,
+            bool sourceNullable = true,
+            bool destNullable = true,
+            int? len = null)
+        {
+            return MethodRaw(field,
+                destField,
+                rawFormat,
+                isGroup,
+                onlySet,
+                Type(DbType.String, len ?? StringLen),
+                Type(DbType.String, len ?? StringLen),
                 sourceNullable,
                 destNullable,
                 len ?? StringLen,

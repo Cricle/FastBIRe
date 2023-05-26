@@ -17,6 +17,7 @@
         Second,
         Quarter,
         Week,
-        Now
+        Now,
+        Unknow
     }
 }

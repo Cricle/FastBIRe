@@ -3,6 +3,10 @@ using DatabaseSchemaReader.DataSchema;
 
 namespace FastBIRe
 {
+    public class FunctionMapperCompiler
+    {
+
+    }
     public partial class FunctionMapper
     {
         public FunctionMapper(SqlType sqlType)
@@ -26,6 +30,50 @@ namespace FastBIRe
         public string Bracket(string input)
         {
             return $"({input})";
+        }
+        public string IsNull(string input)
+        {
+            return $"ISNULL({input})";
+        }
+        public string RowNumber(string? orderby = null)
+        {
+            if (string.IsNullOrEmpty(orderby))
+            {
+                orderby = "(SELECT NULL)";
+            }
+            return $"ROW_NUMBER() OVER (ORDER BY {orderby})";
+        }
+        public string Rank(string? orderby = null)
+        {
+            if (string.IsNullOrEmpty(orderby))
+            {
+                orderby = "(SELECT NULL)";
+            }
+            return $"RANK() OVER (ORDER BY {orderby})";
+        }
+        public string? Version()
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return $"@@VERSION";
+                case SqlType.PostgreSql:
+                case SqlType.MySql:
+                    return $"VERSION()";
+                case SqlType.SQLite:
+                    return $"sqlite_version()";
+                default:
+                    return null;
+            }
+        }
+        public string Coalesce(string input, string nullIf)
+        {
+            if (SqlType == SqlType.SQLite)
+            {
+                return $"IFNULL({input}, {nullIf})";
+            }
+            return $"COALESCE({input}, {nullIf})";
         }
         public string? Map(SQLFunctions func, params string[] args)
         {
@@ -123,6 +171,62 @@ namespace FastBIRe
                     return Bracket(args[0]);
                 case SQLFunctions.DateAdd:
                     return DateAdd(args[0], args[1], (DateTimeUnit)Enum.Parse(typeof(DateTimeUnit),args[2]));
+                case SQLFunctions.IsNull:
+                    return IsNull(args[0]);
+                case SQLFunctions.Like:
+                    return Like(args[0]);
+                case SQLFunctions.Reverse:
+                    return Reverse(args[0]);
+                case SQLFunctions.DayOfYear:
+                    return DayOfYear(args[0]);
+                case SQLFunctions.LastDay:
+                    return LastDay(args[0]);
+                case SQLFunctions.MinC:
+                    return MinC(args[0]);
+                case SQLFunctions.MaxC:
+                    return MaxC(args[0]);
+                case SQLFunctions.AverageC:
+                    return AverageC(args[0]);
+                case SQLFunctions.SumC:
+                    return SumC(args[0]);
+                case SQLFunctions.CountC:
+                    return CountC(args[0]);
+                case SQLFunctions.DistinctCountC:
+                    return DistinctCountC(args[0]);
+                case SQLFunctions.Coalesce:
+                    return Coalesce(args[0], args[1]);
+                case SQLFunctions.RowNumber:
+                    return RowNumber(args.Length > 0 ? args[0] : null);
+                case SQLFunctions.Rank:
+                    return Rank(args.Length > 0 ? args[0] : null);
+                case SQLFunctions.ACos:
+                    return ACos(args[0]);
+                case SQLFunctions.ASin:
+                    return ASin(args[0]);
+                case SQLFunctions.ATan:
+                    return ATan(args[0]);
+                case SQLFunctions.ATan2:
+                    return ATan2(args[0], args[2]);
+                case SQLFunctions.Cos:
+                    return Cos(args[0]);
+                case SQLFunctions.Sin:
+                    return Sin(args[0]);
+                case SQLFunctions.Cot:
+                    return Cot(args[0]);
+                case SQLFunctions.Degress:
+                    return Degress(args[0]);
+                case SQLFunctions.Exp:
+                    return Exp(args[0]);
+                case SQLFunctions.Ln:
+                    return Ln(args[0]);
+                case SQLFunctions.PI:
+                    return PI();
+                case SQLFunctions.Pow:
+                    return Pow(args[0], args[1]);
+                case SQLFunctions.Sqrt:
+                    return Sqrt(args[0]);
+                case SQLFunctions.Log:
+                    return Log(args[0], args.Length > 1 ? args[1] : null);
                 default:
                     return null;
             }

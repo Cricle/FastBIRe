@@ -45,7 +45,7 @@ namespace rsa
                 default:
                     break;
             }
-            conn.Open();
+            conn!.Open();
             return new MigrationService(conn) { Logger = x => Console.WriteLine(x) };
         }
 

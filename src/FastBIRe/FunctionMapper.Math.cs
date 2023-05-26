@@ -4,9 +4,69 @@ namespace FastBIRe
 {
     public partial class FunctionMapper
     {
+        public string? ACos(string input)
+        {
+            return $"ACOS({input})";
+        }
+        public string? ASin(string input)
+        {
+            return $"ASIN({input})";
+        }
         public string? Abs(string input)
         {
             return $"ABS({input})";
+        }
+        public string? ATan(string input)
+        {
+            return $"ATAN({input})";
+        }
+        public string? ATan2(string n,string m)
+        {
+            return $"ATAN2({n},{m})";
+        }
+        public string? Cos(string n)
+        {
+            return $"COS({n})";
+        }
+        public string? Sin(string n)
+        {
+            return $"SIN({n})";
+        }
+        public string? Cot(string n)
+        {
+            return $"COT({n})";
+        }
+        public string? Degress(string n)
+        {
+            return $"DEGREES({n})";
+        }
+        public string? Exp(string n)
+        {
+            return $"EXP({n})";
+        }
+        public string? Ln(string n)
+        {
+            return $"Ln({n})";
+        }
+        public string? PI()
+        {
+            return $"PI()";
+        }
+        public string? Pow(string x,string y)
+        {
+            return $"Pow({x},{y})";
+        }
+        public string? Sqrt(string x)
+        {
+            return $"SQRT({x})";
+        }
+        public string? Log(string n, string? @base = null)
+        {
+            if (string.IsNullOrEmpty(@base))
+            {
+                return $"Log({n})";
+            }
+            return $"Log({@base},{n})";
         }
         public string? Rand()
         {
@@ -92,7 +152,31 @@ namespace FastBIRe
                     return null;
             }
         }
-        public string? Min(IEnumerable<string> inputs)
+        public string? MinC(string input)
+        {
+            return $"MIN({input})";
+        }
+        public string? MaxC(string input)
+        {
+            return $"MAX({input})";
+        }
+        public string? AverageC(string input)
+        {
+            return $"Avg({input})";
+        }
+        public string? SumC(string input)
+        {
+            return $"SUM({input})";
+        }
+        public string? CountC(string input)
+        {
+            return $"COUNT({input})";
+        }
+        public string? DistinctCountC(string input)
+        {
+            return $"COUNT(DISTINCT {input})";
+        }
+        public string? Min(params string[] inputs)
         {
             switch (SqlType)
             {

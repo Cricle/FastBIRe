@@ -8,27 +8,27 @@ namespace FastBIRe.MinSample
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.PostgreSql;
-            var dbName = "testc";
+            var sqlType = SqlType.MySql;
+            var dbName = "testcw";
             const string 归档 = "guidang";
             const string 聚合 = "juhe";
-            await ConnectionProvider.EnsureDatabaseCreatedAsync(sqlType, dbName);
+            //await ConnectionProvider.EnsureDatabaseCreatedAsync(sqlType, dbName);
             var conn = ConnectionProvider.GetDbMigration(sqlType, dbName);
-            conn.EffectMode = true;
-            conn.EffectTrigger = true;
+            conn.EffectMode = false;
+            conn.EffectTrigger = false;
             var builder = conn.GetColumnBuilder();
-            var table = new SourceTableDefine(归档, GetSourceDefine(builder));
+            var table = new SourceTableDefine(归档, GetSourceDefine(builder, sqlType));
             var tableSer = new TableService(conn);
-            await tableSer.CreateTableIfNotExistsAsync(聚合);
-            await tableSer.MigrationAsync(聚合, table.DestColumn);
-            await tableSer.CreateTableIfNotExistsAsync(归档);
-            await tableSer.MigrationAsync(归档,table.Columns);
-            await tableSer.CreateTableIfNotExistsAsync(归档);
-            await tableSer.MigrationAsync(聚合, table, false);
-            await tableSer.SyncIndexAsync(聚合, table);
+            //await tableSer.CreateTableIfNotExistsAsync(聚合);
+            //await tableSer.MigrationAsync(聚合, table.DestColumn);
+            //await tableSer.CreateTableIfNotExistsAsync(归档);
+            //await tableSer.MigrationAsync(归档, table.Columns);
+            //await tableSer.CreateTableIfNotExistsAsync(归档);
+            //await tableSer.MigrationAsync(聚合, table, false);
+            //await tableSer.SyncIndexAsync(聚合, table);
 
             var mr = conn.GetMergeHelper();
-            CompileOptions opt = CompileOptions.EffectJoin("juhe_effect");
+            CompileOptions? opt = null;// CompileOptions.EffectJoin("juhe_effect");
 
             Console.BackgroundColor = ConsoleColor.Green;
             Console.WriteLine("===============");
@@ -43,8 +43,14 @@ namespace FastBIRe.MinSample
             var tr = TruncateHelper.Sql(opt?.EffectTable, sqlType);
             Console.WriteLine(tr);
         }
-        static List<SourceTableColumnDefine> GetSourceDefine(SourceTableColumnBuilder builder)
+        static List<SourceTableColumnDefine> GetSourceDefine(SourceTableColumnBuilder builder, SqlType sqlType)
         {
+            var f = new FunctionMapper(sqlType);
+            var sumA2 = builder.Helper.ToRaw(ToRawMethod.Count,builder.SourceAliasQuto + "." + f.Quto("a2"),false);
+            var sumA3= builder.Helper.ToRaw(ToRawMethod.Count,builder.SourceAliasQuto + "." + f.Quto("a3"), false);
+            var @if = f.If($"{sumA2}/{sumA3}=1",f.WrapValue("succeed"),f.WrapValue("fail"));
+            var str = f.Concatenate(f.RandBetween("0", "999"), f.WrapValue("_"), f.Bracket(@if));
+            var lastDay = f.Min(f.LastDay(builder.SourceAliasQuto + "." + f.Quto("记录时间")));
             var defs = new List<SourceTableColumnDefine>
             {
                 builder.DateTime("记录时间","记录时间", ToRawMethod.Now,onlySet:true).AllNotNull(),
@@ -52,9 +58,9 @@ namespace FastBIRe.MinSample
                 builder.Decimal("a2", "a2", ToRawMethod.Count),
                 builder.Decimal("a3", "a3", ToRawMethod.Count),
                 builder.Decimal("a4","a4", ToRawMethod.Count),
-                builder.String("a5", "a5", ToRawMethod.DistinctCount),
+                builder.StringRaw("a5", "a5", lastDay),
                 builder.DateTime("a7","111aaaa7777", ToRawMethod.Minute,isGroup:true).SetExpandDateTime(true,true),
-                builder.String("aaaa8","aaaa8", ToRawMethod.None,true),
+                builder.StringRaw("aaaa8","aaaa8",$"({str})",false),
             };
             for (int i = 0; i < defs.Count; i++)
             {

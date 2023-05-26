@@ -7,6 +7,14 @@ namespace FastBIRe
 {
     public partial class FunctionMapper
     {
+        public string Reverse(string input)
+        {
+            return $"REVERSE({input})";
+        }
+        public string Like(string input)
+        {
+            return $"like {input}";
+        }
         public string? Char(string input)
         {
             switch (SqlType)
@@ -22,7 +30,7 @@ namespace FastBIRe
                     return null;
             }
         }
-        public string? Concatenate(IEnumerable<string> inputs)
+        public string? Concatenate(params string[] inputs)
         {
             switch (SqlType)
             {

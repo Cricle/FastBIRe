@@ -60,7 +60,7 @@ namespace FastBIRe.Sample
             ser.EffectMode = true;
             ser.EffectTrigger = false;
             var builder = new SourceTableColumnBuilder(d, "a", "b");
-            var s = GetSourceDefine(builder);
+            var s = GetSourceDefine(builder,);
             var dt = GetDestDefine(builder);
             CreateTableIfNotExists(ser, "8ae26aa2-5def-4209-98fd-1002954ba963");
             var dstr = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963", dt,
@@ -141,8 +141,9 @@ namespace FastBIRe.Sample
             }
             return defs;
         }
-        static SourceTableColumnDefine[] GetSourceDefine(SourceTableColumnBuilder builder)
+        static SourceTableColumnDefine[] GetSourceDefine(SourceTableColumnBuilder builder,SqlType sqlType)
         {
+            var f = new FunctionMapper(sqlType);
             var defs = new SourceTableColumnDefine[]
             {
                 builder.Method("记录时间","记录时间", ToRawMethod.Now,onlySet:true,type:builder.Type(DbType.DateTime),sourceNullable:false,destNullable:false,length:8,destLength:8),
@@ -152,7 +153,9 @@ namespace FastBIRe.Sample
                 builder.Method("a4","a4", ToRawMethod.Count,type:builder.Type(DbType.Decimal,25,5),length:30,destLength:30),
                 builder.Method("a5","a5", ToRawMethod.DistinctCount,type:builder.Type(DbType.String,255),length:255,destLength:255),
                 builder.Method("a7","111aaaa7777", ToRawMethod.Minute,true,type:builder.Type(DbType.DateTime),destFieldType:builder.Type(DbType.String, 255),length:8,destLength:255).SetExpandDateTime(true),
-                builder.Method("aaaa8","aaaa8", ToRawMethod.None,true,type:builder.Type(DbType.String,255),destFieldType:builder.Type(DbType.String, 255),length:255,destLength:255),
+                builder.MethodRaw("aaaa8","aaaa8",
+                f.Concatenate(f.Now(),f.WrapValue("_")!,builder.Helper.ToRaw( ToRawMethod.Count,f.Quto("a1"),false)!)!
+                ,true,type:builder.Type(DbType.String,255),destFieldType:builder.Type(DbType.String, 255),length:255,destLength:255),
             };
             foreach (var item in defs)
             {

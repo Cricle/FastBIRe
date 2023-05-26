@@ -545,20 +545,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
             switch (method)
             {
                 case ToRawMethod.Now:
-                    {
-                        switch (SqlType)
-                        {
-                            case SqlType.SQLite:
-                                return "strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime')";
-                            case SqlType.SqlServer:
-                                return "GETDATE()";
-                            case SqlType.PostgreSql:
-                                return "CURRENT_TIMESTAMP";
-                            case SqlType.MySql:
-                            default:
-                                return "NOW()";
-                        }
-                    }
+                    return new FunctionMapper(SqlType).Now();
                 case ToRawMethod.Min:
                     return $"MIN({GetRef(field, quto)})";
                 case ToRawMethod.Max:

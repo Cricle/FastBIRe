@@ -1,23 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using DatabaseSchemaReader.DataSchema;
+﻿using DatabaseSchemaReader.DataSchema;
 
 namespace FastBIRe
 {
-    public enum DateTimeUnit
-    {
-        Year,
-        Month, 
-        Day, 
-        Hour,
-        Minute, 
-        Second,
-        Week,
-        Quarter
-    }
     public partial class FunctionMapper
     {
+        public string? LastDay(string date)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    return $"DATEADD(day, -1, DATEADD(month, DATEDIFF(month, 0, {date}) + 1, 0))";
+                case SqlType.MySql:
+                    return $"LAST_DAY({date})";
+                case SqlType.SQLite:
+                    return $"DATE(strftime('%Y-%m-', {date}) || '01', '+1 month', '-1 day')";
+                case SqlType.PostgreSql:
+                    return $"DATE_TRUNC('month', {date}) + INTERVAL '1 month - 1 day'";
+                default:
+                    return null;
+            }
+        }
+        public string? DayOfYear(string date)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    return $"DATEPART(dayofyear, {date})";
+                case SqlType.MySql:
+                    return $"DAYOFYEAR({date})";
+                case SqlType.SQLite:
+                    return $"STRFTIME('%j', {date})";
+                case SqlType.PostgreSql:
+                    return $"EXTRACT(DOY FROM {date})";
+                default:
+                    return null;
+            }
+        }
         public string? Date(string year, string month, string day)
         {
             switch (SqlType)
