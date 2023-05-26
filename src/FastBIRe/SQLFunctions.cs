@@ -46,6 +46,7 @@
         And,
         Or,
         Not,
-        Bracket
+        Bracket,
+        DateAdd
     }
 }

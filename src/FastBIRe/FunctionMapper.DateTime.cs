@@ -5,6 +5,17 @@ using DatabaseSchemaReader.DataSchema;
 
 namespace FastBIRe
 {
+    public enum DateTimeUnit
+    {
+        Year,
+        Month, 
+        Day, 
+        Hour,
+        Minute, 
+        Second,
+        Week,
+        Quarter
+    }
     public partial class FunctionMapper
     {
         public string? Date(string year, string month, string day)
@@ -32,6 +43,28 @@ WHEN {unit}='M' THEN MONTH({timeA})-MONTH({timeB})
 WHEN {unit}='D' THEN DAY({timeA})-DAY({timeB}) 
 END
 ";
+        }
+        public string? GetUnitString(DateTimeUnit unit)
+        {
+            return unit.ToString().ToUpper();
+        }
+        public string? DateAdd(string time,string num, DateTimeUnit unit)
+        {
+            var unitStr = GetUnitString(unit);
+            switch (SqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    return $"DATEADD({unitStr}, {num}, {time})";
+                case SqlType.MySql:
+                    return $"DATE_ADD({time}, INTERVAL {num} {unitStr})";
+                case SqlType.SQLite:
+                    return $"DATE({time}, '{num} {unitStr}')";
+                case SqlType.PostgreSql:
+                    return $"{time} + INTERVAL '{num} {unitStr}'";
+                default:
+                    return null;
+            }
         }
         public string Day(string time)
         {

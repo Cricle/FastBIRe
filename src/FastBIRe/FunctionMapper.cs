@@ -121,6 +121,8 @@ namespace FastBIRe
                     return Not(args[0]);
                 case SQLFunctions.Bracket:
                     return Bracket(args[0]);
+                case SQLFunctions.DateAdd:
+                    return DateAdd(args[0], args[1], (DateTimeUnit)Enum.Parse(typeof(DateTimeUnit),args[2]));
                 default:
                     return null;
             }

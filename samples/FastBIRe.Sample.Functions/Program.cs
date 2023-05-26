@@ -8,8 +8,7 @@ namespace FastBIRe.Sample.Functions
         {
             var func = new FunctionMapper(SqlType.MySql);
             Console.WriteLine($@"
-SELECT {func.Bracket(func.Replace("name","1","2", func.WrapValue("newText")))} AS av
-from student order by `name`;
+SELECT {func.DateAdd(func.Now(),"+22", DateTimeUnit.Day)} AS av
 ");
         }
     }
