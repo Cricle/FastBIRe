@@ -1,14 +1,45 @@
 ﻿using Ao.Stock.Querying;
 using DatabaseSchemaReader.DataSchema;
+using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 namespace FastBIRe
 {
-    public class FunctionMapperCompiler
-    {
-
-    }
     public partial class FunctionMapper
     {
+
+#if false
+(?<!\\)" "->'
+(?<![\"'])\b[A-Za-z]+\b(?=\()
+#endif
+#if NET7_0_OR_GREATER
+        [GeneratedRegex("(?<!\\\\)\"")]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static partial Regex GetQutoRegex();
+        [GeneratedRegex("(?<![\\\"'])\\b[A-Za-z]+\\b(?=\\()")]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static partial Regex GetMethodNameRegex();
+#else
+        private static readonly Regex qutoRegex = new Regex("(?<!\\\\)\"", RegexOptions.Compiled);
+        private static readonly Regex methodNameRegex = new Regex("(?<![\\\"'])\\b[A-Za-z]+\\b(?=\\()", RegexOptions.Compiled);
+
+        public FunctionCompiler(IReadOnlyDictionary<string, SQLFunctions> functions)
+        {
+            Functions = functions ?? throw new ArgumentNullException(nameof(functions));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Regex GetQutoRegex()
+        {
+            return qutoRegex;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Regex GetMethodNameRegex()
+        {
+            return methodNameRegex;
+        }
+#endif
+
         public FunctionMapper(SqlType sqlType)
         {
             SqlType = sqlType;
@@ -19,7 +50,7 @@ namespace FastBIRe
 
         public SqlType SqlType { get; }
 
-        public string? WrapValue<T>(T value)
+        public string? Value<T>(T value)
         {
             return MethodWrapper.WrapValue(value);
         }
