@@ -3,7 +3,7 @@ using System.Text;
 
 namespace FastBIRe
 {
-    internal static class MD5Helper
+    public static class MD5Helper
     {
         private static readonly MD5 instance = MD5.Create();
 

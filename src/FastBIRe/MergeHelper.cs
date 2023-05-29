@@ -93,6 +93,54 @@ namespace FastBIRe
             str += CompileUpdateSelectCore(destTable, sourceTableDefine, options);
             return str;
         }
+        public string CompileUpdateInnerSelect(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
+        {
+            if (options!=null&&options.UseView)
+            {
+                return $"\nSELECT * FROM {Wrap(options.GetUpdateViewName(destTable, sourceTableDefine.Table))}\n";
+            }
+            var fromTable = GetTableRef(sourceTableDefine, options);
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $@"
+		SELECT
+            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))} 
+		FROM {fromTable}
+        {(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+		GROUP BY
+            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
+";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $@"
+SELECT
+    {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS \"{x.DestColumn.Field}\""))}
+FROM {fromTable}
+{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+GROUP BY {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
+";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $@"
+SELECT
+    {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS \"{x.DestColumn.Field}\""))}
+FROM {fromTable}
+{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+GROUP BY
+    {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
+";
+            }
+            return $@"
+SELECT
+    {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))}
+FROM {fromTable}
+{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
+GROUP BY
+    {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
+";
+        }
         public string CompileUpdateSelectCore(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             var fromTable = GetTableRef(sourceTableDefine, options);
@@ -102,12 +150,7 @@ namespace FastBIRe
 FROM
 	{Wrap(destTable)} AS {Wrap("a")}
 	INNER JOIN (
-		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))} 
-		FROM {fromTable}
-        {(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
-		GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
+		{CompileUpdateInnerSelect(destTable,sourceTableDefine,options)}
 	) AS  {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
     {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -131,11 +174,7 @@ AND(
                 }
                 return $@"
 	FROM (
-		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS \"{x.DestColumn.Field}\""))}
-		FROM {fromTable}
-		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
-        GROUP BY {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
+		{CompileUpdateInnerSelect(destTable, sourceTableDefine, options)}
 
 ) AS {Wrap("tmp")}
     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -148,12 +187,7 @@ AND(
             {
                 return $@"
 FROM (
-        SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS \"{x.DestColumn.Field}\""))}
-        FROM {fromTable}
-		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
-        GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
+		{CompileUpdateInnerSelect(destTable, sourceTableDefine, options)}
     ) AS {Wrap("tmp")}
     WHERE {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $"\"{destTable}\".{Wrap(x.DestColumn.Field)} ={Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
@@ -163,12 +197,7 @@ AND(
             }
             return $@"
 	INNER JOIN (
-		SELECT
-            {string.Join(",\n", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))}
-		FROM {fromTable}
-		{(WhereItems == null || !WhereItems.Any() ? string.Empty : "WHERE " + string.Join(" AND ", WhereItems.Select(x => $"{x.Raw} = {x.Value}")))}
-		GROUP BY
-            {string.Join(",\n", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => GetFormatterSelect(x)))}
+		{CompileUpdateInnerSelect(destTable, sourceTableDefine, options)}
 	) AS {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
     {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $"{Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -263,7 +292,7 @@ SET
                     return string.Empty;
             }
         }
-        public virtual string CompileInsertSelect(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
+        public string CompileInsertSelect(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             var str = $"SELECT {string.Join(",", sourceTableDefine.Columns.Select(x => $"{GetFormatterSelect(x)} AS {Wrap(x.DestColumn.Field)}"))}\n";
             var optSqlite = SqlType == SqlType.SQLite && sourceTableDefine.Columns.Any(x => x.IsGroup && x.Method == ToRawMethod.None);
@@ -294,7 +323,14 @@ SET
         public virtual string CompileInsert(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
             var str = $"INSERT INTO {Wrap(destTable)}({string.Join(", ", sourceTableDefine.Columns.Select(x => Wrap(x.DestColumn.Field)))})\n";
-            str += CompileInsertSelect(destTable, sourceTableDefine, options);
+            if (options != null && options.UseView)
+            {
+                str += $"SELECT * FROM {Wrap(options.GetInsertViewName(destTable, sourceTableDefine.Table))}\n";
+            }
+            else
+            {
+                str += CompileInsertSelect(destTable, sourceTableDefine, options);
+            }
             str += options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
             return str;
         }
@@ -540,7 +576,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
         {
             return quto ? MethodWrapper.Quto(field) : field;
         }
-        public virtual string? ToRaw(ToRawMethod method, string field, bool quto)
+        public virtual string ToRaw(ToRawMethod method, string field, bool quto)
         {
             switch (method)
             {
@@ -574,7 +610,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                         return GetWeekFormatter(GetRef(field, quto));
                     }
                 default:
-                    return quto ? MethodWrapper.WrapValue(field) : field;
+                    return quto ? MethodWrapper.WrapValue(field)! : field;
             }
         }
         public virtual string Wrap(string obj)

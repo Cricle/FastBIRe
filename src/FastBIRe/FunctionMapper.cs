@@ -7,7 +7,6 @@ namespace FastBIRe
 {
     public partial class FunctionMapper
     {
-
 #if false
 (?<!\\)" "->'
 (?<![\"'])\b[A-Za-z]+\b(?=\()
@@ -23,18 +22,13 @@ namespace FastBIRe
         private static readonly Regex qutoRegex = new Regex("(?<!\\\\)\"", RegexOptions.Compiled);
         private static readonly Regex methodNameRegex = new Regex("(?<![\\\"'])\\b[A-Za-z]+\\b(?=\\()", RegexOptions.Compiled);
 
-        public FunctionCompiler(IReadOnlyDictionary<string, SQLFunctions> functions)
-        {
-            Functions = functions ?? throw new ArgumentNullException(nameof(functions));
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Regex GetQutoRegex()
+        public static Regex GetQutoRegex()
         {
             return qutoRegex;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Regex GetMethodNameRegex()
+        public static Regex GetMethodNameRegex()
         {
             return methodNameRegex;
         }

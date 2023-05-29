@@ -9,7 +9,7 @@ namespace FastBIRe
         public const string InsertTail = "_insert";
         public const string UpdateTail = "_update";
 
-        public string? Drop(string name, string destTable, SqlType sqlType)
+        public string Drop(string name, string destTable, SqlType sqlType)
         {
             switch (sqlType)
             {
@@ -25,10 +25,10 @@ namespace FastBIRe
                 case SqlType.Oracle:
                 case SqlType.Db2:
                 default:
-                    return null;
+                    return string.Empty;
             }
         }
-        public string? Create(string name, string destTable, SourceTableDefine table, SqlType sqlType)
+        public string Create(string name, string destTable, SourceTableDefine table, SqlType sqlType)
         {
             switch (sqlType)
             {
@@ -44,7 +44,7 @@ namespace FastBIRe
                 case SqlType.Oracle:
                 case SqlType.Db2:
                 default:
-                    return null;
+                    return string.Empty;
             }
         }
         private IEnumerable<WhereItem> GetWhereItems(SourceTableDefine table, SqlType sqlType)

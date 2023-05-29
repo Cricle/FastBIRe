@@ -1,6 +1,5 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using rsa;
-using System;
 
 namespace FastBIRe.MinSample
 {
@@ -8,14 +7,15 @@ namespace FastBIRe.MinSample
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.MySql;
+            var sqlType = SqlType.SqlServer;
             var dbName = "testcw";
             const string 归档 = "guidang";
             const string 聚合 = "juhe";
             await ConnectionProvider.EnsureDatabaseCreatedAsync(sqlType, dbName);
             var conn = ConnectionProvider.GetDbMigration(sqlType, dbName);
-            conn.EffectMode = false;
-            conn.EffectTrigger = false;
+            conn.EffectMode = true;
+            conn.EffectTrigger = true;
+            conn.ViewMode = true;
             var builder = conn.GetColumnBuilder();
             var table = new SourceTableDefine(归档, GetSourceDefine(builder, sqlType));
             var tableSer = new TableService(conn);
@@ -28,7 +28,7 @@ namespace FastBIRe.MinSample
             await tableSer.SyncIndexAsync(聚合, table);
 
             var mr = conn.GetMergeHelper();
-            CompileOptions opt = null;// CompileOptions.EffectJoin("juhe_effect");
+            CompileOptions opt =new CompileOptions { UseView = true };
 
             Console.BackgroundColor = ConsoleColor.Green;
             Console.WriteLine("===============");
@@ -40,16 +40,15 @@ namespace FastBIRe.MinSample
             var update = mr.CompileUpdate(聚合, table, opt);
             Console.WriteLine(update);
             Console.WriteLine();
-            var tr = TruncateHelper.Sql(opt?.EffectTable, sqlType);
+            var tr = TruncateHelper.Sql("juhe_effect", sqlType);
             Console.WriteLine(tr);
         }
         static List<SourceTableColumnDefine> GetSourceDefine(SourceTableColumnBuilder builder, SqlType sqlType)
         {
             var f = new FunctionMapper(sqlType);
             var sumA2 = builder.Helper.ToRaw(ToRawMethod.Count,builder.SourceAliasQuto + "." + f.Quto("a2"),false);
-            var sumA3= builder.Helper.ToRaw(ToRawMethod.Count,builder.SourceAliasQuto + "." + f.Quto("a3"), false);
-            var @if = f.If($"{sumA2}/{sumA3}=1",f.Value("succeed"),f.Value("fail"));
-            var str = f.Concatenate(f.RandBetween("0", "999"), f.Value("_"), f.Bracket(@if));
+            var @if = f.If($"{sumA2}/10=1",f.Value("succeed"),f.Value("fail"));
+            var str = f.Bracket(@if);
             var lastDay = f.Concatenate(
                 f.MinC(f.LastDay(builder.SourceAliasQuto + "." + f.Quto("记录时间"))),
                 f.Value("num:"),

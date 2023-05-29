@@ -11,6 +11,10 @@ namespace FastBIRe
 {
     public partial class MigrationService : DbMigration
     {
+        public const string DefaultInsertQueryViewFormat = "vq_{0}_insert";
+
+        public const string DefaultUpdateQueryViewFormat = "vq_{0}_update";
+
         public const string AutoTimeTriggerPrefx = "AGT_";
         public const string AutoGenIndexPrefx = "IXAG_";
         public const string AutoGenForceIndexPrefx = "IXFG_";
@@ -49,6 +53,12 @@ namespace FastBIRe
         public IReadOnlyList<string>? NotRemoveColumns { get; set; } = new string[] { "_id", "记录时间" };
 
         public Func<string, string> IdColumnFetcher { get; set; } = s => "_id";
+
+        public bool ViewMode { get; set; }
+
+        public string InsertQueryViewFormat { get; set; } = DefaultInsertQueryViewFormat;
+
+        public string UpdateQueryViewFormat { get; set; } = DefaultUpdateQueryViewFormat;
 
         public string CreateTable(string table)
         {
@@ -415,9 +425,9 @@ namespace FastBIRe
             {
                 scripts.Add(TableHelper.CreateDropTable(effectTableName));
             }
+            var helper = new MergeHelper(SqlType);
             if (EffectTrigger)
             {
-                var helper = new MergeHelper(SqlType);
                 scripts.AddRange(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
                 {
                     if (IsTimePart(x.Method))
@@ -435,6 +445,25 @@ namespace FastBIRe
                 scripts.Add(imdtriggerHelper.Create(imdtriggerName, destTable, tableDef, SqlType));
             }
             script.AddRange(scripts);
+
+            var tableName = MD5Helper.ComputeHash(destTable + tableDef.Table);
+            var insertName = string.Format(InsertQueryViewFormat, tableName);
+            var updateName = string.Format(UpdateQueryViewFormat, tableName);
+
+            script.Add(ViewHelper.Drop(insertName, SqlType));
+            script.Add(ViewHelper.Drop(updateName, SqlType));
+            if (ViewMode)
+            {
+                CompileOptions? opt = null;
+                if (EffectTrigger)
+                {
+                    opt = CompileOptions.EffectJoin(effectTableName);
+                    opt.EffectTable = effectTableName;
+                    opt.IncludeEffectJoin = true;
+                }
+                script.Add(ViewHelper.Create(insertName, helper.CompileInsertSelect(destTable, tableDef, opt), SqlType));
+                script.Add(ViewHelper.Create(updateName, helper.CompileUpdateSelect(destTable, tableDef, opt), SqlType));
+            }
             return script;
         }
     }
