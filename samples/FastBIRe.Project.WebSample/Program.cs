@@ -30,8 +30,7 @@ namespace FastBIRe.Project.WebSample
                             Id ="projId"
                         }
                     },Array.Empty<string>()
-                }
-            });
+                }});
             });
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped(ser =>
@@ -49,8 +48,7 @@ namespace FastBIRe.Project.WebSample
             builder.Services.AddSingleton<ProjectDbServices>();
             builder.Services.AddSingleton<IProjectAccesstor<IProjectAccesstContext<string>, string>>(p =>
             {
-                var path = Path.Combine(AppContext.BaseDirectory, "projects");
-                return new JsonDirectoryProjectAccesstor(path, "proj");
+                return new JsonDirectoryProjectAccesstor("projects", "proj");
             });
             var app = builder.Build();
 
