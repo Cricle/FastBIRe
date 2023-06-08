@@ -43,12 +43,12 @@ namespace FastBIRe.Project.WebSample
             if (project != null)
             {
                 var builder = new DbContextOptionsBuilder(BaseOption);
-                builder.UseSqlite($"Data source=dbs/{project.Id}");
+                builder.UseSqlite($"Data source=projects/{project.Id}");
                 var ctx = new SchoolDbContext(builder.Options);
                 if (projectFirst.TryAdd(id, false))
                 {
-                    await ctx.Database.EnsureCreatedAsync();
-                    await ctx.Database.MigrateAsync();
+                    await ctx.Database.EnsureCreatedAsync(token);
+                    await ctx.Database.MigrateAsync(token);
                 }
                 return new CreateDbContextResult(ctx, project);
             }

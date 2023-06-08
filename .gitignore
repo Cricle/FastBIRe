@@ -477,3 +477,4 @@ $RECYCLE.BIN/
 *.lnk
 /uploadnuget.ps1
 /samples/FastBIRe.Project.WebSample/dbs/*
+/samples/FastBIRe.Project.WebSample/projects
