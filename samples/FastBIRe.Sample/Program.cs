@@ -41,7 +41,7 @@ namespace FastBIRe.Sample
             var ser = GetDbMigration(db);
             var d = ser.GetMergeHelper();
             var builder = new SourceTableColumnBuilder(d, "a", "b");
-            var s = GetSourceDefine(builder);
+            var s = GetSourceDefine(builder,ser.SqlType);
             var sourceTable = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", s);
             Console.WriteLine(new RealTriggerHelper().Create(
                 "d7e3e404-1eb1-4c93-9956-ec66030804e0_triggery",
@@ -60,7 +60,7 @@ namespace FastBIRe.Sample
             ser.EffectMode = true;
             ser.EffectTrigger = false;
             var builder = new SourceTableColumnBuilder(d, "a", "b");
-            var s = GetSourceDefine(builder,);
+            var s = GetSourceDefine(builder,ser.SqlType);
             var dt = GetDestDefine(builder);
             CreateTableIfNotExists(ser, "8ae26aa2-5def-4209-98fd-1002954ba963");
             var dstr = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963", dt,
@@ -169,7 +169,7 @@ namespace FastBIRe.Sample
             var t = new MergeHelper(sqltype);
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
-            var cols = GetSourceDefine(builder);
+            var cols = GetSourceDefine(builder,sqltype);
             CompileOptions? options = CompileOptions.EffectJoin("8ae26aa2-5def-4209-98fd-1002954ba963_effect");
             var def = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", cols);
             var si = t.CompileInsert("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);

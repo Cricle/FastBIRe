@@ -257,7 +257,7 @@ namespace FastBIRe
                         }
                         col.Name = item.New.Field;
                         var s = migGen.RenameColumn(x, col, item.Old.Field);
-                        scripts.Add(s);
+                        scriptBefore.Add(s);
                         col.Name = item.Old.Field;
                     }
                 }

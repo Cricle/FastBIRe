@@ -54,7 +54,7 @@ namespace FastBIRe
         }
         public async Task<int> ExecuteNonQueryAsync(string sql, CancellationToken token = default)
         {
-            if (string.IsNullOrWhiteSpace(sql)||sql.StartsWith("--"))
+            if (string.IsNullOrWhiteSpace(sql))
             {
                 return 0;
             }

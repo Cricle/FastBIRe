@@ -15,7 +15,6 @@ namespace FastBIRe.MinSample
             var conn = ConnectionProvider.GetDbMigration(sqlType, dbName);
             conn.EffectMode = true;
             conn.EffectTrigger = true;
-            conn.ViewMode = true;
             var builder = conn.GetColumnBuilder();
             var table = new SourceTableDefine(归档, GetSourceDefine(builder, sqlType));
             var tableSer = new TableService(conn);
@@ -28,7 +27,7 @@ namespace FastBIRe.MinSample
             await tableSer.SyncIndexAsync(聚合, table);
 
             var mr = conn.GetMergeHelper();
-            CompileOptions opt =new CompileOptions { UseView = true };
+            CompileOptions opt = CompileOptions.EffectJoin("juhe_effect");
 
             Console.BackgroundColor = ConsoleColor.Green;
             Console.WriteLine("===============");
