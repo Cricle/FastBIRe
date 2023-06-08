@@ -18,8 +18,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Project.WebSample", "samples\FastBIRe.Project.WebSample\FastBIRe.Project.WebSample.csproj", "{19A92217-A23A-4DD7-B15D-DDC8B77A23D5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solutions", "Solutions", "{5A27843E-C6E3-4C74-8302-EE12BED8D811}"
+	ProjectSection(SolutionItems) = preProject
+		eng\pkg.props = eng\pkg.props
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.Sample.Functions", "samples\FastBIRe.Sample.Functions\FastBIRe.Sample.Functions.csproj", "{EB19ADF5-F531-4580-B887-12A8347CCE35}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Sample.Functions", "samples\FastBIRe.Sample.Functions\FastBIRe.Sample.Functions.csproj", "{EB19ADF5-F531-4580-B887-12A8347CCE35}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
