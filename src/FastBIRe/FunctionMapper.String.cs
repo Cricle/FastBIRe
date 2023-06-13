@@ -36,9 +36,9 @@ namespace FastBIRe
             {
                 case SqlType.SqlServer:
                 case SqlType.SqlServerCe:
-                    return string.Join(" + ", inputs.Select(x => $"CAST({x} AS CHAR)"));
-                case SqlType.MySql:
                     return $"CONCAT({string.Join(" , ",inputs.Select(x=>$"CONVERT(VARCHAR,{x},120)"))})";
+                case SqlType.MySql:
+                    return string.Join(" + ", inputs.Select(x => $"CAST({x} AS CHAR)"));
                 case SqlType.SQLite:
                     return string.Join(" || ", inputs);
                 case SqlType.PostgreSql:

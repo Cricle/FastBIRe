@@ -158,7 +158,7 @@ namespace FastBIRe
                 Length = length
             };
         }
-        public SourceTableColumnDefine MethodRaw(string field, string destField, string rawFormat, bool isGroup = false, bool onlySet = false, string? type = null,
+        public SourceTableColumnDefine MethodRaw(string destField, string rawFormat, string? field = null, bool isGroup = false, bool onlySet = false, string? type = null,
             string? destFieldType = null, bool sourceNullable = true, bool destNullable = true, int length = 0, int destLength = 0)
         {
             var sourceFormat = string.IsNullOrEmpty(SourceAlias) ? string.Empty : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
@@ -298,17 +298,17 @@ namespace FastBIRe
                 len ?? StringLen);
         }
 
-        public SourceTableColumnDefine DateTimeRaw(string field,
-            string destField,
+        public SourceTableColumnDefine DateTimeRaw(string destField,
             string rawFormat,
+            string? field = null,
             bool isGroup = false,
             bool onlySet = false,
             bool sourceNullable = true,
             bool destNullable = true)
         {
-            return MethodRaw(field,
-                destField,
+            return MethodRaw(destField,
                 rawFormat,
+                field,
                 isGroup,
                 onlySet,
                 Type(DbType.DateTime),
@@ -318,9 +318,9 @@ namespace FastBIRe
                 DateTimeLen,
                 DateTimeLen);
         }
-        public SourceTableColumnDefine DecimalRaw(string field,
-            string destField,
+        public SourceTableColumnDefine DecimalRaw(string destField,
             string rawFormat,
+            string? field = null,
             bool isGroup = false,
             bool onlySet = false,
             bool sourceNullable = true,
@@ -329,9 +329,9 @@ namespace FastBIRe
             int? scale = null,
             bool needString=true)
         {
-            return MethodRaw(field,
-                destField,
+            return MethodRaw(destField,
                 rawFormat,
+                field,
                 isGroup,
                 onlySet,
                 Type(DbType.Decimal, precision ?? Precision, scale ?? Scale),
@@ -341,18 +341,19 @@ namespace FastBIRe
                 GetDecimalByteLen(precision ?? Precision),
                 needString ? StringLen : NumberLen);
         }
-        public SourceTableColumnDefine StringRaw(string field,
-            string destField,
+        public SourceTableColumnDefine StringRaw(
+            string destField, 
             string rawFormat,
+            string? field=null,
             bool isGroup = false,
             bool onlySet = false,
             bool sourceNullable = true,
             bool destNullable = true,
             int? len = null)
         {
-            return MethodRaw(field,
-                destField,
+            return MethodRaw(destField,
                 rawFormat,
+                field,
                 isGroup,
                 onlySet,
                 Type(DbType.String, len ?? StringLen),

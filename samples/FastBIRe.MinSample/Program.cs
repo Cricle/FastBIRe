@@ -1,5 +1,6 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using rsa;
+using System.Text.RegularExpressions;
 
 namespace FastBIRe.MinSample
 {
@@ -7,7 +8,7 @@ namespace FastBIRe.MinSample
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.SqlServer;
+            var sqlType = SqlType.MySql;
             var dbName = "testcw";
             const string 归档 = "guidang";
             const string 聚合 = "juhe";
@@ -16,7 +17,7 @@ namespace FastBIRe.MinSample
             conn.EffectMode = true;
             conn.EffectTrigger = true;
             var builder = conn.GetColumnBuilder();
-            var table = new SourceTableDefine(归档, GetSourceDefine(builder, sqlType));
+            var table = new SourceTableDefine(归档, GetSourceDefine(builder, sqlType,true));
             var tableSer = new TableService(conn);
             await tableSer.CreateTableIfNotExistsAsync(聚合);
             await tableSer.MigrationAsync(聚合, table.DestColumn);
@@ -28,7 +29,7 @@ namespace FastBIRe.MinSample
 
             var mr = conn.GetMergeHelper();
             CompileOptions opt = CompileOptions.EffectJoin("juhe_effect");
-
+            table = new SourceTableDefine(归档, GetSourceDefine(builder, sqlType, false));
             Console.BackgroundColor = ConsoleColor.Green;
             Console.WriteLine("===============");
             Console.ResetColor();
@@ -42,7 +43,7 @@ namespace FastBIRe.MinSample
             var tr = TruncateHelper.Sql("juhe_effect", sqlType);
             Console.WriteLine(tr);
         }
-        static List<SourceTableColumnDefine> GetSourceDefine(SourceTableColumnBuilder builder, SqlType sqlType)
+        static List<SourceTableColumnDefine> GetSourceDefine(SourceTableColumnBuilder builder, SqlType sqlType,bool mig)
         {
             var f = new FunctionMapper(sqlType);
             var sumA2 = builder.Helper.ToRaw(ToRawMethod.Count,builder.SourceAliasQuto + "." + f.Quto("a2"),false);
@@ -59,15 +60,18 @@ namespace FastBIRe.MinSample
                 builder.Decimal("a2", "a2", ToRawMethod.Count),
                 builder.Decimal("a3", "a3", ToRawMethod.Count),
                 builder.Decimal("a4","a4", ToRawMethod.Count),
-                builder.StringRaw("a5", "a5", lastDay),
+                builder.StringRaw("a5", lastDay,field:mig?"a5":null),
                 builder.DateTime("a7","111aaaa7777", ToRawMethod.Minute,isGroup:true).SetExpandDateTime(true,true),
-                builder.StringRaw("aaaa8","aaaa8",$"({str})",false),
+                builder.StringRaw("aaaa8",$"({str})",field:mig?"aaaa8":null,isGroup:false),
             };
             for (int i = 0; i < defs.Count; i++)
             {
                 var item = defs[i];
                 item.Id = i.ToString();
-                item.DestColumn.Id = i.ToString();
+                if (item.DestColumn != null)
+                {
+                    item.DestColumn.Id = i.ToString();
+                }
             }
             return defs;
         }

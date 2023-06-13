@@ -1,4 +1,5 @@
 ﻿using Ao.Stock.Mirror;
+using Ao.Stock.Querying;
 using DatabaseSchemaReader;
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
@@ -174,6 +175,7 @@ namespace FastBIRe
             var tableIndexs = table.Indexes;
             var nameCreator = options.IndexNameCreator ?? (s => $"IDX_{options.Table}_{s}");
             var refedIndexs = new HashSet<string>();
+            var dropedIndexs = new HashSet<string>();
             foreach (var col in options.Columns)
             {
                 var name = nameCreator(col);
@@ -182,7 +184,10 @@ namespace FastBIRe
                 {
                     if (oldIndex.Columns.Count != 1 || oldIndex.Columns[0].Name != col)
                     {
-                        scripts.Add(TableHelper.DropIndex(name, options.Table));
+                        if (dropedIndexs.Add(name))
+                        {
+                            scripts.Add(TableHelper.DropIndex(name, options.Table));
+                        }
                     }
                     else
                     {
@@ -202,7 +207,10 @@ namespace FastBIRe
                     {
                         continue;
                     }
-                    scripts.Add(TableHelper.DropIndex(item, options.Table));
+                    if (dropedIndexs.Add(item))
+                    {
+                        scripts.Add(TableHelper.DropIndex(item, options.Table));
+                    }
                 }
             }
             var res = await ExecuteNonQueryAsync(scripts, token);

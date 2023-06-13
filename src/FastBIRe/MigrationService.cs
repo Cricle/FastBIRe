@@ -203,6 +203,7 @@ namespace FastBIRe
             var tb = Reader.Table(table);
             var helper = GetMergeHelper();
             var scriptBefore = new List<string>();
+            var dropedIndexs = new HashSet<string>();
             var res= CompareWithModify(table, x =>
             {
                 PrepareTable(x);
@@ -250,17 +251,22 @@ namespace FastBIRe
                     var col = x.FindColumn(item.Old.Field);
                     if (col != null && col.Name != item.New.Field)
                     {
-                        foreach (var idx in x.Indexes.Where(x => x.Columns.Any(y => y.Name == col.Name)))
-                        {
-                            scriptBefore.Add(TableHelper.DropIndex(idx.Name, idx.TableName));
-                            existsingIndexs.Remove(idx.Name);
-                        }
+                        //var idxs = x.Indexes.Where(x => x.Columns.Any(y => y.Name == col.Name)).ToList();
+                        //foreach (var idx in idxs)
+                        //{
+                        //    if (dropedIndexs.Add(idx.Name))
+                        //    {
+                        //        scriptBefore.Add(TableHelper.DropIndex(idx.Name, idx.TableName));
+                        //        existsingIndexs.Remove(idx.Name);
+                        //    }
+                        //}
                         col.Name = item.New.Field;
                         var s = migGen.RenameColumn(x, col, item.Old.Field);
                         scriptBefore.Add(s);
                         col.Name = item.Old.Field;
                     }
                 }
+                var affectIndexs = new List<string>();
                 foreach (var item in groupNews)
                 {
                     if (string.IsNullOrEmpty(item.Type))
@@ -285,12 +291,19 @@ namespace FastBIRe
                         if (!string.Equals(leftType, rightType, StringComparison.OrdinalIgnoreCase))
                         {
                             col.DbDataType = item.Type;
-
-                            foreach (var idx in x.Indexes.Where(x => existsingIndexs.Contains(x.Name)&&x.Columns.Any(y => y.Name == col.Name)))
+                            if (col.IsIndexed)
                             {
-                                scriptBefore.Add(TableHelper.DropIndex(idx.Name, idx.TableName));
-                                existsingIndexs.Remove(idx.Name);
+                                affectIndexs.AddRange(x.Indexes.Where(y => y.Columns.Any(q => q.Name == col.Name)).Select(y=>y.Name));
                             }
+                            //var idxs = x.Indexes.Where(x => existsingIndexs.Contains(x.Name) && x.Columns.Any(y => y.Name == col.Name)).ToList();
+                            //foreach (var idx in idxs)
+                            //{
+                            //    if (dropedIndexs.Add(idx.Name))
+                            //    {
+                            //        scriptBefore.Add(TableHelper.DropIndex(idx.Name, idx.TableName));
+                            //        existsingIndexs.Remove(idx.Name);
+                            //    }
+                            //}
                         }
                     }
                 }
@@ -308,7 +321,7 @@ namespace FastBIRe
                         x.Nullable = col.Nullable;
                     });
                 }
-                var alls = new HashSet<string>(x.Indexes.Where(y => y.Name.StartsWith(AutoGenForceIndexPrefx)).Select(y=>y.Name));
+                var alls = new HashSet<string>(x.Indexes.Where(y => y.Name.StartsWith(AutoGenForceIndexPrefx)).Select(y=>y.Name).Except(affectIndexs));
                 foreach (var item in news.Where(x=>!string.IsNullOrEmpty(x.IndexGroup)).GroupBy(x=>x.IndexGroup))
                 {
                     var fields = item.OrderBy(y => y.IndexOrder).Select(y => y.Field).ToArray();
@@ -323,7 +336,10 @@ namespace FastBIRe
                 {
                     foreach (var item in alls)
                     {
-                        scripts.Add(TableHelper.DropIndex(item,x.Name));
+                        if (dropedIndexs.Add(item))
+                        {
+                            scripts.Add(TableHelper.DropIndex(item, x.Name));
+                        }
                     }
                 }
             }).Execute();

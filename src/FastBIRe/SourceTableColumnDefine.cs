@@ -56,7 +56,7 @@
     }
     public record SourceTableColumnDefine: TableColumnDefine
     {
-        public SourceTableColumnDefine(string field, string raw, bool isGroup, TableColumnDefine destColumn, ToRawMethod method, string rawFormat, bool onlySet = false)
+        public SourceTableColumnDefine(string? field, string raw, bool isGroup, TableColumnDefine destColumn, ToRawMethod method, string rawFormat, bool onlySet = false)
             :base(field,raw,rawFormat,onlySet)
         {
             Field = field;
@@ -87,7 +87,7 @@
         public SourceTableColumnDefine SetExpandDateTime(bool expand = true, bool destExpand = false)
         {
             base.SetExpandDateTime(expand);
-            if (destExpand)
+            if (destExpand && DestColumn != null)
             {
                 DestColumn.SetExpandDateTime(destExpand);
             }
