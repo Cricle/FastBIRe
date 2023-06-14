@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 using DatabaseSchemaReader.DataSchema;
 
@@ -32,17 +33,18 @@ namespace FastBIRe
         }
         public string? Concatenate(params string[] inputs)
         {
+            var inputCast = inputs.Select(x => Cast(x, DbType.String));
             switch (SqlType)
             {
                 case SqlType.SqlServer:
                 case SqlType.SqlServerCe:
-                    return $"CONCAT({string.Join(" , ",inputs.Select(x=>$"CONVERT(VARCHAR,{x},120)"))})";
+                    return $"CONCAT({string.Join(" , ", inputCast)})";
                 case SqlType.MySql:
-                    return string.Join(" + ", inputs.Select(x => $"CAST({x} AS CHAR)"));
+                    return string.Join(" + ", inputCast);
                 case SqlType.SQLite:
-                    return string.Join(" || ", inputs);
+                    return string.Join(" || ", inputCast);
                 case SqlType.PostgreSql:
-                    return string.Join(" || ", inputs.Select(x=>$"{x}::VARCHAR"));
+                    return string.Join(" || ", inputCast);
                 default:
                     return null;
             }

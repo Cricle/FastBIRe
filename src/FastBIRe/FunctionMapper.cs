@@ -1,5 +1,6 @@
 ﻿using Ao.Stock.Querying;
 using DatabaseSchemaReader.DataSchema;
+using System.Data;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
@@ -44,6 +45,177 @@ namespace FastBIRe
 
         public SqlType SqlType { get; }
 
+        private string CastMySql(string input, DbType dbType)
+        {
+            switch (dbType)
+            {
+                case DbType.AnsiString:
+                case DbType.Guid:
+                case DbType.String:
+                case DbType.StringFixedLength:
+                case DbType.AnsiStringFixedLength:
+                    return $"CAST({input} AS CHAR)";
+                case DbType.Date:
+                    return $"CAST({input} AS DATE)";
+                case DbType.DateTime:
+                case DbType.DateTime2:
+                case DbType.DateTimeOffset:
+                    return $"CAST({input} AS DATETIME)";
+                case DbType.Decimal:
+                    return $"CAST({input} AS DECIMAL)";
+                case DbType.Double:
+                    return $"CAST({input} AS DOUBLE)";
+                case DbType.Boolean:
+                case DbType.Byte:
+                case DbType.Int16:
+                case DbType.Int32:
+                case DbType.Int64:
+                case DbType.SByte:
+                    return $"CAST({input} AS SIGNED)";
+                case DbType.Single:
+                    return $"CAST({input} AS FLOAT)";
+                case DbType.Time:
+                    return $"CAST({input} AS TIME)";
+                case DbType.UInt16:
+                case DbType.UInt32:
+                case DbType.UInt64:
+                    return $"CAST({input} AS UNSIGNED)";
+                default:
+                    return input;
+            }
+        }
+        private string CastPostgresql(string input, DbType dbType)
+        {
+            switch (dbType)
+            {
+                case DbType.Guid:
+                    return $"{input}::UUID";
+                case DbType.AnsiString:
+                case DbType.String:
+                case DbType.StringFixedLength:
+                case DbType.AnsiStringFixedLength:
+                    return $"{input}::VARCHAR";
+                case DbType.Date:
+                    return $"{input}::DATE";
+                case DbType.DateTime2:
+                case DbType.DateTime:
+                case DbType.DateTimeOffset:
+                    return $"{input}::TIMESTAMP";
+                case DbType.Decimal:
+                case DbType.Double:
+                    return $"{input}::DECIMAL";
+                case DbType.Boolean:
+                case DbType.Byte:
+                case DbType.Int16:
+                case DbType.SByte:
+                    return $"{input}::SMALLINT";
+                case DbType.Int32:
+                    return $"{input}::INT";
+                case DbType.UInt16:
+                case DbType.UInt32:
+                case DbType.UInt64:
+                case DbType.Int64:
+                    return $"{input}::BIGINT";
+                case DbType.Single:
+                    return $"{input}::FLOAT";
+                case DbType.Time:
+                    return $"{input}::TIME";
+                default:
+                    return input;
+            }
+        }
+        private string CastSqlServer(string input, DbType dbType)
+        {
+            switch (dbType)
+            {
+                case DbType.AnsiString:
+                case DbType.Guid:
+                case DbType.String:
+                case DbType.StringFixedLength:
+                case DbType.AnsiStringFixedLength:
+                    return $"CONVERT(VARCHAR,{input},120)";
+                case DbType.Date:
+                    return $"CONVERT(DATE,{input},120)";
+                case DbType.DateTime2:
+                    return $"CONVERT(DATETIME2,{input},120)";
+                case DbType.DateTime:
+                case DbType.DateTimeOffset:
+                    return $"CONVERT(DATETIME,{input},120)";
+                case DbType.Decimal:
+                case DbType.Double:
+                    return $"CONVERT(DECIMAL,{input},120)";
+                case DbType.Boolean:
+                case DbType.Byte:
+                case DbType.Int16:
+                case DbType.SByte:
+                case DbType.Int32:
+                    return $"CONVERT(INT,{input},120)";
+                case DbType.UInt16:
+                case DbType.UInt32:
+                case DbType.UInt64:
+                case DbType.Int64:
+                    return $"CONVERT(BIGINT,{input},120)";
+                case DbType.Single:
+                    return $"CONVERT(FLOAT,{input},120)";
+                case DbType.Time:
+                    return $"CONVERT(TIME,{input},120)";
+                default:
+                    return input;
+            }
+        }
+        private string CastSqlite(string input, DbType dbType)
+        {
+            switch (dbType)
+            {
+                case DbType.AnsiString:
+                case DbType.Guid:
+                case DbType.String:
+                case DbType.StringFixedLength:
+                case DbType.AnsiStringFixedLength:
+                    return $"CAST({input} AS TEXT)";
+                case DbType.Date:
+                case DbType.Time:
+                case DbType.DateTime2:
+                case DbType.DateTime:
+                case DbType.DateTimeOffset:
+                    return $"CAST({input} AS DATETIME)";
+                case DbType.Decimal:
+                case DbType.Single:
+                case DbType.Double:
+                    return $"CAST({input} AS REAL)";
+                case DbType.Boolean:
+                case DbType.Byte:
+                case DbType.Int16:
+                case DbType.SByte:
+                case DbType.Int32:
+                case DbType.UInt16:
+                case DbType.UInt32:
+                case DbType.UInt64:
+                case DbType.Int64:
+                    return $"CAST({input} AS INTEGER)";
+                default:
+                    return input;
+            }
+        }
+        public string? Cast(string input,DbType dbType)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return CastSqlServer(input, dbType);
+                case SqlType.MySql:
+                    return CastMySql(input, dbType);
+                case SqlType.SQLite:
+                    return CastSqlite(input, dbType);
+                case SqlType.PostgreSql:
+                    return CastPostgresql(input, dbType);
+                case SqlType.Db2:
+                case SqlType.Oracle:
+                default:
+                    return null;
+            }
+        }
         public string? Value<T>(T value)
         {
             return MethodWrapper.WrapValue(value);
