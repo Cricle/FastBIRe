@@ -7,9 +7,6 @@ namespace FastBIRe.Sample.Functions
         static void Main(string[] args)
         {
             var func = new FunctionMapper(SqlType.MySql);
-            Console.WriteLine($@"
-SELECT {func.DateAdd(func.Now(),"+22", DateTimeUnit.Day)} AS av
-");
         }
     }
 }

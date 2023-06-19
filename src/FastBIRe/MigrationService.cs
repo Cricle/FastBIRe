@@ -346,6 +346,7 @@ namespace FastBIRe
             res = scriptBefore.Concat(res).ToList();
             var key = AutoTimeTriggerPrefx + table;
             res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(key)).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name, x.TableName, SqlType))!);
+            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith("trigger_")).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name, x.TableName, SqlType))!);
             var computeField = news.Where(x => x.ExpandDateTime).ToList();
             if (computeField.Count != 0)
             {

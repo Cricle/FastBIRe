@@ -46,6 +46,7 @@ namespace FastBIRe.MinSample
         static List<SourceTableColumnDefine> GetSourceDefine(SourceTableColumnBuilder builder, SqlType sqlType,bool mig)
         {
             var f = new FunctionMapper(sqlType);
+            f.Abs("1");
             var sumA2 = builder.Helper.ToRaw(ToRawMethod.Count,builder.SourceAliasQuto + "." + f.Quto("a2"),false);
             var @if = f.If($"{sumA2}/10=1",f.Value("succeed"),f.Value("fail"));
             var str = f.Bracket(@if);

@@ -38,11 +38,9 @@ namespace FastBIRe
             {
                 case SqlType.SqlServer:
                 case SqlType.SqlServerCe:
-                    return $"CONCAT({string.Join(" , ", inputCast)})";
                 case SqlType.MySql:
-                    return string.Join(" + ", inputCast);
+                    return $"CONCAT({string.Join(" , ", inputCast)})";
                 case SqlType.SQLite:
-                    return string.Join(" || ", inputCast);
                 case SqlType.PostgreSql:
                     return string.Join(" || ", inputCast);
                 default:
