@@ -218,7 +218,12 @@ namespace FastBIRe
         }
         public string? Value<T>(T value)
         {
-            return MethodWrapper.WrapValue(value);
+            var str= MethodWrapper.WrapValue(value);
+            if (value is string&&str!=null&&SqlType== SqlType.SqlServer||SqlType== SqlType.SqlServerCe)
+            {
+                str = "N" + str;
+            }
+            return str;
         }
         public string Quto(string name)
         {

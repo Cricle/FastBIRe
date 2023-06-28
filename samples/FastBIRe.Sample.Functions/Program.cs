@@ -6,7 +6,8 @@ namespace FastBIRe.Sample.Functions
     {
         static void Main(string[] args)
         {
-            var func = new FunctionMapper(SqlType.MySql);
+            var func = new FunctionMapper(SqlType.SqlServer);
+
         }
     }
 }

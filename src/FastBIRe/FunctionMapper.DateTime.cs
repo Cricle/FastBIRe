@@ -90,7 +90,11 @@ END
         {
             if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%d', {time});";
+                return $"strftime('%d', {time})";
+            }
+            else if (SqlType== SqlType.SqlServer||SqlType== SqlType.SqlServerCe)
+            {
+                return $"DATEPART(day,{time})";
             }
             return $"DAY({time})";
         }
@@ -98,7 +102,11 @@ END
         {
             if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y', {time});";
+                return $"strftime('%Y', {time})";
+            }
+            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            {
+                return $"DATEPART(year,{time})";
             }
             return $"YEAR({time})";
         }
@@ -106,7 +114,11 @@ END
         {
             if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%m', {time});";
+                return $"strftime('%m', {time})";
+            }
+            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            {
+                return $"DATEPART(month,{time})";
             }
             return $"MONTH({time})";
         }
@@ -114,7 +126,11 @@ END
         {
             if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%H', {time});";
+                return $"strftime('%H', {time})";
+            }
+            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            {
+                return $"DATEPART(hour,{time})";
             }
             return $"HOUR({time})";
         }
@@ -122,7 +138,11 @@ END
         {
             if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%M', {time});";
+                return $"strftime('%M', {time})";
+            }
+            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            {
+                return $"DATEPART(minute,{time})";
             }
             return $"Minute({time})";
         }
@@ -130,7 +150,11 @@ END
         {
             if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%S', {time});";
+                return $"strftime('%S', {time})";
+            }
+            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            {
+                return $"DATEPART(second,{time})";
             }
             return $"Second({time})";
         }
