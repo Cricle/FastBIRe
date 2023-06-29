@@ -248,14 +248,14 @@ FROM (
             switch (SqlType)
             {
                 case SqlType.SQLite:
-                    return "strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime')";
+                    return "strftime('%Y-%m-%d 00:00:00', 'now', 'localtime')";
                 case SqlType.SqlServer:
-                    return "GETDATE()";
+                    return "CONVERT(DATETIME,CONVERT(VARCHAR(10),GETDATE(),120)+' 00:00:00',120)";
                 case SqlType.PostgreSql:
-                    return "CURRENT_TIMESTAMP";
+                    return "CAST(CURRENT_DATE||' 00:00:00' AS TIMESTAMP)";
                 case SqlType.MySql:
                 default:
-                    return "NOW()";
+                    return "CAST(CONCAT(DATE_FORMAT(NOW(),'%Y-%m-%d'),' 00:00:00') AS DATETIME)";
             }
         }
         public string? Days(string timeA, string timeB)
