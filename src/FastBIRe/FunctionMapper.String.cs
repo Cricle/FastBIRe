@@ -16,6 +16,37 @@ namespace FastBIRe
         {
             return $"like {input}";
         }
+        public string? Stdev(string input)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                 case SqlType.SQLite:
+                    return $"STDEV({input})";
+                case SqlType.MySql:
+                case SqlType.PostgreSql:
+                    return $"STDDEV_POP({input})";
+                default:
+                    return null;
+            }
+        }
+        public string? Var(string input)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return $"VAR({input})";
+                case SqlType.MySql:
+                    return $"VAR_POP({input})";
+                case SqlType.SQLite:
+                case SqlType.PostgreSql:
+                    return $"VARIANCE({input})";
+                default:
+                    return null;
+            }
+        }
         public string? Char(string input)
         {
             switch (SqlType)
@@ -47,12 +78,29 @@ namespace FastBIRe
                     return null;
             }
         }
-        public string? Left(string input,string length)
+        public string? Ascii(string input)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                case SqlType.PostgreSql:
+                case SqlType.MySql:
+                    return $"ASCII({input})";
+                case SqlType.SQLite:
+                    return $"UNICODE(substr({input}, 1, 1))";
+                case SqlType.Db2:
+                case SqlType.Oracle:
+                default:
+                    return null;
+            }
+        }
+        public string Left(string input,string length)
         {
             var addition = SqlType == SqlType.PostgreSql ? "::VARCHAR" : string.Empty;
             return $"LEFT({input}{addition},{length})";
         }
-        public string? Right(string input, string length)
+        public string Right(string input, string length)
         {
             var addition = SqlType == SqlType.PostgreSql ? "::VARCHAR" : string.Empty;
             return $"RIGHT({input}{addition},{length})";

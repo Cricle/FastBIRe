@@ -58,9 +58,12 @@ namespace FastBIRe
         public string DateDif(string timeA, string timeB, string unit)
         {
             return $@"
-CASE WHEN {unit}='Y' THEN YEAR({timeA})-YEAR({timeB}) 
-WHEN {unit}='M' THEN MONTH({timeA})-MONTH({timeB}) 
-WHEN {unit}='D' THEN DAY({timeA})-DAY({timeB}) 
+CASE WHEN {Ascii(unit)}={Ascii("'Y'")} THEN {Year(timeA)}-{Year(timeB)}
+WHEN {Ascii(unit)}={Ascii("'M'")} THEN {Month(timeA)}-{Month(timeB)} 
+WHEN {Ascii(unit)}={Ascii("'D'")} THEN {Day(timeA)}-{Day(timeB)}
+WHEN {Ascii(unit)}={Ascii("'h'")} THEN {Hour(timeA)}-{Hour(timeB)}
+WHEN {Ascii(unit)}={Ascii("'m'")} THEN {Minute(timeA)}-{Minute(timeB)}
+WHEN {Ascii(unit)}={Ascii("'s'")} THEN {Second(timeA)}-{Second(timeB)}
 END
 ";
         }
