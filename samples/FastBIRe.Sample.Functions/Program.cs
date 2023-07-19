@@ -1,4 +1,6 @@
 ﻿using DatabaseSchemaReader.DataSchema;
+using FastBIRe.Timescale;
+using System.Runtime.CompilerServices;
 
 namespace FastBIRe.Sample.Functions
 {
@@ -6,8 +8,7 @@ namespace FastBIRe.Sample.Functions
     {
         static void Main(string[] args)
         {
-            var func = new FunctionMapper(SqlType.SqlServer);
-
+            Console.WriteLine(TimescaleHelper.Default.DropChunks("device"));
         }
     }
 }

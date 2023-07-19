@@ -225,6 +225,14 @@ namespace FastBIRe
             }
             return str;
         }
+        public string PartitionBy(params string[] areas)
+        {
+            return $"PARTITION BY {string.Join(",",areas)}";
+        }
+        public string Over(string inner)
+        {
+            return $"OVER({inner})";
+        }
         public string Quto(string name)
         {
             return MethodWrapper.Quto(name);
