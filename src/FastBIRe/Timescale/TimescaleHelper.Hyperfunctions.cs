@@ -382,5 +382,39 @@ namespace FastBIRe.Timescale
             }
             return sql + ")";
         }
+        public string Uddsketch(string size,
+            string max_error,
+            string value)
+        {
+            return $"uddsketch({size},{max_error},{value})";
+        }
+        public string PercentileAgg(string value)
+        {
+            return $"percentile_agg({value})";
+        }
+        public string ApproxPercentile(string percentile, string uddsketch)
+        {
+            return $"approx_percentile({percentile},{uddsketch})";
+        }
+        public string ApproxPercentileArray(string percentiles, string uddsketch)
+        {
+            return $"approx_percentile_array({percentiles},{uddsketch})";
+        }
+        public string ApproxPercentileRank(string value, string sketch)
+        {
+            return $"approx_percentile_rank({value},{sketch})";
+        }
+        public string Error(string sketch)
+        {
+            return $"error({sketch})";
+        }
+        public string Mean(string sketch)
+        {
+            return $"mean({sketch})";
+        }
+        public string Tdigest(string buckets, string value)
+        {
+            return $"tdigest({buckets},{value})";
+        }
     }
 }
