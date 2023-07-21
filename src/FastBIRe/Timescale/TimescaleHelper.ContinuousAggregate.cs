@@ -211,13 +211,5 @@ WITH ({with}) AS
             }
             return sql + ")";
         }
-        public string HypertableSize(string hypertable)
-        {
-            return $"hypertable_size({hypertable})";
-        }
-        public string HypertableDetailedSize(string hypertable)
-        {
-            return $"hypertable_detailed_size({hypertable})";
-        }
     }
 }

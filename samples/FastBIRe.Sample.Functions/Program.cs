@@ -8,7 +8,7 @@ namespace FastBIRe.Sample.Functions
     {
         static void Main(string[] args)
         {
-            Console.WriteLine(TimescaleHelper.Default.DropChunks("device"));
+            Console.WriteLine(TimescaleViews.GetHypertable("device",false));
         }
     }
 }

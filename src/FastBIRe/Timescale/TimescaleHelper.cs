@@ -1,15 +1,18 @@
-﻿namespace FastBIRe.Timescale
+﻿using System.Runtime.CompilerServices;
+
+namespace FastBIRe.Timescale
 {
     public partial class TimescaleHelper
     {
         public static readonly TimescaleHelper Default = new TimescaleHelper();
 
-        private string BoolToString(bool? b)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string BoolToString(bool? b)
         {
-            return b??false ? "true" : "false";
+            return b ?? false ? "true" : "false";
         }
 
-        public string CreateInterval(int value,DateTimeUnit unit)
+        public string CreateInterval(int value, DateTimeUnit unit)
         {
             var unitStr = string.Empty;
             switch (unit)

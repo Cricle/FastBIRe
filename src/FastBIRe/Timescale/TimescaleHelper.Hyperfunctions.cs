@@ -416,5 +416,125 @@ namespace FastBIRe.Timescale
         {
             return $"tdigest({buckets},{value})";
         }
+        public string CounterAgg(string ts,string value, string? bounds = null)
+        {
+            var boundsStr = bounds == null ? string.Empty : "," + bounds;
+
+            return $"counter_agg({ts},{value}{boundsStr})";
+        }
+        public string CounterZeroTime(string summary)
+        {
+            return $"counter_zero_time({summary})";
+        }
+        public string Delta(string summary)
+        {
+            return $"delta({summary})";
+        }
+        public string ExtrapolatedDelta(string summary,string method)
+        {
+            return $"extrapolated_delta({summary},{method})";
+        }
+        public string ExtrapolatedRate(string summary, string method)
+        {
+            return $"extrapolated_rate({summary},{method})";
+        }
+        public string FirstTime(string cs)
+        {
+            return $"first_time({cs})";
+        }
+        public string FirstVal(string cs)
+        {
+            return $"first_val({cs})";
+        }
+        public string IdeltaLeft(string summary)
+        {
+            return $"idelta_left({summary})";
+        }
+        public string IdeltaRight(string summary)
+        {
+            return $"idelta_left({summary})";
+        }
+        public string InterpolatedDelta(string summary,
+            string start,
+            string interval,
+            string? prev=null,
+            string? next = null)
+        {
+            var args = new List<string>(0);
+            if (!string.IsNullOrEmpty(prev))
+                args.Add($"prev => {prev}");
+            if (!string.IsNullOrEmpty(next))
+                args.Add($"next => {next}");
+            var sql = $"interpolated_delta({summary},{start},{interval}";
+            if (args.Count != 0)
+            {
+                sql += "," + string.Join(",", args);
+            }
+            return sql + ")";
+        }
+        public string InterpolatedRate(string summary,
+            string start,
+            string interval,
+            string? prev = null,
+            string? next = null)
+        {
+            var args = new List<string>(0);
+            if (!string.IsNullOrEmpty(prev))
+                args.Add($"prev => {prev}");
+            if (!string.IsNullOrEmpty(next))
+                args.Add($"next => {next}");
+            var sql = $"interpolated_rate({summary},{start},{interval}";
+            if (args.Count != 0)
+            {
+                sql += "," + string.Join(",", args);
+            }
+            return sql + ")";
+        }
+        public string IrateLeft(string summary)
+        {
+            return $"irate_left({summary})";
+        }
+        public string IrateRight(string summary)
+        {
+            return $"irate_right({summary})";
+        }
+        public string LastTime(string cs)
+        {
+            return $"last_time({cs})";
+        }
+        public string LastVal(string cs)
+        {
+            return $"last_val({cs})";
+        }
+        public string NumChanges(string summary)
+        {
+            return $"num_changes({summary})";
+        }
+        public string NumElements(string summary)
+        {
+            return $"num_elements({summary})";
+        }
+        public string NumResets(string summary)
+        {
+            return $"num_resets({summary})";
+        }
+        public string Rate(string summary)
+        {
+            return $"rate({summary})";
+        }
+        public string TimeDelta(string summary)
+        {
+            return $"time_delta({summary})";
+        }
+        public string WithBounds(string summary,string bounds)
+        {
+            return $"with_bounds({summary},{bounds})";
+        }
+        public string GaugeAgg(string ts, string value, string? bounds = null)
+        {
+            var boundsStr = bounds == null ? string.Empty : "," + bounds;
+
+            return $"gauge_agg({ts},{value}{boundsStr})";
+        }
     }
 }
