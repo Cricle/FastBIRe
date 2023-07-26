@@ -22,7 +22,7 @@
             }
             return $@"
 CREATE MATERIALIZED VIEW {viewName}
-WITH ({with}) AS 
+WITH (timescaledb.continuous{with}) AS 
 {query}";
         }
         public string AlterContinuousAggregate(string viewName,

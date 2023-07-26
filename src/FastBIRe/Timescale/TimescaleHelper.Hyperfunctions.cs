@@ -536,5 +536,37 @@ namespace FastBIRe.Timescale
 
             return $"gauge_agg({ts},{value}{boundsStr})";
         }
+        public string TimeWeight(string method,string ts, string value)
+        {
+            return $"time_weight({method},{ts},{value})";
+        }
+        public string Integral(string tws, string? unit=null)
+        {
+            var unitStr = unit == null ? string.Empty : "," + unit;
+
+            return $"integral({tws},{unitStr})";
+        }
+        public string InterpolatedIntegral(string tws,
+            string start,
+            string interval,
+            string? prev = null,
+            string? next = null,
+            string? unit = null)
+        {
+            var args = new List<string>(0);
+            if (!string.IsNullOrEmpty(prev))
+                args.Add($"prev => {prev}");
+            if (!string.IsNullOrEmpty(next))
+                args.Add($"next => {next}");
+            if (!string.IsNullOrEmpty(unit))
+                args.Add($"unit => {unit}");
+
+            var sql = $"interpolated_integral({tws},{start},{interval}";
+            if (args.Count != 0)
+            {
+                sql += "," + string.Join(",", args);
+            }
+            return sql + ")";
+        }
     }
 }
