@@ -45,7 +45,7 @@ namespace FastBIRe.Timescale
                 default:
                     break;
             }
-            return $"{value} {unitStr}";
+            return $"INTERVAL '{value} {unitStr}'";
         }
     }
 }

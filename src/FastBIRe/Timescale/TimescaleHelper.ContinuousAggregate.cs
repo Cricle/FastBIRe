@@ -6,7 +6,8 @@
             string query,
             bool? materialized_only=null,
             bool? create_group_indexes=null,
-            bool? finalized=null)
+            bool? finalized=null,
+            bool if_not_exists=true)
         {
             var args = new List<string>();
             if (materialized_only != null)
@@ -21,7 +22,7 @@
                 with = "," + string.Join(",", args);
             }
             return $@"
-CREATE MATERIALIZED VIEW {viewName}
+CREATE MATERIALIZED VIEW {(if_not_exists?"IF NOT EXISTS":string.Empty)} ""{viewName}""
 WITH (timescaledb.continuous{with}) AS 
 {query}";
         }

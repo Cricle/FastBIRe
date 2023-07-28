@@ -10,13 +10,11 @@ namespace FastBIRe.Timescale
 
         string? ChuckTimeInterval { get; }
 
-        string? Interval { get; }
-
         int CommandTimeout { get; }
 
         Task<bool> IsHypertableAsync();
 
-        Task<bool> CreateHypertableAsync();
+        Task<bool> CreateHypertableAsync(bool quto);
     }
     public class TimescaleManager : ITimescaleManager
     {
@@ -36,9 +34,7 @@ namespace FastBIRe.Timescale
 
         public string TimeColumn { get; }
 
-        public string? ChuckTimeInterval { get; }
-
-        public string? Interval { get; }
+        public string? ChuckTimeInterval { get; set; }
 
         public int CommandTimeout { get; }
 
@@ -46,9 +42,11 @@ namespace FastBIRe.Timescale
 
         public DbConnection Connection { get; }
 
-        public async Task<bool> CreateHypertableAsync()
+        public async Task<bool> CreateHypertableAsync(bool quto)
         {
-            var sql = Helper.CreateHypertable(Table, TimeColumn,
+            var table = quto ? $"'{Table}'" : Table;
+            var timeColumn = quto ? $"'{TimeColumn}'" : TimeColumn;
+            var sql ="SELECT " +Helper.CreateHypertable(table, timeColumn,
                 if_not_exists: true,
                 chunk_time_interval: ChuckTimeInterval);
             using (var comm = Connection.CreateCommand())
