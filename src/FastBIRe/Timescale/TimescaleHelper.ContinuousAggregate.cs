@@ -7,7 +7,8 @@
             bool? materialized_only=null,
             bool? create_group_indexes=null,
             bool? finalized=null,
-            bool if_not_exists=true)
+            bool if_not_exists=true,
+            bool noData=false)
         {
             var args = new List<string>();
             if (materialized_only != null)
@@ -24,7 +25,9 @@
             return $@"
 CREATE MATERIALIZED VIEW {(if_not_exists?"IF NOT EXISTS":string.Empty)} ""{viewName}""
 WITH (timescaledb.continuous{with}) AS 
-{query}";
+{query}
+WITH {(noData?"NO":string.Empty)} DATA
+";
         }
         public string AlterContinuousAggregate(string viewName,
             bool? materialized_only = null,
@@ -55,21 +58,35 @@ WITH (timescaledb.continuous{with}) AS
             return $@"refresh_continuous_aggregate({continuous_aggregate},{window_start},{window_end})";
         }
         public string AddContinuousAggregatePolicy(string continuous_aggregate,
-            string start_offset,
-            string end_offset,
-            string schedule_interval,
-            string initial_start,
-            string timezone,
+            string? start_offset = null,
+            string? end_offset = null,
+            string? schedule_interval = null,
+            string? initial_start = null,
+            string? timezone=null,
             bool? if_not_exists = null)
         {
             var args = new List<string>();
+            if (!string.IsNullOrEmpty(start_offset))
+                args.Add($"start_offset=> {start_offset}");
+            else
+                args.Add($"start_offset=> null");
+            if (!string.IsNullOrEmpty(end_offset))
+                args.Add($"end_offset=> {end_offset}");
+            else
+                args.Add($"end_offset=> null");
+            if (!string.IsNullOrEmpty(schedule_interval))
+                args.Add($"schedule_interval=> {schedule_interval}");
+            if (!string.IsNullOrEmpty(initial_start))
+                args.Add($"initial_start=> {initial_start}");
+            if (!string.IsNullOrEmpty(timezone))
+                args.Add($"timezone=> {timezone}");
             if (if_not_exists != null)
                 args.Add($"if_not_exists= {BoolToString(if_not_exists)}");
             if (args.Count == 0)
             {
                 return string.Empty;
             }
-            var sql = $"add_continuous_aggregate_policy({continuous_aggregate},{start_offset},{end_offset},{schedule_interval},{initial_start},{timezone}";
+            var sql = $"add_continuous_aggregate_policy({continuous_aggregate}";
             if (args.Count != 0)
             {
                 sql += "," + string.Join(",", args);
