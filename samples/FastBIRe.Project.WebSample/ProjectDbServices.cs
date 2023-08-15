@@ -11,10 +11,13 @@ namespace FastBIRe.Project.WebSample
 
         public readonly IProject<string> Project;
 
+        public readonly bool Succeed;
+
         public CreateDbContextResult(SchoolDbContext? dbContext, IProject<string> project)
         {
             DbContext = dbContext;
             Project = project;
+            Succeed = true;
         }
     }
     public class ProjectDbServices

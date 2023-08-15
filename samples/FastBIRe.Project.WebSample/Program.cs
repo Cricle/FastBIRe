@@ -37,19 +37,20 @@ namespace FastBIRe.Project.WebSample
             builder.Services.AddScoped(ser =>
             {
                 var httpContext = ser.GetRequiredService<IHttpContextAccessor>();
-                var pjId=httpContext.HttpContext!.Request.Headers["projId"].ToString();
+                var pjId = httpContext.HttpContext!.Request.Headers["projId"].ToString();
                 var accesstor = ser.GetRequiredService<ProjectDbServices>();
-                var res= accesstor.CreateDbContextAsync(pjId).GetAwaiter().GetResult()!;
-                if (res.Project!=null)
+                var res = accesstor.CreateDbContextAsync(pjId).GetAwaiter().GetResult();
+                if (!res.Succeed)
                 {
-                    httpContext.HttpContext.Features.Set(res.Project);
+                    throw new InvalidOperationException("Project id not found");
                 }
+                httpContext.HttpContext.Features.Set(res.Project);
                 return res.DbContext!;
             });
             builder.Services.AddSingleton<ProjectDbServices>();
-            builder.Services.AddScoped<IProjectAccesstor<IProjectAccesstContext<string>, string>>(p =>
+            builder.Services.AddSingleton<IProjectAccesstor<IProjectAccesstContext<string>, string>>(p =>
             {
-                return new JsonDirectoryProjectAccesstor("projects","pj");
+                return new JsonDirectoryProjectAccesstor("projects", "pj");
             });
             var app = builder.Build();
 
@@ -58,7 +59,7 @@ namespace FastBIRe.Project.WebSample
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            var dbs = app.Services.GetRequiredService<ProjectDbServices>();
             app.MapControllers();
 
             app.Run();

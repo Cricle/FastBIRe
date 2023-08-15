@@ -23,8 +23,9 @@ namespace FastBIRe.Project.WebSample.Controllers
         public async Task<IActionResult> CreateProject([FromForm]string name)
         {
             var id= Guid.NewGuid().ToString("N");
-            var ok=await projectAccesstor.CreateProjectAsync(new ProjectAccesstContext<string>(id), new Project<string>(id, name, new Version(1, 0), DateTime.Now));
-            return Ok(ok);
+            var ok=await projectAccesstor.CreateProjectAsync(new ProjectAccesstContext<string>(id), 
+                new Project<string>(id, name, new Version(1, 0), DateTime.Now));
+            return Ok(id);
         }
     }
 }
