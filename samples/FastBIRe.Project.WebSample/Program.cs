@@ -1,5 +1,6 @@
 using FastBIRe.Project.Accesstor;
 using Microsoft.OpenApi.Models;
+using System.IO.Compression;
 
 namespace FastBIRe.Project.WebSample
 {
@@ -46,9 +47,9 @@ namespace FastBIRe.Project.WebSample
                 return res.DbContext!;
             });
             builder.Services.AddSingleton<ProjectDbServices>();
-            builder.Services.AddSingleton<IProjectAccesstor<IProjectAccesstContext<string>, string>>(p =>
+            builder.Services.AddScoped<IProjectAccesstor<IProjectAccesstContext<string>, string>>(p =>
             {
-                return new JsonDirectoryProjectAccesstor("projects", "proj");
+                return new JsonDirectoryProjectAccesstor("projects","pj");
             });
             var app = builder.Build();
 

@@ -46,6 +46,7 @@ namespace FastBIRe.Project.Accesstor
         }
     }
 #endif
+
     public abstract class DirectoryProjectAccesstor<TInput, TId> : ProjectAccesstorBase<TInput, TId>
         where TInput : IProjectAccesstContext<TId>
     {
@@ -83,7 +84,7 @@ namespace FastBIRe.Project.Accesstor
         public override Task<IReadOnlyList<IProject<TId>>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var res = EnumerableProjectFile(null).Select(ConvertToProject).Where(x => x != null).ToList();
+            var res = EnumerableProjectFile(input?.ToString()).Select(ConvertToProject).Where(x => x != null).ToList();
             return Task.FromResult<IReadOnlyList<IProject<TId>>>(res!);
         }
 
