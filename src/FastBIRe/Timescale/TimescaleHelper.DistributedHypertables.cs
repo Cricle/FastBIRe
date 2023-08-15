@@ -62,7 +62,7 @@
                 args.Add($"database => {database}");
             if (!string.IsNullOrEmpty(port))
                 args.Add($"port => {port}");
-            if (if_not_exists!=null)
+            if (if_not_exists != null)
                 args.Add($"if_not_exists => {BoolToString(if_not_exists)}");
             if (!string.IsNullOrEmpty(bootstrap))
                 args.Add($"bootstrap => {bootstrap}");
@@ -93,7 +93,7 @@
             return sql + ")";
         }
         public string AlterDataNode(string node_name,
-            string? host=null,
+            string? host = null,
             string? database = null,
             string? port = null,
             bool? available = null)

@@ -1,5 +1,4 @@
 ﻿using FastBIRe.Project.Models;
-using System.Security.Cryptography;
 #if !NETSTANDARD2_0
 using System.Text.Json;
 #endif
@@ -65,6 +64,8 @@ namespace FastBIRe.Project.Accesstor
 
         public string Extensions { get; }
 
+        public SearchOption SearchOption { get; set; } = SearchOption.AllDirectories;
+
         public abstract IProject<TId>? ConvertToProject(string file);
 
         public abstract Task WriteProjectToFileAsync(string file, IProject<TId> project, CancellationToken cancellationToken = default);
@@ -76,7 +77,7 @@ namespace FastBIRe.Project.Accesstor
 
         public virtual IEnumerable<string> EnumerableProjectFile(string? keyword)
         {
-            return Directory.EnumerateFiles(Root, keyword == null ? $"*{keyword}*.{Extensions}" : $"*.{Extensions}", SearchOption.AllDirectories);
+            return Directory.EnumerateFiles(Root, !string.IsNullOrEmpty(keyword) ? $"*{keyword}*.{Extensions}" : $"*.{Extensions}", SearchOption);
         }
 
         public override Task<IReadOnlyList<IProject<TId>>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default)
@@ -86,7 +87,7 @@ namespace FastBIRe.Project.Accesstor
             return Task.FromResult<IReadOnlyList<IProject<TId>>>(res!);
         }
 
-        protected override Task<int> OnCleanProjectAsync(TInput? input,CancellationToken cancellationToken = default)
+        protected override Task<int> OnCleanProjectAsync(TInput? input, CancellationToken cancellationToken = default)
         {
             var del = 0;
             foreach (var item in EnumerableProjectFile(null))
@@ -106,7 +107,7 @@ namespace FastBIRe.Project.Accesstor
             {
                 dir.Create();
             }
-            await WriteProjectToFileAsync(path, project,cancellationToken);
+            await WriteProjectToFileAsync(path, project, cancellationToken);
             return true;
         }
 

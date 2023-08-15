@@ -69,7 +69,7 @@ namespace FastBIRe
             var updateName = name + InsertTail;
             var insertName = name + UpdateTail;
             var helper = new MergeHelper(sqlType);
-            helper.WhereItems = GetWhereItems(table,sqlType);
+            helper.WhereItems = GetWhereItems(table, sqlType);
             var inserts = helper.CompileInsert(destTable, table);
             var updates = helper.CompileUpdate(destTable, table);
             return $@"

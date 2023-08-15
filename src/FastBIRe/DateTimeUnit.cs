@@ -3,10 +3,10 @@
     public enum DateTimeUnit
     {
         Year,
-        Month, 
-        Day, 
+        Month,
+        Day,
         Hour,
-        Minute, 
+        Minute,
         Second,
         Week,
         Quarter

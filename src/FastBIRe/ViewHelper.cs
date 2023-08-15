@@ -4,7 +4,7 @@ namespace FastBIRe
 {
     public static class ViewHelper
     {
-        public static string Create(string viewName,string script, SqlType sqlType)
+        public static string Create(string viewName, string script, SqlType sqlType)
         {
             var qutoViewName = MergeHelper.GetMethodWrapper(sqlType).Quto(viewName);
             return $"CREATE VIEW {qutoViewName} AS {script};";

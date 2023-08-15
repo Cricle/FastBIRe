@@ -12,7 +12,7 @@
 
             return $"mcv_agg({n},{value}{skewStr})";
         }
-        public string MaxFrequency(string agg,string value)
+        public string MaxFrequency(string agg, string value)
         {
             return $"max_frequency({agg},{value})";
         }
@@ -24,7 +24,7 @@
         {
             return $"topn({agg},{n})";
         }
-        public string CountMinSketch(string values, string error,string probability)
+        public string CountMinSketch(string values, string error, string probability)
         {
             return $"count_min_sketch({values},{error},{probability})";
         }

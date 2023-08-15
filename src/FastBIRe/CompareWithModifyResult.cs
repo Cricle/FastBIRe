@@ -11,7 +11,7 @@ namespace FastBIRe
             {
                 case SqlType.SqlServer:
                 case SqlType.SqlServerCe:
-                    return SqlServer(helper,name,type);
+                    return SqlServer(helper, name, type);
                 case SqlType.MySql:
                     return MySql(helper, name, type);
                 case SqlType.SQLite:
@@ -40,7 +40,7 @@ namespace FastBIRe
                     return null;
             }
         }
-        public static string NormalSupplement(MergeHelper helper,string name,string miss)
+        public static string NormalSupplement(MergeHelper helper, string name, string miss)
         {
             return $"LEFT({helper.JoinString(name, miss)},19)";
         }
@@ -125,7 +125,7 @@ namespace FastBIRe
                     return null;
             }
         }
-        public static string? MySql(MergeHelper helper,string name,ToRawMethod type)
+        public static string? MySql(MergeHelper helper, string name, ToRawMethod type)
         {
             switch (type)
             {

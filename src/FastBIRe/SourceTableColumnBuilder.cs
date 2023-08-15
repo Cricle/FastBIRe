@@ -327,7 +327,7 @@ namespace FastBIRe
             bool destNullable = true,
             int? precision = null,
             int? scale = null,
-            bool needString=true)
+            bool needString = true)
         {
             return MethodRaw(destField,
                 rawFormat,
@@ -342,9 +342,9 @@ namespace FastBIRe
                 needString ? StringLen : NumberLen);
         }
         public SourceTableColumnDefine StringRaw(
-            string destField, 
+            string destField,
             string rawFormat,
-            string? field=null,
+            string? field = null,
             bool isGroup = false,
             bool onlySet = false,
             bool sourceNullable = true,

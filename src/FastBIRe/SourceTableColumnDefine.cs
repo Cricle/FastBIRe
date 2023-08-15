@@ -12,7 +12,7 @@
         public const string Quarter = "_quarter";
         public const string Week = "_week";
 
-        public static string CombineField(string field,string part)
+        public static string CombineField(string field, string part)
         {
             return SystemPrefx + field + part;
         }
@@ -54,16 +54,16 @@
             }
         }
     }
-    public record SourceTableColumnDefine: TableColumnDefine
+    public record SourceTableColumnDefine : TableColumnDefine
     {
         public SourceTableColumnDefine(string? field, string raw, bool isGroup, TableColumnDefine destColumn, ToRawMethod method, string rawFormat, bool onlySet = false)
-            :base(field,raw,rawFormat,onlySet)
+            : base(field, raw, rawFormat, onlySet)
         {
             Field = field;
             Raw = raw;
             IsGroup = isGroup;
             DestColumn = destColumn;
-            Method = method;  
+            Method = method;
             RawFormat = rawFormat;
             OnlySet = onlySet;
         }
@@ -80,7 +80,7 @@
         }
         public new SourceTableColumnDefine SetIndex(string group, int order = 0, bool desc = false)
         {
-            base.SetIndex(group,order,desc);
+            base.SetIndex(group, order, desc);
             return this;
         }
 
@@ -93,7 +93,7 @@
             }
             return this;
         }
-        public new SourceTableColumnDefine SetExpandDateTime(bool expand=true)
+        public new SourceTableColumnDefine SetExpandDateTime(bool expand = true)
         {
             base.SetExpandDateTime(expand);
             return this;

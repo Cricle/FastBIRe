@@ -19,7 +19,7 @@ namespace FastBIRe.Timescale
     public class TimescaleManager : ITimescaleManager
     {
         public TimescaleManager(string table, string timeColumn, DbConnection connection)
-            :this(table,timeColumn,TimescaleHelper.Default,connection)
+            : this(table, timeColumn, TimescaleHelper.Default, connection)
         {
         }
         public TimescaleManager(string table, string timeColumn, TimescaleHelper helper, DbConnection connection)
@@ -46,7 +46,7 @@ namespace FastBIRe.Timescale
         {
             var table = quto ? $"'{Table}'" : Table;
             var timeColumn = quto ? $"'{TimeColumn}'" : TimeColumn;
-            var sql ="SELECT " +Helper.CreateHypertable(table, timeColumn,
+            var sql = "SELECT " + Helper.CreateHypertable(table, timeColumn,
                 if_not_exists: true,
                 chunk_time_interval: ChuckTimeInterval);
             using (var comm = Connection.CreateCommand())

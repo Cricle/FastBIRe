@@ -33,7 +33,7 @@
         }
         public Task<int> MigrationAsync(string destTable, SourceTableDefine tableDefine, IEnumerable<TableColumnDefine> olds, bool syncSource, CancellationToken token = default)
         {
-            var commands = Migration.RunMigration(destTable, tableDefine, olds,syncSource);
+            var commands = Migration.RunMigration(destTable, tableDefine, olds, syncSource);
             return Migration.ExecuteNonQueryAsync(commands, token);
         }
         public Task<int> MigrationAsync(string tableName, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> olds, CancellationToken token = default)

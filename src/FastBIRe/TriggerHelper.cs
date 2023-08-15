@@ -1,9 +1,8 @@
 ﻿using DatabaseSchemaReader.DataSchema;
-using System.Data.Common;
 
 namespace FastBIRe
 {
-    public record class TriggerField(string Field, string Raw,string Target,string Type,string RawFormat);
+    public record class TriggerField(string Field, string Raw, string Target, string Type, string RawFormat);
     public class ComputeTriggerHelper
     {
         public const string Update = "_update";
@@ -11,7 +10,7 @@ namespace FastBIRe
 
         public static readonly ComputeTriggerHelper Instance = new ComputeTriggerHelper();
 
-        public string? DropRaw(string name,string sourceTable, SqlType sqlType)
+        public string? DropRaw(string name, string sourceTable, SqlType sqlType)
         {
             switch (sqlType)
             {
@@ -30,17 +29,17 @@ namespace FastBIRe
                     return null;
             }
         }
-        public IEnumerable<string> Create(string name, string sourceTable, IEnumerable<TriggerField> columns,string idColumn, SqlType sqlType)
+        public IEnumerable<string> Create(string name, string sourceTable, IEnumerable<TriggerField> columns, string idColumn, SqlType sqlType)
         {
             switch (sqlType)
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    return CreateSqlServer(name, sourceTable, columns,idColumn);
+                    return CreateSqlServer(name, sourceTable, columns, idColumn);
                 case SqlType.MySql:
                     return CreateMySql(name, sourceTable, columns);
                 case SqlType.SQLite:
-                    return CreateSqlite(name, sourceTable, columns,idColumn);
+                    return CreateSqlite(name, sourceTable, columns, idColumn);
                 case SqlType.PostgreSql:
                     return CreatePostgreSQL(name, sourceTable, columns);
                 case SqlType.Oracle:
@@ -53,7 +52,7 @@ namespace FastBIRe
         {
             string GenSql(bool update)
             {
-                return $@"CREATE TRIGGER `{name}{(update?Insert:Update)}` BEFORE {(update ? "INSERT" : "UPDATE")} ON `{sourceTable}`
+                return $@"CREATE TRIGGER `{name}{(update ? Insert : Update)}` BEFORE {(update ? "INSERT" : "UPDATE")} ON `{sourceTable}`
 FOR EACH ROW
 BEGIN
     {string.Join("\n", columns.Select(x => $"SET NEW.`{x.Field}` = CASE WHEN `NEW`.`{x.Target}` IS NULL THEN NULL ELSE {x.Raw} END;"))}
@@ -81,7 +80,7 @@ END;
             yield return GenSql(false);
             yield return GenSql(true);
         }
-        public IEnumerable<string> CreateSqlite(string name, string sourceTable, IEnumerable<TriggerField> columns,string idColumn)
+        public IEnumerable<string> CreateSqlite(string name, string sourceTable, IEnumerable<TriggerField> columns, string idColumn)
         {
             string GenSql(bool update)
             {
@@ -193,7 +192,7 @@ END;
         {
             string GenSql(bool update)
             {
-                return $@"CREATE TRIGGER `{name}{(update?Update:Insert)}` AFTER {(update? "UPDATE": "INSERT")} ON `{sourceTable}`
+                return $@"CREATE TRIGGER `{name}{(update ? Update : Insert)}` AFTER {(update ? "UPDATE" : "INSERT")} ON `{sourceTable}`
 FOR EACH ROW
 BEGIN
     IF {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"NEW.`{x}` IS NOT NULL"))} THEN
@@ -251,7 +250,7 @@ END;
             }
             return new string[]
             {
-                GenSql(false), 
+                GenSql(false),
                 GenSql(true)
             };
         }
@@ -259,7 +258,7 @@ END;
         {
             string GenSql(bool update)
             {
-                var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name +(update ? Update : Insert));
+                var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name + (update ? Update : Insert));
                 return $@"CREATE OR REPLACE FUNCTION {funName}() RETURNS TRIGGER AS $$
 BEGIN
   IF {string.Join(" AND ", columns.Select(x => x.Target).Distinct().Select(x => $"NEW.\"{x}\" IS NOT NULL"))} THEN

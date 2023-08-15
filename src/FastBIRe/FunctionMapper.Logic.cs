@@ -4,7 +4,7 @@ namespace FastBIRe
 {
     public partial class FunctionMapper
     {
-        public string If(string condition,string @true, string @false)
+        public string If(string condition, string @true, string @false)
         {
             return $@"CASE WHEN {condition} THEN {@true} ELSE {@false} END";
         }
@@ -34,11 +34,11 @@ namespace FastBIRe
         }
         private string CaseInput(string input)
         {
-            if (input=="0")
+            if (input == "0")
             {
                 return "0=1";
             }
-            else if (input=="1")
+            else if (input == "1")
             {
                 return "1=1";
             }

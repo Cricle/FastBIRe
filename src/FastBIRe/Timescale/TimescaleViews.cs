@@ -13,9 +13,9 @@
         public const string JobErrors = "timescaledb_information.job_errors";
         public const string Policies = "timescaledb_information.policies";
 
-        public static string GetHypertable(string hypertable,bool hasMode)
+        public static string GetHypertable(string hypertable, bool hasMode)
         {
-            return $"SELECT {(hasMode?"1":"*")} FROM {Hypertables} WHERE hypertable_name = '{hypertable}'";
+            return $"SELECT {(hasMode ? "1" : "*")} FROM {Hypertables} WHERE hypertable_name = '{hypertable}'";
         }
         public static string GetContinuousAggregate(string name, bool hasMode)
         {

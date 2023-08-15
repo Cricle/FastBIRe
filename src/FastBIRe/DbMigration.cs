@@ -1,5 +1,4 @@
 ﻿using Ao.Stock.Mirror;
-using Ao.Stock.Querying;
 using DatabaseSchemaReader;
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
@@ -196,7 +195,7 @@ namespace FastBIRe
                     }
                 }
                 outIndexNames?.Add(name);
-                scripts.Add(TableHelper.CreateIndex(name, options.Table, new[] { col } ));
+                scripts.Add(TableHelper.CreateIndex(name, options.Table, new[] { col }));
                 refedIndexs.Add(name);
             }
             if (options.RemoveNotRef && refedIndexs.Count != 0)

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using DatabaseSchemaReader.DataSchema;
 using System.Data;
-using System.Text;
-using DatabaseSchemaReader.DataSchema;
 
 namespace FastBIRe
 {
@@ -22,7 +19,7 @@ namespace FastBIRe
             {
                 case SqlType.SqlServer:
                 case SqlType.SqlServerCe:
-                 case SqlType.SQLite:
+                case SqlType.SQLite:
                     return $"STDEV({input})";
                 case SqlType.MySql:
                 case SqlType.PostgreSql:
@@ -95,7 +92,7 @@ namespace FastBIRe
                     return null;
             }
         }
-        public string Left(string input,string length)
+        public string Left(string input, string length)
         {
             var addition = SqlType == SqlType.PostgreSql ? "::VARCHAR" : string.Empty;
             return $"LEFT({input}{addition},{length})";
@@ -139,7 +136,7 @@ namespace FastBIRe
                     return null;
             }
         }
-        public string? Mid(string input,string startIndex,string length)
+        public string? Mid(string input, string startIndex, string length)
         {
             switch (SqlType)
             {

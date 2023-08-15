@@ -71,7 +71,7 @@ END
         {
             return unit.ToString().ToUpper();
         }
-        public string? DateAdd(string time,string num, DateTimeUnit unit)
+        public string? DateAdd(string time, string num, DateTimeUnit unit)
         {
             var unitStr = GetUnitString(unit);
             switch (SqlType)
@@ -95,7 +95,7 @@ END
             {
                 return $"strftime('%d', {time})";
             }
-            else if (SqlType== SqlType.SqlServer||SqlType== SqlType.SqlServerCe)
+            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
             {
                 return $"DATEPART(day,{time})";
             }

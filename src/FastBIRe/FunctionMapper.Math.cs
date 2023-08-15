@@ -20,7 +20,7 @@ namespace FastBIRe
         {
             return $"ATAN({input})";
         }
-        public string? ATan2(string n,string m)
+        public string? ATan2(string n, string m)
         {
             return $"ATAN2({n},{m})";
         }
@@ -52,7 +52,7 @@ namespace FastBIRe
         {
             return $"PI()";
         }
-        public string? Pow(string x,string y)
+        public string? Pow(string x, string y)
         {
             return $"Pow({x},{y})";
         }
@@ -84,7 +84,7 @@ namespace FastBIRe
                     return null;
             }
         }
-        public string? RandBetween(string left,string right)
+        public string? RandBetween(string left, string right)
         {
             switch (SqlType)
             {
@@ -100,11 +100,11 @@ namespace FastBIRe
                     return null;
             }
         }
-        public string? Round(string input,string digit)
+        public string? Round(string input, string digit)
         {
             return $"ROUND({input}, {digit})";
         }
-        public string? RoundUp(string input,string digit)
+        public string? RoundUp(string input, string digit)
         {
             return $"ROUND({input} + 0.5 * POWER(10, -{digit}), {digit})";
         }
@@ -118,7 +118,7 @@ namespace FastBIRe
         }
         public string? Count(params string[] inputs)
         {
-            return string.Join("+", inputs.Select(x=>$"(CASE WHEN CAST({x} AS DECIMAL) IS NULL THEN 0 ELSE 1 END)"));
+            return string.Join("+", inputs.Select(x => $"(CASE WHEN CAST({x} AS DECIMAL) IS NULL THEN 0 ELSE 1 END)"));
         }
         public string? CountA(params string[] inputs)
         {
@@ -128,9 +128,9 @@ namespace FastBIRe
         {
             return $"({string.Join("+", inputs)})/{inputs.Count()}";
         }
-        public string? Average(IEnumerable<string> inputs,string? count)
+        public string? Average(IEnumerable<string> inputs, string? count)
         {
-            if (count==null)
+            if (count == null)
             {
                 count = inputs.Count().ToString();
             }
@@ -142,12 +142,12 @@ namespace FastBIRe
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    return $"SELECT MAX(value) FROM (VALUES {string.Join(",",inputs.Select(x=>$"({x})"))}) AS t(value)";
+                    return $"SELECT MAX(value) FROM (VALUES {string.Join(",", inputs.Select(x => $"({x})"))}) AS t(value)";
                 case SqlType.PostgreSql:
                 case SqlType.MySql:
                     return $"GREATEST({string.Join(",", inputs)})";
                 case SqlType.SQLite:
-                    return $"SELECT MAX(value) FROM ({string.Join(" UNION ",inputs.Select((x,i)=>$"SELECT {x} {(i==0?"AS value":string.Empty)}"))})";
+                    return $"SELECT MAX(value) FROM ({string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS value" : string.Empty)}"))})";
                 default:
                     return null;
             }

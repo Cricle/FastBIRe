@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FastBIRe.Timescale
+﻿namespace FastBIRe.Timescale
 {
     public partial class TimescaleHelper
     {
         public string AddRetentionPolicy(string relation,
             string drop_after,
-            string? initial_start=null,
-            string? timezone=null,
+            string? initial_start = null,
+            string? timezone = null,
             bool? if_not_exists = null)
         {
             var args = new List<string>(0);

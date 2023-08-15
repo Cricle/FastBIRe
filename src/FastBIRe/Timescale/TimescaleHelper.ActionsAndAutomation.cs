@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FastBIRe.Timescale
+﻿namespace FastBIRe.Timescale
 {
     public partial class TimescaleHelper
     {
@@ -20,7 +16,7 @@ namespace FastBIRe.Timescale
                 args.Add($"config => {config}");
             if (!string.IsNullOrEmpty(initial_start))
                 args.Add($"initial_start => {initial_start}");
-            if (scheduled!=null)
+            if (scheduled != null)
                 args.Add($"scheduled => {BoolToString(scheduled)}");
             if (!string.IsNullOrEmpty(check_config))
                 args.Add($"check_config => {check_config}");
@@ -44,7 +40,7 @@ namespace FastBIRe.Timescale
             string? config = null,
             string? next_start = null,
             bool? if_exists = null,
-            string? check_config=null)
+            string? check_config = null)
         {
             var args = new List<string>(0);
             if (!string.IsNullOrEmpty(schedule_interval))

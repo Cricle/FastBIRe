@@ -197,7 +197,7 @@ namespace FastBIRe
                     return input;
             }
         }
-        public string? Cast(string input,DbType dbType)
+        public string? Cast(string input, DbType dbType)
         {
             switch (SqlType)
             {
@@ -218,8 +218,8 @@ namespace FastBIRe
         }
         public string? Value<T>(T value)
         {
-            var str= MethodWrapper.WrapValue(value);
-            if (value is string&&str!=null&&SqlType== SqlType.SqlServer||SqlType== SqlType.SqlServerCe)
+            var str = MethodWrapper.WrapValue(value);
+            if (value is string && str != null && SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
             {
                 str = "N" + str;
             }
@@ -227,7 +227,7 @@ namespace FastBIRe
         }
         public string PartitionBy(params string[] areas)
         {
-            return $"PARTITION BY {string.Join(",",areas)}";
+            return $"PARTITION BY {string.Join(",", areas)}";
         }
         public string Over(string inner)
         {
@@ -304,7 +304,7 @@ namespace FastBIRe
                 case SQLFunctions.Second:
                     return Second(args[0]);
                 case SQLFunctions.NetWorkDays:
-                    return NetWorkDays(args[0], args[1],args.Skip(2));
+                    return NetWorkDays(args[0], args[1], args.Skip(2));
                 case SQLFunctions.Now:
                     return Now();
                 case SQLFunctions.ToDay:
@@ -380,7 +380,7 @@ namespace FastBIRe
                 case SQLFunctions.Bracket:
                     return Bracket(args[0]);
                 case SQLFunctions.DateAdd:
-                    return DateAdd(args[0], args[1], (DateTimeUnit)Enum.Parse(typeof(DateTimeUnit),args[2]));
+                    return DateAdd(args[0], args[1], (DateTimeUnit)Enum.Parse(typeof(DateTimeUnit), args[2]));
                 case SQLFunctions.IsNull:
                     return IsNull(args[0]);
                 case SQLFunctions.Like:

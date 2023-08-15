@@ -2,10 +2,6 @@
 
 namespace FastBIRe.Project
 {
-    public interface IProjectContext<TId>
-    {
-        IProject<TId> Current { get; }
-    }
     public class ProjectContext<TId>
     {
         public ProjectContext(IProject<TId> current)

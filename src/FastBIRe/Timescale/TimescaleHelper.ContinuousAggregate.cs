@@ -4,11 +4,11 @@
     {
         public string CreateContinuousAggregate(string viewName,
             string query,
-            bool? materialized_only=null,
-            bool? create_group_indexes=null,
-            bool? finalized=null,
-            bool if_not_exists=true,
-            bool noData=false)
+            bool? materialized_only = null,
+            bool? create_group_indexes = null,
+            bool? finalized = null,
+            bool if_not_exists = true,
+            bool noData = false)
         {
             var args = new List<string>();
             if (materialized_only != null)
@@ -18,15 +18,15 @@
             if (finalized != null)
                 args.Add($"timescaledb.finalized = {BoolToString(finalized)}");
             var with = string.Empty;
-            if (args.Count!=0)
+            if (args.Count != 0)
             {
                 with = "," + string.Join(",", args);
             }
             return $@"
-CREATE MATERIALIZED VIEW {(if_not_exists?"IF NOT EXISTS":string.Empty)} ""{viewName}""
+CREATE MATERIALIZED VIEW {(if_not_exists ? "IF NOT EXISTS" : string.Empty)} ""{viewName}""
 WITH (timescaledb.continuous{with}) AS 
 {query}
-WITH {(noData?"NO":string.Empty)} DATA
+WITH {(noData ? "NO" : string.Empty)} DATA
 ";
         }
         public string AlterContinuousAggregate(string viewName,
@@ -41,11 +41,11 @@ WITH {(noData?"NO":string.Empty)} DATA
                 args.Add($"timescaledb.create_group_indexes = {BoolToString(create_group_indexes)}");
             if (finalized != null)
                 args.Add($"timescaledb.finalized = {BoolToString(finalized)}");
-            if (args.Count==0)
+            if (args.Count == 0)
             {
                 return string.Empty;
             }
-            return $@"ALTER MATERIALIZED VIEW {viewName} SET ({string.Join(",",args)})";
+            return $@"ALTER MATERIALIZED VIEW {viewName} SET ({string.Join(",", args)})";
         }
         public string DropContinuousAggregate(string viewName)
         {
@@ -62,7 +62,7 @@ WITH {(noData?"NO":string.Empty)} DATA
             string? end_offset = null,
             string? schedule_interval = null,
             string? initial_start = null,
-            string? timezone=null,
+            string? timezone = null,
             bool? if_not_exists = null)
         {
             var args = new List<string>();
@@ -174,7 +174,7 @@ WITH {(noData?"NO":string.Empty)} DATA
         }
         public string CaggMigrate(string cagg,
             bool? @override = null,
-            bool? drop_old=null)
+            bool? drop_old = null)
         {
             var args = new List<string>();
             if (@override != null)

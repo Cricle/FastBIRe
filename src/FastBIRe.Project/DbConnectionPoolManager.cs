@@ -2,16 +2,16 @@
 
 namespace FastBIRe.Project
 {
-    public class DbConnectionPoolManager<TKey>:IDisposable
+    public class DbConnectionPoolManager<TKey> : IDisposable
 #if NET7_0_OR_GREATER
-        where TKey :notnull
+        where TKey : notnull
 #endif
     {
         private readonly ConcurrentDictionary<TKey, DbConnectionPool> pools = new ConcurrentDictionary<TKey, DbConnectionPool>();
 
         public IReadOnlyDictionary<TKey, DbConnectionPool> Pools => pools;
 
-        public bool Add(TKey key,DbConnectionPool pool)
+        public bool Add(TKey key, DbConnectionPool pool)
         {
             return pools.TryAdd(key, pool);
         }

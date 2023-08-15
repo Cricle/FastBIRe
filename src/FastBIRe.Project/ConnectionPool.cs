@@ -1,10 +1,9 @@
 ﻿using Microsoft.Extensions.ObjectPool;
-using System.Collections.Concurrent;
 using System.Data.Common;
 
 namespace FastBIRe.Project
 {
-    public class DbConnectionPool : ObjectPool<DbConnection>,IDisposable
+    public class DbConnectionPool : ObjectPool<DbConnection>, IDisposable
     {
         public DbConnectionPool(IPooledObjectPolicy<DbConnection> objectPolicy)
         {

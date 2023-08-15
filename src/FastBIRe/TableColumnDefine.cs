@@ -34,7 +34,7 @@
 
         public bool Desc { get; set; }
 
-        public TableColumnDefine SetIndex(string group,int order=0,bool desc=false)
+        public TableColumnDefine SetIndex(string group, int order = 0, bool desc = false)
         {
             IndexGroup = group;
             IndexOrder = order;

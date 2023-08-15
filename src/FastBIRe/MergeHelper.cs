@@ -5,7 +5,7 @@ namespace FastBIRe
 {
     public class MergeHelper
     {
-        public static string Wrap(SqlType sqlType,string field)
+        public static string Wrap(SqlType sqlType, string field)
         {
             return GetMethodWrapper(sqlType).Quto(field);
         }
@@ -95,7 +95,7 @@ namespace FastBIRe
         }
         public string CompileUpdateInnerSelect(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
-            if (options!=null&&options.UseView)
+            if (options != null && options.UseView)
             {
                 return $"\nSELECT * FROM {Wrap(options.GetUpdateViewName(destTable, sourceTableDefine.Table))}\n";
             }
@@ -150,7 +150,7 @@ GROUP BY
 FROM
 	{Wrap(destTable)} AS {Wrap("a")}
 	INNER JOIN (
-		{CompileUpdateInnerSelect(destTable,sourceTableDefine,options)}
+		{CompileUpdateInnerSelect(destTable, sourceTableDefine, options)}
 	) AS  {Wrap("tmp")} ON {string.Join(" AND ", sourceTableDefine.Columns.Where(x => x.IsGroup).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 AND(
     {string.Join(" OR ", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $" {Wrap("a")}.{Wrap(x.DestColumn.Field)} != {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
@@ -346,7 +346,7 @@ SET
             }
             return $"CONCAT({left},{right})";
         }
-        public string GetFormatter(string @ref,ToRawMethod method)
+        public string GetFormatter(string @ref, ToRawMethod method)
         {
             switch (method)
             {
@@ -364,7 +364,7 @@ SET
                     return GetWeekFormatter(@ref);
                 case ToRawMethod.Quarter:
                     return GetQuarterFormatter(@ref);
-                default: 
+                default:
                     return @ref;
             }
         }
@@ -433,7 +433,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
             {
                 return $"strftime('%Y-01-01 00:00:00', {@ref})";
             }
-            else if (SqlType== SqlType.PostgreSql)
+            else if (SqlType == SqlType.PostgreSql)
             {
                 return $"date_trunc('year',{@ref})";
             }
@@ -523,7 +523,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                 case ToRawMethod.Year:
                     {
                         var forMatter = GetYearFormatter(@ref);
-                        if (SqlType == SqlType.PostgreSql|| SqlType == SqlType.SQLite)
+                        if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
                             return forMatter;
                         }
@@ -531,8 +531,8 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                     }
                 case ToRawMethod.Day:
                     {
-                        var forMatter=GetDayFormatter(@ref);
-                        if (SqlType== SqlType.SQLite||SqlType== SqlType.PostgreSql)
+                        var forMatter = GetDayFormatter(@ref);
+                        if (SqlType == SqlType.SQLite || SqlType == SqlType.PostgreSql)
                         {
                             return forMatter;
                         }
@@ -540,8 +540,8 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                     }
                 case ToRawMethod.Hour:
                     {
-                        var forMatter= GetHourFormatter(@ref);
-                        if (SqlType == SqlType.PostgreSql||SqlType == SqlType.SQLite)
+                        var forMatter = GetHourFormatter(@ref);
+                        if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
                             return forMatter;
                         }
@@ -549,7 +549,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                     }
                 case ToRawMethod.Minute:
                     {
-                        var forMatter= GetMinuteFormatter(@ref);
+                        var forMatter = GetMinuteFormatter(@ref);
                         if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
                             return forMatter;
@@ -560,7 +560,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                     return @ref;
                 case ToRawMethod.Month:
                     {
-                        var forMatter=GetMonthFormatter(@ref);
+                        var forMatter = GetMonthFormatter(@ref);
                         if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
                             return forMatter;

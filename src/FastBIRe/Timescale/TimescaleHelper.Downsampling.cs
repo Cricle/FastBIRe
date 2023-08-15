@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FastBIRe.Timescale
+﻿namespace FastBIRe.Timescale
 {
     public partial class TimescaleHelper
     {
-        public string AsapMmooth(string ts,string value, string resolution)
+        public string AsapMmooth(string ts, string value, string resolution)
         {
             return $"asap_smooth({ts},{value},{resolution})";
         }

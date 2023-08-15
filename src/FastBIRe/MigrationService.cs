@@ -1,11 +1,6 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
-using System.Numerics;
-using System.Security.Cryptography;
-using System.Text;
-using System.Xml.Linq;
 
 namespace FastBIRe
 {
@@ -173,12 +168,12 @@ namespace FastBIRe
             str.AddRange(s);
             return str;
         }
-        public virtual IReadOnlyList<KeyValuePair<string, ToRawMethod>> AddDateTimePartColumns(DatabaseTable table,string field)
+        public virtual IReadOnlyList<KeyValuePair<string, ToRawMethod>> AddDateTimePartColumns(DatabaseTable table, string field)
         {
             var builder = GetColumnBuilder();
-            var dateTimeType=builder.Type(DbType.DateTime);
+            var dateTimeType = builder.Type(DbType.DateTime);
             var parts = DefaultDateTimePartNames.GetDatePartNames(field);
-            var ret=new List<KeyValuePair<string, ToRawMethod>>();
+            var ret = new List<KeyValuePair<string, ToRawMethod>>();
             foreach (var item in parts)
             {
                 if (!table.Columns.Any(x => x.Name == item.Key))
@@ -189,7 +184,7 @@ namespace FastBIRe
             }
             return ret;
         }
-        public static string MakeForceIndexName(string table,IEnumerable<string> columns,IEnumerable<bool> orders)
+        public static string MakeForceIndexName(string table, IEnumerable<string> columns, IEnumerable<bool> orders)
         {
             var tableMd5 = MD5Helper.ComputeHash(table);
             var colsMd5 = MD5Helper.ComputeHash(string.Join("_", columns.Concat(orders.Select(x => x ? "1" : "0"))));
@@ -198,13 +193,13 @@ namespace FastBIRe
         public List<string> RunMigration(List<string> scripts, string table, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine> oldRefs)
         {
             var groupNews = news.GroupBy(x => x.Field).Select(x => x.First()).ToList();
-            var renames = groupNews.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x,IsRename=x.Field!=y.Field });
+            var renames = groupNews.Join(oldRefs, x => x.Id, x => x.Id, (x, y) => new { Old = y, New = x, IsRename = x.Field != y.Field });
             var migGen = DdlGeneratorFactory.MigrationGenerator();
             var tb = Reader.Table(table);
             var helper = GetMergeHelper();
             var scriptBefore = new List<string>();
             var dropedIndexs = new HashSet<string>();
-            var res= CompareWithModify(table, x =>
+            var res = CompareWithModify(table, x =>
             {
                 PrepareTable(x);
                 var olds = x.Columns.Select(x =>
@@ -222,7 +217,7 @@ namespace FastBIRe
                     }
                     return null;
                 }).Where(x => x != null).ToList();
-                var partColumns = new HashSet<string>(x.Columns.Where(x => x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx)).Select(x=>x.Name));
+                var partColumns = new HashSet<string>(x.Columns.Where(x => x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx)).Select(x => x.Name));
                 foreach (var item in news)
                 {
                     if (item.ExpandDateTime)
@@ -238,14 +233,14 @@ namespace FastBIRe
                         }
                     }
                 }
-                if (partColumns.Count!=0)
+                if (partColumns.Count != 0)
                 {
                     foreach (var item in partColumns)
                     {
                         x.Columns.RemoveAll(x => x.Name == item);
                     }
                 }
-                var existsingIndexs=new HashSet<string>(x.Indexes.Select(x=>x.Name));
+                var existsingIndexs = new HashSet<string>(x.Indexes.Select(x => x.Name));
                 foreach (var item in renames)
                 {
                     var col = x.FindColumn(item.Old.Field);
@@ -293,7 +288,7 @@ namespace FastBIRe
                             col.DbDataType = item.Type;
                             if (col.IsIndexed)
                             {
-                                affectIndexs.AddRange(x.Indexes.Where(y => y.Columns.Any(q => q.Name == col.Name)).Select(y=>y.Name));
+                                affectIndexs.AddRange(x.Indexes.Where(y => y.Columns.Any(q => q.Name == col.Name)).Select(y => y.Name));
                             }
                             //var idxs = x.Indexes.Where(x => existsingIndexs.Contains(x.Name) && x.Columns.Any(y => y.Name == col.Name)).ToList();
                             //foreach (var idx in idxs)
@@ -309,10 +304,10 @@ namespace FastBIRe
                 }
                 var adds = groupNews.Where(n => !olds.Any(y => y.Id == n.Id)).ToList();
                 var rms = new HashSet<string>(
-                    x.Columns.Where(x => !x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx)&&x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name)))
+                    x.Columns.Where(x => !x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx) && x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name)))
                     .Select(x => x.Name)
-                    .Where(x=>!news.Any(y=>y.Field==x))
-                    .Where(x=> !renames.Any(y=>y.IsRename&&y.Old.Field==x)));
+                    .Where(x => !news.Any(y => y.Field == x))
+                    .Where(x => !renames.Any(y => y.IsRename && y.Old.Field == x)));
                 x.Columns.RemoveAll(x => rms.Contains(x.Name));
                 foreach (var col in adds)
                 {
@@ -321,18 +316,18 @@ namespace FastBIRe
                         x.Nullable = col.Nullable;
                     });
                 }
-                var alls = new HashSet<string>(x.Indexes.Where(y => y.Name.StartsWith(AutoGenForceIndexPrefx)).Select(y=>y.Name).Except(affectIndexs));
-                foreach (var item in news.Where(x=>!string.IsNullOrEmpty(x.IndexGroup)).GroupBy(x=>x.IndexGroup))
+                var alls = new HashSet<string>(x.Indexes.Where(y => y.Name.StartsWith(AutoGenForceIndexPrefx)).Select(y => y.Name).Except(affectIndexs));
+                foreach (var item in news.Where(x => !string.IsNullOrEmpty(x.IndexGroup)).GroupBy(x => x.IndexGroup))
                 {
                     var fields = item.OrderBy(y => y.IndexOrder).Select(y => y.Field).ToArray();
-                    var idxName = MakeForceIndexName(x.Name, fields, item.OrderBy(y => y.IndexOrder).Select(x=>x.Desc));
+                    var idxName = MakeForceIndexName(x.Name, fields, item.OrderBy(y => y.IndexOrder).Select(x => x.Desc));
                     if (!x.Indexes.Any(y => y.Name == idxName))
                     {
                         scripts.Add(TableHelper.CreateIndex(idxName, table, fields, item.OrderBy(y => y.IndexOrder).Select(y => y.Desc).ToArray()));
                     }
                     alls.Remove(idxName);
                 }
-                if (alls.Count!=0)
+                if (alls.Count != 0)
                 {
                     foreach (var item in alls)
                     {
@@ -355,8 +350,8 @@ namespace FastBIRe
                 {
                     foreach (var part in DefaultDateTimePartNames.GetDatePartNames(item.Field))
                     {
-                        triggers.Add(new TriggerField(part.Key, 
-                            helper.ToRaw(part.Value, $"{(SqlType== SqlType.SqlServer?string.Empty: "NEW.")}{helper.Wrap(item.Field)}",false)!, item.Field, item.Type,item.RawFormat));
+                        triggers.Add(new TriggerField(part.Key,
+                            helper.ToRaw(part.Value, $"{(SqlType == SqlType.SqlServer ? string.Empty : "NEW.")}{helper.Wrap(item.Field)}", false)!, item.Field, item.Type, item.RawFormat));
                     }
                 }
                 var id = IdColumnFetcher(table);
@@ -381,7 +376,7 @@ namespace FastBIRe
                     return false;
             }
         }
-        public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<TableColumnDefine> oldRefs,bool syncSource)
+        public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<TableColumnDefine> oldRefs, bool syncSource)
         {
             var news = tableDef.Columns.GroupBy(x => x.Field).Select(x => x.First()).ToList();
             var table = tableDef.Table;
@@ -397,7 +392,7 @@ namespace FastBIRe
             var triggerHelper = EffectTriggerHelper.Instance;
 
             scripts.AddRange(triggerHelper.Drop(triggerName, tableDef.Table, SqlType));
-            var groupColumns = news.Where(x => x.IsGroup).Select(x=>x.Copy()).ToList();
+            var groupColumns = news.Where(x => x.IsGroup).Select(x => x.Copy()).ToList();
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
                 var refTable = Reader.Table(effectTableName);

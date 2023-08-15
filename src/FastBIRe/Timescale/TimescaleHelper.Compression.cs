@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FastBIRe.Timescale
+﻿namespace FastBIRe.Timescale
 {
     public partial class TimescaleHelper
     {
@@ -15,10 +11,10 @@ namespace FastBIRe.Timescale
             return $"add_compression_policy({hypertable},{compress_after},{schedule_interval},{initial_start},{timezone})";
         }
         public string RemoveCompressionPolicy(string hypertable,
-            bool? if_exists=null)
+            bool? if_exists = null)
         {
             var args = new List<string>(0);
-            if (if_exists!=null)
+            if (if_exists != null)
                 args.Add($"if_exists => {BoolToString(if_exists)}");
             var sql = $"remove_compression_policy({hypertable}";
             if (args.Count != 0)

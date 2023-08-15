@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FastBIRe.Timescale
+﻿namespace FastBIRe.Timescale
 {
     public partial class TimescaleHelper
     {
@@ -10,7 +6,7 @@ namespace FastBIRe.Timescale
         {
             return $"approximate_row_count({relation})";
         }
-        public string First(string value,string time)
+        public string First(string value, string time)
         {
             return $"first({value},{time})";
         }
@@ -18,7 +14,7 @@ namespace FastBIRe.Timescale
         {
             return $"last({value},{time})";
         }
-        public string Last(string value, string min,string max,string nbuckets)
+        public string Last(string value, string min, string max, string nbuckets)
         {
             return $"histogram({value},{min},{max},{nbuckets})";
         }
@@ -116,7 +112,7 @@ namespace FastBIRe.Timescale
         {
             return $"average({summary})";
         }
-        public string Kurtosis(string summary,string? method=null)
+        public string Kurtosis(string summary, string? method = null)
         {
             var methodStr = method == null ? string.Empty : "," + method;
 
@@ -152,7 +148,7 @@ namespace FastBIRe.Timescale
         {
             return $"rolling({ss})";
         }
-        public string StatsAgg(string x,string y)
+        public string StatsAgg(string x, string y)
         {
             return $"stats_agg({x},{y})";
         }
@@ -246,7 +242,7 @@ namespace FastBIRe.Timescale
         {
             return $"x_intercept({summary})";
         }
-        public string MinN(string value,string capacity)
+        public string MinN(string value, string capacity)
         {
             return $"min_n({value},{capacity})";
         }
@@ -258,7 +254,7 @@ namespace FastBIRe.Timescale
         {
             return $"into_values({agg})";
         }
-        public string IntoValues(string agg,string dummy)
+        public string IntoValues(string agg, string dummy)
         {
             return $"into_values({agg},{dummy})";
         }
@@ -266,7 +262,7 @@ namespace FastBIRe.Timescale
         {
             return $"max_n({value},{capacity})";
         }
-        public string MinNBy(string value,string data, string capacity)
+        public string MinNBy(string value, string data, string capacity)
         {
             return $"min_n_by({value},{data},{capacity})";
         }
@@ -278,7 +274,7 @@ namespace FastBIRe.Timescale
         {
             return $"candlestick_agg({ts},{price},{volume})";
         }
-        public string Candlestick(string ts, 
+        public string Candlestick(string ts,
             string open,
             string high,
             string low,
@@ -373,7 +369,7 @@ namespace FastBIRe.Timescale
             var args = new List<string>(0);
             if (!string.IsNullOrEmpty(prev))
                 args.Add($"prev => {prev}");
-            if (treat_null_as_missing != null) 
+            if (treat_null_as_missing != null)
                 args.Add($"treat_null_as_missing => {BoolToString(treat_null_as_missing)}");
             var sql = $"locf({value}";
             if (args.Count != 0)
@@ -416,7 +412,7 @@ namespace FastBIRe.Timescale
         {
             return $"tdigest({buckets},{value})";
         }
-        public string CounterAgg(string ts,string value, string? bounds = null)
+        public string CounterAgg(string ts, string value, string? bounds = null)
         {
             var boundsStr = bounds == null ? string.Empty : "," + bounds;
 
@@ -430,7 +426,7 @@ namespace FastBIRe.Timescale
         {
             return $"delta({summary})";
         }
-        public string ExtrapolatedDelta(string summary,string method)
+        public string ExtrapolatedDelta(string summary, string method)
         {
             return $"extrapolated_delta({summary},{method})";
         }
@@ -457,7 +453,7 @@ namespace FastBIRe.Timescale
         public string InterpolatedDelta(string summary,
             string start,
             string interval,
-            string? prev=null,
+            string? prev = null,
             string? next = null)
         {
             var args = new List<string>(0);
@@ -526,7 +522,7 @@ namespace FastBIRe.Timescale
         {
             return $"time_delta({summary})";
         }
-        public string WithBounds(string summary,string bounds)
+        public string WithBounds(string summary, string bounds)
         {
             return $"with_bounds({summary},{bounds})";
         }
@@ -536,11 +532,11 @@ namespace FastBIRe.Timescale
 
             return $"gauge_agg({ts},{value}{boundsStr})";
         }
-        public string TimeWeight(string method,string ts, string value)
+        public string TimeWeight(string method, string ts, string value)
         {
             return $"time_weight({method},{ts},{value})";
         }
-        public string Integral(string tws, string? unit=null)
+        public string Integral(string tws, string? unit = null)
         {
             var unitStr = unit == null ? string.Empty : "," + unit;
 

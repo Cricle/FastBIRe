@@ -16,13 +16,13 @@
 
         public string ViewUpdateFormat { get; set; } = MigrationService.DefaultUpdateQueryViewFormat;
 
-        public string GetInsertViewName(string destTableName,string sourceTableName)
+        public string GetInsertViewName(string destTableName, string sourceTableName)
         {
-            return string.Format(ViewInsertFormat,MD5Helper.ComputeHash(destTableName + sourceTableName));
+            return string.Format(ViewInsertFormat, MD5Helper.ComputeHash(destTableName + sourceTableName));
         }
         public string GetUpdateViewName(string destTableName, string sourceTableName)
         {
-            return string.Format(ViewUpdateFormat,MD5Helper.ComputeHash(destTableName + sourceTableName));
+            return string.Format(ViewUpdateFormat, MD5Helper.ComputeHash(destTableName + sourceTableName));
         }
         public CompileOptions WithNoLock(bool noLock = true)
         {
