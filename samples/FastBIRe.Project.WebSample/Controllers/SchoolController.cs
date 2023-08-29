@@ -1,3 +1,4 @@
+using Ao.Stock.Mirror;
 using Dapper;
 using FastBIRe.Project.Accesstor;
 using Microsoft.AspNetCore.Mvc;
@@ -63,6 +64,20 @@ namespace FastBIRe.Project.WebSample.Controllers
         public IActionResult FindClass(string className)
         {
             return Ok(projectSession.Result.Project?.Classes.FirstOrDefault(x=>x.Name==className));
+        }
+        [HttpGet]
+        public async Task<IActionResult> DeleteClass(string className)
+        {
+            var @class = projectSession.Result.Project.Classes.FirstOrDefault(x => x.Name == className);
+            if (@class!=null)
+            {
+                var sql = $"Drop table `{className}`";
+                await projectSession.Result.Connection.ExecuteNonQueryAsync(sql);
+                projectSession.Result.Project.Classes.Remove(@class);
+                var tb = await projectSession.ProjectAccesstor.UpdateProjectAsync(projectSession.Context,projectSession.Result.Project);
+                return Ok(true);
+            }
+            return Ok(false);
         }
         [HttpGet]
         public IActionResult AllClass()

@@ -78,7 +78,7 @@ namespace FastBIRe.Project.WebSample
             app.Run();
         }
     }
-    public class ProjectSession
+    public class ProjectSession : IDisposable
     {
         public ProjectSession(IProjectAccesstContext<string> context,
             ProjectCreateWithDbContextResult<SchoolProject, string> result,
@@ -107,8 +107,13 @@ namespace FastBIRe.Project.WebSample
 
         public FunctionMapper FunctionMapper => new FunctionMapper(SqlType);
 
-        public SchoolProject Project => Result.Project;
+        public SchoolProject? Project => Result.Project;
 
         public IProjectAccesstor<IProjectAccesstContext<string>,SchoolProject,string> ProjectAccesstor { get; }
+
+        public void Dispose()
+        {
+            Result.Dispose();
+        }
     }
 }
