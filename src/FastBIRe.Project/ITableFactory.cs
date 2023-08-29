@@ -2,9 +2,9 @@
 
 namespace FastBIRe.Project
 {
-    public interface ITableFactory<TResult,TProject,TId> :IDisposable
-        where TProject:IProject<TId>
-        where TResult : ProjectCreateContextResult<TProject,TId>
+    public interface ITableFactory<TResult, TProject, TId> : IDisposable
+        where TProject : IProject<TId>
+        where TResult : ProjectCreateContextResult<TProject, TId>
     {
         TResult ProjectResult { get; }
 

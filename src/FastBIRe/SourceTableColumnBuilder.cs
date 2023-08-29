@@ -127,7 +127,7 @@ namespace FastBIRe
                 }
             }
         }
-        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true, int length = 0,string? id=null)
+        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true, int length = 0, string? id = null)
         {
             var destFormat = string.IsNullOrEmpty(DestAlias) ? Helper.Wrap(field) : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var destRaw = string.Format(destFormat, SourceAlias);

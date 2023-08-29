@@ -1,6 +1,4 @@
-﻿using DatabaseSchemaReader.DataSchema;
-using FastBIRe.Timescale;
-using System.Runtime.CompilerServices;
+﻿using FastBIRe.Timescale;
 
 namespace FastBIRe.Sample.Functions
 {
@@ -8,7 +6,7 @@ namespace FastBIRe.Sample.Functions
     {
         static void Main(string[] args)
         {
-            Console.WriteLine(TimescaleViews.GetHypertable("device",false));
+            Console.WriteLine(TimescaleViews.GetHypertable("device", false));
         }
     }
 }

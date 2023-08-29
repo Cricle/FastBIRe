@@ -4,10 +4,10 @@ using System.Collections.Concurrent;
 
 namespace FastBIRe.Project
 {
-    public abstract class ProjectFactoryBase<TInput,TProject, TId, TResult>
+    public abstract class ProjectFactoryBase<TInput, TProject, TId, TResult>
         where TInput : IProjectAccesstContext<TId>
         where TId : notnull
-        where TProject:IProject<TId>
+        where TProject : IProject<TId>
         where TResult : ProjectCreateContextResult<TProject, TId>
     {
         public ProjectFactoryBase(IProjectAccesstor<TInput, TProject, TId> projectAccesstor, IDataSchema<TInput> dataSchema)

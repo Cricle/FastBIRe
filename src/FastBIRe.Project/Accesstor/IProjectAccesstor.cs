@@ -2,8 +2,8 @@
 
 namespace FastBIRe.Project.Accesstor
 {
-    public interface IProjectAccesstor<TInput,TProject, TId>
-        where TProject:IProject<TId>
+    public interface IProjectAccesstor<TInput, TProject, TId>
+        where TProject : IProject<TId>
         where TInput : IProjectAccesstContext<TId>
     {
         event EventHandler<WithProjectEventArgs<TInput, TId>>? OnGetProjected;

@@ -2,8 +2,8 @@
 
 namespace FastBIRe.Project.Accesstor
 {
-    public interface IStreamProjectAdapter<TInput,TProject, TId> : IDisposable
-        where TProject:IProject<TId>
+    public interface IStreamProjectAdapter<TInput, TProject, TId> : IDisposable
+        where TProject : IProject<TId>
         where TInput : IProjectAccesstContext<TId>
     {
         Task<IReadOnlyList<TProject>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default);

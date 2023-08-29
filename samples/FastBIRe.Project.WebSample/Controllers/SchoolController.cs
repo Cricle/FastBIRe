@@ -1,9 +1,7 @@
 using Ao.Stock.Mirror;
 using Dapper;
-using FastBIRe.Project.Accesstor;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
-using System.Text.Json;
 
 namespace FastBIRe.Project.WebSample.Controllers
 {
@@ -11,7 +9,7 @@ namespace FastBIRe.Project.WebSample.Controllers
     [Route("[controller]/[action]")]
     public class SchoolController : ControllerBase
     {
-        private readonly ProjectSession  projectSession;
+        private readonly ProjectSession projectSession;
 
         public SchoolController(ProjectSession projectSession)
         {
@@ -31,10 +29,10 @@ namespace FastBIRe.Project.WebSample.Controllers
                     switch (item.Type)
                     {
                         case FastDataType.Text:
-                            defines.Add(builder.Column(item.Name, builder.Type(DbType.String, 64),destNullable:item.Nullable, id: item.Id));
+                            defines.Add(builder.Column(item.Name, builder.Type(DbType.String, 64), destNullable: item.Nullable, id: item.Id));
                             break;
                         case FastDataType.Number:
-                            defines.Add(builder.Column(item.Name, builder.Type(DbType.Decimal,builder.Scale,builder.Precision), destNullable: item.Nullable, id: item.Id));
+                            defines.Add(builder.Column(item.Name, builder.Type(DbType.Decimal, builder.Scale, builder.Precision), destNullable: item.Nullable, id: item.Id));
                             break;
                         case FastDataType.DateTime:
                             defines.Add(builder.Column(item.Name, builder.Type(DbType.DateTime), destNullable: item.Nullable, id: item.Id));
@@ -47,7 +45,7 @@ namespace FastBIRe.Project.WebSample.Controllers
                 var result = await mig.MigrateToSqlAsync(table.Name, colsMerge, null);
                 await result.ExecuteAsync();
                 var @class = projectSession.Result.Project.Classes.FirstOrDefault(x => x.Name == table.Name);
-                if (@class==null)
+                if (@class == null)
                 {
                     projectSession.Result.Project.Classes.Add(table);
                 }
@@ -63,18 +61,18 @@ namespace FastBIRe.Project.WebSample.Controllers
         [HttpGet]
         public IActionResult FindClass(string className)
         {
-            return Ok(projectSession.Result.Project?.Classes.FirstOrDefault(x=>x.Name==className));
+            return Ok(projectSession.Result.Project?.Classes.FirstOrDefault(x => x.Name == className));
         }
         [HttpGet]
         public async Task<IActionResult> DeleteClass(string className)
         {
             var @class = projectSession.Result.Project.Classes.FirstOrDefault(x => x.Name == className);
-            if (@class!=null)
+            if (@class != null)
             {
                 var sql = $"Drop table `{className}`";
                 await projectSession.Result.Connection.ExecuteNonQueryAsync(sql);
                 projectSession.Result.Project.Classes.Remove(@class);
-                var tb = await projectSession.ProjectAccesstor.UpdateProjectAsync(projectSession.Context,projectSession.Result.Project);
+                var tb = await projectSession.ProjectAccesstor.UpdateProjectAsync(projectSession.Context, projectSession.Result.Project);
                 return Ok(true);
             }
             return Ok(false);
@@ -89,7 +87,7 @@ namespace FastBIRe.Project.WebSample.Controllers
         {
             var fun = projectSession.FunctionMapper;
             var @class = projectSession.Project.Classes.FirstOrDefault(x => x.Name == request.ClassName);
-            if (@class==null)
+            if (@class == null)
             {
                 return BadRequest();
             }
@@ -118,14 +116,14 @@ namespace FastBIRe.Project.WebSample.Controllers
                     }
                 }
             }
-            var sql = $"INSERT INTO `{request.ClassName}`(_time,{string.Join(",", cols)}) VALUES ({fun.Now()},{string.Join(",",args)})";
+            var sql = $"INSERT INTO `{request.ClassName}`(_time,{string.Join(",", cols)}) VALUES ({fun.Now()},{string.Join(",", args)})";
             var datas = await projectSession.Connection.ExecuteAsync(sql);
             return Ok(datas);
         }
         [HttpGet]
         public async Task<IActionResult> AllStudent(string className)
         {
-            var datas =await projectSession.Connection.QueryAsync($"SELECT * FROM `{className}`");
+            var datas = await projectSession.Connection.QueryAsync($"SELECT * FROM `{className}`");
             return Ok(datas);
         }
     }
@@ -133,6 +131,6 @@ namespace FastBIRe.Project.WebSample.Controllers
     {
         public string? ClassName { get; set; }
 
-        public Dictionary<string,object>? Values { get; set; }
+        public Dictionary<string, object>? Values { get; set; }
     }
 }

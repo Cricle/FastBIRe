@@ -24,7 +24,7 @@ namespace FastBIRe.Project.Accesstor
             return input.Id;
         }
     }
-    public class JsonZipStreamProjectAdapter<TProject,TInput, TId> : ZipStreamProjectAdapterBase<TInput, TProject, TId>
+    public class JsonZipStreamProjectAdapter<TProject, TInput, TId> : ZipStreamProjectAdapterBase<TInput, TProject, TId>
         where TInput : IProjectAccesstContext<TId>
         where TProject : IProject<TId>
     {
@@ -52,8 +52,8 @@ namespace FastBIRe.Project.Accesstor
         }
     }
 #endif
-    public abstract class ZipStreamProjectAdapterBase<TInput, TProject, TId> : IStreamProjectAdapter<TInput,TProject, TId>
-        where TProject: IProject<TId>
+    public abstract class ZipStreamProjectAdapterBase<TInput, TProject, TId> : IStreamProjectAdapter<TInput, TProject, TId>
+        where TProject : IProject<TId>
         where TInput : IProjectAccesstContext<TId>
     {
         protected ZipStreamProjectAdapterBase(ZipArchive archive)
@@ -105,10 +105,10 @@ namespace FastBIRe.Project.Accesstor
         public async Task<bool> CreateProjectAsync(TInput input, TProject project, CancellationToken cancellationToken = default)
         {
             var name = GetEntryName(input);
-            var zipEntity=Archive.GetEntry(name);
+            var zipEntity = Archive.GetEntry(name);
             if (zipEntity == null)
             {
-                zipEntity=Archive.CreateEntry(name);
+                zipEntity = Archive.CreateEntry(name);
             }
             await WriteProjectToFileAsync(zipEntity, project, cancellationToken).ConfigureAwait(false);
             return true;
@@ -118,7 +118,7 @@ namespace FastBIRe.Project.Accesstor
         {
             var name = GetEntryName(input);
             var zipEntity = Archive.GetEntry(name);
-            if (zipEntity==null)
+            if (zipEntity == null)
             {
                 return Task.FromResult(false);
             }
@@ -152,7 +152,7 @@ namespace FastBIRe.Project.Accesstor
         {
             var name = GetEntryName(input);
             var zipEntity = Archive.GetEntry(name);
-            if (zipEntity==null)
+            if (zipEntity == null)
             {
                 return false;
             }
@@ -161,7 +161,7 @@ namespace FastBIRe.Project.Accesstor
         }
     }
     public abstract class ProjectAccesstorBase<TInput, TProject, TId> : IProjectAccesstor<TInput, TProject, TId>
-        where TProject: IProject<TId>
+        where TProject : IProject<TId>
         where TInput : IProjectAccesstContext<TId>
     {
         public event EventHandler<WithProjectEventArgs<TInput, TId>>? OnGetProjected;
@@ -218,12 +218,12 @@ namespace FastBIRe.Project.Accesstor
 
         public async Task<bool> UpdateProjectAsync(TInput input, TProject project, CancellationToken cancellationToken = default)
         {
-            OnUpdatingProject?.Invoke(this, new UpdatingProjectEventArgs<TInput, TId>(input,project));
+            OnUpdatingProject?.Invoke(this, new UpdatingProjectEventArgs<TInput, TId>(input, project));
             var res = await OnUpdateProjectAsync(input, project, cancellationToken).ConfigureAwait(false);
             OnUpdatedProject?.Invoke(this, new UpdatedProjectEventArgs<TInput, TId>(input, res));
             return res;
         }
 
-        protected abstract Task<bool> OnUpdateProjectAsync(TInput input,TProject project, CancellationToken cancellationToken = default);
+        protected abstract Task<bool> OnUpdateProjectAsync(TInput input, TProject project, CancellationToken cancellationToken = default);
     }
 }

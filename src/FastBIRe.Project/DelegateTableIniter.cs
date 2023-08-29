@@ -13,7 +13,7 @@
 
         public string GetInitScript(MigrationService migrationService, string tableName)
         {
-            return GetInitScriptFun(migrationService,tableName);
+            return GetInitScriptFun(migrationService, tableName);
         }
 
         public IReadOnlyList<TableColumnDefine> GetInitTableColumnDefines(SourceTableColumnBuilder builder)

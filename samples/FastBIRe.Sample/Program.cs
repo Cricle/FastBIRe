@@ -1,11 +1,6 @@
 ﻿using DatabaseSchemaReader.DataSchema;
-using Microsoft.Data.SqlClient;
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
 using MySqlConnector;
-using Npgsql;
 using System.Data;
-using System.Text.RegularExpressions;
 
 namespace FastBIRe.Sample
 {
@@ -41,11 +36,11 @@ namespace FastBIRe.Sample
             var ser = GetDbMigration(db);
             var d = ser.GetMergeHelper();
             var builder = new SourceTableColumnBuilder(d, "a", "b");
-            var s = GetSourceDefine(builder,ser.SqlType);
+            var s = GetSourceDefine(builder, ser.SqlType);
             var sourceTable = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", s);
             Console.WriteLine(new RealTriggerHelper().Create(
                 "d7e3e404-1eb1-4c93-9956-ec66030804e0_triggery",
-                "8ae26aa2-5def-4209-98fd-1002954ba963", 
+                "8ae26aa2-5def-4209-98fd-1002954ba963",
                 sourceTable, SqlType.MySql));
         }
         static void CompareM()
@@ -60,7 +55,7 @@ namespace FastBIRe.Sample
             ser.EffectMode = true;
             ser.EffectTrigger = false;
             var builder = new SourceTableColumnBuilder(d, "a", "b");
-            var s = GetSourceDefine(builder,ser.SqlType);
+            var s = GetSourceDefine(builder, ser.SqlType);
             var dt = GetDestDefine(builder);
             CreateTableIfNotExists(ser, "8ae26aa2-5def-4209-98fd-1002954ba963");
             var dstr = ser.RunMigration("8ae26aa2-5def-4209-98fd-1002954ba963", dt,
@@ -94,7 +89,7 @@ namespace FastBIRe.Sample
                 {
                     def.Id = def.Field;
                     return def;
-                }),true);
+                }), true);
             ser.ExecuteNonQueryAsync(str).GetAwaiter().GetResult();
 
             _ = ser.SyncIndexAutoAsync("8ae26aa2-5def-4209-98fd-1002954ba963", sourceTable).GetAwaiter().GetResult();
@@ -141,7 +136,7 @@ namespace FastBIRe.Sample
             }
             return defs;
         }
-        static SourceTableColumnDefine[] GetSourceDefine(SourceTableColumnBuilder builder,SqlType sqlType)
+        static SourceTableColumnDefine[] GetSourceDefine(SourceTableColumnBuilder builder, SqlType sqlType)
         {
             var f = new FunctionMapper(sqlType);
             var defs = new SourceTableColumnDefine[]
@@ -169,7 +164,7 @@ namespace FastBIRe.Sample
             var t = new MergeHelper(sqltype);
             var builder = new SourceTableColumnBuilder(t, "a", "b");
 
-            var cols = GetSourceDefine(builder,sqltype);
+            var cols = GetSourceDefine(builder, sqltype);
             CompileOptions? options = CompileOptions.EffectJoin("8ae26aa2-5def-4209-98fd-1002954ba963_effect");
             var def = new SourceTableDefine("d7e3e404-1eb1-4c93-9956-ec66030804e0", cols);
             var si = t.CompileInsert("8ae26aa2-5def-4209-98fd-1002954ba963", def, options);

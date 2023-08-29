@@ -1,7 +1,6 @@
 using DatabaseSchemaReader.DataSchema;
 using FastBIRe.Project.Accesstor;
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using System.Data.Common;
 
@@ -48,7 +47,7 @@ namespace FastBIRe.Project.WebSample
                 {
                     throw new InvalidOperationException("Project id not found");
                 }
-                return new ProjectSession(ctx,res,accesstor,
+                return new ProjectSession(ctx, res, accesstor,
                     ser.GetRequiredService<IStringToDbConnectionFactory>(),
                     ser.GetRequiredService<IProjectAccesstor<IProjectAccesstContext<string>, SchoolProject, string>>());
             });
@@ -56,7 +55,7 @@ namespace FastBIRe.Project.WebSample
             builder.Services.AddSingleton(p =>
             {
                 return new ProjectDbServices(
-                    p.GetRequiredService<IProjectAccesstor<IProjectAccesstContext<string>,SchoolProject, string>>(),
+                    p.GetRequiredService<IProjectAccesstor<IProjectAccesstContext<string>, SchoolProject, string>>(),
                     p.GetRequiredService<IDataSchema<IProjectAccesstContext<string>>>(),
                     p.GetRequiredService<IStringToDbConnectionFactory>(),
                     string.Empty);
@@ -65,7 +64,7 @@ namespace FastBIRe.Project.WebSample
                  SqlType.SQLite,
                 s => new SqliteConnection(s),
                 (s, db) => new SqliteConnection($"Data source=projects/{db}{(string.IsNullOrWhiteSpace(s) ? string.Empty : "," + s)}"));
-            builder.Services.AddJsonDirectoryProjectAccesstor<SchoolProject,string>("projects", "pj");
+            builder.Services.AddJsonDirectoryProjectAccesstor<SchoolProject, string>("projects", "pj");
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -109,7 +108,7 @@ namespace FastBIRe.Project.WebSample
 
         public SchoolProject? Project => Result.Project;
 
-        public IProjectAccesstor<IProjectAccesstContext<string>,SchoolProject,string> ProjectAccesstor { get; }
+        public IProjectAccesstor<IProjectAccesstContext<string>, SchoolProject, string> ProjectAccesstor { get; }
 
         public void Dispose()
         {

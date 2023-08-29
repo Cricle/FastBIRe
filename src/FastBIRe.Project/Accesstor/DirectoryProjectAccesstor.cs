@@ -47,8 +47,8 @@ namespace FastBIRe.Project.Accesstor
     }
 #endif
 
-    public abstract class DirectoryProjectAccesstor<TInput, TProject, TId> : ProjectAccesstorBase<TInput,TProject, TId>
-        where TProject: IProject<TId>
+    public abstract class DirectoryProjectAccesstor<TInput, TProject, TId> : ProjectAccesstorBase<TInput, TProject, TId>
+        where TProject : IProject<TId>
         where TInput : IProjectAccesstContext<TId>
     {
         protected DirectoryProjectAccesstor(string path, string extensions)
@@ -130,7 +130,7 @@ namespace FastBIRe.Project.Accesstor
 
         protected override Task<TProject?> OnGetProjectAsync(TInput input, CancellationToken cancellationToken = default)
         {
-            if (input==null)
+            if (input == null)
             {
                 throw new ArgumentNullException(nameof(input));
             }

@@ -16,11 +16,11 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return AddJsonDirectoryProjectAccesstor<string>(services, path, extensions, lifetime);
         }
-        public static IServiceCollection AddJsonDirectoryProjectAccesstor<TProject,TId>(this IServiceCollection services,
+        public static IServiceCollection AddJsonDirectoryProjectAccesstor<TProject, TId>(this IServiceCollection services,
             string path,
             string extensions,
             ServiceLifetime lifetime = ServiceLifetime.Singleton)
-            where TProject:IProject<TId>
+            where TProject : IProject<TId>
         {
             services.Add(new ServiceDescriptor(typeof(IProjectAccesstor<IProjectAccesstContext<TId>, TProject, TId>),
                 (s) => new JsonDirectoryProjectAccesstor<TProject, IProjectAccesstContext<TId>, TId>(path, extensions),
@@ -32,7 +32,7 @@ namespace Microsoft.Extensions.DependencyInjection
             string extensions,
             ServiceLifetime lifetime = ServiceLifetime.Singleton)
         {
-            return AddJsonDirectoryProjectAccesstor<Project<TId>,TId>(services,path,extensions,lifetime);
+            return AddJsonDirectoryProjectAccesstor<Project<TId>, TId>(services, path, extensions, lifetime);
         }
 #endif
         public static IServiceCollection AddProjectAccesstor<TId>(this IServiceCollection services,
@@ -42,14 +42,14 @@ namespace Microsoft.Extensions.DependencyInjection
             services.Add(new ServiceDescriptor(typeof(IProjectAccesstor<IProjectAccesstContext<TId>, Project<TId>, TId>), (s) => factory(s), lifetime));
             return services;
         }
-        public static IServiceCollection AddProjectAccesstor<TAccesstor,TProject,TInput, TId>(this IServiceCollection services,
+        public static IServiceCollection AddProjectAccesstor<TAccesstor, TProject, TInput, TId>(this IServiceCollection services,
             Func<IServiceProvider, TAccesstor> factory,
             ServiceLifetime lifetime = ServiceLifetime.Singleton)
-            where TProject:IProject<TId>
-            where TAccesstor:IProjectAccesstor<TInput,TProject,TId>
+            where TProject : IProject<TId>
+            where TAccesstor : IProjectAccesstor<TInput, TProject, TId>
             where TInput : IProjectAccesstContext<TId>
         {
-            services.Add(new ServiceDescriptor(typeof(IProjectAccesstor<TInput,TProject,TId>),(s)=> factory(s), lifetime));
+            services.Add(new ServiceDescriptor(typeof(IProjectAccesstor<TInput, TProject, TId>), (s) => factory(s), lifetime));
             return services;
         }
         public static IServiceCollection AddDataSchema(this IServiceCollection services,
@@ -64,15 +64,15 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<IProjectAccesstContext<TId>, string> tableName,
             ServiceLifetime lifetime = ServiceLifetime.Singleton)
         {
-            return AddDataSchema<IProjectAccesstContext<TId>,TId>(services,databaseName, tableName, lifetime);
+            return AddDataSchema<IProjectAccesstContext<TId>, TId>(services, databaseName, tableName, lifetime);
         }
-        public static IServiceCollection AddDataSchema<TInput,TId>(this IServiceCollection services,
-            Func<TInput, string> databaseName, 
+        public static IServiceCollection AddDataSchema<TInput, TId>(this IServiceCollection services,
+            Func<TInput, string> databaseName,
             Func<TInput, string> tableName,
-            ServiceLifetime lifetime= ServiceLifetime.Singleton)
-            where TInput :IProjectAccesstContext<TId>
+            ServiceLifetime lifetime = ServiceLifetime.Singleton)
+            where TInput : IProjectAccesstContext<TId>
         {
-            services.Add(new ServiceDescriptor(typeof(IDataSchema<TInput>),_=>new DelegateDataSchema<TInput>(databaseName,tableName),lifetime));
+            services.Add(new ServiceDescriptor(typeof(IDataSchema<TInput>), _ => new DelegateDataSchema<TInput>(databaseName, tableName), lifetime));
             return services;
         }
         public static IServiceCollection AddStringToDbConnectionFactory(this IServiceCollection services,
@@ -81,7 +81,7 @@ namespace Microsoft.Extensions.DependencyInjection
             Func<string, string, DbConnection> dbConnectionWithDatabase,
             ServiceLifetime lifetime = ServiceLifetime.Singleton)
         {
-            services.Add(new ServiceDescriptor(typeof(IStringToDbConnectionFactory), _ => new DelegateStringToDbConnectionFactory(sqlType,dbConnection, dbConnectionWithDatabase), lifetime));
+            services.Add(new ServiceDescriptor(typeof(IStringToDbConnectionFactory), _ => new DelegateStringToDbConnectionFactory(sqlType, dbConnection, dbConnectionWithDatabase), lifetime));
             return services;
         }
     }

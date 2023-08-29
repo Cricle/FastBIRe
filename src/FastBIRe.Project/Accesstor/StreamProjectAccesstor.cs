@@ -8,18 +8,18 @@ namespace FastBIRe.Project.Accesstor
         {
         }
     }
-    public class StreamProjectAccesstor<TProject> : StreamProjectAccesstor<IProjectAccesstContext<string>,TProject, string>
+    public class StreamProjectAccesstor<TProject> : StreamProjectAccesstor<IProjectAccesstContext<string>, TProject, string>
            where TProject : IProject<string>
     {
         public StreamProjectAccesstor(IStreamProjectAdapter<IProjectAccesstContext<string>, TProject, string> adapter) : base(adapter)
         {
         }
     }
-    public class StreamProjectAccesstor<TInput, TProject, TId> : ProjectAccesstorBase<TInput,TProject, TId>, IDisposable
-        where TProject:IProject<TId>
+    public class StreamProjectAccesstor<TInput, TProject, TId> : ProjectAccesstorBase<TInput, TProject, TId>, IDisposable
+        where TProject : IProject<TId>
         where TInput : IProjectAccesstContext<TId>
     {
-        public StreamProjectAccesstor(IStreamProjectAdapter<TInput,TProject, TId> adapter)
+        public StreamProjectAccesstor(IStreamProjectAdapter<TInput, TProject, TId> adapter)
         {
             Adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
         }

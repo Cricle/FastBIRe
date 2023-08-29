@@ -1,9 +1,8 @@
 ﻿using FastBIRe.Project.Accesstor;
-using FastBIRe.Project.Models;
 
 namespace FastBIRe.Project.WebSample
 {
-    public class ProjectDbServices : DbProjectFactoryBase<IProjectAccesstContext<string>,SchoolProject, string, ProjectCreateWithDbContextResult<SchoolProject,string>>
+    public class ProjectDbServices : DbProjectFactoryBase<IProjectAccesstContext<string>, SchoolProject, string, ProjectCreateWithDbContextResult<SchoolProject, string>>
     {
         public ProjectDbServices(IProjectAccesstor<IProjectAccesstContext<string>, SchoolProject, string> projectAccesstor,
             IDataSchema<IProjectAccesstContext<string>> dataSchema,
@@ -22,11 +21,11 @@ namespace FastBIRe.Project.WebSample
         {
         }
 
-        protected override Task<ProjectCreateWithDbContextResult<SchoolProject,string>?> OnCreateResultHasFirstAsync(IProjectAccesstContext<string> input, SchoolProject project, bool isFirst, CancellationToken token = default)
+        protected override Task<ProjectCreateWithDbContextResult<SchoolProject, string>?> OnCreateResultHasFirstAsync(IProjectAccesstContext<string> input, SchoolProject project, bool isFirst, CancellationToken token = default)
         {
             return Task.FromResult<ProjectCreateWithDbContextResult<SchoolProject, string>?>(new ProjectCreateWithDbContextResult<SchoolProject, string>(project, isFirst, CreateDbConnection(input)));
         }
-        public Task<ITableFactory<ProjectCreateWithDbContextResult<SchoolProject, string>, SchoolProject, string>?> CreateTableFactoryAsync(IProjectAccesstContext<string> input,CancellationToken token = default)
+        public Task<ITableFactory<ProjectCreateWithDbContextResult<SchoolProject, string>, SchoolProject, string>?> CreateTableFactoryAsync(IProjectAccesstContext<string> input, CancellationToken token = default)
         {
             return base.CreateTableFactoryAsync(input, TableIniter.Instance, token);
         }

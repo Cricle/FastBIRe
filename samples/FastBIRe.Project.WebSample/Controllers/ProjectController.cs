@@ -1,5 +1,4 @@
 ﻿using FastBIRe.Project.Accesstor;
-using FastBIRe.Project.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FastBIRe.Project.WebSample.Controllers
@@ -29,7 +28,7 @@ namespace FastBIRe.Project.WebSample.Controllers
         {
             var id = Guid.NewGuid().ToString("N");
             var ok = await dbServices.ProjectAccesstor.CreateProjectAsync(new ProjectAccesstContext<string>(id),
-                new SchoolProject(id, name, new Version(1, 0), DateTime.Now,new List<ClassTable>(0)));
+                new SchoolProject(id, name, new Version(1, 0), DateTime.Now, new List<ClassTable>(0)));
             return Ok(id);
         }
     }

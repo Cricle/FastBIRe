@@ -5,11 +5,11 @@ using System.Data.Common;
 
 namespace FastBIRe.Project
 {
-    public abstract class DbProjectFactoryBase<TInput,TProject, TId, TResult> : ProjectFactoryBase<TInput, TProject, TId, TResult>
+    public abstract class DbProjectFactoryBase<TInput, TProject, TId, TResult> : ProjectFactoryBase<TInput, TProject, TId, TResult>
         where TInput : IProjectAccesstContext<TId>
         where TId : notnull
-        where TProject:IProject<TId>
-        where TResult : ProjectCreateWithDbContextResult<TProject,TId>
+        where TProject : IProject<TId>
+        where TResult : ProjectCreateWithDbContextResult<TProject, TId>
     {
         protected DbProjectFactoryBase(IProjectAccesstor<TInput, TProject, TId> projectAccesstor, IDataSchema<TInput> dataSchema,
             IStringToDbConnectionFactory stringToDbConnectionFactory, string connectionString)
@@ -43,7 +43,7 @@ namespace FastBIRe.Project
         protected sealed override async Task<TResult?> OnCreateResultAsync(TInput input, TProject project, bool isFirst, CancellationToken token = default)
         {
             var database = DataSchema.GetDatabaseName(input);
-            if (isFirst&& NeetToInitDatabase(input,project))
+            if (isFirst && NeetToInitDatabase(input, project))
             {
                 using (var db = StringToDbConnectionFactory.CreateDbConnection(ConnectionString))
                 using (var migSer = new MigrationService(db))
@@ -63,7 +63,7 @@ namespace FastBIRe.Project
         protected abstract Task<TResult?> OnCreateResultHasFirstAsync(TInput input, TProject project, bool isFirst, CancellationToken token = default);
 
 
-        public virtual async Task<ITableFactory<TResult,TProject, TId>?> CreateTableFactoryAsync(TInput input, ITableIniter tableIniter, CancellationToken token = default)
+        public virtual async Task<ITableFactory<TResult, TProject, TId>?> CreateTableFactoryAsync(TInput input, ITableIniter tableIniter, CancellationToken token = default)
         {
             var result = await CreateDbContextAsync(input, token);
             if (result == null)

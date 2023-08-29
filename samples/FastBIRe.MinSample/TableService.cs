@@ -4,7 +4,7 @@ using System.Data;
 
 namespace rsa
 {
-    public class TableService: TableServiceBase
+    public class TableService : TableServiceBase
     {
         public TableService(MigrationService migration) : base(migration)
         {

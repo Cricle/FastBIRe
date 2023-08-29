@@ -2,9 +2,9 @@
 
 namespace FastBIRe.Project
 {
-    public class TableFactory<TResult,TProject,TId> : ITableFactory<TResult,TProject,TId>
-        where TProject:IProject<TId>
-        where TResult : ProjectCreateContextResult<TProject,TId>
+    public class TableFactory<TResult, TProject, TId> : ITableFactory<TResult, TProject, TId>
+        where TProject : IProject<TId>
+        where TResult : ProjectCreateContextResult<TProject, TId>
     {
         public TableFactory(MigrationService service, ITableIniter tableIniter, TResult result)
         {
@@ -34,19 +34,19 @@ namespace FastBIRe.Project
             return false;
         }
 
-        public async Task<MigrateToSqlRestul> MigrateToSqlAsync(string tableName, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine>? olds,CancellationToken token=default)
+        public async Task<MigrateToSqlRestul> MigrateToSqlAsync(string tableName, IReadOnlyList<TableColumnDefine> news, IEnumerable<TableColumnDefine>? olds, CancellationToken token = default)
         {
-            if (TryGetCreateScript(tableName,out var tableCreateScript)&& !string.IsNullOrEmpty(tableCreateScript))
+            if (TryGetCreateScript(tableName, out var tableCreateScript) && !string.IsNullOrEmpty(tableCreateScript))
             {
                 await Service.ExecuteNonQueryAsync(tableCreateScript, token);
             }
-            if (OldColumnActual&&olds!=null)
+            if (OldColumnActual && olds != null)
             {
                 var actualColumns = Service.Reader.Table(tableName);
-                var hasColumns=new HashSet<string>(olds.Where(x=>x.Field!=null).Select(x=>x.Field)!);
+                var hasColumns = new HashSet<string>(olds.Where(x => x.Field != null).Select(x => x.Field)!);
                 olds = olds.Where(x => x.Field != null && hasColumns.Contains(x.Field));
             }
-            var res = Service.RunMigration(tableName, news, olds??Array.Empty<TableColumnDefine>());
+            var res = Service.RunMigration(tableName, news, olds ?? Array.Empty<TableColumnDefine>());
             return new MigrateToSqlRestul(res, Service);
         }
 
