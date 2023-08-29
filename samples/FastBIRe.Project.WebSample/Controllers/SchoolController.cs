@@ -2,6 +2,7 @@ using Dapper;
 using FastBIRe.Project.Accesstor;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
+using System.Text.Json;
 
 namespace FastBIRe.Project.WebSample.Controllers
 {
@@ -17,36 +18,93 @@ namespace FastBIRe.Project.WebSample.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateClass(string className)
+        public async Task<IActionResult> CreateClass([FromBody] ClassTable table)
         {
             using (var mig = await projectSession.ProjectDbServices.CreateTableFactoryAsync(projectSession.Context))
             {
                 mig.Service.Logger = s => Console.WriteLine(s);
                 var builder = mig!.Service.GetColumnBuilder();
-                var colsMerge = mig.TableIniter.WithColumns(builder,new TableColumnDefine[]
-                 {
-                    builder.Column("Name",builder.Type(DbType.AnsiStringFixedLength,64)),
-                    builder.Column("Age",builder.Type(DbType.Int16))
-                 });
-                var result = await mig.MigrateToSqlAsync(className, colsMerge, null);
+                var defines = new List<TableColumnDefine>();
+                foreach (var item in table.Columns)
+                {
+                    switch (item.Type)
+                    {
+                        case FastDataType.Text:
+                            defines.Add(builder.Column(item.Name, builder.Type(DbType.String, 64),destNullable:item.Nullable, id: item.Id));
+                            break;
+                        case FastDataType.Number:
+                            defines.Add(builder.Column(item.Name, builder.Type(DbType.Decimal,builder.Scale,builder.Precision), destNullable: item.Nullable, id: item.Id));
+                            break;
+                        case FastDataType.DateTime:
+                            defines.Add(builder.Column(item.Name, builder.Type(DbType.DateTime), destNullable: item.Nullable, id: item.Id));
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                var colsMerge = mig.TableIniter.WithColumns(builder, defines);
+                var result = await mig.MigrateToSqlAsync(table.Name, colsMerge, null);
                 await result.ExecuteAsync();
-                return Ok(className);
+                var @class = projectSession.Result.Project.Classes.FirstOrDefault(x => x.Name == table.Name);
+                if (@class==null)
+                {
+                    projectSession.Result.Project.Classes.Add(table);
+                }
+                else
+                {
+                    @class.Columns.Clear();
+                    @class.Columns.AddRange(table.Columns);
+                }
+                var res = await projectSession.ProjectAccesstor.UpdateProjectAsync(projectSession.Context, projectSession.Result.Project);
+                return Ok(res);
             }
         }
         [HttpGet]
-        public async Task<IActionResult> AllClass()
+        public IActionResult FindClass(string className)
         {
-            using (var mig = await projectSession.ProjectDbServices.CreateTableFactoryAsync(projectSession.Context))
-            {
-                var tables = mig.Service.Reader.TableList();
-                return Ok(tables);
-            }
+            return Ok(projectSession.Result.Project?.Classes.FirstOrDefault(x=>x.Name==className));
+        }
+        [HttpGet]
+        public IActionResult AllClass()
+        {
+            return Ok(projectSession.Result.Project?.Classes);
         }
         [HttpPost]
-        public async Task<IActionResult> CreateStudent(string className,string name,int arg)
+        public async Task<IActionResult> CreateStudent([FromBody] WriteDataRequest request)
         {
             var fun = projectSession.FunctionMapper;
-            var datas = await projectSession.Connection.ExecuteAsync($"INSERT INTO `{className}`(_time,Name,Age) VALUES ({fun.Now()},'{name}',{arg})");
+            var @class = projectSession.Project.Classes.FirstOrDefault(x => x.Name == request.ClassName);
+            if (@class==null)
+            {
+                return BadRequest();
+            }
+            var cols = new List<string>();
+            var args = new List<string>();
+            if (request.Values != null)
+            {
+                foreach (var item in request.Values)
+                {
+                    var col = @class.Columns.FirstOrDefault(x => x.Name == item.Key);
+                    if (col != null)
+                    {
+                        cols.Add(item.Key);
+                        switch (col.Type)
+                        {
+                            case FastDataType.DateTime:
+                            case FastDataType.Text:
+                                args.Add($"'{item.Value}'");
+                                break;
+                            case FastDataType.Number:
+                                args.Add(item.Value.ToString());
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+            var sql = $"INSERT INTO `{request.ClassName}`(_time,{string.Join(",", cols)}) VALUES ({fun.Now()},{string.Join(",",args)})";
+            var datas = await projectSession.Connection.ExecuteAsync(sql);
             return Ok(datas);
         }
         [HttpGet]
@@ -55,5 +113,11 @@ namespace FastBIRe.Project.WebSample.Controllers
             var datas =await projectSession.Connection.QueryAsync($"SELECT * FROM `{className}`");
             return Ok(datas);
         }
+    }
+    public class WriteDataRequest
+    {
+        public string? ClassName { get; set; }
+
+        public Dictionary<string,object>? Values { get; set; }
     }
 }

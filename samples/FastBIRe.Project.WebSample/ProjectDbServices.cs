@@ -3,9 +3,9 @@ using FastBIRe.Project.Models;
 
 namespace FastBIRe.Project.WebSample
 {
-    public class ProjectDbServices : DbProjectFactoryBase<IProjectAccesstContext<string>, string, ProjectCreateWithDbContextResult<string>>
+    public class ProjectDbServices : DbProjectFactoryBase<IProjectAccesstContext<string>,SchoolProject, string, ProjectCreateWithDbContextResult<SchoolProject,string>>
     {
-        public ProjectDbServices(IProjectAccesstor<IProjectAccesstContext<string>, string> projectAccesstor,
+        public ProjectDbServices(IProjectAccesstor<IProjectAccesstContext<string>, SchoolProject, string> projectAccesstor,
             IDataSchema<IProjectAccesstContext<string>> dataSchema,
             IStringToDbConnectionFactory stringToDbConnectionFactory,
             string connectionString)
@@ -13,7 +13,7 @@ namespace FastBIRe.Project.WebSample
         {
         }
 
-        public ProjectDbServices(IProjectAccesstor<IProjectAccesstContext<string>, string> projectAccesstor,
+        public ProjectDbServices(IProjectAccesstor<IProjectAccesstContext<string>, SchoolProject, string> projectAccesstor,
             IEqualityComparer<string> equalityComparer,
             IDataSchema<IProjectAccesstContext<string>> dataSchema,
             IStringToDbConnectionFactory stringToDbConnectionFactory,
@@ -22,11 +22,11 @@ namespace FastBIRe.Project.WebSample
         {
         }
 
-        protected override Task<ProjectCreateWithDbContextResult<string>?> OnCreateResultHasFirstAsync(IProjectAccesstContext<string> input, IProject<string> project, bool isFirst, CancellationToken token = default)
+        protected override Task<ProjectCreateWithDbContextResult<SchoolProject,string>?> OnCreateResultHasFirstAsync(IProjectAccesstContext<string> input, SchoolProject project, bool isFirst, CancellationToken token = default)
         {
-            return Task.FromResult<ProjectCreateWithDbContextResult<string>?>(new ProjectCreateWithDbContextResult<string>(project, isFirst, CreateDbConnection(input)));
+            return Task.FromResult<ProjectCreateWithDbContextResult<SchoolProject, string>?>(new ProjectCreateWithDbContextResult<SchoolProject, string>(project, isFirst, CreateDbConnection(input)));
         }
-        public Task<ITableFactory<ProjectCreateWithDbContextResult<string>, string>?> CreateTableFactoryAsync(IProjectAccesstContext<string> input,CancellationToken token = default)
+        public Task<ITableFactory<ProjectCreateWithDbContextResult<SchoolProject, string>, SchoolProject, string>?> CreateTableFactoryAsync(IProjectAccesstContext<string> input,CancellationToken token = default)
         {
             return base.CreateTableFactoryAsync(input, TableIniter.Instance, token);
         }

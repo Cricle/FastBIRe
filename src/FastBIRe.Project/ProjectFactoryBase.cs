@@ -4,16 +4,17 @@ using System.Collections.Concurrent;
 
 namespace FastBIRe.Project
 {
-    public abstract class ProjectFactoryBase<TInput, TId, TResult>
+    public abstract class ProjectFactoryBase<TInput,TProject, TId, TResult>
         where TInput : IProjectAccesstContext<TId>
         where TId : notnull
-        where TResult : ProjectCreateContextResult<TId>
+        where TProject:IProject<TId>
+        where TResult : ProjectCreateContextResult<TProject, TId>
     {
-        public ProjectFactoryBase(IProjectAccesstor<TInput, TId> projectAccesstor, IDataSchema<TInput> dataSchema)
+        public ProjectFactoryBase(IProjectAccesstor<TInput, TProject, TId> projectAccesstor, IDataSchema<TInput> dataSchema)
             : this(projectAccesstor, EqualityComparer<TId>.Default, dataSchema)
         {
         }
-        public ProjectFactoryBase(IProjectAccesstor<TInput, TId> projectAccesstor, IEqualityComparer<TId> equalityComparer, IDataSchema<TInput> dataSchema)
+        public ProjectFactoryBase(IProjectAccesstor<TInput, TProject, TId> projectAccesstor, IEqualityComparer<TId> equalityComparer, IDataSchema<TInput> dataSchema)
         {
             DataSchema = dataSchema ?? throw new ArgumentNullException(nameof(dataSchema));
             ProjectAccesstor = projectAccesstor ?? throw new ArgumentNullException(nameof(projectAccesstor));
@@ -21,7 +22,7 @@ namespace FastBIRe.Project
         }
         private readonly ConcurrentDictionary<TId, bool> projectFirst;
 
-        public IProjectAccesstor<TInput, TId> ProjectAccesstor { get; }
+        public IProjectAccesstor<TInput, TProject, TId> ProjectAccesstor { get; }
 
         public IReadOnlyDictionary<TId, bool> ProjectFirst => projectFirst;
 
@@ -42,7 +43,7 @@ namespace FastBIRe.Project
             projectFirst.TryAdd(id, false);
         }
 
-        public async Task<bool> CreateIfNotExistsAsync(TInput input, Func<IProject<TId>> projectCreator, CancellationToken token = default)
+        public async Task<bool> CreateIfNotExistsAsync(TInput input, Func<TProject> projectCreator, CancellationToken token = default)
         {
             var exists = await ProjectAccesstor.ProjectExistsAsync(input, token);
             if (!exists)
@@ -87,7 +88,7 @@ namespace FastBIRe.Project
             return null;
         }
 
-        protected abstract Task<TResult?> OnCreateResultAsync(TInput input, IProject<TId> project, bool isFirst, CancellationToken token = default);
+        protected abstract Task<TResult?> OnCreateResultAsync(TInput input, TProject project, bool isFirst, CancellationToken token = default);
     }
 
 }

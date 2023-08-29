@@ -3,7 +3,7 @@
 namespace FastBIRe.Project
 {
     public class DbConnectionPoolManager<TKey> : IDisposable
-#if NET7_0_OR_GREATER
+#if NET6_0_OR_GREATER
         where TKey : notnull
 #endif
     {

@@ -5,18 +5,19 @@ using System.Data.Common;
 
 namespace FastBIRe.Project
 {
-    public abstract class DbProjectFactoryBase<TInput, TId, TResult> : ProjectFactoryBase<TInput, TId, TResult>
+    public abstract class DbProjectFactoryBase<TInput,TProject, TId, TResult> : ProjectFactoryBase<TInput, TProject, TId, TResult>
         where TInput : IProjectAccesstContext<TId>
         where TId : notnull
-        where TResult : ProjectCreateWithDbContextResult<TId>
+        where TProject:IProject<TId>
+        where TResult : ProjectCreateWithDbContextResult<TProject,TId>
     {
-        protected DbProjectFactoryBase(IProjectAccesstor<TInput, TId> projectAccesstor, IDataSchema<TInput> dataSchema,
+        protected DbProjectFactoryBase(IProjectAccesstor<TInput, TProject, TId> projectAccesstor, IDataSchema<TInput> dataSchema,
             IStringToDbConnectionFactory stringToDbConnectionFactory, string connectionString)
             : this(projectAccesstor, EqualityComparer<TId>.Default, dataSchema, stringToDbConnectionFactory, connectionString)
         {
         }
 
-        protected DbProjectFactoryBase(IProjectAccesstor<TInput, TId> projectAccesstor,
+        protected DbProjectFactoryBase(IProjectAccesstor<TInput, TProject, TId> projectAccesstor,
             IEqualityComparer<TId> equalityComparer,
             IDataSchema<TInput> dataSchema,
             IStringToDbConnectionFactory stringToDbConnectionFactory,
@@ -39,7 +40,7 @@ namespace FastBIRe.Project
                 DataSchema.GetDatabaseName(input));
         }
 
-        protected sealed override async Task<TResult?> OnCreateResultAsync(TInput input, IProject<TId> project, bool isFirst, CancellationToken token = default)
+        protected sealed override async Task<TResult?> OnCreateResultAsync(TInput input, TProject project, bool isFirst, CancellationToken token = default)
         {
             var database = DataSchema.GetDatabaseName(input);
             if (isFirst&& NeetToInitDatabase(input,project))
@@ -54,22 +55,22 @@ namespace FastBIRe.Project
             return await OnCreateResultHasFirstAsync(input, project, isFirst, token);
         }
 
-        protected virtual bool NeetToInitDatabase(TInput input, IProject<TId> project)
+        protected virtual bool NeetToInitDatabase(TInput input, TProject project)
         {
             return StringToDbConnectionFactory.SqlType != SqlType.SQLite;
         }
 
-        protected abstract Task<TResult?> OnCreateResultHasFirstAsync(TInput input, IProject<TId> project, bool isFirst, CancellationToken token = default);
+        protected abstract Task<TResult?> OnCreateResultHasFirstAsync(TInput input, TProject project, bool isFirst, CancellationToken token = default);
 
 
-        public virtual async Task<ITableFactory<TResult, TId>?> CreateTableFactoryAsync(TInput input, ITableIniter tableIniter, CancellationToken token = default)
+        public virtual async Task<ITableFactory<TResult,TProject, TId>?> CreateTableFactoryAsync(TInput input, ITableIniter tableIniter, CancellationToken token = default)
         {
             var result = await CreateDbContextAsync(input, token);
             if (result == null)
             {
                 return null;
             }
-            return new TableFactory<TResult, TId>(new MigrationService(result.Connection), tableIniter, result);
+            return new TableFactory<TResult, TProject, TId>(new MigrationService(result.Connection), tableIniter, result);
         }
     }
 

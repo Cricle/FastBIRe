@@ -3,8 +3,10 @@ using System.Data.Common;
 
 namespace FastBIRe.Project
 {
-    public record class ProjectCreateContextResult<TId>(IProject<TId>? Project, bool IsFirst);
-    public record class ProjectCreateWithDbContextResult<TId>(IProject<TId>? Project, bool IsFirst,DbConnection Connection):
-        ProjectCreateContextResult<TId>(Project,IsFirst);
+    public record class ProjectCreateContextResult<TProject,TId>(TProject? Project, bool IsFirst)
+        where TProject:IProject<TId>;
+    public record class ProjectCreateWithDbContextResult<TProject,TId>(TProject? Project, bool IsFirst,DbConnection Connection):
+        ProjectCreateContextResult<TProject,TId>(Project,IsFirst)
+        where TProject : IProject<TId>;
 
 }

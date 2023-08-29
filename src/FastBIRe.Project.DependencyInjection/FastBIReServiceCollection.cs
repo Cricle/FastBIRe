@@ -16,31 +16,40 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             return AddJsonDirectoryProjectAccesstor<string>(services, path, extensions, lifetime);
         }
+        public static IServiceCollection AddJsonDirectoryProjectAccesstor<TProject,TId>(this IServiceCollection services,
+            string path,
+            string extensions,
+            ServiceLifetime lifetime = ServiceLifetime.Singleton)
+            where TProject:IProject<TId>
+        {
+            services.Add(new ServiceDescriptor(typeof(IProjectAccesstor<IProjectAccesstContext<TId>, TProject, TId>),
+                (s) => new JsonDirectoryProjectAccesstor<TProject, IProjectAccesstContext<TId>, TId>(path, extensions),
+                lifetime));
+            return services;
+        }
         public static IServiceCollection AddJsonDirectoryProjectAccesstor<TId>(this IServiceCollection services,
             string path,
             string extensions,
             ServiceLifetime lifetime = ServiceLifetime.Singleton)
         {
-            services.Add(new ServiceDescriptor(typeof(IProjectAccesstor<IProjectAccesstContext<TId>, TId>), 
-                (s) => new JsonDirectoryProjectAccesstor<Project<TId>,IProjectAccesstContext<TId>,TId>(path,extensions),
-                lifetime));
-            return services;
+            return AddJsonDirectoryProjectAccesstor<Project<TId>,TId>(services,path,extensions,lifetime);
         }
 #endif
         public static IServiceCollection AddProjectAccesstor<TId>(this IServiceCollection services,
-            Func<IServiceProvider, IProjectAccesstor<IProjectAccesstContext<TId>, TId>> factory,
+            Func<IServiceProvider, IProjectAccesstor<IProjectAccesstContext<TId>, Project<TId>, TId>> factory,
             ServiceLifetime lifetime = ServiceLifetime.Singleton)
         {
-            services.Add(new ServiceDescriptor(typeof(IProjectAccesstor<IProjectAccesstContext<TId>, TId>), (s) => factory(s), lifetime));
+            services.Add(new ServiceDescriptor(typeof(IProjectAccesstor<IProjectAccesstContext<TId>, Project<TId>, TId>), (s) => factory(s), lifetime));
             return services;
         }
-        public static IServiceCollection AddProjectAccesstor<TAccesstor,TInput, TId>(this IServiceCollection services,
+        public static IServiceCollection AddProjectAccesstor<TAccesstor,TProject,TInput, TId>(this IServiceCollection services,
             Func<IServiceProvider, TAccesstor> factory,
             ServiceLifetime lifetime = ServiceLifetime.Singleton)
-            where TAccesstor:IProjectAccesstor<TInput,TId>
+            where TProject:IProject<TId>
+            where TAccesstor:IProjectAccesstor<TInput,TProject,TId>
             where TInput : IProjectAccesstContext<TId>
         {
-            services.Add(new ServiceDescriptor(typeof(IProjectAccesstor<TInput,TId>),(s)=> factory(s), lifetime));
+            services.Add(new ServiceDescriptor(typeof(IProjectAccesstor<TInput,TProject,TId>),(s)=> factory(s), lifetime));
             return services;
         }
         public static IServiceCollection AddDataSchema(this IServiceCollection services,

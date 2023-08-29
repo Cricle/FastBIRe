@@ -24,7 +24,7 @@ namespace FastBIRe.Project.Accesstor
             return input.Id;
         }
     }
-    public class JsonZipStreamProjectAdapter<TProject,TInput, TId> : ZipStreamProjectAdapterBase<TInput, TId>
+    public class JsonZipStreamProjectAdapter<TProject,TInput, TId> : ZipStreamProjectAdapterBase<TInput, TProject, TId>
         where TInput : IProjectAccesstContext<TId>
         where TProject : IProject<TId>
     {
@@ -34,7 +34,7 @@ namespace FastBIRe.Project.Accesstor
 
         public JsonSerializerOptions? Options { get; set; }
 
-        public override IProject<TId>? ConvertToProject(ZipArchiveEntry entry)
+        public override TProject? ConvertToProject(ZipArchiveEntry entry)
         {
             using (var fs = entry.Open())
             {
@@ -42,7 +42,7 @@ namespace FastBIRe.Project.Accesstor
             }
         }
 
-        public override async Task WriteProjectToFileAsync(ZipArchiveEntry entry, IProject<TId> project, CancellationToken cancellationToken = default)
+        public override async Task WriteProjectToFileAsync(ZipArchiveEntry entry, TProject project, CancellationToken cancellationToken = default)
         {
             using (var fs = entry.Open())
             {
@@ -52,7 +52,8 @@ namespace FastBIRe.Project.Accesstor
         }
     }
 #endif
-    public abstract class ZipStreamProjectAdapterBase<TInput, TId> : IStreamProjectAdapter<TInput, TId>
+    public abstract class ZipStreamProjectAdapterBase<TInput, TProject, TId> : IStreamProjectAdapter<TInput,TProject, TId>
+        where TProject: IProject<TId>
         where TInput : IProjectAccesstContext<TId>
     {
         protected ZipStreamProjectAdapterBase(ZipArchive archive)
@@ -62,9 +63,9 @@ namespace FastBIRe.Project.Accesstor
 
         public ZipArchive Archive { get; }
 
-        public abstract IProject<TId>? ConvertToProject(ZipArchiveEntry entry);
+        public abstract TProject? ConvertToProject(ZipArchiveEntry entry);
 
-        public abstract Task WriteProjectToFileAsync(ZipArchiveEntry entry, IProject<TId> project, CancellationToken cancellationToken = default);
+        public abstract Task WriteProjectToFileAsync(ZipArchiveEntry entry, TProject project, CancellationToken cancellationToken = default);
 
         public virtual bool IsProject(ZipArchiveEntry entry)
         {
@@ -78,7 +79,7 @@ namespace FastBIRe.Project.Accesstor
         {
             return Archive.Entries.Where(x => string.IsNullOrEmpty(keyword) || x.Name.Contains(keyword));
         }
-        public Task<IReadOnlyList<IProject<TId>>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<TProject>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var res = EnumerableProjectEntity(input?.ToString())
@@ -86,7 +87,7 @@ namespace FastBIRe.Project.Accesstor
                 .Select(ConvertToProject)
                 .Where(x => x != null)
                 .ToList();
-            return Task.FromResult<IReadOnlyList<IProject<TId>>>(res!);
+            return Task.FromResult<IReadOnlyList<TProject>>(res!);
         }
 
         public Task<int> CleanProjectAsync(TInput? input, CancellationToken cancellationToken = default)
@@ -101,7 +102,7 @@ namespace FastBIRe.Project.Accesstor
             return Task.FromResult(res);
         }
 
-        public async Task<bool> CreateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateProjectAsync(TInput input, TProject project, CancellationToken cancellationToken = default)
         {
             var name = GetEntryName(input);
             var zipEntity=Archive.GetEntry(name);
@@ -130,13 +131,13 @@ namespace FastBIRe.Project.Accesstor
             Archive.Dispose();
         }
 
-        public Task<IProject<TId>?> GetProjectAsync(TInput input, CancellationToken cancellationToken = default)
+        public Task<TProject?> GetProjectAsync(TInput input, CancellationToken cancellationToken = default)
         {
             var name = GetEntryName(input);
             var zipEntity = Archive.GetEntry(name);
             if (zipEntity == null)
             {
-                return Task.FromResult<IProject<TId>?>(null);
+                return Task.FromResult<TProject?>(default);
             }
             return Task.FromResult(ConvertToProject(zipEntity));
         }
@@ -147,7 +148,7 @@ namespace FastBIRe.Project.Accesstor
             return Task.FromResult(Archive.Entries.Any(x => x.Name == name));
         }
 
-        public async Task<bool> UpdateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default)
+        public async Task<bool> UpdateProjectAsync(TInput input, TProject project, CancellationToken cancellationToken = default)
         {
             var name = GetEntryName(input);
             var zipEntity = Archive.GetEntry(name);
@@ -159,7 +160,8 @@ namespace FastBIRe.Project.Accesstor
             return true;
         }
     }
-    public abstract class ProjectAccesstorBase<TInput, TId> : IProjectAccesstor<TInput, TId>
+    public abstract class ProjectAccesstorBase<TInput, TProject, TId> : IProjectAccesstor<TInput, TProject, TId>
+        where TProject: IProject<TId>
         where TInput : IProjectAccesstContext<TId>
     {
         public event EventHandler<WithProjectEventArgs<TInput, TId>>? OnGetProjected;
@@ -182,7 +184,7 @@ namespace FastBIRe.Project.Accesstor
 
         protected abstract Task<int> OnCleanProjectAsync(TInput? input, CancellationToken cancellationToken = default);
 
-        public async Task<bool> CreateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateProjectAsync(TInput input, TProject project, CancellationToken cancellationToken = default)
         {
             OnCreatingProject?.Invoke(this, new CreatingProjectEventArgs<TInput, TId>(input, project));
             var res = await OnCreateProjectAsync(input, project, cancellationToken).ConfigureAwait(false);
@@ -190,7 +192,7 @@ namespace FastBIRe.Project.Accesstor
             return res;
         }
 
-        protected abstract Task<bool> OnCreateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default);
+        protected abstract Task<bool> OnCreateProjectAsync(TInput input, TProject project, CancellationToken cancellationToken = default);
 
         public async Task<bool> DeleteProjectAsync(TInput input, CancellationToken cancellationToken = default)
         {
@@ -201,20 +203,20 @@ namespace FastBIRe.Project.Accesstor
         }
         protected abstract Task<bool> OnDeleteProjectAsync(TInput input, CancellationToken cancellationToken = default);
 
-        public async Task<IProject<TId>?> GetProjectAsync(TInput input, CancellationToken cancellationToken = default)
+        public async Task<TProject?> GetProjectAsync(TInput input, CancellationToken cancellationToken = default)
         {
             var res = await OnGetProjectAsync(input, cancellationToken).ConfigureAwait(false);
             OnGetProjected?.Invoke(this, new WithProjectEventArgs<TInput, TId>(input, res));
             return res;
         }
 
-        protected abstract Task<IProject<TId>?> OnGetProjectAsync(TInput input, CancellationToken cancellationToken = default);
+        protected abstract Task<TProject?> OnGetProjectAsync(TInput input, CancellationToken cancellationToken = default);
 
         public abstract Task<bool> ProjectExistsAsync(TInput input, CancellationToken cancellationToken = default);
 
-        public abstract Task<IReadOnlyList<IProject<TId>>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default);
+        public abstract Task<IReadOnlyList<TProject>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default);
 
-        public async Task<bool> UpdateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default)
+        public async Task<bool> UpdateProjectAsync(TInput input, TProject project, CancellationToken cancellationToken = default)
         {
             OnUpdatingProject?.Invoke(this, new UpdatingProjectEventArgs<TInput, TId>(input,project));
             var res = await OnUpdateProjectAsync(input, project, cancellationToken).ConfigureAwait(false);
@@ -222,6 +224,6 @@ namespace FastBIRe.Project.Accesstor
             return res;
         }
 
-        protected abstract Task<bool> OnUpdateProjectAsync(TInput input,IProject<TId> project, CancellationToken cancellationToken = default);
+        protected abstract Task<bool> OnUpdateProjectAsync(TInput input,TProject project, CancellationToken cancellationToken = default);
     }
 }

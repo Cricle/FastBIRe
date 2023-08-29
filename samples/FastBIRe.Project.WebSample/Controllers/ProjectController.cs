@@ -8,28 +8,28 @@ namespace FastBIRe.Project.WebSample.Controllers
     [Route("[controller]/[action]")]
     public class ProjectController : ControllerBase
     {
-        private readonly IProjectAccesstor<IProjectAccesstContext<string>, string> projectAccesstor;
+        private readonly ProjectDbServices dbServices;
 
-        public ProjectController(IProjectAccesstor<IProjectAccesstContext<string>, string> projectAccesstor)
+        public ProjectController(ProjectDbServices dbServices)
         {
-            this.projectAccesstor = projectAccesstor;
+            this.dbServices = dbServices;
         }
         [HttpGet]
         public async Task<IActionResult> AllProject()
         {
-            return Ok(await projectAccesstor.AllProjectsAsync(null));
+            return Ok(await dbServices.ProjectAccesstor.AllProjectsAsync(null));
         }
         [HttpPost]
         public async Task<IActionResult> DeleteProject([FromForm] string id)
         {
-            return Ok(await projectAccesstor.DeleteProjectAsync(new ProjectAccesstContext<string>(id)));
+            return Ok(await dbServices.ProjectAccesstor.DeleteProjectAsync(new ProjectAccesstContext<string>(id)));
         }
         [HttpPost]
         public async Task<IActionResult> CreateProject([FromForm] string name)
         {
             var id = Guid.NewGuid().ToString("N");
-            var ok = await projectAccesstor.CreateProjectAsync(new ProjectAccesstContext<string>(id),
-                new Project<string>(id, name, new Version(1, 0), DateTime.Now));
+            var ok = await dbServices.ProjectAccesstor.CreateProjectAsync(new ProjectAccesstContext<string>(id),
+                new SchoolProject(id, name, new Version(1, 0), DateTime.Now,new List<ClassTable>(0)));
             return Ok(id);
         }
     }

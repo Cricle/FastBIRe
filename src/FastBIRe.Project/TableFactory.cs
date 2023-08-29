@@ -1,7 +1,10 @@
-﻿namespace FastBIRe.Project
+﻿using FastBIRe.Project.Models;
+
+namespace FastBIRe.Project
 {
-    public class TableFactory<TResult,TId> : ITableFactory<TResult,TId>
-          where TResult : ProjectCreateContextResult<TId>
+    public class TableFactory<TResult,TProject,TId> : ITableFactory<TResult,TProject,TId>
+        where TProject:IProject<TId>
+        where TResult : ProjectCreateContextResult<TProject,TId>
     {
         public TableFactory(MigrationService service, ITableIniter tableIniter, TResult result)
         {

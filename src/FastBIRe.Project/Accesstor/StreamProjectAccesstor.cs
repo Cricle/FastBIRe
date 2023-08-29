@@ -2,30 +2,31 @@
 
 namespace FastBIRe.Project.Accesstor
 {
-    public class StreamProjectAccesstor : StreamProjectAccesstor<IProject<string>>
+    public class StreamProjectAccesstor : StreamProjectAccesstor<Project<string>>
     {
-        public StreamProjectAccesstor(IStreamProjectAdapter<IProjectAccesstContext<string>, string> adapter) : base(adapter)
+        public StreamProjectAccesstor(IStreamProjectAdapter<IProjectAccesstContext<string>, Project<string>, string> adapter) : base(adapter)
         {
         }
     }
-    public class StreamProjectAccesstor<TProject> : StreamProjectAccesstor<IProjectAccesstContext<string>, string>
+    public class StreamProjectAccesstor<TProject> : StreamProjectAccesstor<IProjectAccesstContext<string>,TProject, string>
            where TProject : IProject<string>
     {
-        public StreamProjectAccesstor(IStreamProjectAdapter<IProjectAccesstContext<string>, string> adapter) : base(adapter)
+        public StreamProjectAccesstor(IStreamProjectAdapter<IProjectAccesstContext<string>, TProject, string> adapter) : base(adapter)
         {
         }
     }
-    public class StreamProjectAccesstor<TInput, TId> : ProjectAccesstorBase<TInput, TId>, IDisposable
-           where TInput : IProjectAccesstContext<TId>
+    public class StreamProjectAccesstor<TInput, TProject, TId> : ProjectAccesstorBase<TInput,TProject, TId>, IDisposable
+        where TProject:IProject<TId>
+        where TInput : IProjectAccesstContext<TId>
     {
-        public StreamProjectAccesstor(IStreamProjectAdapter<TInput, TId> adapter)
+        public StreamProjectAccesstor(IStreamProjectAdapter<TInput,TProject, TId> adapter)
         {
             Adapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
         }
 
-        public IStreamProjectAdapter<TInput,TId> Adapter { get; }
+        public IStreamProjectAdapter<TInput, TProject, TId> Adapter { get; }
 
-        public override Task<IReadOnlyList<IProject<TId>>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default)
+        public override Task<IReadOnlyList<TProject>> AllProjectsAsync(TInput? input, CancellationToken cancellationToken = default)
         {
             return Adapter.AllProjectsAsync(input, cancellationToken);
         }
@@ -45,7 +46,7 @@ namespace FastBIRe.Project.Accesstor
             return Adapter.CleanProjectAsync(input, cancellationToken);
         }
 
-        protected override Task<bool> OnCreateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default)
+        protected override Task<bool> OnCreateProjectAsync(TInput input, TProject project, CancellationToken cancellationToken = default)
         {
             return Adapter.CreateProjectAsync(input, project, cancellationToken);
         }
@@ -55,12 +56,12 @@ namespace FastBIRe.Project.Accesstor
             return Adapter.DeleteProjectAsync(input, cancellationToken);
         }
 
-        protected override Task<IProject<TId>?> OnGetProjectAsync(TInput input, CancellationToken cancellationToken = default)
+        protected override Task<TProject?> OnGetProjectAsync(TInput input, CancellationToken cancellationToken = default)
         {
             return Adapter.GetProjectAsync(input, cancellationToken);
         }
 
-        protected override Task<bool> OnUpdateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default)
+        protected override Task<bool> OnUpdateProjectAsync(TInput input, TProject project, CancellationToken cancellationToken = default)
         {
             return Adapter.UpdateProjectAsync(input, project, cancellationToken);
         }
