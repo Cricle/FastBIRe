@@ -13,6 +13,8 @@ namespace FastBIRe.Project.Accesstor
 
         Task<bool> CreateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default);
 
+        Task<bool> UpdateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default);
+
         Task<bool> DeleteProjectAsync(TInput input, CancellationToken cancellationToken = default);
 
         Task<IProject<TId>?> GetProjectAsync(TInput input, CancellationToken cancellationToken = default);

@@ -111,7 +111,10 @@ namespace FastBIRe.Project.Accesstor
             await WriteProjectToFileAsync(path, project, cancellationToken);
             return true;
         }
-
+        protected override Task<bool> OnUpdateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default)
+        {
+            return OnCreateProjectAsync(input, project, cancellationToken);
+        }
         protected override Task<bool> OnDeleteProjectAsync(TInput input, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -126,6 +129,10 @@ namespace FastBIRe.Project.Accesstor
 
         protected override Task<IProject<TId>?> OnGetProjectAsync(TInput input, CancellationToken cancellationToken = default)
         {
+            if (input==null)
+            {
+                throw new ArgumentNullException(nameof(input));
+            }
             var path = GetFilePath(input);
             return Task.FromResult(ConvertToProject(path));
         }

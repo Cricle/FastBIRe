@@ -13,6 +13,9 @@ namespace FastBIRe.Project.Accesstor
         event EventHandler<CreatingProjectEventArgs<TInput, TId>>? OnCreatingProject;
         event EventHandler<CreatedProjectEventArgs<TInput, TId>>? OnCreatedProject;
 
+        event EventHandler<UpdatingProjectEventArgs<TInput, TId>>? OnUpdatingProject;
+        event EventHandler<UpdatedProjectEventArgs<TInput, TId>>? OnUpdatedProject;
+
         event EventHandler<CleaningProjectEventArgs<TInput, TId>>? OnCleaningProject;
         event EventHandler<CleanProjectEventArgs<TInput, TId>>? OnCleanProject;
 
@@ -21,6 +24,8 @@ namespace FastBIRe.Project.Accesstor
         Task<bool> DeleteProjectAsync(TInput input, CancellationToken cancellationToken = default);
 
         Task<bool> CreateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default);
+
+        Task<bool> UpdateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default);
 
         Task<bool> ProjectExistsAsync(TInput input, CancellationToken cancellationToken = default);
 

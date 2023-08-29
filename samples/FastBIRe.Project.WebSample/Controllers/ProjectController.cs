@@ -20,10 +20,15 @@ namespace FastBIRe.Project.WebSample.Controllers
             return Ok(await projectAccesstor.AllProjectsAsync(null));
         }
         [HttpPost]
-        public async Task<IActionResult> CreateProject([FromForm]string name)
+        public async Task<IActionResult> DeleteProject([FromForm] string id)
         {
-            var id= Guid.NewGuid().ToString("N");
-            var ok=await projectAccesstor.CreateProjectAsync(new ProjectAccesstContext<string>(id), 
+            return Ok(await projectAccesstor.DeleteProjectAsync(new ProjectAccesstContext<string>(id)));
+        }
+        [HttpPost]
+        public async Task<IActionResult> CreateProject([FromForm] string name)
+        {
+            var id = Guid.NewGuid().ToString("N");
+            var ok = await projectAccesstor.CreateProjectAsync(new ProjectAccesstContext<string>(id),
                 new Project<string>(id, name, new Version(1, 0), DateTime.Now));
             return Ok(id);
         }

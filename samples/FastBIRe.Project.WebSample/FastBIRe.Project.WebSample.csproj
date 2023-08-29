@@ -7,11 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.0.151" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.10" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.5" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\FastBIRe.Project.DependencyInjection\FastBIRe.Project.DependencyInjection.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe.Project\FastBIRe.Project.csproj" />
   </ItemGroup>
 

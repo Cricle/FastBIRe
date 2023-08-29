@@ -59,5 +59,10 @@ namespace FastBIRe.Project.Accesstor
         {
             return Adapter.GetProjectAsync(input, cancellationToken);
         }
+
+        protected override Task<bool> OnUpdateProjectAsync(TInput input, IProject<TId> project, CancellationToken cancellationToken = default)
+        {
+            return Adapter.UpdateProjectAsync(input, project, cancellationToken);
+        }
     }
 }

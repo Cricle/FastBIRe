@@ -1,6 +1,8 @@
+using DatabaseSchemaReader.DataSchema;
 using FastBIRe.Project.Accesstor;
+using Microsoft.Data.Sqlite;
 using Microsoft.OpenApi.Models;
-using System.IO.Compression;
+using System.Data.Common;
 
 namespace FastBIRe.Project.WebSample
 {
@@ -39,19 +41,28 @@ namespace FastBIRe.Project.WebSample
                 var httpContext = ser.GetRequiredService<IHttpContextAccessor>();
                 var pjId = httpContext.HttpContext!.Request.Headers["projId"].ToString();
                 var accesstor = ser.GetRequiredService<ProjectDbServices>();
-                var res = accesstor.CreateDbContextAsync(pjId).GetAwaiter().GetResult();
-                if (!res.Succeed)
+                var ctx = new ProjectAccesstContext<string>(pjId);
+                var res = accesstor.CreateDbContextAsync(ctx).GetAwaiter().GetResult();
+                if (res?.Connection == null)
                 {
                     throw new InvalidOperationException("Project id not found");
                 }
-                httpContext.HttpContext.Features.Set(res.Project);
-                return res.DbContext!;
+                return new ProjectSession(ctx,res,accesstor,ser.GetRequiredService<IStringToDbConnectionFactory>());
             });
-            builder.Services.AddSingleton<ProjectDbServices>();
-            builder.Services.AddSingleton<IProjectAccesstor<IProjectAccesstContext<string>, string>>(p =>
+            builder.Services.AddDataSchema(s => $"{s.Id}_data", s => s.Id);
+            builder.Services.AddSingleton(p =>
             {
-                return new JsonDirectoryProjectAccesstor("projects", "pj");
+                return new ProjectDbServices(
+                    p.GetRequiredService<IProjectAccesstor<IProjectAccesstContext<string>, string>>(),
+                    p.GetRequiredService<IDataSchema<IProjectAccesstContext<string>>>(),
+                    p.GetRequiredService<IStringToDbConnectionFactory>(),
+                    string.Empty);
             });
+            builder.Services.AddStringToDbConnectionFactory(
+                 SqlType.SQLite,
+                s => new SqliteConnection(s),
+                (s, db) => new SqliteConnection($"Data source=projects/{db}{(string.IsNullOrWhiteSpace(s) ? string.Empty : "," + s)}"));
+            builder.Services.AddJsonDirectoryProjectAccesstor("projects", "pj");
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -59,10 +70,36 @@ namespace FastBIRe.Project.WebSample
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            var dbs = app.Services.GetRequiredService<ProjectDbServices>();
             app.MapControllers();
 
             app.Run();
         }
+    }
+    public class ProjectSession
+    {
+        public ProjectSession(IProjectAccesstContext<string> context,
+            ProjectCreateWithDbContextResult<string> result,
+            ProjectDbServices projectDbServices, 
+            IStringToDbConnectionFactory stringToDbConnectionFactory)
+        {
+            Context = context;
+            Result = result;
+            ProjectDbServices = projectDbServices;
+            StringToDbConnectionFactory = stringToDbConnectionFactory;
+        }
+
+        public IProjectAccesstContext<string> Context { get; }
+
+        public ProjectCreateWithDbContextResult<string> Result { get; }
+
+        public ProjectDbServices ProjectDbServices { get; }
+
+        public IStringToDbConnectionFactory StringToDbConnectionFactory { get; }
+
+        public SqlType SqlType => StringToDbConnectionFactory.SqlType;
+
+        public DbConnection Connection => Result.Connection;
+
+        public FunctionMapper FunctionMapper => new FunctionMapper(SqlType);
     }
 }

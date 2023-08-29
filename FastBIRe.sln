@@ -24,6 +24,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solutions", "Solutions", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Sample.Functions", "samples\FastBIRe.Sample.Functions\FastBIRe.Sample.Functions.csproj", "{EB19ADF5-F531-4580-B887-12A8347CCE35}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.Project.DependencyInjection", "src\FastBIRe.Project.DependencyInjection\FastBIRe.Project.DependencyInjection.csproj", "{ABDD9A85-3727-439D-9DE5-E8F95D6DD13B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -88,6 +90,14 @@ Global
 		{EB19ADF5-F531-4580-B887-12A8347CCE35}.net45|Any CPU.Build.0 = Debug|Any CPU
 		{EB19ADF5-F531-4580-B887-12A8347CCE35}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB19ADF5-F531-4580-B887-12A8347CCE35}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABDD9A85-3727-439D-9DE5-E8F95D6DD13B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABDD9A85-3727-439D-9DE5-E8F95D6DD13B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABDD9A85-3727-439D-9DE5-E8F95D6DD13B}.Net4|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABDD9A85-3727-439D-9DE5-E8F95D6DD13B}.Net4|Any CPU.Build.0 = Debug|Any CPU
+		{ABDD9A85-3727-439D-9DE5-E8F95D6DD13B}.net45|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABDD9A85-3727-439D-9DE5-E8F95D6DD13B}.net45|Any CPU.Build.0 = Debug|Any CPU
+		{ABDD9A85-3727-439D-9DE5-E8F95D6DD13B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABDD9A85-3727-439D-9DE5-E8F95D6DD13B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

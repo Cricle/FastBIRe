@@ -1,61 +1,34 @@
 ﻿using FastBIRe.Project.Accesstor;
 using FastBIRe.Project.Models;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
 
 namespace FastBIRe.Project.WebSample
 {
-    public readonly struct CreateDbContextResult
+    public class ProjectDbServices : DbProjectFactoryBase<IProjectAccesstContext<string>, string, ProjectCreateWithDbContextResult<string>>
     {
-        public readonly SchoolDbContext? DbContext;
-
-        public readonly IProject<string> Project;
-
-        public readonly bool Succeed;
-
-        public CreateDbContextResult(SchoolDbContext? dbContext, IProject<string> project)
+        public ProjectDbServices(IProjectAccesstor<IProjectAccesstContext<string>, string> projectAccesstor,
+            IDataSchema<IProjectAccesstContext<string>> dataSchema,
+            IStringToDbConnectionFactory stringToDbConnectionFactory,
+            string connectionString)
+            : base(projectAccesstor, dataSchema, stringToDbConnectionFactory, connectionString)
         {
-            DbContext = dbContext;
-            Project = project;
-            Succeed = true;
         }
-    }
-    public class ProjectDbServices
-    {
-        public ProjectDbServices(IProjectAccesstor<IProjectAccesstContext<string>, string> projectAccesstor)
-            :this(projectAccesstor,new DbContextOptionsBuilder().Options)
-        {
 
+        public ProjectDbServices(IProjectAccesstor<IProjectAccesstContext<string>, string> projectAccesstor,
+            IEqualityComparer<string> equalityComparer,
+            IDataSchema<IProjectAccesstContext<string>> dataSchema,
+            IStringToDbConnectionFactory stringToDbConnectionFactory,
+            string connectionString)
+            : base(projectAccesstor, equalityComparer, dataSchema, stringToDbConnectionFactory, connectionString)
+        {
         }
-        public ProjectDbServices(IProjectAccesstor<IProjectAccesstContext<string>, string> projectAccesstor, DbContextOptions baseOption)
-        {
-            ProjectAccesstor = projectAccesstor;
-            BaseOption = baseOption;
 
-            projectFirst = new ConcurrentDictionary<string, bool>();
+        protected override Task<ProjectCreateWithDbContextResult<string>?> OnCreateResultHasFirstAsync(IProjectAccesstContext<string> input, IProject<string> project, bool isFirst, CancellationToken token = default)
+        {
+            return Task.FromResult<ProjectCreateWithDbContextResult<string>?>(new ProjectCreateWithDbContextResult<string>(project, isFirst, CreateDbConnection(input)));
         }
-        private readonly ConcurrentDictionary<string, bool> projectFirst;
-
-        public IProjectAccesstor<IProjectAccesstContext<string>, string> ProjectAccesstor { get; }
-
-        public DbContextOptions BaseOption { get; }
-
-        public async Task<CreateDbContextResult> CreateDbContextAsync(string id, CancellationToken token = default)
+        public Task<ITableFactory<ProjectCreateWithDbContextResult<string>, string>?> CreateTableFactoryAsync(IProjectAccesstContext<string> input,CancellationToken token = default)
         {
-            var project = await ProjectAccesstor.GetProjectAsync(new ProjectAccesstContext<string>(id), token);
-            if (project != null)
-            {
-                var builder = new DbContextOptionsBuilder(BaseOption);
-                builder.UseSqlite($"Data source=projects/{project.Id}");
-                var ctx = new SchoolDbContext(builder.Options);
-                if (projectFirst.TryAdd(id, false))
-                {
-                    await ctx.Database.EnsureCreatedAsync(token);
-                    await ctx.Database.MigrateAsync(token);
-                }
-                return new CreateDbContextResult(ctx, project);
-            }
-            return default;
+            return base.CreateTableFactoryAsync(input, TableIniter.Instance, token);
         }
     }
 }
