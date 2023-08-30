@@ -110,6 +110,8 @@ namespace FastBIRe.Project.WebSample
 
         public IProjectAccesstor<IProjectAccesstContext<string>, SchoolProject, string> ProjectAccesstor { get; }
 
+        public SchoolDynamicOperator DynamicOperator => new SchoolDynamicOperator(ProjectDbServices.CreateTableFactory(Result, TableIniter.Instance), ProjectAccesstor);
+
         public void Dispose()
         {
             Result.Dispose();

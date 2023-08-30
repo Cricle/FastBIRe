@@ -23,7 +23,7 @@ namespace FastBIRe.Project.WebSample
 
         protected override Task<ProjectCreateWithDbContextResult<SchoolProject, string>?> OnCreateResultHasFirstAsync(IProjectAccesstContext<string> input, SchoolProject project, bool isFirst, CancellationToken token = default)
         {
-            return Task.FromResult<ProjectCreateWithDbContextResult<SchoolProject, string>?>(new ProjectCreateWithDbContextResult<SchoolProject, string>(project, isFirst, CreateDbConnection(input)));
+            return Task.FromResult<ProjectCreateWithDbContextResult<SchoolProject, string>?>(new ProjectCreateWithDbContextResult<SchoolProject, string>(project, isFirst, new MigrationService(CreateDbConnection(input))));
         }
         public Task<ITableFactory<ProjectCreateWithDbContextResult<SchoolProject, string>, SchoolProject, string>?> CreateTableFactoryAsync(IProjectAccesstContext<string> input, CancellationToken token = default)
         {

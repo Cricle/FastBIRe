@@ -1,14 +1,16 @@
-﻿using FastBIRe.Project.Models;
+﻿using FastBIRe.Project.Accesstor;
+using FastBIRe.Project.DynamicTable;
 
 namespace FastBIRe.Project.WebSample
 {
-    public enum FastDataType
+    public class SchoolDynamicOperator : DynamicOperator<ProjectCreateWithDbContextResult<SchoolProject, string>, IProjectAccesstContext<string>, SchoolProject, string, DefaultDynamicTable<DefaultDynamicColumn>, DefaultDynamicColumn>
     {
-        Text,
-        Number,
-        DateTime
+        public SchoolDynamicOperator(ITableFactory<ProjectCreateWithDbContextResult<SchoolProject, string>, SchoolProject, string> tableFactory, 
+            IProjectAccesstor<IProjectAccesstContext<string>, SchoolProject, string> accesstor)
+            : base(tableFactory, accesstor)
+        {
+        }
     }
-    public record ClassColumn(string Id, string Name, bool Nullable, FastDataType Type);
-    public record ClassTable(string Name, List<ClassColumn> Columns);
-    public record SchoolProject(string Id, string Name, Version Version, DateTime CreateTime, List<ClassTable> Classes) : Project<string>(Id, Name, Version, CreateTime);
+    public record SchoolProject(string Id, string Name, Version Version, DateTime CreateTime, List<DefaultDynamicTable<DefaultDynamicColumn>> Tables)
+        : DynamicProject<string,DefaultDynamicTable<DefaultDynamicColumn>, DefaultDynamicColumn>(Id,Name,Version,CreateTime,Tables);
 }

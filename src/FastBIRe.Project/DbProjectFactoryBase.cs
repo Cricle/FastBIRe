@@ -70,6 +70,10 @@ namespace FastBIRe.Project
             {
                 return null;
             }
+            return CreateTableFactory(result, tableIniter);
+        }
+        public virtual ITableFactory<TResult, TProject, TId> CreateTableFactory(TResult result, ITableIniter tableIniter)
+        {
             return new TableFactory<TResult, TProject, TId>(new MigrationService(result.Connection), tableIniter, result);
         }
     }

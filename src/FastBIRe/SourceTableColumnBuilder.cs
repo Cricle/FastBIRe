@@ -127,7 +127,7 @@ namespace FastBIRe
                 }
             }
         }
-        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true, int length = 0, string? id = null)
+        public TableColumnDefine Column(string field, string? type = null, bool destNullable = true, int length = 0, string? id = null,string? indexGroup=null,int indexOrder=0)
         {
             var destFormat = string.IsNullOrEmpty(DestAlias) ? Helper.Wrap(field) : $"{Helper.Wrap("{0}")}." + Helper.Wrap(field);
             var destRaw = string.Format(destFormat, SourceAlias);
@@ -136,7 +136,9 @@ namespace FastBIRe
                 Type = type,
                 Nullable = destNullable,
                 Length = length,
-                Id = id
+                Id = id, 
+                IndexGroup=indexGroup,
+                IndexOrder=indexOrder
             };
         }
         public SourceTableColumnDefine Method(string field, ToRawMethod method, TableColumnDefine destColumn, bool isGroup = false, bool onlySet = false, string? type = null,
