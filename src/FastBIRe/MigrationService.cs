@@ -1,6 +1,7 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using System.Data;
 using System.Data.Common;
+using System.Dynamic;
 
 namespace FastBIRe
 {
@@ -11,6 +12,7 @@ namespace FastBIRe
         public const string DefaultUpdateQueryViewFormat = "vq_{0}_update";
 
         public const string AutoTimeTriggerPrefx = "AGT_";
+        public const string AutoTimeTriggerEFFPrefx = "AGT_EFF_";
         public const string AutoGenIndexPrefx = "IXAG_";
         public const string AutoGenForceIndexPrefx = "IXFG_";
         public const string DefaultEffectSuffix = "_effect";
@@ -345,19 +347,24 @@ namespace FastBIRe
             var computeField = news.Where(x => x.ExpandDateTime).ToList();
             if (computeField.Count != 0)
             {
-                var triggers = new List<TriggerField>();
-                foreach (var item in computeField)
-                {
-                    foreach (var part in DefaultDateTimePartNames.GetDatePartNames(item.Field))
-                    {
-                        triggers.Add(new TriggerField(part.Key,
-                            helper.ToRaw(part.Value, $"{(SqlType == SqlType.SqlServer ? string.Empty : "NEW.")}{helper.Wrap(item.Field)}", false)!, item.Field, item.Type, item.RawFormat));
-                    }
-                }
-                var id = IdColumnFetcher(table);
-                res.AddRange(ComputeTriggerHelper.Instance.Create(key, table, triggers, id, SqlType)!);
+                var triggerSqls = CreateExpandTriggerSql(key, table, helper, computeField);
+                res.AddRange(triggerSqls);
             }
             return res;
+        }
+        private IEnumerable<string> CreateExpandTriggerSql(string key,string table,MergeHelper helper,IEnumerable<TableColumnDefine> columnDefines)
+        {
+            var triggers = new List<TriggerField>();
+            foreach (var item in columnDefines)
+            {
+                foreach (var part in DefaultDateTimePartNames.GetDatePartNames(item.Field))
+                {
+                    triggers.Add(new TriggerField(part.Key,
+                        helper.ToRaw(part.Value, $"{(SqlType == SqlType.SqlServer ? string.Empty : "NEW.")}{helper.Wrap(item.Field)}", false)!, item.Field, item.Type, item.RawFormat));
+                }
+            }
+            var id = IdColumnFetcher(table);
+            return ComputeTriggerHelper.Instance.Create(key, table, triggers, id, SqlType)!;
         }
         private bool IsTimePart(ToRawMethod method)
         {
@@ -396,6 +403,7 @@ namespace FastBIRe
             if (EffectMode && !string.IsNullOrEmpty(destTable) && tableDef.Columns.Any(x => x.IsGroup))
             {
                 var refTable = Reader.Table(effectTableName);
+                var oldRefTable = refTable;
                 var hasTale = false;
                 if (refTable != null)
                 {
@@ -423,6 +431,25 @@ namespace FastBIRe
                     foreach (var item in groupColumns)
                     {
                         refTable.AddColumn(item.Field, item.Type);
+                        if (item.ExpandDateTime)
+                        {
+                            foreach (var name in DefaultDateTimePartNames.GetDatePartNames(item.Field))
+                            {
+                                refTable.AddColumn(name.Key, item.Type,x=>x.Nullable=true);
+                            }
+                        }
+                    }
+                    var exps = groupColumns.Where(x => x.ExpandDateTime).ToList();
+                    var key = AutoTimeTriggerEFFPrefx + effectTableName;
+                    if (oldRefTable != null)
+                    {
+                        scripts.AddRange(oldRefTable.Triggers.Where(x => x.Name.StartsWith(key)).Select(x =>
+                            ComputeTriggerHelper.Instance.DropRaw(x.Name, effectTableName, SqlType)));
+                    }
+                    IEnumerable<string>? triggerSqls = null;
+                    if (exps.Count != 0)
+                    {
+                        triggerSqls = CreateExpandTriggerSql(key, effectTableName, GetMergeHelper(), exps);
                     }
                     var constrain = new DatabaseConstraint();
                     constrain.ConstraintType = ConstraintType.PrimaryKey;
@@ -431,6 +458,10 @@ namespace FastBIRe
                     constrain.Columns.AddRange(groupColumns.Select(x => x.Field));
                     refTable.AddConstraint(constrain);
                     scripts.Add(migGen.AddTable(refTable));
+                    if (triggerSqls!=null)
+                    {
+                        scripts.AddRange(triggerSqls);
+                    }
                 }
             }
             else if (Reader.TableExists(effectTableName))
@@ -442,10 +473,6 @@ namespace FastBIRe
             {
                 scripts.AddRange(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
                 {
-                    if (IsTimePart(x.Method))
-                    {
-                        return new TriggerField(x.Field, helper.ToRaw(x.Method, $"NEW.{helper.Wrap(x.Field)}", false), x.Field, x.Type, x.RawFormat);
-                    }
                     return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}", x.Field, x.Type, x.RawFormat);
                 }), SqlType)!);
             }

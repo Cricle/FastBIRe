@@ -1,13 +1,53 @@
-﻿using FastBIRe.Project.Accesstor;
-using FastBIRe.Project.Models;
-using System.Data;
+﻿using FastBIRe.Project.Models;
 
 namespace FastBIRe.Project.DynamicTable
 {
-    public record class DefaultDynamicColumn(string Id, string Name, DynamicTypes Type,bool Nullable,string? IndexGroup=null,int IndexOrder=0);
-    public record class DefaultDynamicTable<TColumn>(string Id, string Name, List<TColumn> Columns)
+    public record class DefaultDynamicColumn
+    {
+        public DefaultDynamicColumn()
+        {
+        }
+
+        public DefaultDynamicColumn(string id, string name, DynamicTypes type, bool nullable)
+        {
+            Id = id;
+            Name = name;
+            Type = type;
+            Nullable = nullable;
+        }
+
+        public string? Id { get; set; }
+
+        public string? Name { get; set; }
+
+        public DynamicTypes Type { get; set; }
+
+        public bool Nullable { get; set; }
+
+        public string? IndexGroup { get; set; }
+
+        public int IndexOrder { get; set; }
+    }
+    public record class DefaultDynamicTable<TColumn>
         where TColumn : DefaultDynamicColumn
     {
+        public DefaultDynamicTable()
+        {
+        }
+
+        public DefaultDynamicTable(string id, string name, List<TColumn> columns)
+        {
+            Id = id;
+            Name = name;
+            Columns = columns;
+        }
+
+        public string? Id { get; set; }
+
+        public string? Name { get; set; }
+
+        public List<TColumn>? Columns { get; set; }
+
         public TColumn? FindColumnById(string id)
         {
             return Columns?.FirstOrDefault(c => c.Id == id);
@@ -17,11 +57,23 @@ namespace FastBIRe.Project.DynamicTable
             return Columns?.FirstOrDefault(c => c.Name == name);
         }
     }
-    public record class DynamicProject<TId, TTable, TColumn>(TId Id, string Name, Version Version, DateTime CreateTime, List<TTable> Tables)
-        : Project<TId>(Id, Name, Version, CreateTime)
+    public record class DynamicProject<TId, TTable, TColumn>
+        : Project<TId>
         where TTable : DefaultDynamicTable<TColumn>
         where TColumn : DefaultDynamicColumn
     {
+        public DynamicProject()
+        {
+
+        }
+
+        public DynamicProject(TId id, string name, Version version, DateTime createTime, List<TTable> tables) 
+            : base(id, name, version, createTime)
+        {
+            Tables = tables;   
+        }
+        public List<TTable>? Tables { get; set; }
+
         public TTable? FindTable(string name)
         {
             return Tables?.FirstOrDefault(x => x.Name == name);

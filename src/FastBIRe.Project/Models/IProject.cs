@@ -2,11 +2,11 @@
 {
     public interface IProject<TId>
     {
-        TId Id { get; }
+        TId? Id { get; }
 
-        string Name { get; }
+        string? Name { get; }
 
-        Version Version { get; }
+        Version? Version { get; }
 
         DateTime CreateTime { get; }
     }

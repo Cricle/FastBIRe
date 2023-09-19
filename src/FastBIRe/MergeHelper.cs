@@ -53,7 +53,7 @@ namespace FastBIRe
             var sourceField = DefaultDateTimePartNames.GetField(x.Method, x.Field, out var sourceOk);
             if (sourceOk)
             {
-                return $"{Wrap("a")}.{Wrap(sourceField)} = {Wrap("b")}.{Wrap(x.Field)}";
+                return $"{Wrap("a")}.{Wrap(sourceField)} = {Wrap("b")}.{Wrap(sourceField)}";
             }
             var refSource = GetFormatter($"{Wrap("b")}.{Wrap(x.Field)}", x.Method);
             var refDest = GetFormatter($"{Wrap("a")}.{Wrap(x.Field)}", x.Method);

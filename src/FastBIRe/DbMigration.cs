@@ -240,7 +240,7 @@ namespace FastBIRe
                 var res = await Connection.ExecuteNonQueryAsync(dropIndexSql, timeout: CommandTimeout, token: token);
                 Log("Drop index result {0}", res);
             }
-            var createIndexSql = TableHelper.CreateIndex(options.IndexName, options.Table, options.Columns.ToArray());
+            var createIndexSql = TableHelper.CreateIndex(options.IndexName, options.Table, options.Columns.Distinct().ToArray());
             Log("Run create index {0} sql\n{1}", options.IndexName, createIndexSql);
             var createRes = await Connection.ExecuteNonQueryAsync(createIndexSql, timeout: CommandTimeout, token: token);
             Log("Create index {0} result {1}", options.IndexName, createRes);

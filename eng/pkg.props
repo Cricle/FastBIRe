@@ -1,11 +1,13 @@
 <Project>
-  <PropertyGroup>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>1.1.8</Version>
-    <Authors>HCricle</Authors>
-    <Description>A fast agger</Description>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-  </PropertyGroup>
+	<PropertyGroup>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<Version>1.1.10</Version>
+		<Authors>HCricle</Authors>
+		<Description>A fast agger</Description>
+		<RepositoryType>https://github.com/Cricle/FastBIRe.git</RepositoryType>
+
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	</PropertyGroup>
 </Project>

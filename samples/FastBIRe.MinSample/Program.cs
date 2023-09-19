@@ -28,6 +28,7 @@ namespace FastBIRe.MinSample
 
             var mr = conn.GetMergeHelper();
             CompileOptions opt = CompileOptions.EffectJoin("juhe_effect");
+            opt.UseExpandField = true;
             table = new SourceTableDefine(归档, GetSourceDefine(builder, sqlType, false));
             Console.BackgroundColor = ConsoleColor.Green;
             Console.WriteLine("===============");
@@ -61,7 +62,9 @@ namespace FastBIRe.MinSample
                 builder.Decimal("a3", "a3", ToRawMethod.Count),
                 builder.Decimal("a4","a4", ToRawMethod.Count),
                 builder.StringRaw("a5", lastDay,field:mig?"a5":null),
-                builder.DateTime("a7","111aaaa7777", ToRawMethod.Minute,isGroup:true).SetExpandDateTime(true,true),
+                builder.DateTime("a7","a7_m", ToRawMethod.Minute,isGroup:true).SetExpandDateTime(true,true),
+                builder.DateTime("a7","a7_d", ToRawMethod.Day,isGroup:true).SetExpandDateTime(true,true),
+                builder.DateTime("a7","a7_mon", ToRawMethod.Month,isGroup:true).SetExpandDateTime(true,true),
                 builder.StringRaw("aaaa8",$"({str})",field:mig?"aaaa8":null,isGroup:false),
             };
             for (int i = 0; i < defs.Count; i++)
