@@ -12,7 +12,6 @@ namespace FastBIRe
         public const string DefaultUpdateQueryViewFormat = "vq_{0}_update";
 
         public const string AutoTimeTriggerPrefx = "AGT_";
-        public const string AutoTimeTriggerEFFPrefx = "AGT_EFF_";
         public const string AutoGenIndexPrefx = "IXAG_";
         public const string AutoGenForceIndexPrefx = "IXFG_";
         public const string DefaultEffectSuffix = "_effect";
@@ -385,7 +384,7 @@ namespace FastBIRe
         }
         public List<string> RunMigration(string destTable, SourceTableDefine tableDef, IEnumerable<TableColumnDefine> oldRefs, bool syncSource)
         {
-            var news = tableDef.Columns.GroupBy(x => x.Field).Select(x => x.First()).ToList();
+            var news = tableDef.Columns;
             var table = tableDef.Table;
             var scripts = new List<string>();
             var migGen = DdlGeneratorFactory.MigrationGenerator();
@@ -430,38 +429,24 @@ namespace FastBIRe
                     };
                     foreach (var item in groupColumns)
                     {
-                        refTable.AddColumn(item.Field, item.Type);
+                        var field = item.Field;
                         if (item.ExpandDateTime)
                         {
-                            foreach (var name in DefaultDateTimePartNames.GetDatePartNames(item.Field))
+                            var f = DefaultDateTimePartNames.GetField(item.Method, item.Field, out var ok);
+                            if (ok)
                             {
-                                refTable.AddColumn(name.Key, item.Type,x=>x.Nullable=true);
+                                field = f;
                             }
                         }
-                    }
-                    var exps = groupColumns.Where(x => x.ExpandDateTime).ToList();
-                    var key = AutoTimeTriggerEFFPrefx + effectTableName;
-                    if (oldRefTable != null)
-                    {
-                        scripts.AddRange(oldRefTable.Triggers.Where(x => x.Name.StartsWith(key)).Select(x =>
-                            ComputeTriggerHelper.Instance.DropRaw(x.Name, effectTableName, SqlType)));
-                    }
-                    IEnumerable<string>? triggerSqls = null;
-                    if (exps.Count != 0)
-                    {
-                        triggerSqls = CreateExpandTriggerSql(key, effectTableName, GetMergeHelper(), exps);
+                        refTable.AddColumn(field, item.Type);
                     }
                     var constrain = new DatabaseConstraint();
                     constrain.ConstraintType = ConstraintType.PrimaryKey;
-                    constrain.Name = "FK_" + effectTableName;
+                    constrain.Name = "FK_" + MD5Helper.ComputeHash(effectTableName);
                     constrain.TableName = effectTableName;
-                    constrain.Columns.AddRange(groupColumns.Select(x => x.Field));
+                    constrain.Columns.AddRange(refTable.Columns.Select(x=>x.Name));
                     refTable.AddConstraint(constrain);
                     scripts.Add(migGen.AddTable(refTable));
-                    if (triggerSqls!=null)
-                    {
-                        scripts.AddRange(triggerSqls);
-                    }
                 }
             }
             else if (Reader.TableExists(effectTableName))
@@ -473,7 +458,16 @@ namespace FastBIRe
             {
                 scripts.AddRange(triggerHelper.Create(triggerName, tableDef.Table, effectTableName, groupColumns.Select(x =>
                 {
-                    return new TriggerField(x.Field, $"NEW.{helper.Wrap(x.Field)}", x.Field, x.Type, x.RawFormat);
+                    var field = x.Field;
+                    if (x.ExpandDateTime)
+                    {
+                        var f = DefaultDateTimePartNames.GetField(x.Method, x.Field, out var ok);
+                        if (ok)
+                        {
+                            field = f;
+                        }
+                    }
+                    return new TriggerField(field, $"NEW.{helper.Wrap(field)}", field, x.Type, x.RawFormat);
                 }), SqlType)!);
             }
             var imdtriggerName = destTable + "_imd";
