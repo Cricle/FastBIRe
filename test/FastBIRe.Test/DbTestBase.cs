@@ -1,8 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Dapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
+using MySqlConnector;
+using Npgsql;
+using System.Data.Common;
 
 namespace FastBIRe.Test
 {
@@ -12,5 +13,8 @@ namespace FastBIRe.Test
         {
             return MergeHelper.Wrap(type, name);
         }
+
+        protected readonly DatabaseIniter databaseIniter= DatabaseIniter.Instance;
+
     }
 }

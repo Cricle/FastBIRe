@@ -54,7 +54,7 @@ namespace FastBIRe
                 case SqlType.SQLite:
                     return $"CHAR({input})";
                 case SqlType.PostgreSql:
-                    return $"chr({input})";
+                    return $"CHR({input})";
                 default:
                     return null;
             }
