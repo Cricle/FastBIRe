@@ -200,13 +200,14 @@ namespace FastBIRe
             }
             if (options.RemoveNotRef && refedIndexs.Count != 0)
             {
+                table = Reader.Table(options.Table);
                 foreach (var item in refedIndexs)
                 {
                     if (options.RemoveFilter != null && !options.RemoveFilter(item))
                     {
                         continue;
                     }
-                    if (dropedIndexs.Add(item))
+                    if (dropedIndexs.Add(item) && !table.Indexes.Any(x => x.Name == item))
                     {
                         scripts.Add(TableHelper.DropIndex(item, options.Table));
                     }

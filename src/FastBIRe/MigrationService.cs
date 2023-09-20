@@ -103,7 +103,7 @@ namespace FastBIRe
                 table = Reader.Table(tableName);
                 foreach (var item in needDrops)
                 {
-                    if (table.Triggers.Any(x => x.Name == item))
+                    if (table.Indexes.Any(x => x.Name == item))
                     {
                         var sql = TableHelper.DropIndex(item, tableName);
                         res += await ExecuteNonQueryAsync(sql, token: token);
