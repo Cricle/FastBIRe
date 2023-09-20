@@ -37,7 +37,7 @@ namespace FastBIRe
             {
                 return $"LIMIT {skip}";
             }
-            return $"LIMIT 0,{skip}";
+            return $"LIMIT 0, {take}";
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string SqlServer(int? skip, int? take)
@@ -52,7 +52,7 @@ namespace FastBIRe
             }
             if (skip != null)
             {
-                return $" OFFSET {skip} ROWS";
+                return $"OFFSET {skip} ROWS";
             }
             return $"OFFSET 0 ROWS FETCH NEXT {take} ROWS ONLY";
         }

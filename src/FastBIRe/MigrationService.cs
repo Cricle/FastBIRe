@@ -100,14 +100,10 @@ namespace FastBIRe
             }
             if (needDrops.Count != 0)
             {
-                table = Reader.Table(tableName);
                 foreach (var item in needDrops)
                 {
-                    if (table.Indexes.Any(x => x.Name == item))
-                    {
-                        var sql = TableHelper.DropIndex(item, tableName);
-                        res += await ExecuteNonQueryAsync(sql, token: token);
-                    }
+                    var sql = TableHelper.DropIndex(item, tableName);
+                    res += await ExecuteNonQueryAsync(sql, token: token);
                 }
             }
             return res;

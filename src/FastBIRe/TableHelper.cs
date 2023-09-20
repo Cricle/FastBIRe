@@ -17,7 +17,7 @@ namespace FastBIRe
             for (int i = 0; i < fields.Length; i++)
             {
                 var field = fields[i];
-                if (descs == null || descs.Length < i)
+                if (descs == null || descs.Length <= i)
                 {
                     fs.Add(Wrap(field));
                 }
@@ -31,19 +31,7 @@ namespace FastBIRe
 
         private string Wrap(string input)
         {
-            switch (SqlType)
-            {
-                case SqlType.MySql:
-                    return $"`{input}`";
-                case SqlType.PostgreSql:
-                case SqlType.SQLite:
-                    return $"\"{input}\"";
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
-                    return $"[{input}]";
-                default:
-                    return input;
-            }
+            return MergeHelper.Wrap(SqlType, input);
         }
 
         public string DropIndex(string name, string table)
@@ -51,30 +39,19 @@ namespace FastBIRe
             switch (SqlType)
             {
                 case SqlType.MySql:
-                    return $"DROP INDEX `{name}` ON `{table}`;";
+                    return $"DROP INDEX {Wrap(name)} ON {Wrap(table)};";
                 case SqlType.SqlServer:
-                    return $"DROP INDEX [{table}].[{name}];";
+                    return $"DROP INDEX {Wrap(table)}.{Wrap(name)};";
                 case SqlType.SQLite:
                 case SqlType.PostgreSql:
-                    return $"DROP INDEX \"{name}\";";
+                    return $"DROP INDEX {Wrap(name)};";
                 default:
-                    throw new NotSupportedException(SqlType.ToString());
+                    return string.Empty;
             }
         }
         public string CreateDropTable(string table)
         {
             return $"DROP TABLE {Wrap(table)};";
         }
-
-        public string CreateTable(string table, IEnumerable<SourceTableColumnDefine> columns)
-        {
-            var source = @$"
-CREATE TABLE {Wrap(table)} (
-    {string.Join(",\n    ", columns.Select(x => $"{Wrap(x.Field)} {x.Type}"))},
-    PRIMARY KEY ({string.Join(",", columns.Select(x => Wrap(x.Field)))})
-);";
-            return source;
-        }
-
     }
 }

@@ -34,7 +34,7 @@ namespace FastBIRe
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string SqlServer(string table)
         {
-            return $"ALTER INDEX ALL ON [{table}] REBUILD ;";
+            return $"ALTER INDEX ALL ON [{table}] REBUILD;";
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string Sqlite()

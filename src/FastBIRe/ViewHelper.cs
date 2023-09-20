@@ -11,12 +11,16 @@ namespace FastBIRe
         }
         public static string Drop(string viewName, SqlType sqlType)
         {
+            if (sqlType== SqlType.Db2||sqlType== SqlType.Oracle)
+            {
+                return string.Empty;
+            }
             var qutoViewName = MergeHelper.GetMethodWrapper(sqlType).Quto(viewName);
             switch (sqlType)
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    return $"IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'{qutoViewName}')) DROP VIEW {qutoViewName};";
+                    return $"IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'{viewName}')) DROP VIEW {qutoViewName};";
                 case SqlType.MySql:
                 case SqlType.SQLite:
                 case SqlType.PostgreSql:
