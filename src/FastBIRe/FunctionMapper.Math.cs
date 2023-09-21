@@ -206,9 +206,9 @@ FROM
 	FROM 
 	(
 		SELECT num AS val, ROW_NUMBER() OVER (ORDER BY num ASC) AS row_num
-		FROM (SELECT DISTINCT num FROM ({string.Join("UNION", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t
+		FROM (SELECT DISTINCT num FROM ({string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t
 	) t1 
-	WHERE t1.row_num IN ((SELECT COUNT(*) FROM (SELECT DISTINCT num FROM ({string.Join("UNION", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t) / 2 + 1, (SELECT COUNT(*) FROM (SELECT DISTINCT num FROM ({string.Join("UNION", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t) / 2 + ((SELECT COUNT(*) FROM (SELECT DISTINCT num FROM ({string.Join("UNION", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t) % 2))
+	WHERE t1.row_num IN ((SELECT COUNT(*) FROM (SELECT DISTINCT num FROM ({string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t) / 2 + 1, (SELECT COUNT(*) FROM (SELECT DISTINCT num FROM ({string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t) / 2 + ((SELECT COUNT(*) FROM (SELECT DISTINCT num FROM ({string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t) % 2))
 ) t2
 ";
                 case SqlType.PostgreSql:
@@ -217,14 +217,14 @@ FROM (
     SELECT val 
     FROM (
         SELECT num AS val, ROW_NUMBER() OVER (ORDER BY num ASC) AS row_num 
-        FROM ( {string.Join("UNION", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))} ) vals
+        FROM ( {string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))} ) vals
     ) t1
     WHERE t1.row_num IN ((SELECT COUNT(*) FROM (SELECT DISTINCT num FROM (
-        {string.Join("UNION", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}
+        {string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}
     ) vals) t) / 2 + 1, (SELECT COUNT(*) FROM (SELECT DISTINCT num FROM (
-        {string.Join("UNION", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}
+        {string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}
     ) vals) t) / 2 + ((SELECT COUNT(*) FROM (SELECT DISTINCT num FROM (
-        {string.Join("UNION", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}
+        {string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}
     ) vals) t) % 2))
     ORDER BY val
     LIMIT 2
