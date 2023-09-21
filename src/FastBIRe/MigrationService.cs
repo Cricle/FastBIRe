@@ -412,7 +412,15 @@ namespace FastBIRe
                 {
                     //FIXME: 判断要看expand
                     if (refTable.Columns.Count != groupColumns.Count ||
-                        !refTable.Columns.Select(x => x.Name).SequenceEqual(groupColumns.Select(x => x.Field)) ||
+                        !refTable.Columns.Select(x => x.Name).SequenceEqual(groupColumns.Select(x =>
+                        {
+                            var field = DefaultDateTimePartNames.GetField(x.Method, x.Field, out var ok);
+                            if (ok)
+                            {
+                                return field;
+                            }
+                            return x.Field;
+                        })) ||
                         refTable.PrimaryKey == null ||
                         refTable.PrimaryKey.Columns.Count != refTable.Columns.Count ||
                         !refTable.PrimaryKey.Columns.SequenceEqual(refTable.Columns.Select(x => x.Name)) ||
