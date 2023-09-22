@@ -6,8 +6,6 @@
 
         public string? EffectTable { get; set; }
 
-        public bool NoLock { get; set; }
-
         public bool UseExpandField { get; set; }
 
         public bool UseView { get; set; }
@@ -24,12 +22,6 @@
         {
             return string.Format(ViewUpdateFormat, MD5Helper.ComputeHash(destTableName + sourceTableName));
         }
-        public CompileOptions WithNoLock(bool noLock = true)
-        {
-            NoLock = noLock;
-            return this;
-        }
-
         public static CompileOptions EffectJoin(string effectTable)
         {
             return new CompileOptions { IncludeEffectJoin = true, EffectTable = effectTable };

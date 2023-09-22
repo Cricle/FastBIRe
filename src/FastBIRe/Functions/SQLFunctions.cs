@@ -76,6 +76,9 @@
         PI,
         Pow,
         Sqrt,
-        Log
+        Log,
+        Week,
+        Quarter,
+        Hour
     }
 }

@@ -63,7 +63,7 @@ namespace FastBIRe
         }
         public string? Type(DbType dbType, params object[] formatArgs)
         {
-            var rt = DatabaseReader.FindDataTypesByDbType(Helper.SqlType, dbType);
+            var rt = DatabaseReader.FindDataTypeStringByDbType(Helper.SqlType, dbType);
             if (string.IsNullOrEmpty(rt))
             {
                 return null;

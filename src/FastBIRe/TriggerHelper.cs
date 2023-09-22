@@ -5,10 +5,20 @@ namespace FastBIRe
     public record class TriggerField(string Field, string Raw, string Target, string Type, string RawFormat);
     public class ComputeTriggerHelper
     {
-        public const string Update = "_update";
-        public const string Insert = "_insert";
+        public const string DefaultUpdateSuffix = "_update";
+        public const string DefaultInsertSuffix = "_insert";
 
-        public static readonly ComputeTriggerHelper Instance = new ComputeTriggerHelper();
+        public static readonly ComputeTriggerHelper Default = new ComputeTriggerHelper(DefaultUpdateSuffix,DefaultInsertSuffix);
+
+        public ComputeTriggerHelper(string updateSuffix, string insertSuffix)
+        {
+            UpdateSuffix = updateSuffix;
+            InsertSuffix = insertSuffix;
+        }
+
+        public string UpdateSuffix { get; }
+
+        public string InsertSuffix { get; }
 
         public string? DropRaw(string name, string sourceTable, SqlType sqlType)
         {
@@ -52,7 +62,7 @@ namespace FastBIRe
         {
             string GenSql(bool update)
             {
-                return $@"CREATE TRIGGER `{name}{(update ? Insert : Update)}` BEFORE {(update ? "INSERT" : "UPDATE")} ON `{sourceTable}`
+                return $@"CREATE TRIGGER `{name}{(update ? InsertSuffix : UpdateSuffix)}` BEFORE {(update ? "INSERT" : "UPDATE")} ON `{sourceTable}`
 FOR EACH ROW
 BEGIN
     {string.Join("\n", columns.Select(x => $"SET NEW.`{x.Field}` = CASE WHEN `NEW`.`{x.Target}` IS NULL THEN NULL ELSE {x.Raw} END;"))}
@@ -66,7 +76,7 @@ END;
         {
             string GenSql(bool update)
             {
-                return $@"CREATE TRIGGER [{name}{(update ? Insert : Update)}] ON [{sourceTable}] AFTER {(update ? "INSERT" : "UPDATE")}
+                return $@"CREATE TRIGGER [{name}{(update ? InsertSuffix : UpdateSuffix)}] ON [{sourceTable}] AFTER {(update ? "INSERT" : "UPDATE")}
         AS
         BEGIN
             SET NOCOUNT ON;
@@ -84,7 +94,7 @@ END;
         {
             string GenSql(bool update)
             {
-                return $@"CREATE TRIGGER [{name}{(update ? Insert : Update)}] AFTER {(update ? "INSERT" : "UPDATE")} ON [{sourceTable}]
+                return $@"CREATE TRIGGER [{name}{(update ? InsertSuffix : UpdateSuffix)}] AFTER {(update ? "INSERT" : "UPDATE")} ON [{sourceTable}]
         BEGIN
             UPDATE [{sourceTable}] SET {string.Join(", ", columns.Select(x => $"[{x.Field}] = CASE WHEN NEW.[{x.Target}] IS NULL THEN NULL ELSE {x.Raw} END"))}
             WHERE [{idColumn}]=NEW.[{idColumn}];
@@ -99,7 +109,7 @@ END;
             IEnumerable<string> GenSql(bool update)
             {
                 var funName = PostgreSQLTriggerHelper.GetNpgSqlFunName(name);
-                yield return $@"CREATE OR REPLACE FUNCTION {funName}{(update ? Insert : Update)}() RETURNS TRIGGER AS $$
+                yield return $@"CREATE OR REPLACE FUNCTION {funName}{(update ? InsertSuffix : UpdateSuffix)}() RETURNS TRIGGER AS $$
         BEGIN
               {string.Join("\n", columns.Select(x => $"NEW.\"{x.Field}\" = CASE WHEN NEW.\"{x.Target}\" IS NULL THEN NULL ELSE {x.Raw} END;"))}
               RETURN NEW;
@@ -107,9 +117,9 @@ END;
         $$ LANGUAGE plpgsql;
         ";
                 yield return $@"
-        CREATE OR REPLACE TRIGGER ""{name}{(update ? Insert : Update)}"" BEFORE {(update ? "INSERT" : "UPDATE")} ON ""{sourceTable}""
+        CREATE OR REPLACE TRIGGER ""{name}{(update ? InsertSuffix : UpdateSuffix)}"" BEFORE {(update ? "INSERT" : "UPDATE")} ON ""{sourceTable}""
         FOR EACH ROW
-        EXECUTE FUNCTION {funName}{(update ? Insert : Update)}();
+        EXECUTE FUNCTION {funName}{(update ? InsertSuffix : UpdateSuffix)}();
         ";
             }
             foreach (var item in GenSql(false))

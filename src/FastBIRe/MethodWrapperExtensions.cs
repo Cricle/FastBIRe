@@ -1,11 +1,24 @@
 ﻿using Ao.Stock.Querying;
 using DatabaseSchemaReader.DataSchema;
+using FastBIRe.Creating;
 
 namespace FastBIRe
 {
-    public static class MethodWrapperHelper
+    public static class MethodWrapperExtensions
     {
-        public static IMethodWrapper GetMethodWrapper(SqlType sqlType)
+        public static string Wrap(this SqlType sqlType, string field)
+        {
+            return GetMethodWrapper(sqlType).Quto(field);
+        }
+        public static string? WrapValue<T>(this SqlType sqlType, T value)
+        {
+            return GetMethodWrapper(sqlType).WrapValue(value);
+        }
+        public static IDatabaseCreateAdapter? GetDatabaseCreateAdapter<T>(this SqlType sqlType)
+        {
+            return DatabaseCreateAdapter.Get(sqlType);
+        }
+        public static IMethodWrapper GetMethodWrapper(this SqlType sqlType)
         {
             switch (sqlType)
             {

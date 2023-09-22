@@ -8,33 +8,33 @@ namespace FastBIRe.Test
         [TestMethod]
         public void MethodWrapperSqlServer()
         {
-            Assert.AreEqual(DefaultMethodWrapper.SqlServer, MethodWrapperHelper.GetMethodWrapper(SqlType.SqlServer));
-            Assert.AreEqual(DefaultMethodWrapper.SqlServer, MethodWrapperHelper.GetMethodWrapper(SqlType.SqlServerCe));
+            Assert.AreEqual(DefaultMethodWrapper.SqlServer, MethodWrapperExtensions.GetMethodWrapper(SqlType.SqlServer));
+            Assert.AreEqual(DefaultMethodWrapper.SqlServer, MethodWrapperExtensions.GetMethodWrapper(SqlType.SqlServerCe));
         }
         [TestMethod]
         public void MethodWrapperMySql()
         {
-            Assert.AreEqual(DefaultMethodWrapper.MySql, MethodWrapperHelper.GetMethodWrapper(SqlType.MySql));
+            Assert.AreEqual(DefaultMethodWrapper.MySql, MethodWrapperExtensions.GetMethodWrapper(SqlType.MySql));
         }
         [TestMethod]
         public void MethodWrapperSqlite()
         {
-            Assert.AreEqual(DefaultMethodWrapper.Sqlite, MethodWrapperHelper.GetMethodWrapper(SqlType.SQLite));
+            Assert.AreEqual(DefaultMethodWrapper.Sqlite, MethodWrapperExtensions.GetMethodWrapper(SqlType.SQLite));
         }
         [TestMethod]
         public void MethodWrapperOracle()
         {
-            Assert.AreEqual(DefaultMethodWrapper.Oracle, MethodWrapperHelper.GetMethodWrapper(SqlType.Oracle));
+            Assert.AreEqual(DefaultMethodWrapper.Oracle, MethodWrapperExtensions.GetMethodWrapper(SqlType.Oracle));
         }
         [TestMethod]
         public void MethodWrapperPostgreSql()
         {
-            Assert.AreEqual(DefaultMethodWrapper.PostgreSql, MethodWrapperHelper.GetMethodWrapper(SqlType.PostgreSql));
+            Assert.AreEqual(DefaultMethodWrapper.PostgreSql, MethodWrapperExtensions.GetMethodWrapper(SqlType.PostgreSql));
         }
         [TestMethod]
         public void MethodWrapperOther()
         {
-            Assert.ThrowsException<NotSupportedException>(()=>MethodWrapperHelper.GetMethodWrapper(SqlType.Db2));
+            Assert.ThrowsException<NotSupportedException>(()=>MethodWrapperExtensions.GetMethodWrapper(SqlType.Db2));
         }
     }
 }

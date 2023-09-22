@@ -20,7 +20,6 @@ namespace FastBIRe.MinSample
             var tableSer = new TableService(conn);
             await tableSer.CreateTableIfNotExistsAsync(聚合);
             await tableSer.MigrationAsync(聚合, table.DestColumn);
-            await tableSer.CreateTableIfNotExistsAsync(归档);
             await tableSer.MigrationAsync(归档, table.Columns);
             await tableSer.CreateTableIfNotExistsAsync(归档);
             await tableSer.MigrationAsync(聚合, table, false);

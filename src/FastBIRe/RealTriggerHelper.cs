@@ -54,8 +54,7 @@ namespace FastBIRe
             {
                 if (item.ExpandDateTime)
                 {
-                    var field = DefaultDateTimePartNames.GetField(item.Method, item.Field, out var ok);
-                    if (ok)
+                    if (DateTimePartNames.Default.TryGetField(item.Method, item.Field, out var field))
                     {
                         yield return new WhereItem(item.Field, helper.Wrap(field), helper.ToRaw(item.Method, $"NEW.{helper.Wrap(item.Field)}", false));
                         continue;

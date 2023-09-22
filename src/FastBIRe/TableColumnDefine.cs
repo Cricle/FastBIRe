@@ -1,4 +1,6 @@
-﻿namespace FastBIRe
+﻿using DatabaseSchemaReader.DataSchema;
+
+namespace FastBIRe
 {
     public record TableColumnDefine
     {

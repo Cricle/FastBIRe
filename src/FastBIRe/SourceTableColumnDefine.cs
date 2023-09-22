@@ -1,22 +1,82 @@
-﻿namespace FastBIRe
+﻿using DatabaseSchemaReader.DataSchema;
+
+namespace FastBIRe
 {
-    public static class DefaultDateTimePartNames
+    public static class DateTimePartNamesExtensions
     {
-        public const string SystemPrefx = "__$";
-
-        public const string Year = "_year";
-        public const string Month = "_month";
-        public const string Day = "_day";
-        public const string Hour = "_hour";
-        public const string Minute = "_minute";
-        public const string Quarter = "_quarter";
-        public const string Week = "_week";
-
-        public static string CombineField(string field, string part)
+        public static IEnumerable<string> WriteDatePartTrigger(this IDateTimePartNames timePartNames,string name,string table, string idColumn,string field,string type,string rawFormat,SqlType sqlType,ComputeTriggerHelper computeTriggerHelper)
         {
-            return SystemPrefx + field + part;
+            var triggers = new List<TriggerField>();
+            var prefx = sqlType == SqlType.SqlServer ? string.Empty : "NEW.";
+            var useField = prefx + sqlType.Wrap(field);
+            var helper = new MergeHelper(sqlType);
+            foreach (var part in timePartNames.GetDatePartNames(field))
+            {
+                triggers.Add(new TriggerField(part.Key,
+                    helper.ToRaw(part.Value, useField, false)!, field, type,rawFormat));
+            }
+            return computeTriggerHelper.Create(name, table, triggers, idColumn, sqlType);
         }
-        public static IReadOnlyList<KeyValuePair<string, ToRawMethod>> GetDatePartNames(string field)
+    }
+    public class DateTimePartNames : IDateTimePartNames
+    {
+        public const string DefaultSystemPrefx = "__$";
+        public const string DefaultSystemSuffix = "";
+
+        public const string DefaultYear = "_year";
+        public const string DefaultMonth = "_month";
+        public const string DefaultDay = "_day";
+        public const string DefaultHour = "_hour";
+        public const string DefaultMinute = "_minute";
+        public const string DefaultQuarter = "_quarter";
+        public const string DefaultWeek = "_week";
+
+        public static readonly DateTimePartNames Default = new DateTimePartNames(DefaultSystemPrefx,
+            DefaultSystemSuffix,
+            DefaultYear,
+            DefaultMonth,
+            DefaultDay,
+            DefaultHour,
+            DefaultMinute,
+            DefaultQuarter,
+            DefaultWeek);
+
+        public DateTimePartNames(string systemPrefx, string systemSuffix, string year, string month, string day, string hour, string minute, string quarter, string week)
+        {
+            SystemPrefx = systemPrefx;
+            SystemSuffix = systemSuffix;
+            Year = year;
+            Month = month;
+            Day = day;
+            Hour = hour;
+            Minute = minute;
+            Quarter = quarter;
+            Week = week;
+        }
+
+        public string SystemPrefx { get; }
+
+        public string SystemSuffix { get; }
+
+        public string Year { get; }
+
+        public string Month { get; }
+
+        public string Day { get; }
+
+        public string Hour { get; }
+
+        public string Minute { get; }
+
+        public string Quarter { get; }
+
+        public string Week { get; }
+
+        public string CombineField(string field, string part)
+        {
+            return SystemPrefx + field + part + SystemSuffix;
+        }
+        public IReadOnlyList<KeyValuePair<string, ToRawMethod>> GetDatePartNames(string field)
         {
             return new KeyValuePair<string, ToRawMethod>[]
             {
@@ -29,28 +89,34 @@
                 new KeyValuePair<string, ToRawMethod>(CombineField(field,Week), ToRawMethod.Week),
             };
         }
-        public static string GetField(ToRawMethod method, string field, out bool ok)
+        public bool TryGetField(ToRawMethod method, string field, out string? combinedField)
         {
-            ok = true;
             switch (method)
             {
                 case ToRawMethod.Year:
-                    return CombineField(field, Year);
+                    combinedField = CombineField(field, Year);
+                    return true;
                 case ToRawMethod.Month:
-                    return CombineField(field, Month);
+                    combinedField = CombineField(field, Month);
+                    return true;
                 case ToRawMethod.Day:
-                    return CombineField(field, Day);
+                    combinedField = CombineField(field, Day);
+                    return true;
                 case ToRawMethod.Hour:
-                    return CombineField(field, Hour);
+                    combinedField = CombineField(field, Hour);
+                    return true;
                 case ToRawMethod.Minute:
-                    return CombineField(field, Minute);
+                    combinedField = CombineField(field, Minute);
+                    return true;
                 case ToRawMethod.Quarter:
-                    return CombineField(field, Quarter);
+                    combinedField = CombineField(field, Quarter);
+                    return true;
                 case ToRawMethod.Week:
-                    return CombineField(field, Week);
+                    combinedField = CombineField(field, Week);
+                    return true;
                 default:
-                    ok = false;
-                    return field;
+                    combinedField = null;
+                    return false;
             }
         }
     }

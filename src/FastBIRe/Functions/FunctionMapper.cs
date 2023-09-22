@@ -8,6 +8,11 @@ namespace FastBIRe
 {
     public partial class FunctionMapper
     {
+        public static readonly FunctionMapper MySql = new FunctionMapper(SqlType.MySql);
+        public static readonly FunctionMapper Sqlite = new FunctionMapper(SqlType.SQLite);
+        public static readonly FunctionMapper PostgreSql = new FunctionMapper(SqlType.PostgreSql);
+        public static readonly FunctionMapper SqlServer = new FunctionMapper(SqlType.SqlServer);
+
 #if false
 (?<!\\)" "->'
 (?<![\"'])\b[A-Za-z]+\b(?=\()
@@ -38,7 +43,7 @@ namespace FastBIRe
         public FunctionMapper(SqlType sqlType)
         {
             SqlType = sqlType;
-            MethodWrapper = MergeHelper.GetMethodWrapper(sqlType);
+            MethodWrapper = sqlType.GetMethodWrapper();
         }
 
         public IMethodWrapper MethodWrapper { get; }
@@ -380,7 +385,7 @@ namespace FastBIRe
                 case SQLFunctions.Bracket:
                     return Bracket(args[0]);
                 case SQLFunctions.DateAdd:
-                    return DateAdd(args[0], args[1], (DateTimeUnit)Enum.Parse(typeof(DateTimeUnit), args[2]));
+                    return DateAdd(args[0], args[1], args[2]);
                 case SQLFunctions.IsNull:
                     return IsNull(args[0]);
                 case SQLFunctions.Like:
@@ -437,6 +442,12 @@ namespace FastBIRe
                     return Sqrt(args[0]);
                 case SQLFunctions.Log:
                     return Log(args[0], args.Length > 1 ? args[1] : null);
+                case SQLFunctions.Week:
+                    return Week(args[0]);
+                case SQLFunctions.Quarter:
+                    return Quarter(args[0]);
+                case SQLFunctions.Hour:
+                    return Hour(args[0]);
                 default:
                     return null;
             }

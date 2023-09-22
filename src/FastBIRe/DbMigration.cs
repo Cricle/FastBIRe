@@ -3,6 +3,7 @@ using DatabaseSchemaReader;
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
+using FastBIRe.Creating;
 using System.Data.Common;
 
 namespace FastBIRe
@@ -42,6 +43,7 @@ namespace FastBIRe
         public SqlType SqlType => Reader.SqlType!.Value;
 
         public int CommandTimeout { get; set; } = 10 * 60;
+
         public async Task<int> ExecuteNonQueryAsync(IEnumerable<string> sqls, CancellationToken token = default)
         {
             var res = 0;
@@ -95,24 +97,9 @@ namespace FastBIRe
         {
             return new SourceTableColumnBuilder(GetMergeHelper(), sourceAlias, destAlias);
         }
-        public ISQLDatabaseCreateAdapter? GetSQLDatabaseCreateAdapter()
+        public IDatabaseCreateAdapter? GetSQLDatabaseCreateAdapter()
         {
-            switch (SqlType)
-            {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
-                    return SQLDatabaseCreateAdapter.SqlServer;
-                case SqlType.Oracle:
-                    return SQLDatabaseCreateAdapter.Oracle;
-                case SqlType.MySql:
-                    return SQLDatabaseCreateAdapter.MySql;
-                case SqlType.SQLite:
-                    return SQLDatabaseCreateAdapter.Sqlite;
-                case SqlType.PostgreSql:
-                    return SQLDatabaseCreateAdapter.PostgreSql;
-                default:
-                    return null;
-            }
+            return DatabaseCreateAdapter.Get(SqlType);
         }
         public virtual void CleanIdentityType(IEnumerable<DatabaseColumn> columns)
         {
@@ -161,7 +148,7 @@ namespace FastBIRe
         public async Task<int> SyncIndexSingleAsync(SyncIndexOptions options, List<string>? outIndexNames = null, CancellationToken token = default)
         {
             //Single indexs
-            var table = Reader.Table(options.Table);
+            var table = Reader.Table(options.Table, token);
             if (table == null)
             {
                 return 0;
@@ -224,7 +211,7 @@ namespace FastBIRe
                 return 0;
             }
             var tableIndexs = table.Indexes;
-            var index = tableIndexs.FirstOrDefault(x => x.Name == options.IndexName);
+            var index = tableIndexs.Find(x => x.Name == options.IndexName);
             if (index != null && !options.DuplicationNameReplace)
             {
                 if (options.Columns.Count() == index.Columns.Count &&
@@ -254,34 +241,25 @@ namespace FastBIRe
             {
                 throw new NotSupportedException($"Not support {SqlType} to EnsureDatabaseCreatedAsync");
             }
-            if (SqlType == SqlType.PostgreSql)
+            var checkSql = adapter.CheckDatabaseExists(database);
+            Log("Check db sql \n{0}", checkSql);
+            var hasDb = false;
+            using (var command = Connection.CreateCommand(checkSql))
             {
-                var hasDbSql = $"SELECT 1 FROM pg_database WHERE datname = '{database}'";
-                Log("Check db sql \n{0}", hasDbSql);
-                var hasDb = false;
-                using (var command = Connection.CreateCommand(hasDbSql))
+                command.CommandTimeout = CommandTimeout;
+                using (var reader = await command.ExecuteReaderAsync(token))
                 {
-                    command.CommandTimeout = CommandTimeout;
-                    using (var reader = await command.ExecuteReaderAsync(token))
-                    {
-                        hasDb = reader.Read();
-                    }
-                }
-                if (!hasDb)
-                {
-                    var createSql = adapter.GenericCreateDatabaseSql(database);
-                    Log("Create db sql \n{0}", createSql);
-                    var createRes = await Connection.ExecuteNonQueryAsync(createSql, timeout: CommandTimeout, token: token);
-                    Log("Sync database result {0}", createRes);
+                    hasDb = reader.Read();
                 }
             }
-            else
+            if (hasDb)
             {
-                var createIfNotExistsSql = adapter.GenericCreateDatabaseIfNotExistsSql(database);
-                Log("Create if not exists with sql \n{0}", createIfNotExistsSql);
-                var createRes = await Connection.ExecuteNonQueryAsync(createIfNotExistsSql, timeout: CommandTimeout, token: token);
-                Log("Sync database result {0}", createRes);
+                return;
             }
+            var createIfNotExistsSql = adapter.CreateDatabaseIfNotExists(database);
+            Log("Create if not exists with sql \n{0}", createIfNotExistsSql);
+            var createRes = await Connection.ExecuteNonQueryAsync(createIfNotExistsSql, timeout: CommandTimeout, token: token);
+            Log("Sync database result {0}", createRes);
         }
     }
 }

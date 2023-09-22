@@ -55,6 +55,9 @@ namespace FastBIRe
                     return null;
             }
         }
+
+        //public string 
+
         public string DateDif(string timeA, string timeB, string unit)
         {
             return $@"
@@ -67,24 +70,19 @@ WHEN {Ascii(unit)}={Ascii("'s'")} THEN {Second(timeA)}-{Second(timeB)}
 END
 ";
         }
-        public string? GetUnitString(DateTimeUnit unit)
+        public string? DateAdd(string time, string num, string unit)
         {
-            return unit.ToString().ToUpper();
-        }
-        public string? DateAdd(string time, string num, DateTimeUnit unit)
-        {
-            var unitStr = GetUnitString(unit);
             switch (SqlType)
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    return $"DATEADD({unitStr}, {num}, {time})";
+                    return $"DATEADD({unit}, {num}, {time})";
                 case SqlType.MySql:
-                    return $"DATE_ADD({time}, INTERVAL {num} {unitStr})";
+                    return $"DATE_ADD({time}, INTERVAL {num} {unit})";
                 case SqlType.SQLite:
-                    return $"DATE({time}, '{num} {unitStr}')";
+                    return $"DATE({time}, '{num} {unit}')";
                 case SqlType.PostgreSql:
-                    return $"{time} + INTERVAL '{num} {unitStr}'";
+                    return $"{time} + INTERVAL '{num} {unit}'";
                 default:
                     return null;
             }
@@ -148,6 +146,44 @@ END
                 return $"DATEPART(minute,{time})";
             }
             return $"Minute({time})";
+        }
+        public string Quarter(string time)
+        {
+            if (SqlType == SqlType.SQLite)
+            {
+                return $@"
+    STRFTIME('%Y', {time})||'-'||(CASE 
+        WHEN COALESCE(NULLIF((SUBSTR({time}, 4, 2) - 1) / 3, 0), 4) < 10 
+        THEN '0' || COALESCE(NULLIF((SUBSTR({time}, 4, 2) - 1) / 3, 0), 4)
+        ELSE COALESCE(NULLIF((SUBSTR({time}, 4, 2) - 1) / 3, 0), 4)
+    END)||'-01 00:00:00'
+";
+            }
+            else if (SqlType == SqlType.SqlServer)
+            {
+                return $"DATEADD(qq, DATEDIFF(qq, 0, {time}), 0)";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('quarter', {time}::TIMESTAMP)";
+            }
+            return $"CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM {time}),1) + interval QUARTER({time})*3-3 month),'%Y-%m-'),'01')";
+        }
+        public string Week(string time)
+        {
+            if (SqlType == SqlType.SQLite)
+            {
+                return $"date({time}, 'weekday 0', '-6 day')||' 00:00:00'";
+            }
+            else if (SqlType == SqlType.SqlServer)
+            {
+                return $"DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {time}, 120) - 1), 0)";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('day',{time}::timestamp) - ((EXTRACT(DOW FROM {time}::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL";
+            }
+            return $"DATE_FORMAT(DATE_SUB({time}, INTERVAL WEEKDAY({time}) DAY),'%Y-%m-%d')";
         }
         public string Second(string time)
         {

@@ -19,19 +19,14 @@ namespace FastBIRe
                 var field = fields[i];
                 if (descs == null || descs.Length <= i)
                 {
-                    fs.Add(Wrap(field));
+                    fs.Add(SqlType.Wrap(field));
                 }
                 else
                 {
-                    fs.Add($"{Wrap(field)} {(descs[i] ? "DESC" : "ASC")}");
+                    fs.Add($"{SqlType.Wrap(field)} {(descs[i] ? "DESC" : "ASC")}");
                 }
             }
-            return $"CREATE INDEX {Wrap(name)} ON {Wrap(table)} ({string.Join(",", fs)});";
-        }
-
-        private string Wrap(string input)
-        {
-            return MergeHelper.Wrap(SqlType, input);
+            return $"CREATE INDEX {SqlType.Wrap(name)} ON {SqlType.Wrap(table)} ({string.Join(",", fs)});";
         }
 
         public string DropIndex(string name, string table)
@@ -39,19 +34,19 @@ namespace FastBIRe
             switch (SqlType)
             {
                 case SqlType.MySql:
-                    return $"DROP INDEX {Wrap(name)} ON {Wrap(table)};";
+                    return $"DROP INDEX {SqlType.Wrap(name)} ON {SqlType.Wrap(table)};";
                 case SqlType.SqlServer:
-                    return $"DROP INDEX {Wrap(table)}.{Wrap(name)};";
+                    return $"DROP INDEX {SqlType.Wrap(table)}.{SqlType.Wrap(name)};";
                 case SqlType.SQLite:
                 case SqlType.PostgreSql:
-                    return $"DROP INDEX {Wrap(name)};";
+                    return $"DROP INDEX {SqlType.Wrap(name)};";
                 default:
                     return string.Empty;
             }
         }
         public string CreateDropTable(string table)
         {
-            return $"DROP TABLE {Wrap(table)};";
+            return $"DROP TABLE {SqlType.Wrap(table)};";
         }
     }
 }

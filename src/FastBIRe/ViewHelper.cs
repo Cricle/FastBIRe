@@ -6,7 +6,7 @@ namespace FastBIRe
     {
         public static string Create(string viewName, string script, SqlType sqlType)
         {
-            var qutoViewName = MergeHelper.GetMethodWrapper(sqlType).Quto(viewName);
+            var qutoViewName = sqlType.Wrap(viewName);
             return $"CREATE VIEW {qutoViewName} AS {script};";
         }
         public static string Drop(string viewName, SqlType sqlType)
@@ -15,7 +15,7 @@ namespace FastBIRe
             {
                 return string.Empty;
             }
-            var qutoViewName = MergeHelper.GetMethodWrapper(sqlType).Quto(viewName);
+            var qutoViewName = sqlType.Wrap(viewName);
             switch (sqlType)
             {
                 case SqlType.SqlServerCe:

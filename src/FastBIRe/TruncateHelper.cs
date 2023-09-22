@@ -1,5 +1,4 @@
 ﻿using DatabaseSchemaReader.DataSchema;
-using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
@@ -11,50 +10,20 @@ namespace FastBIRe
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    return SqlServer(table);
+                    return $"TRUNCATE TABLE [{table}];";
                 case SqlType.MySql:
-                    return MySql(table);
+                    return $"DELETE FROM `{table}`;";
                 case SqlType.SQLite:
-                    return Sqlite(table);
+                    return $"DELETE FROM `{table}`;";
                 case SqlType.PostgreSql:
-                    return PostgreSql(table);
+                    return $"TRUNCATE TABLE \"{table}\";";
                 case SqlType.Oracle:
-                    return Oracle(table);
+                    return $"TRUNCATE TABLE \"{table}\";";
                 case SqlType.Db2:
-                    return DB2(table);
+                    return $"TRUNCATE TABLE \"{table}\";";
                 default:
                     throw new NotSupportedException(sqlType.ToString());
             }
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string MySql(string table)
-        {
-            return @$"DELETE FROM `{table}`;";
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string SqlServer(string table)
-        {
-            return $"TRUNCATE TABLE [{table}];";
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string Sqlite(string table)
-        {
-            return $"DELETE FROM \"{table}\";";
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string PostgreSql(string table)
-        {
-            return $"TRUNCATE TABLE \"{table}\";";
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string Oracle(string table)
-        {
-            return $"TRUNCATE TABLE \"{table}\";";
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static string DB2(string table)
-        {
-            return $"TRUNCATE TABLE \"{table}\";";
         }
     }
 }

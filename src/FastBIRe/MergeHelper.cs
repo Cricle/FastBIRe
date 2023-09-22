@@ -5,30 +5,6 @@ namespace FastBIRe
 {
     public class MergeHelper
     {
-        public static string Wrap(SqlType sqlType, string field)
-        {
-            return GetMethodWrapper(sqlType).Quto(field);
-        }
-        public static string? WrapValue<T>(SqlType sqlType, T value)
-        {
-            return GetMethodWrapper(sqlType).WrapValue(value);
-        }
-        public static IMethodWrapper GetMethodWrapper(SqlType sqlType)
-        {
-            switch (sqlType)
-            {
-                case SqlType.MySql:
-                    return DefaultMethodWrapper.MySql;
-                case SqlType.SQLite:
-                    return DefaultMethodWrapper.Sqlite;
-                case SqlType.SqlServer:
-                    return DefaultMethodWrapper.SqlServer;
-                case SqlType.PostgreSql:
-                    return DefaultMethodWrapper.PostgreSql;
-                default:
-                    throw new NotSupportedException(sqlType.ToString());
-            }
-        }
         public MergeHelper(SqlType sqlType, IMethodWrapper methodWrapper)
         {
             SqlType = sqlType;
@@ -36,7 +12,7 @@ namespace FastBIRe
         }
 
         public MergeHelper(SqlType sqlType)
-            : this(sqlType, GetMethodWrapper(sqlType))
+            : this(sqlType, sqlType.GetMethodWrapper())
         {
         }
 
@@ -50,8 +26,7 @@ namespace FastBIRe
 
         private string GetFormatter(SourceTableColumnDefine x)
         {
-            var sourceField = DefaultDateTimePartNames.GetField(x.Method, x.Field, out var sourceOk);
-            if (sourceOk)
+            if (DateTimePartNames.Default.TryGetField(x.Method, x.Field, out var sourceField))
             {
                 return $"{Wrap("a")}.{Wrap(sourceField)} = {Wrap("b")}.{Wrap(sourceField)}";
             }
@@ -63,8 +38,7 @@ namespace FastBIRe
         {
             if (x.ExpandDateTime)
             {
-                var sourceField = DefaultDateTimePartNames.GetField(x.Method, x.Field, out var sourceOk);
-                if (sourceOk)
+                if (DateTimePartNames.Default.TryGetField(x.Method, x.Field, out var sourceField))
                 {
                     return $"{Wrap("a")}.{Wrap(sourceField)}";
                 }
@@ -206,91 +180,43 @@ AND(
         }
         public virtual string CompileUpdate(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
-            var noLockSql = options?.NoLock ?? false ? GetNoLockSql() : string.Empty;
-            var noLockRestoreSql = options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
             var fromTable = GetTableRef(sourceTableDefine, options);
             if (SqlType == SqlType.SqlServer)
             {
                 return $@"
-{noLockSql}
 UPDATE
 	{Wrap(destTable)}
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 {CompileUpdateSelectCore(destTable, sourceTableDefine, options)};
-{noLockRestoreSql}
 ";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
                 return $@"
-{noLockSql}
 UPDATE
 	{Wrap(destTable)} AS {Wrap("a")}
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup && !x.OnlySet).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))}
 {CompileUpdateSelectCore(destTable, sourceTableDefine, options)};
-{noLockRestoreSql}
 ";
             }
             else if (SqlType == SqlType.SQLite)
             {
                 return $@"
-{noLockSql}
 UPDATE
     {Wrap(destTable)}
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.""{x.DestColumn.Field}"""))}
 {CompileUpdateSelectCore(destTable, sourceTableDefine, options)};
-{noLockRestoreSql}
 ";
             }
             return $@"
-{noLockSql}
 UPDATE {Wrap(destTable)} AS {Wrap("a")}
 {CompileUpdateSelectCore(destTable, sourceTableDefine, options)}
 SET
     {string.Join(",\n", sourceTableDefine.Columns.Where(x => !x.IsGroup).Select(x => $@"{Wrap("a")}.{Wrap(x.DestColumn.Field)} = {Wrap("tmp")}.{Wrap(x.DestColumn.Field)}"))};
-{noLockRestoreSql}
 ";
-        }
-        public string GetNoLockRestoreSql()
-        {
-            switch (SqlType)
-            {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
-                    return "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;\n";
-                case SqlType.MySql:
-                    return "SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n";
-                case SqlType.SQLite:
-                    return "PRAGMA read_uncommitted = 0;\n";
-                case SqlType.PostgreSql:
-                    return "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ COMMITTED;\n";
-                case SqlType.Oracle:
-                case SqlType.Db2:
-                default:
-                    return string.Empty;
-            }
-        }
-        public string GetNoLockSql()
-        {
-            switch (SqlType)
-            {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
-                    return "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n";
-                case SqlType.MySql:
-                    return "SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n";
-                case SqlType.SQLite:
-                    return "PRAGMA read_uncommitted = 1;\n";
-                case SqlType.PostgreSql:
-                    return "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n";
-                case SqlType.Oracle:
-                case SqlType.Db2:
-                default:
-                    return string.Empty;
-            }
         }
         public string CompileInsertSelect(string destTable, SourceTableDefine sourceTableDefine, CompileOptions? options = null)
         {
@@ -331,198 +257,43 @@ SET
             {
                 str += CompileInsertSelect(destTable, sourceTableDefine, options);
             }
-            str += options?.NoLock ?? false ? GetNoLockRestoreSql() : string.Empty;
             return str;
         }
         public string JoinString(string left, string right)
         {
-            if (SqlType == SqlType.SQLite || SqlType == SqlType.PostgreSql)
-            {
-                return $"{left} || {right}";
-            }
-            if (SqlType == SqlType.SqlServer)
-            {
-                return $"{left} + {right}";
-            }
-            return $"CONCAT({left},{right})";
+            return new FunctionMapper(SqlType).Concatenate(left, right);
         }
         public string GetFormatter(string @ref, ToRawMethod method)
         {
+            var mapper = new FunctionMapper(SqlType);
             switch (method)
             {
                 case ToRawMethod.Year:
-                    return GetYearFormatter(@ref);
+                    return mapper.Year(@ref);
                 case ToRawMethod.Month:
-                    return GetMonthFormatter(@ref);
+                    return mapper.Month(@ref);
                 case ToRawMethod.Day:
-                    return GetDayFormatter(@ref);
+                    return mapper.Day(@ref);
                 case ToRawMethod.Hour:
-                    return GetHourFormatter(@ref);
+                    return mapper.Hour(@ref);
                 case ToRawMethod.Minute:
-                    return GetMinuteFormatter(@ref);
+                    return mapper.Minute(@ref);
                 case ToRawMethod.Week:
-                    return GetWeekFormatter(@ref);
+                    return mapper.Week(@ref);
                 case ToRawMethod.Quarter:
-                    return GetQuarterFormatter(@ref);
+                    return mapper.Quarter(@ref);
                 default:
                     return @ref;
-            }
-        }
-        public string GetQuarterFormatter(string @ref)
-        {
-            if (SqlType == SqlType.SQLite)
-            {
-                return $@"
-    STRFTIME('%Y', {@ref})||'-'||(CASE 
-        WHEN COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4) < 10 
-        THEN '0' || COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)
-        ELSE COALESCE(NULLIF((SUBSTR({@ref}, 4, 2) - 1) / 3, 0), 4)
-    END)||'-01 00:00:00'
-";
-            }
-            else if (SqlType == SqlType.SqlServer)
-            {
-                return $"DATEADD(qq, DATEDIFF(qq, 0, {@ref}), 0)";
-            }
-            else if (SqlType == SqlType.PostgreSql)
-            {
-                return $"date_trunc('quarter', {@ref}::TIMESTAMP)";
-            }
-            return $"CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM {@ref}),1) + interval QUARTER({@ref})*3-3 month),'%Y-%m-'),'01')";
-#if false
-select CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM  '2023-12-24'),1) + interval QUARTER('2023-12-24')*3-3 month),'%Y-%m-'),'01'); --mysql
-SELECT DATEADD(qq, DATEDIFF(qq, 0, '2023-010-23'), 0);--sqlserver
-SELECT STRFTIME('%Y', '2023-04-24')||'-'||(CASE 
-        WHEN COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4) < 10 
-        THEN '0' || COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4)
-        ELSE COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4)
-    END)||'-01'; --sqlite
-SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
-#endif
-        }
-        public string GetWeekFormatter(string @ref)
-        {
-            if (SqlType == SqlType.SQLite)
-            {
-                return $"date({@ref}, 'weekday 0', '-6 day')||' 00:00:00'";
-            }
-            else if (SqlType == SqlType.SqlServer)
-            {
-                return $"DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {@ref}, 120) - 1), 0)";
-            }
-            else if (SqlType == SqlType.PostgreSql)
-            {
-                return $"date_trunc('day',{@ref}::timestamp) - ((EXTRACT(DOW FROM {@ref}::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL";
-            }
-            return $"DATE_FORMAT(DATE_SUB({@ref}, INTERVAL WEEKDAY({@ref}) DAY),'%Y-%m-%d')";
-
-#if false
-SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY),'%Y-%m-%d')--mysql
-SELECT DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, '2023-04-24', 120) - 1), 0);--sqlserver
-SELECT date('now', 'weekday 0', '-6 day');--sqlite
-SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:00'::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL;--pgsql
-#endif
-        }
-        public string GetYearFormatter(string @ref)
-        {
-            if (SqlType == SqlType.SqlServer)
-            {
-                return $"CONVERT(VARCHAR(4),{@ref} ,120)";
-            }
-            else if (SqlType == SqlType.SQLite)
-            {
-                return $"strftime('%Y-01-01 00:00:00', {@ref})";
-            }
-            else if (SqlType == SqlType.PostgreSql)
-            {
-                return $"date_trunc('year',{@ref})";
-            }
-            return $"LEFT({@ref},4)";
-        }
-        public string GetMonthFormatter(string @ref)
-        {
-            if (SqlType == SqlType.SqlServer)
-            {
-                return $"CONVERT(VARCHAR(7),{@ref} ,120)";
-            }
-            else if (SqlType == SqlType.SQLite)
-            {
-                return $"strftime('%Y-%m-01 00:00:00', {@ref})";
-            }
-            else if (SqlType == SqlType.PostgreSql)
-            {
-                return $"date_trunc('month',{@ref})";
-            }
-            else
-            {
-                return $"LEFT({@ref},7)";
-            }
-        }
-        public string GetDayFormatter(string @ref)
-        {
-            if (SqlType == SqlType.SqlServer)
-            {
-                return $"CONVERT(VARCHAR(10),{@ref} ,120)";
-            }
-            else if (SqlType == SqlType.SQLite)
-            {
-                return $"strftime('%Y-%m-%d 00:00:00', {@ref})";
-            }
-            else if (SqlType == SqlType.PostgreSql)
-            {
-                return $"date_trunc('day',{@ref})";
-            }
-            else
-            {
-                return $"LEFT({@ref},10)";
-            }
-        }
-        public string GetHourFormatter(string @ref)
-        {
-            if (SqlType == SqlType.SqlServer)
-            {
-                return $"CONVERT(VARCHAR(13),{@ref} ,120)";
-            }
-            else if (SqlType == SqlType.SQLite)
-            {
-                return $"strftime('%Y-%m-%d %H:00:00', {@ref})";
-            }
-            else if (SqlType == SqlType.PostgreSql)
-            {
-                return $"date_trunc('hour',{@ref})";
-            }
-            else
-            {
-                return $"LEFT({@ref},13)";
-            }
-        }
-        public string GetMinuteFormatter(string @ref)
-        {
-            if (SqlType == SqlType.SqlServer)
-            {
-                return $"CONVERT(VARCHAR(16),{@ref} ,120)";
-            }
-            else if (SqlType == SqlType.SQLite)
-            {
-                return $"strftime('%Y-%m-%d %H:%M:00', {@ref})";
-            }
-            else if (SqlType == SqlType.PostgreSql)
-            {
-                return $"date_trunc('minute',{@ref})";
-            }
-            else
-            {
-                return $"LEFT({@ref},16)";
             }
         }
         protected string GetFormatString(ToRawMethod method, string fieldName, bool quto)
         {
             var @ref = GetRef(fieldName, quto);
+            var forMatter= GetFormatter(@ref,method);
             switch (method)
             {
                 case ToRawMethod.Year:
                     {
-                        var forMatter = GetYearFormatter(@ref);
                         if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
                             return forMatter;
@@ -531,7 +302,6 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                     }
                 case ToRawMethod.Day:
                     {
-                        var forMatter = GetDayFormatter(@ref);
                         if (SqlType == SqlType.SQLite || SqlType == SqlType.PostgreSql)
                         {
                             return forMatter;
@@ -540,7 +310,6 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                     }
                 case ToRawMethod.Hour:
                     {
-                        var forMatter = GetHourFormatter(@ref);
                         if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
                             return forMatter;
@@ -549,7 +318,6 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                     }
                 case ToRawMethod.Minute:
                     {
-                        var forMatter = GetMinuteFormatter(@ref);
                         if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
                             return forMatter;
@@ -560,7 +328,6 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                     return @ref;
                 case ToRawMethod.Month:
                     {
-                        var forMatter = GetMonthFormatter(@ref);
                         if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
                         {
                             return forMatter;
@@ -576,24 +343,25 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
         {
             return quto ? MethodWrapper.Quto(field) : field;
         }
-        public virtual string ToRaw(ToRawMethod method, string field, bool quto)
+        public virtual string? ToRaw(ToRawMethod method, string field, bool quto)
         {
+            var mapper = new FunctionMapper(SqlType);
             switch (method)
             {
                 case ToRawMethod.Now:
-                    return new FunctionMapper(SqlType).Now();
+                    return mapper.Now();
                 case ToRawMethod.Min:
-                    return $"MIN({GetRef(field, quto)})";
+                    return mapper.MinC(GetRef(field, quto));
                 case ToRawMethod.Max:
-                    return $"MAX({GetRef(field, quto)})";
+                    return mapper.MaxC(GetRef(field, quto));
                 case ToRawMethod.Count:
-                    return $"COUNT({GetRef(field, quto)})";
+                    return mapper.CountC(GetRef(field, quto));
                 case ToRawMethod.DistinctCount:
-                    return $"COUNT(DISTINCT {GetRef(field, quto)})";
+                    return mapper.DistinctCountC(GetRef(field, quto));
                 case ToRawMethod.Sum:
-                    return $"SUM({GetRef(field, quto)})";
+                    return mapper.SumC(GetRef(field, quto));
                 case ToRawMethod.Avg:
-                    return $"AVG({GetRef(field, quto)})";
+                    return mapper.AverageC(GetRef(field, quto));
                 case ToRawMethod.Year:
                 case ToRawMethod.Month:
                 case ToRawMethod.Day:
@@ -603,11 +371,11 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
                     return GetFormatString(method, field, quto);
                 case ToRawMethod.Quarter:
                     {
-                        return GetQuarterFormatter(GetRef(field, quto));
+                        return GetFormatter(GetRef(field, quto), ToRawMethod.Quarter);
                     }
                 case ToRawMethod.Week:
                     {
-                        return GetWeekFormatter(GetRef(field, quto));
+                        return GetFormatter(GetRef(field, quto), ToRawMethod.Week);
                     }
                 default:
                     return quto ? MethodWrapper.WrapValue(field)! : field;

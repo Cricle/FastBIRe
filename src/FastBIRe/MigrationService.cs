@@ -1,7 +1,6 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using System.Data;
 using System.Data.Common;
-using System.Dynamic;
 
 namespace FastBIRe
 {
@@ -113,7 +112,6 @@ namespace FastBIRe
             sourceIdxName ??= $"{AutoGenIndexPrefx}{MD5Helper.ComputeHash(destTable)}";
             destIdxName ??= sourceIdxName + "_g";
             var groupColumns = new List<SourceTableColumnDefine>();
-            var helper = GetMergeHelper();
             foreach (var item in tableDef.Columns)
             {
                 if (item.IsGroup)
@@ -121,11 +119,10 @@ namespace FastBIRe
                     if (item.ExpandDateTime)
                     {
                         var clone = item.Copy();
-                        var field = DefaultDateTimePartNames.GetField(clone.Method, clone.Field, out var ok);
-                        if (ok)
+                        if (DateTimePartNames.Default.TryGetField(clone.Method, clone.Field, out var field))
                         {
                             clone.Field = field;
-                            clone.Raw = clone.RawFormat = helper.Wrap(clone.Field);
+                            clone.Raw = clone.RawFormat = SqlType.Wrap(clone.Field);
                         }
                         groupColumns.Add(clone);
                     }
@@ -173,7 +170,7 @@ namespace FastBIRe
         {
             var builder = GetColumnBuilder();
             var dateTimeType = builder.Type(DbType.DateTime);
-            var parts = DefaultDateTimePartNames.GetDatePartNames(field);
+            var parts = DateTimePartNames.Default.GetDatePartNames(field);
             var ret = new List<KeyValuePair<string, ToRawMethod>>();
             foreach (var item in parts)
             {
@@ -218,12 +215,12 @@ namespace FastBIRe
                     }
                     return null;
                 }).Where(x => x != null).ToList();
-                var partColumns = new HashSet<string>(x.Columns.Where(x => x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx)).Select(x => x.Name));
+                var partColumns = new HashSet<string>(x.Columns.Where(x => x.Name.StartsWith(DateTimePartNames.Default.SystemPrefx)).Select(x => x.Name));
                 foreach (var item in news)
                 {
                     if (item.ExpandDateTime)
                     {
-                        foreach (var name in DefaultDateTimePartNames.GetDatePartNames(item.Field))
+                        foreach (var name in DateTimePartNames.Default.GetDatePartNames(item.Field))
                         {
                             partColumns.Remove(name.Key);
                         }
@@ -305,7 +302,7 @@ namespace FastBIRe
                 }
                 var adds = groupNews.Where(n => !olds.Any(y => y.Id == n.Id)).ToList();
                 var rms = new HashSet<string>(
-                    x.Columns.Where(x => !x.Name.StartsWith(DefaultDateTimePartNames.SystemPrefx) && x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name)))
+                    x.Columns.Where(x => !x.Name.StartsWith(DateTimePartNames.Default.SystemPrefx) && x.Tag == null && (NotRemoveColumns == null || !NotRemoveColumns.Contains(x.Name)))
                     .Select(x => x.Name)
                     .Where(x => !news.Any(y => y.Field == x))
                     .Where(x => !renames.Any(y => y.IsRename && y.Old.Field == x)));
@@ -341,8 +338,8 @@ namespace FastBIRe
             }).Execute();
             res = scriptBefore.Concat(res).ToList();
             var key = AutoTimeTriggerPrefx + table;
-            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(key)).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name, x.TableName, SqlType))!);
-            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith("trigger_")).Select(x => ComputeTriggerHelper.Instance.DropRaw(x.Name, x.TableName, SqlType))!);
+            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith(key)).Select(x => ComputeTriggerHelper.Default.DropRaw(x.Name, x.TableName, SqlType))!);
+            res.AddRange(tb.Triggers.Where(x => x.Name.StartsWith("trigger_")).Select(x => ComputeTriggerHelper.Default.DropRaw(x.Name, x.TableName, SqlType))!);
             var computeField = news.Where(x => x.ExpandDateTime).ToList();
             if (computeField.Count != 0)
             {
@@ -356,14 +353,14 @@ namespace FastBIRe
             var triggers = new List<TriggerField>();
             foreach (var item in columnDefines)
             {
-                foreach (var part in DefaultDateTimePartNames.GetDatePartNames(item.Field))
+                foreach (var part in DateTimePartNames.Default.GetDatePartNames(item.Field))
                 {
                     triggers.Add(new TriggerField(part.Key,
                         helper.ToRaw(part.Value, $"{(SqlType == SqlType.SqlServer ? string.Empty : "NEW.")}{helper.Wrap(item.Field)}", false)!, item.Field, item.Type, item.RawFormat));
                 }
             }
             var id = IdColumnFetcher(table);
-            return ComputeTriggerHelper.Instance.Create(key, table, triggers, id, SqlType)!;
+            return ComputeTriggerHelper.Default.Create(key, table, triggers, id, SqlType)!;
         }
         private bool IsTimePart(ToRawMethod method)
         {
@@ -432,8 +429,7 @@ namespace FastBIRe
                         var field = item.Field;
                         if (item.ExpandDateTime)
                         {
-                            var f = DefaultDateTimePartNames.GetField(item.Method, item.Field, out var ok);
-                            if (ok)
+                            if (DateTimePartNames.Default.TryGetField(item.Method, item.Field, out var f))
                             {
                                 field = f;
                             }
@@ -461,8 +457,7 @@ namespace FastBIRe
                     var field = x.Field;
                     if (x.ExpandDateTime)
                     {
-                        var f = DefaultDateTimePartNames.GetField(x.Method, x.Field, out var ok);
-                        if (ok)
+                        if (DateTimePartNames.Default.TryGetField(x.Method, x.Field, out var f))
                         {
                             field = f;
                         }
