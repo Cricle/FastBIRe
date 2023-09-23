@@ -4,7 +4,7 @@ namespace FastBIRe.Triggering
 {
     public static class TriggerWriterEffectExtensions
     {
-        public static IEnumerable<string> CreateEffect(this TriggerWriter triggerWriter,SqlType sqlType, string name, TriggerTypes type, string sourceTable,string targetTable, IEnumerable<EffectTriggerSettingItem> settingItems)
+        public static IEnumerable<string> CreateEffect(this ITriggerWriter triggerWriter,SqlType sqlType, string name, TriggerTypes type, string sourceTable,string targetTable, IEnumerable<EffectTriggerSettingItem> settingItems)
         {
             var body = string.Empty;
             var when = string.Empty;

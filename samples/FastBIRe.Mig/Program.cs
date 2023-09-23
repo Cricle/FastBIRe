@@ -1,5 +1,7 @@
 ﻿using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
+using FastBIRe.AAMode;
+using FastBIRe.Naming;
 using FastBIRe.Triggering;
 using rsa;
 using System.Data;
@@ -20,10 +22,26 @@ namespace FastBIRe.Mig
             //{
             //    Console.WriteLine(item);
             //}
-            //var sqlType = SqlType.SqlServer;
-            //var dbName = "测试";
-            //var migSer =ConnectionProvider.GetDbMigration(sqlType, dbName);
-            //var reader = migSer.Reader;
+            var sqlType = SqlType.MySql;
+            var dbName = "testc";
+            var migSer = ConnectionProvider.GetDbMigration(sqlType, dbName);
+            var reader = migSer.Reader;
+            var ach = reader.Table("guidang");
+            var agg = reader.Table("juhe");
+            var adm = new EffectTableCreateAAModelHelper(new RegexNameGenerator("{0}_effect"), DefaultEffectTableKeyNameGenerator.Instance, StringComparison.Ordinal);
+            var req = new EffectTableCreateAAModelRequest(ach, agg, new EffectTableSettingItem[]
+            {
+                new EffectTableSettingItem(new DatabaseColumn
+                {
+                    Name="a7",
+                    DbDataType="varchar(22)"
+                })
+            });
+            adm.Apply(reader, req);
+            foreach (var item in req.Scripts)
+            {
+                Console.WriteLine(item);
+            }
             //var table = reader.Table("qqx");
 
             //table.Columns[0].Name = "hello";

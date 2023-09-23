@@ -1,9 +1,10 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using FastBIRe.AAMode;
+using FastBIRe.Naming;
 
 namespace FastBIRe.Triggering
 {
-    public class TriggerWriter
+    public class TriggerWriter : ITriggerWriter
     {
         public static readonly INameGenerator DefaultPostgresqlFunctionNameGenerator = new RegexNameGenerator("fun_{0}");
 
@@ -16,7 +17,7 @@ namespace FastBIRe.Triggering
 
         public INameGenerator PostgresqlFunctionNameGenerator { get; }
 
-        public virtual string GetTriggerName(TriggerTypes type,SqlType sqlType)
+        public virtual string GetTriggerName(TriggerTypes type, SqlType sqlType)
         {
             switch (type)
             {
@@ -57,7 +58,7 @@ namespace FastBIRe.Triggering
                     return string.Empty;
             }
         }
-        public virtual IEnumerable<string> Drop(SqlType sqlType,string name)
+        public virtual IEnumerable<string> Drop(SqlType sqlType, string name)
         {
             switch (sqlType)
             {
@@ -82,7 +83,7 @@ namespace FastBIRe.Triggering
                     yield break;
             }
         }
-        public virtual IEnumerable<string> Create(SqlType sqlType,string name,TriggerTypes type,string table,string body,string? when)
+        public virtual IEnumerable<string> Create(SqlType sqlType, string name, TriggerTypes type, string table, string body, string? when)
         {
             var hasWhen = !string.IsNullOrEmpty(when);
             switch (sqlType)
@@ -99,8 +100,8 @@ BEGIN
 END
 ";
                         }
-                       yield return $@"
-CREATE TRIGGER [{name}] ON [{table}] {GetTriggerName(type,sqlType)}
+                        yield return $@"
+CREATE TRIGGER [{name}] ON [{table}] {GetTriggerName(type, sqlType)}
 AS
 BEGIN
 {body}

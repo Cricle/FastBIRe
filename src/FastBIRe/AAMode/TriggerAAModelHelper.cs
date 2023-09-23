@@ -1,92 +1,43 @@
 ﻿using DatabaseSchemaReader;
-using DatabaseSchemaReader.DataSchema;
+using FastBIRe.Naming;
 using FastBIRe.Triggering;
-using System.Text.RegularExpressions;
 
 namespace FastBIRe.AAMode
 {
-    public interface INameGenerator
+    public abstract class TriggerAAModelHelper<TModelRequest> : IModeHelper<TModelRequest>
+        where TModelRequest : AAModeRequest
     {
-        int MaxArgCount { get; }
-
-        int MinArgCount { get; }
-
-        string Create(IEnumerable<object> args);
-
-        int Count(string input);
-
-        bool TryParse(string input, out IReadOnlyList<string> results);
-    }
-    public class RegexNameGenerator : INameGenerator
-    {
-        public const string BraceRegexExp = "({.*?})";
-
-        public static readonly Regex BraceRegex = new Regex(BraceRegexExp, RegexOptions.Compiled);
-
-        public RegexNameGenerator(string format)
+        protected TriggerAAModelHelper(INameGenerator triggerNameGenerator, ITriggerWriter triggerWriter)
         {
-            ParseRegex = BraceRegex;
-            Format = format;
-            var braceCount = BraceRegex.Matches(format).Count;
-            MaxArgCount = braceCount;
-            MinArgCount = braceCount;
-        }
-        public RegexNameGenerator(Regex parseRegex, string format, int maxArgCount, int minArgCount)
-        {
-            ParseRegex = parseRegex;
-            Format = format;
-            MaxArgCount = maxArgCount;
-            MinArgCount = minArgCount;
+            TriggerNameGenerator = triggerNameGenerator;
+            TriggerWriter = triggerWriter;
         }
 
-        public Regex ParseRegex { get; }
+        public INameGenerator TriggerNameGenerator { get; }
 
-        public string Format { get; }
+        public ITriggerWriter TriggerWriter { get; }
 
-        public int MaxArgCount { get; }
-
-        public int MinArgCount { get; }
-
-        public int Count(string input)
+        public void Apply(DatabaseReader reader, TModelRequest request)
         {
-#if NET7_0_OR_GREATER
-            return ParseRegex.Count(input);
-#else
-            return ParseRegex.Matches(input).Count;
-#endif
+            var triggerName = GetTriggerName(reader, request);
+            if (IsTriggerExists(reader,request,triggerName))
+            {
+                var dropSqls = TriggerWriter.Drop(reader.SqlType!.Value, triggerName);
+                request.AddScripts(dropSqls);
+            }
+            AddTrigger(reader, request, triggerName);
         }
 
-        public string Create(IEnumerable<object> args)
+        protected abstract void AddTrigger(DatabaseReader reader, TModelRequest request,string triggerName);
+
+        protected virtual string GetTriggerName(DatabaseReader reader, TModelRequest request)
         {
-            return string.Format(Format, args);
+            return TriggerNameGenerator.Create(new[] { request.ArchiveTable.Name });
         }
 
-        public bool TryParse(string input, out IReadOnlyList<string> results)
+        protected virtual bool IsTriggerExists(DatabaseReader reader, TModelRequest request,string triggerName)
         {
-            var matchs = ParseRegex.Matches(input);
-            results = matchs.OfType<Capture>().Select(x => x.Value).ToList();
-            return true;
-        }
-    }
-    public class EffectTriggerAAModelRequest : AAModeRequest
-    {
-        public EffectTriggerAAModelRequest(DatabaseTable archiveTable, DatabaseTable aggregationTable) 
-            : base(archiveTable, aggregationTable)
-        {
-            SettingItems = new List<EffectTriggerSettingItem>();
-        }
-
-        public List<EffectTriggerSettingItem> SettingItems { get; }
-    }
-    public class EffectTriggerAAModelHelper : IModeHelper<EffectTriggerAAModelRequest>
-    {
-        public INameGenerator InsertNameGenerator { get; }
-
-        public INameGenerator UpdateNameGenerator { get; }
-
-        public void Apply(DatabaseReader reader, EffectTriggerAAModelRequest request)
-        {
-
+            return request.ArchiveTable.Triggers.Any(x => x.Name == triggerName);
         }
     }
 }
