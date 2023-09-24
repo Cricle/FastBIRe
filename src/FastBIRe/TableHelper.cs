@@ -48,5 +48,135 @@ namespace FastBIRe
         {
             return $"DROP TABLE {SqlType.Wrap(table)};";
         }
+        public string Pagging(int? skip, int? take)
+        {
+            if (skip == null && take == null)
+            {
+                return string.Empty;
+            }
+            switch (SqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    {
+                        if (skip != null && take != null)
+                        {
+                            return $"OFFSET {skip} ROWS FETCH NEXT {take} ROWS ONLY";
+                        }
+                        if (skip != null)
+                        {
+                            return $"OFFSET {skip} ROWS";
+                        }
+                        return $"OFFSET 0 ROWS FETCH NEXT {take} ROWS ONLY";
+                    }
+                case SqlType.MySql:
+                    {
+                        if (skip != null && take != null)
+                        {
+                            return $"LIMIT {skip}, {take}";
+                        }
+                        if (skip != null)
+                        {
+                            return $"LIMIT {skip}";
+                        }
+                        return $"LIMIT 0, {take}";
+                    }
+                case SqlType.SQLite:
+                    {
+                        if (skip != null && take != null)
+                        {
+                            return $"LIMIT {take} OFFSET {skip}";
+                        }
+                        if (skip != null)
+                        {
+                            return $"LIMIT -1 OFFSET {skip}";
+                        }
+                        return $"LIMIT {take} OFFSET 0";
+                    }
+                case SqlType.PostgreSql:
+                    {
+                        if (skip != null && take != null)
+                        {
+                            return $"OFFSET {skip} LIMIT {take}";
+                        }
+                        if (skip != null)
+                        {
+                            return $"OFFSET {skip}";
+                        }
+                        return $"LIMIT {take}";
+                    }
+                default:
+                    throw new NotSupportedException(SqlType.ToString());
+            }
+        }
+
+        public string Opimize(string table)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    return $"ALTER INDEX ALL ON [{table}] REBUILD;";
+                case SqlType.MySql:
+                    return $"OPTIMIZE TABLE `{table}`;";
+                case SqlType.SQLite:
+                    return "VACUUM;";
+                case SqlType.PostgreSql:
+                    return $"VACUUM FULL \"{table}\";";
+                case SqlType.Oracle:
+                    return $"ALTER TABLE TRUNCATE TABLE \"{table}\" MOVE;";
+                case SqlType.Db2:
+                    return $"REORG TABLE \"{table}\";";
+                default:
+                    throw new NotSupportedException(SqlType.ToString());
+            }
+        }
+
+        public static string Truncate(string table, SqlType sqlType)
+        {
+            switch (sqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    return $"TRUNCATE TABLE [{table}];";
+                case SqlType.MySql:
+                    return $"DELETE FROM `{table}`;";
+                case SqlType.SQLite:
+                    return $"DELETE FROM `{table}`;";
+                case SqlType.PostgreSql:
+                    return $"TRUNCATE TABLE \"{table}\";";
+                case SqlType.Oracle:
+                    return $"TRUNCATE TABLE \"{table}\";";
+                case SqlType.Db2:
+                    return $"TRUNCATE TABLE \"{table}\";";
+                default:
+                    throw new NotSupportedException(sqlType.ToString());
+            }
+        }
+        public string CreateView(string viewName, string script)
+        {
+            var qutoViewName = SqlType.Wrap(viewName);
+            return $"CREATE VIEW {qutoViewName} AS {script};";
+        }
+        public string DropView(string viewName)
+        {
+            if (SqlType == SqlType.Db2 || SqlType == SqlType.Oracle)
+            {
+                return string.Empty;
+            }
+            var qutoViewName = SqlType.Wrap(viewName);
+            switch (SqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    return $"IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'{viewName}')) DROP VIEW {qutoViewName};";
+                case SqlType.MySql:
+                case SqlType.SQLite:
+                case SqlType.PostgreSql:
+                    return $"DROP VIEW IF EXISTS {qutoViewName};";
+                default:
+                    return string.Empty;
+            }
+        }
     }
 }

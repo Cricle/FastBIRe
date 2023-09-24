@@ -1,4 +1,6 @@
-﻿namespace FastBIRe.Triggering
+﻿using DatabaseSchemaReader.DataSchema;
+
+namespace FastBIRe.Triggering
 {
     public record class EffectTriggerSettingItem : FieldRaw
     {
@@ -10,6 +12,13 @@
         protected EffectTriggerSettingItem(FieldRaw original) 
             : base(original)
         {
+        }
+
+        public static EffectTriggerSettingItem Trigger(string field,SqlType sqlType)
+        {
+            var qutoName = sqlType.Wrap(field);
+            var triggerField = $"NEW.{qutoName}";
+            return new EffectTriggerSettingItem(field, triggerField, qutoName);
         }
     }
 }

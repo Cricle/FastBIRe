@@ -1,9 +1,33 @@
 ﻿using DatabaseSchemaReader.DataSchema;
+using FastBIRe.Timing;
 
 namespace FastBIRe.Triggering
 {
     public static class TriggerWriterEffectExtensions
     {
+        public static IEnumerable<string> CreateExpand(this ITriggerWriter triggerWriter,SqlType sqlType,string name,TriggerTypes type,string table,string field, ITimeExpandHelper timeExpandHelper)
+        {
+            var body = string.Empty;
+            var when = string.Empty;
+            switch (sqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    {
+                        break;
+                    }
+                case SqlType.MySql:
+                    break;
+                case SqlType.SQLite:
+                    break;
+                case SqlType.PostgreSql:
+                    break;
+                case SqlType.Db2:
+                case SqlType.Oracle:
+                default:
+                    yield break;
+            }
+        }
         public static IEnumerable<string> CreateEffect(this ITriggerWriter triggerWriter,SqlType sqlType, string name, TriggerTypes type, string sourceTable,string targetTable, IEnumerable<EffectTriggerSettingItem> settingItems)
         {
             var body = string.Empty;
@@ -32,8 +56,13 @@ namespace FastBIRe.Triggering
                     }
                 case SqlType.MySql:
                     {
-                        when = string.Join(" AND ", settingItems.Select(x => x.Field).Distinct().Select(x => $"NEW.`{x}` IS NOT NULL"));
-                        body = $@"INSERT IGNORE INTO `{targetTable}`({string.Join(",", settingItems.Select(x => $"`{x.Field}`"))}) VALUES({string.Join(",", settingItems.Select(x => x.Raw))});";
+                        body = $@"
+DECLARE has_row INT;
+SELECT 1 INTO has_row FROM `{targetTable}` WHERE {string.Join(" AND ", settingItems.Select(x => $"(NEW.`{x.Field}` = {x.Raw} OR (NEW.`{x.Field}` IS NULL AND {x.Raw} IS NULL))"))} LIMIT 1;
+IF has_row IS NULL THEN
+    INSERT INTO `{targetTable}`({string.Join(",", settingItems.Select(x => $"`{x.Field}`"))}) VALUES({string.Join(",", settingItems.Select(x => x.Raw))});
+END IF;
+";
                         break;
                     }
                 case SqlType.SQLite:

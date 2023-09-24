@@ -99,6 +99,125 @@ END
             }
             return $"DAY({time})";
         }
+        public string DayTo(string time)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(10),{time} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y-%m-%d 00:00:00', {time})";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('day',{time})";
+            }
+            return $"LEFT({time},10)";
+        }
+        public string? DayFull(string time)
+        {
+            return Concatenate(DayTo(time), "' 00:00:00'");
+        }
+        public string HourTo(string time)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(13),{time} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y-%m-%d %H:00:00', {time})";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('hour',{time})";
+            }
+            return $"LEFT({time},13)";
+        }
+        public string? HourFull(string time)
+        {
+            return Concatenate(HourTo(time), "':00:00'");
+        }
+        public string MinuteTo(string time)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(16),{time} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y-%m-%d %H:%M:00', {time})";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('minute',{time})";
+            }
+            return $"LEFT({time},16)";
+        }
+        public string? MinuteFull(string time)
+        {
+            return Concatenate(HourTo(time), "':00'");
+        }
+        public string WeekTo(string time)
+        {
+            if (SqlType == SqlType.SQLite)
+            {
+                return $"date({time}, 'weekday 0', '-6 day')||' 00:00:00'";
+            }
+            else if (SqlType == SqlType.SqlServer)
+            {
+                return $"DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {time}, 120) - 1), 0)";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('day',{time}::timestamp) - ((EXTRACT(DOW FROM {time}::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL";
+            }
+            return $"DATE_FORMAT(DATE_SUB({time}, INTERVAL WEEKDAY({time}) DAY),'%Y-%m-%d')";
+
+#if false
+SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL WEEKDAY(NOW()) DAY),'%Y-%m-%d')--mysql
+SELECT DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, '2023-04-24', 120) - 1), 0);--sqlserver
+SELECT date('now', 'weekday 0', '-6 day');--sqlite
+SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:00'::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL;--pgsql
+#endif
+        }
+        public string? WeekFull(string time)
+        {
+            return Concatenate(WeekTo(time), "':00'");
+        }
+        public string QuarterTo(string time)
+        {
+            if (SqlType == SqlType.SQLite)
+            {
+                return $@"
+    STRFTIME('%Y', {time})||'-'||(CASE 
+        WHEN COALESCE(NULLIF((SUBSTR({time}, 4, 2) - 1) / 3, 0), 4) < 10 
+        THEN '0' || COALESCE(NULLIF((SUBSTR({time}, 4, 2) - 1) / 3, 0), 4)
+        ELSE COALESCE(NULLIF((SUBSTR({time}, 4, 2) - 1) / 3, 0), 4)
+    END)||'-01 00:00:00'
+";
+            }
+            else if (SqlType == SqlType.SqlServer)
+            {
+                return $"DATEADD(qq, DATEDIFF(qq, 0, {time}), 0)";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('quarter', {time}::TIMESTAMP)";
+            }
+            return $"CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM {time}),1) + interval QUARTER({time})*3-3 month),'%Y-%m-'),'01')";
+#if false
+select CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM  '2023-12-24'),1) + interval QUARTER('2023-12-24')*3-3 month),'%Y-%m-'),'01'); --mysql
+SELECT DATEADD(qq, DATEDIFF(qq, 0, '2023-010-23'), 0);--sqlserver
+SELECT STRFTIME('%Y', '2023-04-24')||'-'||(CASE 
+        WHEN COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4) < 10 
+        THEN '0' || COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4)
+        ELSE COALESCE(NULLIF((SUBSTR('2023-10-24', 4, 2) - 1) / 3, 0), 4)
+    END)||'-01'; --sqlite
+SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
+#endif
+        }
         public string Year(string time)
         {
             if (SqlType == SqlType.SQLite)
@@ -110,6 +229,46 @@ END
                 return $"DATEPART(year,{time})";
             }
             return $"YEAR({time})";
+        }
+        public string? YearFull(string time)
+        {
+            return Concatenate(YearTo(time), "'-01-01 00:00:00'");
+        }
+        public string MonthTo(string time)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(7),{time} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y-%m-01 00:00:00', {time})";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('month',{time})";
+            }
+            return $"LEFT({time},7)";
+        }
+        public string? MonthFull(string time)
+        {
+            return Concatenate(YearTo(time), "'-01 00:00:00'");
+        }
+        public string YearTo(string time)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(4),{time} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y-01-01 00:00:00', {time})";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"date_trunc('year',{time})";
+            }
+            return $"LEFT({time},4)";
         }
         public string Month(string time)
         {
@@ -149,41 +308,11 @@ END
         }
         public string Quarter(string time)
         {
-            if (SqlType == SqlType.SQLite)
-            {
-                return $@"
-    STRFTIME('%Y', {time})||'-'||(CASE 
-        WHEN COALESCE(NULLIF((SUBSTR({time}, 4, 2) - 1) / 3, 0), 4) < 10 
-        THEN '0' || COALESCE(NULLIF((SUBSTR({time}, 4, 2) - 1) / 3, 0), 4)
-        ELSE COALESCE(NULLIF((SUBSTR({time}, 4, 2) - 1) / 3, 0), 4)
-    END)||'-01 00:00:00'
-";
-            }
-            else if (SqlType == SqlType.SqlServer)
-            {
-                return $"DATEADD(qq, DATEDIFF(qq, 0, {time}), 0)";
-            }
-            else if (SqlType == SqlType.PostgreSql)
-            {
-                return $"date_trunc('quarter', {time}::TIMESTAMP)";
-            }
-            return $"CONCAT(DATE_FORMAT(LAST_DAY(MAKEDATE(EXTRACT(YEAR FROM {time}),1) + interval QUARTER({time})*3-3 month),'%Y-%m-'),'01')";
+            throw new NotSupportedException();
         }
         public string Week(string time)
         {
-            if (SqlType == SqlType.SQLite)
-            {
-                return $"date({time}, 'weekday 0', '-6 day')||' 00:00:00'";
-            }
-            else if (SqlType == SqlType.SqlServer)
-            {
-                return $"DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {time}, 120) - 1), 0)";
-            }
-            else if (SqlType == SqlType.PostgreSql)
-            {
-                return $"date_trunc('day',{time}::timestamp) - ((EXTRACT(DOW FROM {time}::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL";
-            }
-            return $"DATE_FORMAT(DATE_SUB({time}, INTERVAL WEEKDAY({time}) DAY),'%Y-%m-%d')";
+            throw new NotSupportedException();
         }
         public string Second(string time)
         {

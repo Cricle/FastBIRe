@@ -12,7 +12,7 @@
         [DataRow(SqlType.Db2, "TRUNCATE TABLE \"test\";")]
         public void Sql(SqlType sqlType,string exp)
         {
-            var act = TruncateHelper.Sql("test", sqlType);
+            var act = TruncateHelper.Truncate("test", sqlType);
             Assert.AreEqual(exp, act);
         }
     }

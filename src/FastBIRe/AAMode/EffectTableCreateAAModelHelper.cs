@@ -2,14 +2,15 @@
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
 using FastBIRe.Naming;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FastBIRe.AAMode
 {
     public class EffectTableCreateAAModelHelper : IModeHelper<EffectTableCreateAAModelRequest>
     {
+        public static readonly INameGenerator DefaultEffectNameGenerator = new RegexNameGenerator("{0}_effect");
+
+        public static readonly EffectTableCreateAAModelHelper Default = new EffectTableCreateAAModelHelper(DefaultEffectNameGenerator, DefaultEffectTableKeyNameGenerator.Instance, StringComparison.Ordinal);
+
         public EffectTableCreateAAModelHelper(INameGenerator effectNameGenerator, INameGenerator effectTableKeyNameGenerator, StringComparison columnComparision)
         {
             EffectNameGenerator = effectNameGenerator;
@@ -48,12 +49,20 @@ namespace FastBIRe.AAMode
             {
                 Name = effectTableName
             };
-            var keyName = EffectTableKeyNameGenerator.Create(request.SettingItems.Select(x => x.EffectColumn.Name));
-            effectTable.PrimaryKey = new DatabaseConstraint { Name = keyName,TableName=effectTableName };
+            //Add all columns
             foreach (var item in request.SettingItems)
             {
                 effectTable.AddColumn(item.EffectColumn);
-                effectTable.PrimaryKey.Columns.Add(item.EffectColumn.Name);
+                //All column was index
+                var idx = new DatabaseIndex
+                {
+                    Name = "IX_" + item.EffectColumn.Name,
+                    Columns =
+                    {
+                        item.EffectColumn
+                    }
+                };
+                effectTable.AddIndex(idx);
             }
             var createSql = ddl.TableGenerator(effectTable).Write();
             request.Scripts.Add(createSql);
@@ -74,7 +83,12 @@ namespace FastBIRe.AAMode
                     return true;
                 }
                 //Is column type equals
-                if (!Equals(remoteColumn.DbDataType,item.EffectColumn.DbDataType))
+                if (!string.Equals(remoteColumn.DbDataType,item.EffectColumn.DbDataType, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                //Nullable 
+                if (item.EffectColumn.Nullable!=remoteColumn.Nullable)
                 {
                     return true;
                 }

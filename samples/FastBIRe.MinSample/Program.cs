@@ -39,7 +39,7 @@ namespace FastBIRe.MinSample
             var update = mr.CompileUpdate(聚合, table, opt);
             Console.WriteLine(update);
             Console.WriteLine();
-            var tr = TruncateHelper.Sql("juhe_effect", sqlType);
+            var tr = TruncateHelper.Truncate("juhe_effect", sqlType);
             Console.WriteLine(tr);
         }
         static List<SourceTableColumnDefine> GetSourceDefine(SourceTableColumnBuilder builder, SqlType sqlType, bool mig)

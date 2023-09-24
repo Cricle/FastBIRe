@@ -79,6 +79,11 @@
         Log,
         Week,
         Quarter,
-        Hour
+        Hour,
+        MinuteTo,
+        HourTo,
+        DayTo,
+        MonthTo,
+        YearTo
     }
 }

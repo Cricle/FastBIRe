@@ -448,6 +448,16 @@ namespace FastBIRe
                     return Quarter(args[0]);
                 case SQLFunctions.Hour:
                     return Hour(args[0]);
+                case SQLFunctions.HourTo:
+                    return HourTo(args[0]);
+                case SQLFunctions.MinuteTo:
+                    return MinuteTo(args[0]);
+                case SQLFunctions.DayTo:
+                    return DayTo(args[0]);
+                case SQLFunctions.MonthTo:
+                    return MonthTo(args[0]);
+                case SQLFunctions.YearTo:
+                    return YearTo(args[0]);
                 default:
                     return null;
             }

@@ -1,5 +1,6 @@
 ﻿namespace FastBIRe.Timing
 {
+    [Flags]
     public enum TimeTypes
     {
         None = 0,
@@ -11,5 +12,6 @@
         Month = Second << 5,
         Quarter = Second << 6,
         Year = Second << 7,
+        All = Second | Minute | Hour | Day | Week | Month | Quarter | Year,
     }
 }

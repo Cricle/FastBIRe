@@ -28,17 +28,27 @@ namespace FastBIRe.Mig
             var reader = migSer.Reader;
             var ach = reader.Table("guidang");
             var agg = reader.Table("juhe");
-            var adm = new EffectTableCreateAAModelHelper(new RegexNameGenerator("{0}_effect"), DefaultEffectTableKeyNameGenerator.Instance, StringComparison.Ordinal);
-            var req = new EffectTableCreateAAModelRequest(ach, agg, new EffectTableSettingItem[]
+            var adm = EffectTableCreateAAModelHelper.Default;
+            //var s = reader.Table("guidang");
+            //var a = reader.Table("juhe");
+            //var req = new EffectTableCreateAAModelRequest(s, a, new EffectTableSettingItem[]
+            //{
+            //    new EffectTableSettingItem(new DatabaseColumn
+            //    {
+            //        Name="a7"
+            //    }.SetTypeDefault( sqlType,DbType.Int64))
+            //});
+            //adm.Apply(reader, req);
+            //foreach (var item in req.Scripts)
+            //{
+            //    Console.WriteLine(item);
+            //}
+            var tw = TriggerWriter.Default;
+            var sqls = tw.CreateEffect(SqlType.MySql, "triggerx", TriggerTypes.BeforeInsert, "guidang", "juhe", new EffectTriggerSettingItem[]
             {
-                new EffectTableSettingItem(new DatabaseColumn
-                {
-                    Name="a7",
-                    DbDataType="varchar(22)"
-                })
+                EffectTriggerSettingItem.Trigger("a7",sqlType)
             });
-            adm.Apply(reader, req);
-            foreach (var item in req.Scripts)
+            foreach (var item in sqls)
             {
                 Console.WriteLine(item);
             }

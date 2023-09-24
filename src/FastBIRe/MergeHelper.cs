@@ -263,79 +263,27 @@ SET
         {
             return new FunctionMapper(SqlType).Concatenate(left, right);
         }
-        public string GetFormatter(string @ref, ToRawMethod method)
+        public string? GetFormatter(string @ref, ToRawMethod method)
         {
             var mapper = new FunctionMapper(SqlType);
             switch (method)
             {
                 case ToRawMethod.Year:
-                    return mapper.Year(@ref);
+                    return mapper.YearFull(@ref);
                 case ToRawMethod.Month:
-                    return mapper.Month(@ref);
+                    return mapper.MonthFull(@ref);
                 case ToRawMethod.Day:
-                    return mapper.Day(@ref);
+                    return mapper.DayFull(@ref);
                 case ToRawMethod.Hour:
-                    return mapper.Hour(@ref);
+                    return mapper.HourFull(@ref);
                 case ToRawMethod.Minute:
-                    return mapper.Minute(@ref);
+                    return mapper.MinuteFull(@ref);
                 case ToRawMethod.Week:
-                    return mapper.Week(@ref);
+                    return mapper.WeekFull(@ref);
                 case ToRawMethod.Quarter:
-                    return mapper.Quarter(@ref);
+                    return mapper.QuarterTo(@ref);
                 default:
                     return @ref;
-            }
-        }
-        protected string GetFormatString(ToRawMethod method, string fieldName, bool quto)
-        {
-            var @ref = GetRef(fieldName, quto);
-            var forMatter= GetFormatter(@ref,method);
-            switch (method)
-            {
-                case ToRawMethod.Year:
-                    {
-                        if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
-                        {
-                            return forMatter;
-                        }
-                        return JoinString(forMatter, "'-01-01 00:00:00'");
-                    }
-                case ToRawMethod.Day:
-                    {
-                        if (SqlType == SqlType.SQLite || SqlType == SqlType.PostgreSql)
-                        {
-                            return forMatter;
-                        }
-                        return JoinString(forMatter, "' 00:00:00'");
-                    }
-                case ToRawMethod.Hour:
-                    {
-                        if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
-                        {
-                            return forMatter;
-                        }
-                        return JoinString(forMatter, "':00:00'");
-                    }
-                case ToRawMethod.Minute:
-                    {
-                        if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
-                        {
-                            return forMatter;
-                        }
-                        return JoinString(forMatter, "':00'");
-                    }
-                case ToRawMethod.Second:
-                    return @ref;
-                case ToRawMethod.Month:
-                    {
-                        if (SqlType == SqlType.PostgreSql || SqlType == SqlType.SQLite)
-                        {
-                            return forMatter;
-                        }
-                        return JoinString(forMatter, "'-01 00:00:00'");
-                    }
-                default:
-                    throw new NotSupportedException(method.ToString());
             }
         }
 
@@ -368,7 +316,7 @@ SET
                 case ToRawMethod.Hour:
                 case ToRawMethod.Minute:
                 case ToRawMethod.Second:
-                    return GetFormatString(method, field, quto);
+                    return GetFormatter(GetRef(field, quto), method);
                 case ToRawMethod.Quarter:
                     {
                         return GetFormatter(GetRef(field, quto), ToRawMethod.Quarter);
