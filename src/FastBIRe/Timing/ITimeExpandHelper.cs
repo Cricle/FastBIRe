@@ -2,6 +2,6 @@
 {
     public interface ITimeExpandHelper
     {
-        IEnumerable<string> Create(string name, TimeTypes type);
+        IEnumerable<TimeExpandResult> Create(string name, TimeTypes type);
     }
 }

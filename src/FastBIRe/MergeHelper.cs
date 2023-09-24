@@ -281,7 +281,7 @@ SET
                 case ToRawMethod.Week:
                     return mapper.WeekFull(@ref);
                 case ToRawMethod.Quarter:
-                    return mapper.QuarterTo(@ref);
+                    return mapper.QuarterFull(@ref);
                 default:
                     return @ref;
             }

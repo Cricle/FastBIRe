@@ -186,7 +186,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
         {
             return Concatenate(WeekTo(time), "':00'");
         }
-        public string QuarterTo(string time)
+        public string QuarterFull(string time)
         {
             if (SqlType == SqlType.SQLite)
             {

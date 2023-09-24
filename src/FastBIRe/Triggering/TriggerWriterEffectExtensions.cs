@@ -5,30 +5,59 @@ namespace FastBIRe.Triggering
 {
     public static class TriggerWriterEffectExtensions
     {
-        public static IEnumerable<string> CreateExpand(this ITriggerWriter triggerWriter,SqlType sqlType,string name,TriggerTypes type,string table,string field, ITimeExpandHelper timeExpandHelper)
+        public static IEnumerable<string> CreateExpand(this ITriggerWriter triggerWriter,
+            SqlType sqlType,
+            string name,
+            TriggerTypes type,
+            string table,
+            string field,
+            ITimeExpandHelper timeExpandHelper,
+            TimeTypes timeTypes = TimeTypes.All & ~TimeTypes.Second)
         {
             var body = string.Empty;
             var when = string.Empty;
+            var fields= timeExpandHelper.Create(field, timeTypes);
             switch (sqlType)
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
                     {
+                        //INSTEAD OF INSERT
+                        //https://www.sqlservertutorial.net/sql-server-triggers/sql-server-instead-of-trigger
                         break;
                     }
                 case SqlType.MySql:
-                    break;
+                    {
+                        body = string.Join("\n", fields.Select(x => $"SET NEW.`{x.Name}` = CASE WHEN `NEW`.`{field}` IS NULL THEN NULL ELSE {x.Trigger} END;"));
+                        break;
+                    }
                 case SqlType.SQLite:
-                    break;
+                    {
+                        body = $"UPDATE `{table}` SET {string.Join(", ", fields.Select(x => $"`{x.Name}` = CASE WHEN NEW.`{field}` IS NULL THEN NULL ELSE {x.Trigger} END"))} WHERE `ROWID` = NEW.`ROWID`";
+                        break;
+                    }
                 case SqlType.PostgreSql:
-                    break;
+                    {
+                        body = string.Join("\n", fields.Select(x => $"NEW.\"{x.Name}\" = CASE WHEN NEW.\"{field}\" IS NULL THEN NULL ELSE {x.Trigger} END;"));
+                        break;
+                    }
                 case SqlType.Db2:
                 case SqlType.Oracle:
                 default:
                     yield break;
             }
+            foreach (var item in triggerWriter.Create(sqlType, name, type, table, body, when))
+            {
+                yield return item;
+            }
         }
-        public static IEnumerable<string> CreateEffect(this ITriggerWriter triggerWriter,SqlType sqlType, string name, TriggerTypes type, string sourceTable,string targetTable, IEnumerable<EffectTriggerSettingItem> settingItems)
+        public static IEnumerable<string> CreateEffect(this ITriggerWriter triggerWriter,
+            SqlType sqlType,
+            string name, 
+            TriggerTypes type,
+            string sourceTable,
+            string targetTable, 
+            IEnumerable<EffectTriggerSettingItem> settingItems)
         {
             var body = string.Empty;
             var when = string.Empty;

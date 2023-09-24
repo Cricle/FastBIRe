@@ -85,7 +85,7 @@ namespace FastBIRe.Triggering
         }
         public virtual IEnumerable<string> Create(SqlType sqlType, string name, TriggerTypes type, string table, string body, string? when)
         {
-            var hasWhen = !string.IsNullOrEmpty(when);
+            var hasWhen = !string.IsNullOrWhiteSpace(when);
             switch (sqlType)
             {
                 case SqlType.SqlServer:
