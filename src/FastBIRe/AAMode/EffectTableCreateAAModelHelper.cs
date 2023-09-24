@@ -5,6 +5,16 @@ using FastBIRe.Naming;
 
 namespace FastBIRe.AAMode
 {
+    public class TableExpandTimeRequest
+    {
+        public DatabaseTable Table { get; }
+    }
+    public class TableExpandTimeAAModelHelper : IModeHelper<TableExpandTimeRequest>
+    {
+        public void Apply(DatabaseReader reader, TableExpandTimeRequest request)
+        {
+        }
+    }
     public class EffectTableCreateAAModelHelper : IModeHelper<EffectTableCreateAAModelRequest>
     {
         public static readonly INameGenerator DefaultEffectNameGenerator = new RegexNameGenerator("{0}_effect");
