@@ -13,6 +13,26 @@ namespace FastBIRe
         public static readonly FunctionMapper PostgreSql = new FunctionMapper(SqlType.PostgreSql);
         public static readonly FunctionMapper SqlServer = new FunctionMapper(SqlType.SqlServer);
 
+        public static FunctionMapper? Get(SqlType sqlType)
+        {
+            switch (sqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    return SqlServer;
+                case SqlType.MySql:
+                    return MySql;
+                case SqlType.SQLite:
+                    return Sqlite;
+                case SqlType.PostgreSql:
+                    return PostgreSql;
+                case SqlType.Db2:
+                case SqlType.Oracle:
+                default:
+                    return null;
+            }
+        }
+
 #if false
 (?<!\\)" "->'
 (?<![\"'])\b[A-Za-z]+\b(?=\()

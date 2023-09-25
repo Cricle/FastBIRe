@@ -1,18 +1,32 @@
 ﻿namespace FastBIRe.Timing
 {
-    public readonly record struct TimeExpandResult
+    public readonly record struct TimeExpandResult: IExpandResult
     {
-        public readonly TimeTypes Type;
+        /// <summary>
+        /// Gets the value of current result time
+        /// </summary>
+        public TimeTypes Type { get; }
 
-        public readonly string Name;
+        /// <inheritdoc/>
+        public string Name { get; }
 
-        public readonly string? Trigger;
+        /// <inheritdoc/>
+        public string? ExparessionFormatter { get; }
 
-        public TimeExpandResult(TimeTypes type, string name, string? trigger)
+        /// <inheritdoc/>
+        public string OriginName { get; }
+
+        public TimeExpandResult(TimeTypes type, string name, string originName, string? trigger)
         {
             Type = type;
             Name = name;
-            Trigger = trigger;
+            ExparessionFormatter = trigger;
+            OriginName = originName;
+        }
+        /// <inheritdoc/>
+        public string FormatExpression(string input)
+        {
+            return string.Format(ExparessionFormatter, input);
         }
     }
 }

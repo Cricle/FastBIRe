@@ -157,7 +157,7 @@ END
         }
         public string? MinuteFull(string time)
         {
-            return Concatenate(HourTo(time), "':00'");
+            return Concatenate(MinuteTo(time), "':00'");
         }
         public string WeekTo(string time)
         {
@@ -252,7 +252,7 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string? MonthFull(string time)
         {
-            return Concatenate(YearTo(time), "'-01 00:00:00'");
+            return Concatenate(MonthTo(time), "'-01 00:00:00'");
         }
         public string YearTo(string time)
         {
@@ -308,11 +308,46 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string Quarter(string time)
         {
-            throw new NotSupportedException();
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return $"DATEPART(QUARTER, {time})";
+                case SqlType.MySql:
+                    return $"QUARTER({time})";
+                case SqlType.SQLite:
+                    return @$"CASE
+    WHEN strftime('%m', {time}) BETWEEN '01' AND '03' THEN 1
+    WHEN strftime('%m', {time}) BETWEEN '04' AND '06' THEN 2
+    WHEN strftime('%m', {time}) BETWEEN '07' AND '09' THEN 3
+    ELSE 4
+    END";
+                case SqlType.PostgreSql:
+                    return $"EXTRACT(QUARTER FROM {time})";
+                case SqlType.Db2:
+                case SqlType.Oracle:
+                default:
+                    return string.Empty;
+            }
         }
         public string Week(string time)
         {
-            throw new NotSupportedException();
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return $"DATEPART(WEEK, {time})";
+                case SqlType.MySql:
+                    return $"WEEK({time})";
+                case SqlType.SQLite:
+                    return $"strftime('%W', {time})";
+                case SqlType.PostgreSql:
+                    return $"EXTRACT(WEEK FROM {time})";
+                case SqlType.Db2:
+                case SqlType.Oracle:
+                default:
+                    return string.Empty;
+            }
         }
         public string Second(string time)
         {

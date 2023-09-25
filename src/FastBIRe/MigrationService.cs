@@ -478,8 +478,8 @@ namespace FastBIRe
             var insertName = string.Format(InsertQueryViewFormat, tableName);
             var updateName = string.Format(UpdateQueryViewFormat, tableName);
 
-            script.Add(ViewHelper.DropView(insertName, SqlType));
-            script.Add(ViewHelper.DropView(updateName, SqlType));
+            //script.Add(ViewHelper.DropView(insertName, SqlType));
+            //script.Add(ViewHelper.DropView(updateName, SqlType));
             if (ViewMode)
             {
                 CompileOptions? opt = null;
@@ -489,8 +489,8 @@ namespace FastBIRe
                     opt.EffectTable = effectTableName;
                     opt.IncludeEffectJoin = true;
                 }
-                script.Add(ViewHelper.CreateView(insertName, helper.CompileInsertSelect(destTable, tableDef, opt), SqlType));
-                script.Add(ViewHelper.CreateView(updateName, helper.CompileUpdateSelect(destTable, tableDef, opt), SqlType));
+                //script.Add(ViewHelper.CreateView(insertName, helper.CompileInsertSelect(destTable, tableDef, opt), SqlType));
+                //script.Add(ViewHelper.CreateView(updateName, helper.CompileUpdateSelect(destTable, tableDef, opt), SqlType));
             }
             return script;
         }

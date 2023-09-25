@@ -24,7 +24,7 @@ namespace rsa
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    conn = new SqlConnection($"Server=192.168.2.45;Uid=sa;Pwd=123456;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+                    conn = new SqlConnection($"Server=192.168.1.101;Uid=sa;Pwd=Syc123456.;Connection Timeout=2000;TrustServerCertificate=true{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
                     break;
                 case SqlType.MySql:
                     if (mariadb)

@@ -2,6 +2,7 @@
 using DatabaseSchemaReader.DataSchema;
 using FastBIRe.AAMode;
 using FastBIRe.Naming;
+using FastBIRe.Timing;
 using FastBIRe.Triggering;
 using rsa;
 using System.Data;
@@ -22,8 +23,8 @@ namespace FastBIRe.Mig
             //{
             //    Console.WriteLine(item);
             //}
-            var sqlType = SqlType.MySql;
-            var dbName = "testc";
+            var sqlType = SqlType.SqlServer;
+            var dbName = "test";
             var migSer = ConnectionProvider.GetDbMigration(sqlType, dbName);
             var reader = migSer.Reader;
             var ach = reader.Table("guidang");
@@ -44,14 +45,20 @@ namespace FastBIRe.Mig
             //    Console.WriteLine(item);
             //}
             var tw = TriggerWriter.Default;
-            var sqls = tw.CreateEffect(SqlType.MySql, "triggerx", TriggerTypes.BeforeInsert, "guidang", "juhe", new EffectTriggerSettingItem[]
-            {
-                EffectTriggerSettingItem.Trigger("a7",sqlType)
-            });
+            var wwTable = reader.Table("ww");
+           var sqls= tw.CreateTimeExpand(sqlType, "triggerx", TriggerTypes.InsteadOfInsert, wwTable, new string[] { "qq" }, new TimeExpandHelper(sqlType));
             foreach (var item in sqls)
             {
                 Console.WriteLine(item);
             }
+            //var sqls = tw.CreateEffect(SqlType.MySql, "triggerx", TriggerTypes.BeforeInsert, "guidang", "juhe", new EffectTriggerSettingItem[]
+            //{
+            //    EffectTriggerSettingItem.Trigger("a7",sqlType)
+            //});
+            //foreach (var item in sqls)
+            //{
+            //    Console.WriteLine(item);
+            //}
             //var table = reader.Table("qqx");
 
             //table.Columns[0].Name = "hello";

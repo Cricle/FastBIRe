@@ -53,6 +53,12 @@ namespace FastBIRe.Triggering
                     if (sqlType == SqlType.SQLite)
                         return "DELETE";
                     return "AFTER DELETE";
+                case TriggerTypes.InsteadOfInsert:
+                    return "INSTEAD OF INSERT";
+                case TriggerTypes.InsteadOfUpdate:
+                    return "INSTEAD OF UPDATE";
+                case TriggerTypes.InsteadOfDelete:
+                    return "INSTEAD OF DELETE";
                 case TriggerTypes.None:
                 default:
                     return string.Empty;

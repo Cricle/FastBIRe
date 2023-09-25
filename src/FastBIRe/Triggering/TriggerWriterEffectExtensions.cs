@@ -5,40 +5,84 @@ namespace FastBIRe.Triggering
 {
     public static class TriggerWriterEffectExtensions
     {
+        public static IEnumerable<string> CreateTimeExpand(this ITriggerWriter triggerWriter,
+            SqlType sqlType,
+            string name,
+            TriggerTypes type,
+            DatabaseTable table,
+            IEnumerable<string> expandFields,
+            ITimeExpandHelper timeExpandHelper,
+            TimeTypes timeTypes = TimeTypes.All & ~TimeTypes.Second)
+        {
+            var exps = expandFields.SelectMany(x => timeExpandHelper.Create(x, timeTypes)).Cast<IExpandResult>().ToList();
+            return CreateExpand(triggerWriter, sqlType, name, type, table, exps);
+        }
         public static IEnumerable<string> CreateExpand(this ITriggerWriter triggerWriter,
             SqlType sqlType,
             string name,
             TriggerTypes type,
-            string table,
-            string field,
-            ITimeExpandHelper timeExpandHelper,
-            TimeTypes timeTypes = TimeTypes.All & ~TimeTypes.Second)
+            DatabaseTable table,
+            IEnumerable<IExpandResult> expandResults)
         {
             var body = string.Empty;
             var when = string.Empty;
-            var fields= timeExpandHelper.Create(field, timeTypes);
             switch (sqlType)
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
                     {
-                        //INSTEAD OF INSERT
                         //https://www.sqlservertutorial.net/sql-server-triggers/sql-server-instead-of-trigger
+                        if (type== TriggerTypes.InsteadOfInsert)
+                        {
+                            var allColumnExceptExpands = table.Columns.Select(x => x.Name).Except(expandResults.Select(x => x.Name)).Distinct().ToList();
+                            //Make insert column expressions
+                            var insertColumnExpression = allColumnExceptExpands.Concat(expandResults.Select(x => x.Name))
+                                .Select(x => $"[{x}]")
+                                .ToList();
+                            //The expand field was let it to end insert, now make insert expressions exception
+                            for (int i = 0; i < allColumnExceptExpands.Count; i++)
+                            {
+                                allColumnExceptExpands[i] = $"[{allColumnExceptExpands[i]}]";//Replace to quto
+                            }
+                            //Add expressions
+                            allColumnExceptExpands.AddRange(expandResults.Select(x => $"({x.FormatExpression($"[NEW].[{x.OriginName}]")}) AS [{x.Name}]"));
+                            body = $@"INSERT INTO [{table.Name}]({string.Join(",", insertColumnExpression)}) SELECT {string.Join(",", allColumnExceptExpands)} FROM INSERTED AS [NEW];";
+                        }
+                        else if (type== TriggerTypes.InsteadOfUpdate)
+                        {
+                            string where = string.Empty;
+                            if (table.PrimaryKey == null)
+                            {
+                                //No PK, all columns except expands
+                                throw new InvalidOperationException($"Sqlserver update trigger must has PK for update");
+                            }
+                            var setList = table.Columns.Select(x => x.Name)
+                                .Except(expandResults.Select(x => x.Name))
+                                .Distinct()
+                                .Select(x => $"[{x}] = [NEW].[{x}]")
+                                .ToList();
+                            var pkWhereList = table.PrimaryKey.Columns.Select(x => $"[{x}] = [NEW].[{x}]");
+                            body = $"UPDATE [{table.Name}] SET {string.Join(",", setList)} FROM INSERTED AS [NEW] WHERE {string.Join(" AND ", pkWhereList)};";
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"At sqlserver use INSTEAD OF to do that, only InsteadOfInsert/AfterUpdate can be used");
+                        }
                         break;
                     }
                 case SqlType.MySql:
                     {
-                        body = string.Join("\n", fields.Select(x => $"SET NEW.`{x.Name}` = CASE WHEN `NEW`.`{field}` IS NULL THEN NULL ELSE {x.Trigger} END;"));
+                        body = string.Join("\n", expandResults.Select(x => $"SET NEW.`{x.Name}` = CASE WHEN NEW.`{x.OriginName}` IS NULL THEN NULL ELSE {x.FormatExpression($"NEW.`{x.OriginName}`")} END;"));
                         break;
                     }
                 case SqlType.SQLite:
                     {
-                        body = $"UPDATE `{table}` SET {string.Join(", ", fields.Select(x => $"`{x.Name}` = CASE WHEN NEW.`{field}` IS NULL THEN NULL ELSE {x.Trigger} END"))} WHERE `ROWID` = NEW.`ROWID`";
+                        body = $"UPDATE `{table}` SET {string.Join(", ", expandResults.Select(x => $"`{x.Name}` = CASE WHEN NEW.`{x.OriginName}` IS NULL THEN NULL ELSE {x.FormatExpression($"NEW.`{x.OriginName}`")} END"))} WHERE `ROWID` = NEW.`ROWID`";
                         break;
-                    }
+                    } 
                 case SqlType.PostgreSql:
                     {
-                        body = string.Join("\n", fields.Select(x => $"NEW.\"{x.Name}\" = CASE WHEN NEW.\"{field}\" IS NULL THEN NULL ELSE {x.Trigger} END;"));
+                        body = string.Join("\n", expandResults.Select(x => $"NEW.\"{x.Name}\" = CASE WHEN NEW.\"{x.OriginName}\" IS NULL THEN NULL ELSE {x.FormatExpression($"NEW.\"{x.OriginName}\"")} END;"));
                         break;
                     }
                 case SqlType.Db2:
@@ -46,7 +90,7 @@ namespace FastBIRe.Triggering
                 default:
                     yield break;
             }
-            foreach (var item in triggerWriter.Create(sqlType, name, type, table, body, when))
+            foreach (var item in triggerWriter.Create(sqlType, name, type, table.Name, body, when))
             {
                 yield return item;
             }
