@@ -5,16 +5,6 @@ using FastBIRe.Naming;
 
 namespace FastBIRe.AAMode
 {
-    public class TableExpandTimeRequest
-    {
-        public DatabaseTable Table { get; }
-    }
-    public class TableExpandTimeAAModelHelper : IModeHelper<TableExpandTimeRequest>
-    {
-        public void Apply(DatabaseReader reader, TableExpandTimeRequest request)
-        {
-        }
-    }
     public class EffectTableCreateAAModelHelper : IModeHelper<EffectTableCreateAAModelRequest>
     {
         public static readonly INameGenerator DefaultEffectNameGenerator = new RegexNameGenerator("{0}_effect");
@@ -88,17 +78,17 @@ namespace FastBIRe.AAMode
             {
                 //Is all the name exists
                 var remoteColumn = table.Columns.Find(x => x.Name.Equals(item.EffectColumn.Name, ColumnComparision));
-                if (remoteColumn==null)
+                if (remoteColumn == null)
                 {
                     return true;
                 }
                 //Is column type equals
-                if (!string.Equals(remoteColumn.DbDataType,item.EffectColumn.DbDataType, StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(remoteColumn.DbDataType, item.EffectColumn.DbDataType, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
                 //Nullable 
-                if (item.EffectColumn.Nullable!=remoteColumn.Nullable)
+                if (item.EffectColumn.Nullable != remoteColumn.Nullable)
                 {
                     return true;
                 }

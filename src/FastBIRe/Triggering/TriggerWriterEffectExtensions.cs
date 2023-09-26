@@ -11,11 +11,21 @@ namespace FastBIRe.Triggering
             TriggerTypes type,
             DatabaseTable table,
             IEnumerable<string> expandFields,
-            ITimeExpandHelper timeExpandHelper,
-            TimeTypes timeTypes = TimeTypes.All & ~TimeTypes.Second)
+            ITimeExpandHelper? timeExpandHelper = null,
+            TimeTypes timeTypes = TimeTypes.ExceptSecond)
         {
-            var exps = expandFields.SelectMany(x => timeExpandHelper.Create(x, timeTypes)).Cast<IExpandResult>().ToList();
-            return CreateExpand(triggerWriter, sqlType, name, type, table, exps);
+            if (expandFields == null)
+            {
+                throw new ArgumentNullException(nameof(expandFields));
+            }
+
+            if (triggerWriter == null)
+            {
+                timeExpandHelper = new TimeExpandHelper(sqlType);
+            }
+
+            var exps = expandFields.SelectMany(x => timeExpandHelper!.Create(x, timeTypes)).Cast<IExpandResult>().ToList();
+            return CreateExpand(triggerWriter!, sqlType, name, type, table, exps);
         }
         public static IEnumerable<string> CreateExpand(this ITriggerWriter triggerWriter,
             SqlType sqlType,
@@ -32,7 +42,7 @@ namespace FastBIRe.Triggering
                 case SqlType.SqlServer:
                     {
                         //https://www.sqlservertutorial.net/sql-server-triggers/sql-server-instead-of-trigger
-                        if (type== TriggerTypes.InsteadOfInsert)
+                        if (type == TriggerTypes.InsteadOfInsert)
                         {
                             var allColumnExceptExpands = table.Columns.Select(x => x.Name).Except(expandResults.Select(x => x.Name)).Distinct().ToList();
                             //Make insert column expressions
@@ -48,7 +58,7 @@ namespace FastBIRe.Triggering
                             allColumnExceptExpands.AddRange(expandResults.Select(x => $"({x.FormatExpression($"[NEW].[{x.OriginName}]")}) AS [{x.Name}]"));
                             body = $@"INSERT INTO [{table.Name}]({string.Join(",", insertColumnExpression)}) SELECT {string.Join(",", allColumnExceptExpands)} FROM INSERTED AS [NEW];";
                         }
-                        else if (type== TriggerTypes.InsteadOfUpdate)
+                        else if (type == TriggerTypes.InsteadOfUpdate)
                         {
                             string where = string.Empty;
                             if (table.PrimaryKey == null)
@@ -79,7 +89,7 @@ namespace FastBIRe.Triggering
                     {
                         body = $"UPDATE `{table}` SET {string.Join(", ", expandResults.Select(x => $"`{x.Name}` = CASE WHEN NEW.`{x.OriginName}` IS NULL THEN NULL ELSE {x.FormatExpression($"NEW.`{x.OriginName}`")} END"))} WHERE `ROWID` = NEW.`ROWID`";
                         break;
-                    } 
+                    }
                 case SqlType.PostgreSql:
                     {
                         body = string.Join("\n", expandResults.Select(x => $"NEW.\"{x.Name}\" = CASE WHEN NEW.\"{x.OriginName}\" IS NULL THEN NULL ELSE {x.FormatExpression($"NEW.\"{x.OriginName}\"")} END;"));
@@ -97,10 +107,10 @@ namespace FastBIRe.Triggering
         }
         public static IEnumerable<string> CreateEffect(this ITriggerWriter triggerWriter,
             SqlType sqlType,
-            string name, 
+            string name,
             TriggerTypes type,
             string sourceTable,
-            string targetTable, 
+            string targetTable,
             IEnumerable<EffectTriggerSettingItem> settingItems)
         {
             var body = string.Empty;

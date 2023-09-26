@@ -15,5 +15,8 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="BackupRestore\" />
+	</ItemGroup>
 
 </Project>

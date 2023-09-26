@@ -6,7 +6,19 @@ namespace FastBIRe
 {
     public static class MethodWrapperExtensions
     {
-        public static string Wrap(this SqlType sqlType, string field)
+        public static bool Ors(this SqlType sqlType,params SqlType[] types)
+        {
+            foreach (var item in types)
+            {
+                if (sqlType==item)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static string Wrap(this SqlType sqlType, string? field)
         {
             return GetMethodWrapper(sqlType).Quto(field);
         }

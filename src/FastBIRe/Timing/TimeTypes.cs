@@ -13,5 +13,6 @@
         Quarter = Second << 6,
         Year = Second << 7,
         All = Second | Minute | Hour | Day | Week | Month | Quarter | Year,
+        ExceptSecond = All & ~Second
     }
 }
