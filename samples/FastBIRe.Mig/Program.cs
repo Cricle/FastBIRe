@@ -1,12 +1,15 @@
 ﻿using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using FastBIRe.AAMode;
+using FastBIRe.Data;
 using FastBIRe.Naming;
 using FastBIRe.Querying;
 using FastBIRe.Timing;
 using FastBIRe.Triggering;
+using FastBIRe.Wrapping;
 using rsa;
 using System.Data;
+using System.Diagnostics;
 
 namespace FastBIRe.Mig
 {
@@ -26,31 +29,31 @@ namespace FastBIRe.Mig
             //}
             var sqlType = SqlType.SqlServer;
             var dbName = "test";
-            var reader = ConnectionProvider.GetDbMigration(sqlType, dbName);
-            var juhe = reader.Table("juhe");
-            var guidang = reader.Table("guidang");
-            var function = FunctionMapper.Get(sqlType);
-            var groupLink = new ITableFieldLink[]
-            {
-                new DirectTableFieldLink(juhe.FindColumn("ja1"),guidang.FindColumn("a1")),
-                new DirectTableFieldLink(juhe.FindColumn("ja2"),guidang.FindColumn("a2"))
-            };
-            var noGroupLink = new ITableFieldLink[]
-            {
-                new ExpandTableFieldLink(juhe.FindColumn("datetime"),DefaultExpandResult.Expression("datetime",function.Now())),
-                new ExpandTableFieldLink(juhe.FindColumn("sa3"),DefaultExpandResult.Expression("a3",function.SumC("{0}"))),
-                new ExpandTableFieldLink(juhe.FindColumn("ca4"),DefaultExpandResult.Expression("a3",function.CountC("{0}")))
-            };
-            var merquer = MergeQuerying.Default.Update(new MergeQueryUpdateRequest(sqlType, guidang, juhe, noGroupLink, groupLink)
-            {
-                EffectTable = reader.Table("juhe_effect"),
-                UseEffectTable = true,
-                IgnoreCompareFields =
-                {
-                    "datetime"
-                }
-            });
-            Console.WriteLine(merquer);
+            //var reader = ConnectionProvider.GetDbMigration(sqlType, dbName);
+            //var juhe = reader.Table("juhe");
+            //var guidang = reader.Table("guidang");
+            //var function = FunctionMapper.Get(sqlType);
+            //var groupLink = new ITableFieldLink[]
+            //{
+            //    new DirectTableFieldLink(juhe.FindColumn("ja1"),guidang.FindColumn("a1")),
+            //    new DirectTableFieldLink(juhe.FindColumn("ja2"),guidang.FindColumn("a2"))
+            //};
+            //var noGroupLink = new ITableFieldLink[]
+            //{
+            //    new ExpandTableFieldLink(juhe.FindColumn("datetime"),DefaultExpandResult.Expression("datetime",function.Now())),
+            //    new ExpandTableFieldLink(juhe.FindColumn("sa3"),DefaultExpandResult.Expression("a3",function.SumC("{0}"))),
+            //    new ExpandTableFieldLink(juhe.FindColumn("ca4"),DefaultExpandResult.Expression("a3",function.CountC("{0}")))
+            //};
+            //var merquer = MergeQuerying.Default.Update(new MergeQueryUpdateRequest(sqlType, guidang, juhe, noGroupLink, groupLink)
+            //{
+            //    EffectTable = reader.Table("juhe_effect"),
+            //    UseEffectTable = true,
+            //    IgnoreCompareFields =
+            //    {
+            //        "datetime"
+            //    }
+            //});
+            //Console.WriteLine(merquer);
             //var s = reader.Table("guidang");
             //var a = reader.Table("juhe");
             //var req = new EffectTableCreateAAModelRequest(s, a, new EffectTableSettingItem[]
@@ -97,6 +100,29 @@ namespace FastBIRe.Mig
             //old.Columns[0].Id = "1";
             //var res = CompareSchemas.FromTable(reader.DatabaseSchema.ConnectionString, sqlType, old, table).Execute();
             //Console.WriteLine(res);
+            var gc = GC.GetTotalMemory(true);
+            var reader1 = ConnectionProvider.GetDbMigration(sqlType, dbName);
+            var reader2 = ConnectionProvider.GetDbMigration(sqlType, dbName);
+            using (var comm = reader2.CreateCommand())
+            {
+                var sw = Stopwatch.GetTimestamp();
+                comm.CommandText = "SELECT TOP 999 * FROM [guidang];";
+                var reader = await comm.ExecuteReaderAsync();
+                using (var fi = File.Open("a.sql", FileMode.Create))
+                using (var swx = new StreamWriter(fi))
+                {
+                    var copys = new StreamSQLMirror(reader, new SQLMirrorTarget(reader1, "[guidang_copy1]"), DefaultEscaper.SqlServer, swx,400);
+                    var result = await copys.CopyAsync(CancellationToken.None);
+                    Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw));
+                    Console.WriteLine(result.Count);
+                }
+            }
+            Console.WriteLine($"{(GC.GetTotalMemory(false)-gc)/1024/1024.0}MB");
+            //var a = new SQLCognateMirrorCopy(reader1, "SELECT TOP 100000 * FROM [guidang]", "guidang_copy1");
+            //var sw = Stopwatch.GetTimestamp();
+            //var res=await a.CopyAsync(CancellationToken.None);
+            //Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw));
+            //Console.WriteLine(res.Count);
         }
     }
 }

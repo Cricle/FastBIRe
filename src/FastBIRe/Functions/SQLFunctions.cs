@@ -1,4 +1,4 @@
-﻿namespace FastBIRe
+﻿namespace FastBIRe.Functions
 {
     public enum SQLFunctions
     {

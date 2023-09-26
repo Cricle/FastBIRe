@@ -18,7 +18,7 @@ namespace rsa
         //        await createMig.EnsureDatabaseCreatedAsync(database);
         //    }
         //}
-        public static DatabaseReader GetDbMigration(SqlType type, string database, bool mariadb = false)
+        public static DbConnection GetDbMigration(SqlType type, string database, bool mariadb = false)
         {
             DbConnection conn = null;
             switch (type)
@@ -47,7 +47,7 @@ namespace rsa
                     break;
             }
             conn!.Open();
-            return new DatabaseReader(conn);
+            return conn;
         }
 
     }

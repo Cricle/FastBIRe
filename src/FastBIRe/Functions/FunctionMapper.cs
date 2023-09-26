@@ -1,4 +1,5 @@
 ﻿using DatabaseSchemaReader.DataSchema;
+using FastBIRe.Functions;
 using FastBIRe.Wrapping;
 using System.Data;
 using System.Runtime.CompilerServices;
