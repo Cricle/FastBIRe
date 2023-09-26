@@ -17,10 +17,14 @@
 
         public string FormatExpression(string input)
         {
+            if (ExparessionFormatter == null)
+            {
+                return string.Empty;
+            }
             return string.Format(ExparessionFormatter, input);
         }
 
-        public static DefaultExpandResult Expression(string field,string? expressionFormatter)
+        public static DefaultExpandResult Expression(string field, string? expressionFormatter)
         {
             return new DefaultExpandResult(field, field, expressionFormatter);
         }

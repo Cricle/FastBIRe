@@ -1,5 +1,5 @@
-﻿using Ao.Stock.Querying;
-using DatabaseSchemaReader.DataSchema;
+﻿using DatabaseSchemaReader.DataSchema;
+using FastBIRe.Wrapping;
 using System.Data;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -63,10 +63,10 @@ namespace FastBIRe
         public FunctionMapper(SqlType sqlType)
         {
             SqlType = sqlType;
-            MethodWrapper = sqlType.GetMethodWrapper();
+            Escaper = sqlType.GetMethodWrapper();
         }
 
-        public IMethodWrapper MethodWrapper { get; }
+        public IEscaper Escaper { get; }
 
         public SqlType SqlType { get; }
 
@@ -243,7 +243,7 @@ namespace FastBIRe
         }
         public string? Value<T>(T value)
         {
-            var str = MethodWrapper.WrapValue(value);
+            var str = Escaper.WrapValue(value);
             if (value is string && str != null && SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
             {
                 str = "N" + str;
@@ -260,7 +260,7 @@ namespace FastBIRe
         }
         public string Quto(string name)
         {
-            return MethodWrapper.Quto(name);
+            return Escaper.Quto(name);
         }
         public string Bracket(string input)
         {

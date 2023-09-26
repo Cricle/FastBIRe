@@ -1,6 +1,6 @@
 ﻿namespace FastBIRe.Timing
 {
-    public readonly record struct TimeExpandResult: IExpandResult
+    public readonly record struct TimeExpandResult : IExpandResult
     {
         /// <summary>
         /// Gets the value of current result time
@@ -26,6 +26,10 @@
         /// <inheritdoc/>
         public string FormatExpression(string input)
         {
+            if (ExparessionFormatter == null)
+            {
+                return string.Empty;
+            }
             return string.Format(ExparessionFormatter, input);
         }
     }

@@ -1,6 +1,6 @@
-﻿using Ao.Stock.Querying;
-using DatabaseSchemaReader.DataSchema;
+﻿using DatabaseSchemaReader.DataSchema;
 using FastBIRe.Creating;
+using FastBIRe.Wrapping;
 
 namespace FastBIRe
 {
@@ -30,21 +30,21 @@ namespace FastBIRe
         {
             return DatabaseCreateAdapter.Get(sqlType);
         }
-        public static IMethodWrapper GetMethodWrapper(this SqlType sqlType)
+        public static IEscaper GetMethodWrapper(this SqlType sqlType)
         {
             switch (sqlType)
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    return DefaultMethodWrapper.SqlServer;
+                    return DefaultEscaper.SqlServer;
                 case SqlType.Oracle:
-                    return DefaultMethodWrapper.Oracle;
+                    return DefaultEscaper.Oracle;
                 case SqlType.MySql:
-                    return DefaultMethodWrapper.MySql;
+                    return DefaultEscaper.MySql;
                 case SqlType.SQLite:
-                    return DefaultMethodWrapper.Sqlite;
+                    return DefaultEscaper.Sqlite;
                 case SqlType.PostgreSql:
-                    return DefaultMethodWrapper.PostgreSql;
+                    return DefaultEscaper.PostgreSql;
                 case SqlType.Db2:
                 default:
                     throw new NotSupportedException(sqlType.ToString());

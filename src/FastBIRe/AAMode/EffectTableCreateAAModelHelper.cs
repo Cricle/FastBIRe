@@ -2,6 +2,7 @@
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
 using FastBIRe.Naming;
+using FastBIRe.Querying;
 
 namespace FastBIRe.AAMode
 {

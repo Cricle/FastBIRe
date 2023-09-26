@@ -26,8 +26,7 @@ namespace FastBIRe.Mig
             //}
             var sqlType = SqlType.SqlServer;
             var dbName = "test";
-            var migSer = ConnectionProvider.GetDbMigration(sqlType, dbName);
-            var reader = migSer.Reader;
+            var reader = ConnectionProvider.GetDbMigration(sqlType, dbName);
             var juhe = reader.Table("juhe");
             var guidang = reader.Table("guidang");
             var function = FunctionMapper.Get(sqlType);

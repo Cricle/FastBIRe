@@ -132,9 +132,9 @@ namespace FastBIRe
             }
         }
 
-        public static string Truncate(string table, SqlType sqlType)
+        public string Truncate(string table)
         {
-            switch (sqlType)
+            switch (SqlType)
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
@@ -150,7 +150,7 @@ namespace FastBIRe
                 case SqlType.Db2:
                     return $"TRUNCATE TABLE \"{table}\";";
                 default:
-                    throw new NotSupportedException(sqlType.ToString());
+                    throw new NotSupportedException(SqlType.ToString());
             }
         }
         public string CreateView(string viewName, string script)

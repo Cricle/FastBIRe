@@ -9,14 +9,13 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Ao.Stock" Version="1.1.0-preview.8" />
-		<!--<PackageReference Include="Mig.DatabaseSchemaReader" Version="2.7.20" />-->
-	</ItemGroup>
-	<ItemGroup>
 	  <ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 	  <Folder Include="BackupRestore\" />
+	</ItemGroup>
+	<ItemGroup Condition="$(TargetFramework)=='netstandard2.0'">
+	  <PackageReference Include="System.Memory" Version="4.5.5" />
 	</ItemGroup>
 
 </Project>

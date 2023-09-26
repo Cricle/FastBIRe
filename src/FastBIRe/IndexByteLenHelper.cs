@@ -1,5 +1,4 @@
-﻿using Ao.Stock.Mirror;
-using DatabaseSchemaReader.DataSchema;
+﻿using DatabaseSchemaReader.DataSchema;
 using System.Data.Common;
 
 namespace FastBIRe
@@ -40,8 +39,9 @@ namespace FastBIRe
                 default:
                     throw new NotSupportedException(sqlType.ToString());
             }
-            using (var command = connection.CreateCommand(sql))
+            using (var command = connection.CreateCommand())
             {
+                command.CommandText = sql;
                 command.CommandTimeout = timeOut;
                 token.ThrowIfCancellationRequested();
                 var scan = await command.ExecuteScalarAsync(token);

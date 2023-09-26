@@ -1,4 +1,5 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿using DatabaseSchemaReader;
+using DatabaseSchemaReader.DataSchema;
 using FastBIRe;
 using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
@@ -10,14 +11,14 @@ namespace rsa
 {
     internal static class ConnectionProvider
     {
-        public static async Task EnsureDatabaseCreatedAsync(SqlType type, string database, bool mariadb = false)
-        {
-            using (var createMig = GetDbMigration(type, null, mariadb))
-            {
-                await createMig.EnsureDatabaseCreatedAsync(database);
-            }
-        }
-        public static MigrationService GetDbMigration(SqlType type, string database, bool mariadb = false)
+        //public static async Task EnsureDatabaseCreatedAsync(SqlType type, string database, bool mariadb = false)
+        //{
+        //    using (var createMig = GetDbMigration(type, null, mariadb))
+        //    {
+        //        await createMig.EnsureDatabaseCreatedAsync(database);
+        //    }
+        //}
+        public static DatabaseReader GetDbMigration(SqlType type, string database, bool mariadb = false)
         {
             DbConnection conn = null;
             switch (type)
@@ -46,7 +47,7 @@ namespace rsa
                     break;
             }
             conn!.Open();
-            return new MigrationService(conn) { Logger = x => Console.WriteLine(x) };
+            return new DatabaseReader(conn);
         }
 
     }
