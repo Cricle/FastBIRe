@@ -1,5 +1,4 @@
 ﻿using DatabaseSchemaReader.DataSchema;
-using FastBIRe.AAMode;
 using FastBIRe.Naming;
 
 namespace FastBIRe.Triggering
@@ -99,12 +98,10 @@ namespace FastBIRe.Triggering
                     {
                         if (hasWhen)
                         {
-                            body = $@"
-IF ({when})
+                            body = $@"IF ({when})
 BEGIN
 {body}
-END
-";
+END";
                         }
                         yield return $@"
 CREATE TRIGGER [{name}] ON [{table}] {GetTriggerName(type, sqlType)}
@@ -119,11 +116,9 @@ END;
                     {
                         if (hasWhen)
                         {
-                            body = $@"
-IF {when} THEN
+                            body = $@"IF {when} THEN
 {body}
-END IF;
-";
+END IF;";
                         }
                         yield return $@"
 CREATE TRIGGER `{name}` {GetTriggerName(type, sqlType)} ON `{table}`
@@ -142,7 +137,7 @@ END;
                             whenStr = $"WHEN {when}";
                         }
                         yield return $@"
-CREATE TRIGGER `{name}` {GetTriggerName(type, sqlType)} ON [{table}]
+CREATE TRIGGER `{name}` {GetTriggerName(type, sqlType)} ON `{table}`
 {whenStr}
 BEGIN
 {body}
@@ -156,15 +151,15 @@ END;
                         string whenStr;
                         if (hasWhen)
                         {
-                            whenStr = $@"
-IF {when} THEN
-{when}
+                            whenStr = $@"IF {when} THEN
+{body}
 END IF;
 RETURN NEW;";
                         }
                         else
                         {
-                            whenStr = "RETURN NEW;";
+                            whenStr = $@"{body}
+RETURN NEW;";
                         }
                         yield return $@"
 CREATE OR REPLACE FUNCTION {funName}() RETURNS TRIGGER AS $$

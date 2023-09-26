@@ -1,6 +1,6 @@
 {
-  "MySql": "Server=192.168.1.100;Port=3306;Uid=root;Pwd=syc123;Connection Timeout=2000;Character Set=utf8;",
+  "MySql": "Server=192.168.1.101;Port=3306;Uid=root;Pwd=Syc123456.;Connection Timeout=2000;Character Set=utf8;",
   "Sqlite": "Data Source=test.db;",
-  "SqlServer": "Server=192.168.1.95;Uid=sa;Pwd=Syc123456;Connection Timeout=2000;TrustServerCertificate=true;",
-  "Postgresql": "host=127.0.0.1;port=5432;username=postgres;password=355343;"
+  "SqlServer": "Server=192.168.1.101;Uid=sa;Pwd=Syc123456.;Connection Timeout=2000;TrustServerCertificate=true;",
+  "Postgresql": "host=192.168.1.101;port=5432;username=postgres;password=Syc123456.;"
 }

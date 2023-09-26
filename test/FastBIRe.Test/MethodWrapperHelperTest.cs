@@ -1,4 +1,4 @@
-﻿using Ao.Stock.Querying;
+﻿using FastBIRe.Wrapping;
 
 namespace FastBIRe.Test
 {
@@ -8,28 +8,28 @@ namespace FastBIRe.Test
         [TestMethod]
         public void MethodWrapperSqlServer()
         {
-            Assert.AreEqual(DefaultMethodWrapper.SqlServer, MethodWrapperExtensions.GetMethodWrapper(SqlType.SqlServer));
-            Assert.AreEqual(DefaultMethodWrapper.SqlServer, MethodWrapperExtensions.GetMethodWrapper(SqlType.SqlServerCe));
+            Assert.AreEqual(DefaultEscaper.SqlServer, MethodWrapperExtensions.GetMethodWrapper(SqlType.SqlServer));
+            Assert.AreEqual(DefaultEscaper.SqlServer, MethodWrapperExtensions.GetMethodWrapper(SqlType.SqlServerCe));
         }
         [TestMethod]
         public void MethodWrapperMySql()
         {
-            Assert.AreEqual(DefaultMethodWrapper.MySql, MethodWrapperExtensions.GetMethodWrapper(SqlType.MySql));
+            Assert.AreEqual(DefaultEscaper.MySql, MethodWrapperExtensions.GetMethodWrapper(SqlType.MySql));
         }
         [TestMethod]
         public void MethodWrapperSqlite()
         {
-            Assert.AreEqual(DefaultMethodWrapper.Sqlite, MethodWrapperExtensions.GetMethodWrapper(SqlType.SQLite));
+            Assert.AreEqual(DefaultEscaper.Sqlite, MethodWrapperExtensions.GetMethodWrapper(SqlType.SQLite));
         }
         [TestMethod]
         public void MethodWrapperOracle()
         {
-            Assert.AreEqual(DefaultMethodWrapper.Oracle, MethodWrapperExtensions.GetMethodWrapper(SqlType.Oracle));
+            Assert.AreEqual(DefaultEscaper.Oracle, MethodWrapperExtensions.GetMethodWrapper(SqlType.Oracle));
         }
         [TestMethod]
         public void MethodWrapperPostgreSql()
         {
-            Assert.AreEqual(DefaultMethodWrapper.PostgreSql, MethodWrapperExtensions.GetMethodWrapper(SqlType.PostgreSql));
+            Assert.AreEqual(DefaultEscaper.PostgreSql, MethodWrapperExtensions.GetMethodWrapper(SqlType.PostgreSql));
         }
         [TestMethod]
         public void MethodWrapperOther()

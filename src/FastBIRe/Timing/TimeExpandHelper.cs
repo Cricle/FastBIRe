@@ -20,9 +20,9 @@ namespace FastBIRe.Timing
 
         public TimeExpandHelper(INameGenerator nameGenerator, ITimeNameMapper timeNameMapper, FunctionMapper functionMapper)
         {
-            NameGenerator = nameGenerator;
-            TimeNameMapper = timeNameMapper;
-            FunctionMapper = functionMapper;
+            NameGenerator = nameGenerator ?? throw new ArgumentNullException(nameof(nameGenerator));
+            TimeNameMapper = timeNameMapper ?? throw new ArgumentNullException(nameof(timeNameMapper));
+            FunctionMapper = functionMapper ?? throw new ArgumentNullException(nameof(functionMapper));
         }
 
         public INameGenerator NameGenerator { get; }
@@ -39,7 +39,7 @@ namespace FastBIRe.Timing
             {
                 args[1] = TimeNameMapper.ToName(TimeTypes.Second);
                 var timeField = NameGenerator.Create(args);
-                yield return new TimeExpandResult(TimeTypes.Second, timeField,name, name);
+                yield return new TimeExpandResult(TimeTypes.Second, timeField,name, timeField);
             }
             if ((type & TimeTypes.Minute) != 0)
             {

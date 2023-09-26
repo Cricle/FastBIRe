@@ -1,4 +1,6 @@
-﻿namespace FastBIRe.Wrapping
+﻿using System.Runtime.CompilerServices;
+
+namespace FastBIRe.Wrapping
 {
     public class DefaultEscaper : IEscaper
     {
@@ -28,24 +30,24 @@
 
         public bool BoolAsInteger { get; }
 
-        public string Quto<T>(T input)
+        public string Quto<T>(T? input)
         {
-            return QutoStart + input + QutoEnd;
+            return $"{QutoStart}{input}{QutoEnd}";
         }
 
-        public string? WrapValue<T>(T input)
+        public string? WrapValue<T>(T? input)
         {
             if (input == null || Equals(input, DBNull.Value))
             {
                 return "NULL";
             }
-            else if (input is string)
+            else if (input is string||input is Guid)
             {
                 return ValueStart + input + ValueEnd;
             }
-            else if (input is DateTime || input is DateTime?)
+            else if (input is DateTime)
             {
-                var dt = (DateTime)(object)input;
+                var dt = Unsafe.As<T, DateTime>(ref input);
                 if (dt.Date == dt)
                 {
                     return ValueStart + dt.ToString("yyyy-MM-dd") + ValueEnd;
@@ -55,10 +57,6 @@
             else if (input is byte[] buffer)
             {
                 return "0x" + BitConverter.ToString(buffer).Replace("-", string.Empty);
-            }
-            else if (input is Guid guid)
-            {
-                return ValueStart + guid + ValueEnd;
             }
             else if (input is bool b)
             {

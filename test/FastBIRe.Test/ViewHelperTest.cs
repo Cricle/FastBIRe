@@ -11,13 +11,13 @@
         public void Create(SqlType sqlType)
         {
             var wraper = sqlType.Wrap("view1");
-            var act = ViewHelper.CreateView("view1", $"SELECT * FROM {wraper}", sqlType);
+            var act = new TableHelper(sqlType).CreateView("view1", $"SELECT * FROM {wraper}");
             Assert.AreEqual($"CREATE VIEW {wraper} AS SELECT * FROM {wraper};", act);
         }
         [TestMethod]
         public void DropSqlServer()
         {
-            var act = ViewHelper.DropView("view1", SqlType.SqlServer);
+            var act = new TableHelper(SqlType.SqlServer).DropView("view1");
             Assert.AreEqual("IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'view1')) DROP VIEW [view1];", act);
         }
         [TestMethod]
@@ -27,13 +27,13 @@
         public void DropMySql(SqlType sqlType)
         {
             var qutoView = sqlType.Wrap("view1");
-            var act = ViewHelper.DropView("view1", sqlType);
+            var act = new TableHelper(sqlType).DropView("view1");
             Assert.AreEqual($"DROP VIEW IF EXISTS {qutoView};", act);
         }
         [TestMethod]
         public void DropIfNoSupport_ReturnEmpty()
         {
-            Assert.AreEqual(string.Empty, ViewHelper.DropView("view1", SqlType.Db2));
+            Assert.AreEqual(string.Empty, new TableHelper( SqlType.Oracle).DropView("view1"));
         }
     }
 }
