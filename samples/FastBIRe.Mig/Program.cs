@@ -3,9 +3,49 @@ using FastBIRe.AAMode;
 using FastBIRe.Querying;
 using FastBIRe.Timing;
 using rsa;
+using System.Data;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace FastBIRe.Mig
 {
+    public class VObject
+    {
+        public string Id { get; set; }
+    }
+    public class VTable: VObject
+    {
+        public string Name { get; set; }
+
+        public List<VColumn> Columns { get; set; }
+    }
+    public class VColumn : VObject
+    {
+        public string Name { get; set; }
+
+        public DbType Type { get; set; }
+
+        public int Length { get; set; } = 255;
+
+        public int Scale { get; set; } = 2;
+
+        public int Precision { get; set; } = 22;
+
+        public bool Nullable { get; set; } = true;
+
+        public bool PK { get; set; }
+
+        public bool IX { get; set; }
+
+        public void ToDatabaseColumn(DatabaseColumn column, SqlType sqlType)
+        {
+            column.Name = Name;
+            column.Length = Length;
+            column.Scale = Scale;
+            column.Precision = Precision;
+            column.SetTypeDefault(sqlType, Type);
+        }
+    }
     internal class Program
     {
         static async Task Main(string[] args)
@@ -21,16 +61,48 @@ namespace FastBIRe.Mig
 
         private static async Task GoAsync(IScriptExecuter executer, AATableHelper tableHelper)
         {
-            var scripts = tableHelper.EffectTableScript("juhe", new[] { "a1", "a2" });
+            var content = File.ReadAllText("Table.json");
+            var vtb = JsonSerializer.Deserialize<VTable>(content,new JsonSerializerOptions { Converters =
+                {
+                    new JsonStringEnumConverter()
+                }
+            });
+            var scripts = tableHelper.GetTableMigrationScript((old, @new) =>
+            {
+                foreach (var item in vtb.Columns)
+                {
+                    var column = @new.FindColumn(item.Name);
+                    if (column == null)
+                    {
+                        column = new DatabaseColumn();
+                        item.ToDatabaseColumn(column, tableHelper.SqlType);
+                        @new.AddColumn(column);
+                    }
+                    else
+                    {
+                        item.ToDatabaseColumn(column, tableHelper.SqlType);
+                    }
+                }
+                @new.Columns.RemoveAll(x => !vtb.Columns.Any(y => y.Name == x.Name));
+                return @new;
+            });
+            await executer.ExecuteAsync(scripts, default);
+            scripts = tableHelper.EffectTableScript("juhe", new[] { "a1", "a2" });
             await executer.ExecuteAsync(scripts, default);
             scripts = tableHelper.EffectScript("juhe", "juhe_effect");
             await executer.ExecuteAsync(scripts, default);
-            scripts = tableHelper.CreateIndexScript("a1",true);
-            await executer.ExecuteAsync(scripts, default);
+            foreach (var item in vtb.Columns)
+            {
+                if (item.IX)
+                {
+                    scripts = tableHelper.CreateIndexScript(item.Name, true);
+                    await executer.ExecuteAsync(scripts, default);
+                }
+            }
             var juheTable = tableHelper.DatabaseReader.Table("juhe");
             var builder = TableFieldLinkBuilder.From(tableHelper.DatabaseReader, "guidang", "juhe");
             var funcMapper = tableHelper.FunctionMapper;
-            var query = tableHelper.QueryInsert(MergeQuerying.Default, "juhe", new ITableFieldLink[]
+            var query = tableHelper.MakeInsertQuery(MergeQuerying.Default, "juhe", new ITableFieldLink[]
             {
                 builder.Expand("sa3",DefaultExpandResult.Expression("a3",funcMapper.SumC("{0}"))),
                 builder.Expand("ca4",DefaultExpandResult.Expression("a4",funcMapper.CountC("{0}")))

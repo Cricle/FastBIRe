@@ -12,10 +12,12 @@
 		<PackageReference Include="Npgsql" Version="7.0.2" />
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="../FastBIRe.MinSample/ConnectionProvider.cs"></Compile>
+		<ProjectReference Include="..\..\src\FastBIRe\FastBIRe.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\FastBIRe\FastBIRe.csproj" />
+	  <None Update="Table.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>

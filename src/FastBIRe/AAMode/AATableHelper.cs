@@ -9,7 +9,6 @@ using System.Data.Common;
 namespace FastBIRe.AAMode
 {
     public delegate DatabaseTable MigrationTableHandler(DatabaseTable old, DatabaseTable @new);
-
     public partial class AATableHelper
     {
         public const string DefaultInsertTag = "insert";
