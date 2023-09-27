@@ -8,9 +8,9 @@ namespace FastBIRe.AAMode
 {
     public class EffectTableCreateAAModelHelper : IModeHelper<EffectTableCreateAAModelRequest>
     {
-        public static readonly INameGenerator DefaultEffectNameGenerator = new RegexNameGenerator("{0}_effect");
+        public static readonly INameGenerator DefaultEffectTableNameGenerator = new RegexNameGenerator("{0}_effect");
 
-        public static readonly EffectTableCreateAAModelHelper Default = new EffectTableCreateAAModelHelper(DefaultEffectNameGenerator, DefaultEffectTableKeyNameGenerator.Instance, StringComparison.Ordinal);
+        public static readonly EffectTableCreateAAModelHelper Default = new EffectTableCreateAAModelHelper(DefaultEffectTableNameGenerator, DefaultEffectTableKeyNameGenerator.Instance, StringComparison.Ordinal);
 
         public EffectTableCreateAAModelHelper(INameGenerator effectNameGenerator, INameGenerator effectTableKeyNameGenerator, StringComparison columnComparision)
         {
@@ -68,6 +68,25 @@ namespace FastBIRe.AAMode
             var createSql = ddl.TableGenerator(effectTable).Write();
             request.Scripts.Add(createSql);
         }
+
+        protected virtual bool IsDbTypeNotEqual(DatabaseColumn left,DatabaseColumn right)
+        {
+            if (left.DataType.NetDataType != right.DataType.NetDataType)
+            {
+                return true;
+            }
+            if (left.DataType.IsString)
+            {
+                return left.Length != right.Length;
+            }
+            if (left.DataType.NetDataType==typeof(decimal).FullName)
+            {
+                return left.Scale != right.Scale ||
+                    left.Precision != right.Precision;
+            }
+            return false;
+        }
+
         protected virtual bool IsEffectTableChanged(DatabaseReader reader, EffectTableCreateAAModelRequest request, DatabaseTable table)
         {
             //Is the field count equals
@@ -84,7 +103,7 @@ namespace FastBIRe.AAMode
                     return true;
                 }
                 //Is column type equals
-                if (!string.Equals(remoteColumn.DbDataType, item.EffectColumn.DbDataType, StringComparison.OrdinalIgnoreCase))
+                if (IsDbTypeNotEqual(remoteColumn, item.EffectColumn))
                 {
                     return true;
                 }

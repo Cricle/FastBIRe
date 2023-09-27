@@ -11,7 +11,7 @@ namespace FastBIRe.AAMode
 
         protected override TriggerTypes GetTriggerTypes()
         {
-            return TriggerTypes.BeforeInsert;
+            return TriggerTypes.AfterInsert;
         }
     }
 }

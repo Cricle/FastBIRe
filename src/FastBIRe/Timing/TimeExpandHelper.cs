@@ -7,6 +7,31 @@ namespace FastBIRe.Timing
     {
         public static readonly INameGenerator DefaultNameGenerator = new RegexNameGenerator("__${0}_{1}");
 
+        public static readonly TimeExpandHelper MySqlDefault = new TimeExpandHelper(SqlType.MySql);
+        public static readonly TimeExpandHelper SqlServerDefault = new TimeExpandHelper(SqlType.SqlServer);
+        public static readonly TimeExpandHelper SqliteDefault = new TimeExpandHelper(SqlType.SQLite);
+        public static readonly TimeExpandHelper PostgresqlDefault = new TimeExpandHelper(SqlType.PostgreSql);
+
+        public static TimeExpandHelper? GetDefault(SqlType sqlType)
+        {
+            switch (sqlType)
+            {
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    return SqlServerDefault;
+                case SqlType.MySql:
+                    return MySqlDefault;
+                case SqlType.SQLite:
+                    return SqliteDefault;
+                case SqlType.PostgreSql:
+                    return PostgresqlDefault;
+                case SqlType.Db2:
+                case SqlType.Oracle:
+                default:
+                    return null;
+            }
+        }
+
         public TimeExpandHelper(SqlType sqlType)
             : this(FunctionMapper.Get(sqlType) ?? throw new NotSupportedException(sqlType.ToString()))
         {

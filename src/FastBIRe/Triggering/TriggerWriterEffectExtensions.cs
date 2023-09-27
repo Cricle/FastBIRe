@@ -71,12 +71,12 @@ namespace FastBIRe.Triggering
                                 .Distinct()
                                 .Select(x => $"[{x}] = [NEW].[{x}]")
                                 .ToList();
-                            var pkWhereList = table.PrimaryKey.Columns.Select(x => $"[{x}] = [NEW].[{x}]");
+                            var pkWhereList = table.PrimaryKey.Columns.Select(x => $"[{table.Name}].[{x}] = [NEW].[{x}]");
                             body = $"UPDATE [{table.Name}] SET {string.Join(",", setList)} FROM INSERTED AS [NEW] WHERE {string.Join(" AND ", pkWhereList)};";
                         }
                         else
                         {
-                            throw new InvalidOperationException($"At sqlserver use INSTEAD OF to do that, only InsteadOfInsert/AfterUpdate can be used");
+                            throw new InvalidOperationException($"At sqlserver use INSTEAD OF to do that, only InsteadOfInsert/InsteadOfUpdate can be used");
                         }
                         break;
                     }
@@ -120,7 +120,7 @@ namespace FastBIRe.Triggering
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
                     {
-                        yield return $@"
+                        body = $@"
     SET NOCOUNT ON;
     INSERT INTO [{targetTable}] ({string.Join(",", settingItems.Select(x => $"[{x.Field}]"))})
     SELECT {string.Join(",", settingItems.Select(x => x.Raw))}
@@ -150,6 +150,7 @@ END IF;
                     }
                 case SqlType.SQLite:
                     {
+                        //TODO: when check
                         when = string.Join(" AND ", settingItems.Select(x => x.Field).Distinct().Select(x => $"[NEW].[{x}] IS NOT NULL"));
                         body = $@"INSERT OR IGNORE INTO [{targetTable}] ({string.Join(",", settingItems.Select(x => $"[{x.Field}]"))}) VALUES({string.Join(",", settingItems.Select(x => x.Raw))});";
                         break;
