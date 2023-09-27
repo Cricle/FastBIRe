@@ -50,7 +50,7 @@ namespace FastBIRe.Mig
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.SqlServer;
+            var sqlType = SqlType.SQLite;
             var dbName = "test";
             var dbc = ConnectionProvider.GetDbMigration(sqlType, dbName);
             var executer = new DefaultScriptExecuter(dbc);
@@ -67,7 +67,21 @@ namespace FastBIRe.Mig
                     new JsonStringEnumConverter()
                 }
             });
-            var scripts = tableHelper.GetTableMigrationScript((old, @new) =>
+            var scripts = tableHelper.CreateTableOrMigrationScript(() =>
+            {
+                return new DatabaseTable
+                {
+                    Name="guidang",
+                    Columns =
+                    {
+                        new DatabaseColumn
+                        {
+                            Name="a1",
+                            Nullable=true
+                        }.SetTypeDefault(SqlType.SQLite, DbType.Int32),
+                    }
+                };
+            },(old, @new) =>
             {
                 foreach (var item in vtb.Columns)
                 {

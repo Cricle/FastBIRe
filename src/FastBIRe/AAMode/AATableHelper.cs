@@ -1,6 +1,7 @@
 ﻿using DatabaseSchemaReader;
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
+using DatabaseSchemaReader.SqlGen;
 using FastBIRe.Naming;
 using FastBIRe.Timing;
 using FastBIRe.Triggering;
@@ -208,6 +209,26 @@ namespace FastBIRe.AAMode
                 scripts.AddRange(TriggerWriter.CreateExpand(SqlType, triggerUpdateName, TriggerTypes.AfterUpdate, table, expandResults));
             }
             return scripts;
+        }
+        public virtual IList<string> CreateTableOrMigrationScript(Func<DatabaseTable> tableCreator,MigrationTableHandler changeFun)
+        {
+            if (DatabaseReader.TableExists(TableName))
+            {
+                return GetTableMigrationScript(changeFun);
+            }
+            var table = tableCreator();
+            var script = new DdlGeneratorFactory(SqlType).TableGenerator(table).Write();
+            return new[] { script };
+        }
+        public virtual IList<string> CreateTableIfNotExistsScript(Func<DatabaseTable> tableCreator)
+        {
+            if (DatabaseReader.TableExists(TableName))
+            {
+                return Array.Empty<string>();
+            }
+            var table = tableCreator();
+            var script = new DdlGeneratorFactory(SqlType).TableGenerator(table).Write();
+            return new[] { script };
         }
         public virtual IList<string> GetTableMigrationScript(MigrationTableHandler changeFun)
         {

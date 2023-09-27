@@ -38,7 +38,7 @@ namespace rsa
                     }
                     break;
                 case SqlType.SQLite:
-                    conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source=C:\\Users\\huaji\\Desktop\\{database};")}");
+                    conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source={database}.db;")}");
                     break;
                 case SqlType.PostgreSql:
                     conn = new NpgsqlConnection($"host=192.168.1.95;port=5432;username=postgres;password=syc123;{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
