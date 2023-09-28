@@ -87,7 +87,7 @@ namespace FastBIRe.Triggering
                     }
                 case SqlType.SQLite:
                     {
-                        body = $"UPDATE `{table}` SET {string.Join(", ", expandResults.Select(x => $"`{x.Name}` = CASE WHEN NEW.`{x.OriginName}` IS NULL THEN NULL ELSE {x.FormatExpression($"NEW.`{x.OriginName}`")} END"))} WHERE `ROWID` = NEW.`ROWID`";
+                        body = $"UPDATE `{table}` SET {string.Join(", ", expandResults.Select(x => $"`{x.Name}` = (CASE WHEN NEW.`{x.OriginName}` IS NULL THEN NULL ELSE {x.FormatExpression($"NEW.`{x.OriginName}`")} END)"))} WHERE `ROWID` = NEW.`ROWID`;";
                         break;
                     }
                 case SqlType.PostgreSql:
@@ -151,8 +151,8 @@ END IF;
                 case SqlType.SQLite:
                     {
                         //TODO: when check
-                        when = string.Join(" AND ", settingItems.Select(x => x.Field).Distinct().Select(x => $"[NEW].[{x}] IS NOT NULL"));
-                        body = $@"INSERT OR IGNORE INTO [{targetTable}] ({string.Join(",", settingItems.Select(x => $"[{x.Field}]"))}) VALUES({string.Join(",", settingItems.Select(x => x.Raw))});";
+                        when = $"(NOT EXISTS (SELECT 1 FROM `{targetTable}` WHERE {string.Join(" AND ", settingItems.Select(x => x.Field).Distinct().Select(x => $"(`{x}` = `NEW`.`{x}` OR (`{x}` IS NULL AND `NEW`.`{x}` IS NULL))"))}))";
+                        body = $@"INSERT INTO [{targetTable}] ({string.Join(",", settingItems.Select(x => $"[{x.Field}]"))}) VALUES({string.Join(",", settingItems.Select(x => x.Raw))});";
                         break;
                     }
                 case SqlType.PostgreSql:

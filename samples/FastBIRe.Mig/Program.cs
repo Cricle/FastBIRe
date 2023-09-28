@@ -67,10 +67,10 @@ namespace FastBIRe.Mig
                 }
                 return Task.CompletedTask;
             },default);
-            //var inter = new AATableHelper("guidang", dbc);
-            //await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer);
-            //await MigTableAsync("JuHeTable.json", "juhe", dbc, executer);
-            //await GoAsync(executer, inter);
+            var inter = new AATableHelper("guidang", dbc);
+            await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer);
+            await MigTableAsync("JuHeTable.json", "juhe", dbc, executer);
+            await GoAsync(executer, inter);
         }
 
         private static async Task MigTableAsync(string file,string tableName,DbConnection dbConnection,IScriptExecuter executer)
@@ -121,16 +121,21 @@ namespace FastBIRe.Mig
                 @new.Columns.RemoveAll(x => !vtb.Columns.Any(y => y.Name == x.Name));
                 return @new;
             });
-            await executer.ExecuteAsync(scripts, default);
+            await executer.ExecuteAsync(scripts);
 
             foreach (var item in vtb.Columns)
             {
                 if (item.IX)
                 {
                     scripts = tableHelper.CreateIndexScript(item.Name, true);
-                    await executer.ExecuteAsync(scripts, default);
+                    await executer.ExecuteAsync(scripts);
                 }
             }
+            var expandColumns = vtb.Columns.Where(x => x.Type == DbType.DateTime).Select(x=>x.Name).ToList();
+            scripts = tableHelper.ExpandTimeMigrationScript(expandColumns);
+            await executer.ExecuteAsync(scripts);
+            scripts = tableHelper.ExpandTriggerScript(expandColumns);
+            await executer.ExecuteAsync(scripts);
         }
 
         private static async Task GoAsync(IScriptExecuter executer, AATableHelper tableHelper)
@@ -187,12 +192,12 @@ namespace FastBIRe.Mig
 
                 Console.Write("ExecutedTime: ");
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.Write($"{e.ExecutionTime.Value.TotalMilliseconds:F4}ms ");
+                Console.Write($"{e.ExecutionTime?.TotalMilliseconds:F4}ms ");
                 Console.ResetColor();
 
                 Console.Write(", FullTime: ");
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine($"{e.FullTime.Value.TotalMilliseconds:F4}ms");
+                Console.WriteLine($"{e.FullTime?.TotalMilliseconds:F4}ms");
                 Console.ResetColor();
 
                 Console.ForegroundColor = ConsoleColor.Cyan;

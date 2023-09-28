@@ -63,7 +63,7 @@ namespace FastBIRe
 
         public event EventHandler<ScriptExecuteEventArgs>? ScriptStated;
 
-        public Task<int> ExecuteAsync(string script, CancellationToken token)
+        public Task<int> ExecuteAsync(string script, CancellationToken token = default)
         {
             return ExecuteAsync(script, null, GetStackTrace(), token);
         }
@@ -140,7 +140,7 @@ namespace FastBIRe
             }
             return res;
         }
-        public async Task<int> ExecuteAsync(IEnumerable<string> scripts, CancellationToken token)
+        public async Task<int> ExecuteAsync(IEnumerable<string> scripts, CancellationToken token = default)
         {
             var stackTrace = GetStackTrace();
 #if !NETSTANDARD2_0
@@ -181,7 +181,7 @@ namespace FastBIRe
             return await ExecuteBatchAsync(scripts, stackTrace, token).ConfigureAwait(false);
         }
 
-        public async Task ReadAsync(string script, ReadDataHandler handler, CancellationToken token)
+        public async Task ReadAsync(string script, ReadDataHandler handler, CancellationToken token=default)
         {
             var stackTrace = GetStackTrace();
             var fullStartTime = Stopwatch.GetTimestamp();

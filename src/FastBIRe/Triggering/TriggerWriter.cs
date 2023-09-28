@@ -21,36 +21,20 @@ namespace FastBIRe.Triggering
             switch (type)
             {
                 case TriggerTypes.BeforeInsert:
-                    if (sqlType == SqlType.SQLite)
-                        return "INSERT";
                     return "BEFORE INSERT";
                 case TriggerTypes.AfterInsert:
-                    if (sqlType == SqlType.SQLite)
-                        return "INSERT";
                     return "AFTER INSERT";
                 case TriggerTypes.BeforeUpdate:
-                    if (sqlType == SqlType.SQLite)
-                        return "UPDATE";
                     return "BEFORE UPDATE";
                 case TriggerTypes.AfterUpdate:
-                    if (sqlType == SqlType.SQLite)
-                        return "UPDATE";
                     return "AFTER UPDATE";
                 case TriggerTypes.BeforeMerge:
-                    if (sqlType == SqlType.SQLite)
-                        return "MERGE";
                     return "BEFORE MERGE";
                 case TriggerTypes.AfterMerge:
-                    if (sqlType == SqlType.SQLite)
-                        return "MERGE";
                     return "AFTER MERGE";
                 case TriggerTypes.BeforeDelete:
-                    if (sqlType == SqlType.SQLite)
-                        return "DELETE";
                     return "BEFORE DELETE";
                 case TriggerTypes.AfterDelete:
-                    if (sqlType == SqlType.SQLite)
-                        return "DELETE";
                     return "AFTER DELETE";
                 case TriggerTypes.InsteadOfInsert:
                     return "INSTEAD OF INSERT";

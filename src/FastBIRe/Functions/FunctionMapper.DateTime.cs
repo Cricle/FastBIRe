@@ -107,7 +107,7 @@ END
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m-%d 00:00:00', {time})";
+                return $"strftime('%Y-%m-%d', {time})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -127,7 +127,7 @@ END
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m-%d %H:00:00', {time})";
+                return $"strftime('%Y-%m-%d %H', {time})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -147,7 +147,7 @@ END
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m-%d %H:%M:00', {time})";
+                return $"strftime('%Y-%m-%d %H:%M', {time})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -242,7 +242,7 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-%m-01 00:00:00', {time})";
+                return $"strftime('%Y-%m', {time})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
@@ -262,7 +262,7 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
             }
             else if (SqlType == SqlType.SQLite)
             {
-                return $"strftime('%Y-01-01 00:00:00', {time})";
+                return $"strftime('%Y', {time})";
             }
             else if (SqlType == SqlType.PostgreSql)
             {
