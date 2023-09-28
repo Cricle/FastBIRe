@@ -4,6 +4,7 @@ using FastBIRe.Querying;
 using FastBIRe.Timing;
 using rsa;
 using System.Data;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -50,10 +51,10 @@ namespace FastBIRe.Mig
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.SQLite;
+            var sqlType = SqlType.SqlServer;
             var dbName = "test";
             var dbc = ConnectionProvider.GetDbMigration(sqlType, dbName);
-            var executer = new DefaultScriptExecuter(dbc);
+            var executer = new DefaultScriptExecuter(dbc) { CaptureStackTrace = true };
             executer.ScriptStated += OnExecuterScriptStated;
             var inter = new AATableHelper("guidang", dbc);
             await GoAsync(executer, inter);
@@ -132,6 +133,14 @@ namespace FastBIRe.Mig
         {
             if (e.State == ScriptExecutState.Executed || e.State == ScriptExecutState.Exception)
             {
+                if (e.StackTrace!=null)
+                {
+                    var fr= DefaultScriptExecuter.GetSourceFrame(e.StackTrace);
+                    if (fr != null)
+                    {
+                        Console.WriteLine($"{fr.GetFileName()}:{fr.GetFileLineNumber()}:{fr.GetFileColumnNumber()}");
+                    }
+                }
                 ConsoleColor color = e.State == ScriptExecutState.Executed ? ConsoleColor.Green : ConsoleColor.Red;
                 Console.ForegroundColor = color;
                 Console.Write(e.State);
