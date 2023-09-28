@@ -76,7 +76,7 @@ namespace FastBIRe
             }
             return null;
         }
-        protected virtual async Task<int> ExecuteAsync(string script, IEnumerable<string>? scripts, StackTrace? stackTrace, CancellationToken token)
+        protected virtual async Task<int> ExecuteAsync(string script, IEnumerable<string>? scripts, StackTrace? stackTrace, CancellationToken token = default)
         {
             if (IsEmptyScript(script))
             {
@@ -131,7 +131,7 @@ namespace FastBIRe
             }
             return true;
         }
-        private async Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, StackTrace? stackTrace, CancellationToken token)
+        private async Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, StackTrace? stackTrace, CancellationToken token = default)
         {
             var res = 0;
             foreach (var item in scripts)
@@ -181,7 +181,7 @@ namespace FastBIRe
             return await ExecuteBatchAsync(scripts, stackTrace, token).ConfigureAwait(false);
         }
 
-        public async Task ReadAsync(string script, ReadDataHandler handler, CancellationToken token)
+        public async Task ReadAsync(string script, ReadDataHandler handler, CancellationToken token=default)
         {
             var stackTrace = GetStackTrace();
             var fullStartTime = Stopwatch.GetTimestamp();

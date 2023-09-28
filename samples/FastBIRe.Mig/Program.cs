@@ -66,7 +66,7 @@ namespace FastBIRe.Mig
 
                 }
                 return Task.CompletedTask;
-            },default);
+            });
             //var inter = new AATableHelper("guidang", dbc);
             //await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer);
             //await MigTableAsync("JuHeTable.json", "juhe", dbc, executer);
