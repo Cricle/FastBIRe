@@ -7,15 +7,15 @@ namespace FastBIRe.Creating
     {
         record class DatabaseCreator : IDatabaseCreator
         {
-            public DatabaseCreator(DbConnection connection, string existsSql, string createSql, Action<DbCommand>? commandAction)
+            public DatabaseCreator(IScriptExecuter scriptExecuter, string existsSql, string createSql, Action<DbCommand>? commandAction)
             {
-                Connection = connection;
+                ScriptExecuter = scriptExecuter;
                 ExistsSql = existsSql;
                 CreateSql = createSql;
                 CommandAction = commandAction;
             }
 
-            public DbConnection Connection { get; }
+            public IScriptExecuter ScriptExecuter { get; }
 
             public Action<DbCommand>? CommandAction { get; }
 
@@ -23,45 +23,28 @@ namespace FastBIRe.Creating
 
             public string CreateSql { get; }
 
-            private async Task EnsureOpenAsync(CancellationToken token = default)
+            public Task<int> CreateAsync(CancellationToken token = default)
             {
-                if (Connection.State!= ConnectionState.Open)
-                {
-                    await Connection.OpenAsync(token);
-                }
-            }
-
-            public async Task<int> CreateAsync(CancellationToken token = default)
-            {
-                await EnsureOpenAsync(token);
-                using (var command = Connection.CreateCommand())
-                {
-                    command.CommandText = ExistsSql;
-                    CommandAction?.Invoke(command);
-                    return await command.ExecuteNonQueryAsync(token);
-                }
+                return ScriptExecuter.ExecuteAsync(ExistsSql, token);
             }
 
             public async Task<bool> ExistsAsync(CancellationToken token = default)
             {
-                await EnsureOpenAsync(token);
-                using (var command = Connection.CreateCommand())
+                var ok = false;
+                await ScriptExecuter.ReadAsync(ExistsSql, (o, e) =>
                 {
-                    command.CommandText = ExistsSql;
-                    CommandAction?.Invoke(command);
-                    using (var reader = await command.ExecuteReaderAsync(token))
-                    {
-                        return reader.Read();
-                    }
-                }
+                    ok=e.Reader.Read();
+                    return Task.CompletedTask;
+                }, token);
+                return ok;
             }
         }
 
-        public static IDatabaseCreator GetDatabaseCreator(this IDatabaseCreateAdapter adapter,string database,DbConnection dbConnection,Action<DbCommand>? commandAction=null)
+        public static IDatabaseCreator GetDatabaseCreator(this IDatabaseCreateAdapter adapter,string database,IScriptExecuter scriptExecuter,Action<DbCommand>? commandAction=null)
         {
             var existsSql = adapter.CheckDatabaseExists(database);
             var createSql = adapter.CreateDatabase(database);
-            return new DatabaseCreator(dbConnection, existsSql, createSql,commandAction);
+            return new DatabaseCreator(scriptExecuter, existsSql, createSql,commandAction);
         }
     }
     public interface IDatabaseCreator

@@ -6,7 +6,8 @@
       "Id": "weibingzaixuerust_0",
       "Name": "_id",
       "Type": "Int32",
-      "PK": true
+      "PK": true,
+      "AI": true
     },
     {
       "Id": "weibingzaixuerust_1",

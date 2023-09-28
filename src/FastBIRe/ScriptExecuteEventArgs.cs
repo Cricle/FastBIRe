@@ -16,6 +16,7 @@ namespace FastBIRe
             DbBatchCommand? batchCommand,
 #endif
             TimeSpan? executionTime,
+            TimeSpan? fullTime,
             StackTrace? stackTrace,
             CancellationToken cancellationToken)
         {
@@ -32,6 +33,7 @@ namespace FastBIRe
             ExecutionTime = executionTime;
             CancellationToken = cancellationToken;
             StackTrace = stackTrace;
+            FullTime = fullTime;
         }
 
         public ScriptExecutState State { get; }
@@ -59,6 +61,8 @@ namespace FastBIRe
 #endif
         public TimeSpan? ExecutionTime { get; }
 
+        public TimeSpan? FullTime { get; }
+
         public StackTrace? StackTrace { get; }
 
         public CancellationToken CancellationToken { get; }
@@ -74,7 +78,8 @@ namespace FastBIRe
 #if !NETSTANDARD2_0
                 null,
                 null,
-#endif
+#endif                
+                null,
                 null,
                 stackTrace,
                 token);
@@ -92,6 +97,7 @@ namespace FastBIRe
                 null,
 #endif
                 null,
+                null,
                 stackTrace,
                 token);
         }
@@ -108,10 +114,11 @@ namespace FastBIRe
                 null,
 #endif
                 null,
+                null,
                 stackTrace,
                 token);
         }
-        public static ScriptExecuteEventArgs Executed(DbConnection connection, DbCommand command, IEnumerable<string>? scripts, int recordsAffected,TimeSpan executionTime, StackTrace? stackTrace, CancellationToken token)
+        public static ScriptExecuteEventArgs Executed(DbConnection connection, DbCommand command, IEnumerable<string>? scripts, int recordsAffected,TimeSpan executionTime,TimeSpan fullTime, StackTrace? stackTrace, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.Executed,
                 connection,
@@ -124,10 +131,11 @@ namespace FastBIRe
                 null,
 #endif
                 executionTime,
+                fullTime,
                 stackTrace,
                 token);
         }
-        public static ScriptExecuteEventArgs Exception(DbConnection connection, DbCommand command, IEnumerable<string>? scripts, Exception exception, TimeSpan executionTime, StackTrace? stackTrace, CancellationToken token)
+        public static ScriptExecuteEventArgs Exception(DbConnection connection, DbCommand command, IEnumerable<string>? scripts, Exception exception, TimeSpan? executionTime, TimeSpan fullTime, StackTrace? stackTrace, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.Exception,
                 connection,
@@ -140,6 +148,7 @@ namespace FastBIRe
                 null,
 #endif
                 executionTime,
+                fullTime,
                 stackTrace,
                 token);
         }
@@ -153,6 +162,7 @@ namespace FastBIRe
                 null,
                 null,
                 batch,
+                null,
                 null,
                 null,
                 stackTrace,
@@ -169,10 +179,11 @@ namespace FastBIRe
                 batch,
                 command,
                 null,
+                null,
                 stackTrace,
                 token);
         }
-        public static ScriptExecuteEventArgs ExecutedBatch(DbConnection connection, IEnumerable<string> scripts, DbBatch batch, TimeSpan executionTime, StackTrace? stackTrace, CancellationToken token)
+        public static ScriptExecuteEventArgs ExecutedBatch(DbConnection connection, IEnumerable<string> scripts, DbBatch batch, TimeSpan? executionTime, TimeSpan fullTime, StackTrace? stackTrace, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.ExecutedBatch,
                 connection,
@@ -183,10 +194,11 @@ namespace FastBIRe
                 batch,
                 null,
                 executionTime,
+                fullTime,
                 stackTrace,
                 token);
         }
-        public static ScriptExecuteEventArgs BatchException(DbConnection connection, IEnumerable<string> scripts, DbBatch batch,Exception exception, TimeSpan executionTime, StackTrace? stackTrace, CancellationToken token)
+        public static ScriptExecuteEventArgs BatchException(DbConnection connection, IEnumerable<string> scripts, DbBatch batch,Exception exception, TimeSpan? executionTime, TimeSpan fullTime, StackTrace? stackTrace, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.BatchException,
                 connection,
@@ -197,9 +209,61 @@ namespace FastBIRe
                 batch,
                 null,
                 executionTime,
+                fullTime,
                 stackTrace,
                 token);
         }
 #endif
+        public static ScriptExecuteEventArgs Skip(DbConnection connection, IEnumerable<string> scripts, StackTrace? stackTrace, CancellationToken token)
+        {
+            return new ScriptExecuteEventArgs(ScriptExecutState.Skip,
+                connection,
+                null,
+                scripts,
+                null,
+                null,
+#if !NETSTANDARD2_0
+                null,
+                null,
+#endif
+                null,
+                null,
+                stackTrace,
+                token);
+        }
+        public static ScriptExecuteEventArgs StartReading(DbConnection connection, DbCommand command, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, CancellationToken token)
+        {
+            return new ScriptExecuteEventArgs(ScriptExecutState.StartReading,
+                connection,
+                command,
+                null,
+                null,
+                null,
+#if !NETSTANDARD2_0
+                null,
+                null,
+#endif
+                executingTime,
+                fullTime,
+                stackTrace,
+                token);
+        }
+        public static ScriptExecuteEventArgs EndReading(DbConnection connection, DbCommand command, StackTrace? stackTrace,TimeSpan? executingTime, TimeSpan? fullTime, CancellationToken token)
+        {
+            return new ScriptExecuteEventArgs(ScriptExecutState.EndReading,
+                connection,
+                command,
+                null,
+                null,
+                null,
+#if !NETSTANDARD2_0
+                null,
+                null,
+#endif
+                executingTime,
+                fullTime,
+                stackTrace,
+                token);
+        }
     }
 }

@@ -15,7 +15,10 @@
 		<ProjectReference Include="..\..\src\FastBIRe\FastBIRe.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-	  <None Update="Table.json">
+	  <None Update="JuHeTable.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="GuiDangTable.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	</ItemGroup>

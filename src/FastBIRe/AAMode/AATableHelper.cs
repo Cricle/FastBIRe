@@ -2,6 +2,7 @@
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
+using FastBIRe.Creating;
 using FastBIRe.Naming;
 using FastBIRe.Timing;
 using FastBIRe.Triggering;
@@ -18,11 +19,13 @@ namespace FastBIRe.AAMode
 
         public static readonly INameGenerator DefaultExpandTriggerNameGenerator = new RegexNameGenerator("EXP_{0}_{1}");
 
-        public static readonly INameGenerator DefaultIndexNameGenerator = new RegexNameGenerator("IX_{0}");
+        public static readonly INameGenerator DefaultIndexNameGenerator = new RegexNameGenerator("IX_{0}_{1}");
 
         public static readonly INameGenerator DefaultEffectInsertNameGenerator = new RegexNameGenerator("EFF_{0}_INSERT");
 
         public static readonly INameGenerator DefaultEffectUpdateNameGenerator = new RegexNameGenerator("EFF_{0}_UPDATE");
+
+        public static readonly INameGenerator DefaultPrimaryKeyNameGenerator = new RegexNameGenerator("PK_{0}");
 
         public AATableHelper(string tableName, DbConnection dbConnection)
             : this(tableName,
@@ -33,12 +36,13 @@ namespace FastBIRe.AAMode
                   DefaultEffectInsertNameGenerator,
                   DefaultEffectUpdateNameGenerator,
                   EffectTableCreateAAModelHelper.DefaultEffectTableNameGenerator,
+                  DefaultPrimaryKeyNameGenerator,
                   DefaultInsertTag,
                   DefaultUpdateTag,
                   null)
         {
         }
-        public AATableHelper(string tableName, DbConnection dbConnection, ITriggerWriter triggerWriter, INameGenerator expandTriggerNameGenerator, INameGenerator indexNameGenerator, INameGenerator effectInsertTriggerNameGenerator, INameGenerator effectUpdateTriggerNameGenerator, INameGenerator effectTableNameGenerator, string insertTag, string updateTag, ITimeExpandHelper? timeExpandHelper)
+        public AATableHelper(string tableName, DbConnection dbConnection, ITriggerWriter triggerWriter, INameGenerator expandTriggerNameGenerator, INameGenerator indexNameGenerator, INameGenerator effectInsertTriggerNameGenerator, INameGenerator effectUpdateTriggerNameGenerator, INameGenerator effectTableNameGenerator, INameGenerator primaryKeyNameGenerator, string insertTag, string updateTag, ITimeExpandHelper? timeExpandHelper)
         {
             TableName = tableName ?? throw new ArgumentNullException(nameof(tableName));
             DbConnection = dbConnection ?? throw new ArgumentNullException(nameof(dbConnection));
@@ -51,7 +55,8 @@ namespace FastBIRe.AAMode
             EffectUpdateTriggerNameGenerator = effectUpdateTriggerNameGenerator;
             EffectTableNameGenerator = effectTableNameGenerator;
             TriggerWriter = triggerWriter;
-            TimeExpandHelper = timeExpandHelper ?? Timing.TimeExpandHelper.GetDefault(SqlType)??throw new ArgumentNullException($"{nameof(timeExpandHelper)} null or sql type not support");
+            TimeExpandHelper = timeExpandHelper ?? Timing.TimeExpandHelper.GetDefault(SqlType) ?? throw new ArgumentNullException($"{nameof(timeExpandHelper)} null or sql type not support");
+            PrimaryKeyNameGenerator = primaryKeyNameGenerator;
         }
 
         public string TableName { get; }
@@ -74,6 +79,8 @@ namespace FastBIRe.AAMode
 
         public INameGenerator EffectTableNameGenerator { get; }
 
+        public INameGenerator PrimaryKeyNameGenerator { get; }
+
         public ITriggerWriter TriggerWriter { get; }
 
         public ITimeExpandHelper TimeExpandHelper { get; }
@@ -83,6 +90,8 @@ namespace FastBIRe.AAMode
         public string UpdateTag { get; }
 
         public FunctionMapper? FunctionMapper => FunctionMapper.Get(SqlType);
+
+        public string PrimaryKeyName => PrimaryKeyNameGenerator.Create(new[] { TableName });
 
         public virtual IList<string> ExpandTimeMigrationScript(IEnumerable<string> columns, TimeTypes timeTypes = TimeTypes.ExceptSecond)
         {
@@ -155,18 +164,24 @@ namespace FastBIRe.AAMode
             var scripts = new List<string>();
             var table = Table;
             //Check the index exists
-            var name = IndexNameGenerator.Create(new[] { field });
+            var name = IndexNameGenerator.Create(new[] { TableName,field });
             var index = table.Indexes.FirstOrDefault(x => x.Name == name);
             var tableHelper = new TableHelper(SqlType);
             if (index != null)
             {
                 //Check index ok?
                 if (index.Columns.Count == 1 &&
-                    index.Columns[0].Name == field &&
-                    index.ColumnOrderDescs.Count == 1 &&
-                    index.ColumnOrderDescs[0] == desc)
+                    index.Columns[0].Name == field)
                 {
-                    return scripts;
+                    if (SqlType == SqlType.SQLite)
+                    {
+                        return scripts;
+                    }
+                    else if (index.ColumnOrderDescs.Count == 1 && index.ColumnOrderDescs[0] == desc)
+                    {
+
+                        return scripts;
+                    }
                 }
                 //Drop index
                 scripts.Add(tableHelper.DropIndex(name, TableName));
@@ -175,7 +190,36 @@ namespace FastBIRe.AAMode
             scripts.Add(tableHelper.CreateIndex(name, TableName, new[] { field }, new[] { desc }));
             return scripts;
         }
+        public virtual IList<string> CreatePrimaryKeyScripts(IReadOnlyList<string> columns)
+        {
+            var scripts = new List<string>();
+            var table = Table;
+            var ddl = new DdlGeneratorFactory(SqlType).MigrationGenerator();
+            var pkName = PrimaryKeyName;
+            if (table.PrimaryKey != null && table.PrimaryKey.Columns.Count != 0)
+            {
+                var equals = SqlType == SqlType.SQLite || table.PrimaryKey.Name != pkName;
+                if (equals)
+                {
+                    if (table.PrimaryKey.Columns.Count == columns.Count &&
+                    table.PrimaryKey.Columns.All(x => columns.Contains(x)))
+                    {
+                        return Array.Empty<string>();
 
+                    }
+                }
+                scripts.Add(ddl.DropConstraint(table, table.PrimaryKey));
+            }
+            var pk = new DatabaseConstraint
+            {
+                Name = pkName,
+                ConstraintType = ConstraintType.PrimaryKey
+            };
+            table.AddConstraint(pk);
+            pk.Columns.AddRange(columns);
+            scripts.Add(ddl.AddConstraint(table, table.PrimaryKey));
+            return scripts;
+        }
         public virtual IList<string> ExpandTriggerScript(IEnumerable<string> columns, TimeTypes timeTypes = TimeTypes.ExceptSecond)
         {
             var scripts = new List<string>();
