@@ -10,7 +10,7 @@ namespace FastBIRe.Comparing
 
         public bool Equals(DatabaseColumn? x, DatabaseColumn? y)
         {
-            if (x==null&&y==null)
+            if (x == null && y == null)
             {
                 return true;
             }
@@ -22,7 +22,7 @@ namespace FastBIRe.Comparing
             {
                 return false;
             }
-            if (x.DataType.NetDataType!=y.DataType.NetDataType)
+            if (x.DataType.NetDataType != y.DataType.NetDataType)
             {
                 return false;
             }
@@ -30,7 +30,7 @@ namespace FastBIRe.Comparing
             {
                 return x.Length == y.Length;
             }
-            if (x.DataType.NetDataType== typeof(decimal).FullName)
+            if (x.DataType.NetDataType == typeof(decimal).FullName)
             {
                 return x.Scale == y.Scale &&
                     x.Precision == y.Precision;
