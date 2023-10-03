@@ -142,6 +142,10 @@ namespace FastBIRe
         }
         public async Task<int> ExecuteAsync(IEnumerable<string> scripts, CancellationToken token = default)
         {
+            if (!scripts.Any())
+            {
+                return 0;
+            }
             var stackTrace = GetStackTrace();
 #if !NETSTANDARD2_0
             if (UseBatch && Connection.CanCreateBatch)

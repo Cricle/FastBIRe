@@ -6,8 +6,10 @@ using FastBIRe.Timing;
 using rsa;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace FastBIRe.Mig
 {
@@ -52,8 +54,32 @@ namespace FastBIRe.Mig
     }
     internal class Program
     {
+        private static Regex rg1 = new Regex("\\s{1,}");
+        private static Regex rg2 = new Regex("\\s{1,}\\(");
+        private static Regex rg3 = new Regex("\\s{1,}\\)");
         static async Task Main(string[] args)
         {
+//            var str = @"CREATE TRIGGER `EXP_guidang_insert` AFTER INSERT ON `guidang`
+
+//BEGIN
+//UPDATE `guidang` SET `__$datetime_minute` = (CASE WHEN NEW.`datetime` IS NULL THEN NULL ELSE CAST(strftime('%Y-%m-%d %H:%M', NEW.`datetime`) AS TEXT) || CAST(':00' AS TEXT) END), `__$datetime_hour` = (CASE WHEN NEW.`datetime` IS NULL THEN NULL ELSE CAST(strftime('%Y-%m-%d %H', NEW.`datetime`) AS TEXT) || CAST(':00:00' AS TEXT) END), `__$datetime_day` = (CASE WHEN NEW.`datetime` IS NULL THEN NULL ELSE CAST(strftime('%Y-%m-%d', NEW.`datetime`) AS TEXT) || CAST(' 00:00:00' AS TEXT) END), `__$datetime_week` = (CASE WHEN NEW.`datetime` IS NULL THEN NULL ELSE CAST(date(NEW.`datetime`, 'weekday 0', '-6 day')||' 00:00:00' AS TEXT) || CAST(':00' AS TEXT) END), `__$datetime_month` = (CASE WHEN NEW.`datetime` IS NULL THEN NULL ELSE CAST(strftime('%Y-%m', NEW.`datetime`) AS TEXT) || CAST('-01 00:00:00' AS TEXT) END), `__$datetime_quarter` = (CASE WHEN NEW.`datetime` IS NULL THEN NULL ELSE
+//    STRFTIME('%Y', NEW.`datetime`)||'-'||(CASE
+//        WHEN COALESCE(NULLIF((SUBSTR(NEW.`datetime`, 4, 2) - 1) / 3, 0), 4) < 10
+//        THEN '0' || COALESCE(NULLIF((SUBSTR(NEW.`datetime`, 4, 2) - 1) / 3, 0), 4)
+//        ELSE COALESCE(NULLIF((SUBSTR(NEW.`datetime`, 4, 2) - 1) / 3, 0), 4)
+//    END)||'-01 00:00:00'
+// END), `__$datetime_year` = (CASE WHEN NEW.`datetime` IS NULL THEN NULL ELSE CAST(strftime('%Y', NEW.`datetime`) AS TEXT) || CAST('-01-01 00:00:00' AS TEXT) END), `__$a1_minute` = (CASE WHEN NEW.`a1` IS NULL THEN NULL ELSE CAST(strftime('%Y-%m-%d %H:%M', NEW.`a1`) AS TEXT) || CAST(':00' AS TEXT) END), `__$a1_hour` = (CASE WHEN NEW.`a1` IS NULL THEN NULL ELSE CAST(strftime('%Y-%m-%d %H', NEW.`a1`) AS TEXT) || CAST(':00:00' AS TEXT) END), `__$a1_day` = (CASE WHEN NEW.`a1` IS NULL THEN NULL ELSE CAST(strftime('%Y-%m-%d', NEW.`a1`) AS TEXT) || CAST(' 00:00:00' AS TEXT) END), `__$a1_week` = (CASE WHEN NEW.`a1` IS NULL THEN NULL ELSE CAST(date(NEW.`a1`, 'weekday 0', '-6 day')||' 00:00:00' AS TEXT) || CAST(':00' AS TEXT) END), `__$a1_month` = (CASE WHEN NEW.`a1` IS NULL THEN NULL ELSE CAST(strftime('%Y-%m', NEW.`a1`) AS TEXT) || CAST('-01 00:00:00' AS TEXT) END), `__$a1_quarter` = (CASE WHEN NEW.`a1` IS NULL THEN NULL ELSE
+//    STRFTIME('%Y', NEW.`a1`)||'-'||(CASE
+//        WHEN COALESCE(NULLIF((SUBSTR(NEW.`a1`, 4, 2) - 1) / 3, 0), 4) < 10
+//        THEN '0' || COALESCE(NULLIF((SUBSTR(NEW.`a1`, 4, 2) - 1) / 3, 0), 4)
+//        ELSE COALESCE(NULLIF((SUBSTR(NEW.`a1`, 4, 2) - 1) / 3, 0), 4)
+//    END)||'-01 00:00:00'
+// END), `__$a1_year` = (CASE WHEN NEW.`a1` IS NULL THEN NULL ELSE CAST(strftime('%Y', NEW.`a1`) AS TEXT) || CAST('-01-01 00:00:00' AS TEXT) END) WHERE `ROWID` = NEW.`ROWID`;
+//END;";
+//            Console.WriteLine(rg3.Replace(rg2.Replace(rg1.Replace(str, " "), "("), ")"));
+//            return;
+
+            var sw = Stopwatch.GetTimestamp();
             var sqlType = SqlType.SQLite;
             var dbName = "test1";
             var dbc = ConnectionProvider.GetDbMigration(sqlType, dbName);
@@ -68,9 +94,11 @@ namespace FastBIRe.Mig
                 return Task.CompletedTask;
             },default);
             var inter = new AATableHelper("guidang", dbc);
+            var r = inter.Table.Triggers;
             await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer);
             await MigTableAsync("JuHeTable.json", "juhe", dbc, executer);
             await GoAsync(executer, inter);
+            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp()-sw));
         }
 
         private static async Task MigTableAsync(string file,string tableName,DbConnection dbConnection,IScriptExecuter executer)
@@ -117,8 +145,15 @@ namespace FastBIRe.Mig
                     {
                         item.ToDatabaseColumn(column, tableHelper.SqlType);
                     }
+                    if (column.DataType.IsDateTime)
+                    {
+                        var result = tableHelper.TimeExpandHelper.Create(column.Name, TimeTypes.ExceptSecond);
+                        foreach (var res in result)
+                        {
+                            @new.AddColumn(res.Name, DbType.DateTime);
+                        }
+                    }
                 }
-                @new.Columns.RemoveAll(x => !vtb.Columns.Any(y => y.Name == x.Name));
                 return @new;
             });
             await executer.ExecuteAsync(scripts);
