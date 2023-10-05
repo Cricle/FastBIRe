@@ -1,5 +1,6 @@
 ﻿using DatabaseSchemaReader;
 using FastBIRe.Naming;
+using FastBIRe.Store;
 using FastBIRe.Triggering;
 
 namespace FastBIRe.AAMode
@@ -12,16 +13,42 @@ namespace FastBIRe.AAMode
         }
         protected abstract TriggerTypes GetTriggerTypes();
 
-        protected override void AddTrigger(DatabaseReader reader, EffectTriggerAAModelRequest request, string triggerName)
+        protected virtual IEnumerable<string> GetTriggerScripts(DatabaseReader reader, EffectTriggerAAModelRequest request, string triggerName)
         {
             var triggerTypes = GetTriggerTypes();
-            var sqls = TriggerWriter.CreateEffect(reader.SqlType!.Value,
+            return TriggerWriter.CreateEffect(reader.SqlType!.Value,
                 triggerName,
                 triggerTypes,
                 request.ArchiveTable.Name,
                 request.EffectTable.Name,
                 request.SettingItems);
-            request.AddScripts(sqls);
+
+        }
+
+        protected override void AddTrigger(DatabaseReader reader, EffectTriggerAAModelRequest request, string triggerName,bool equals)
+        {
+            if (!equals)
+            {
+                var scripts = GetTriggerScripts(reader, request, triggerName);
+                TriggerDataStore?.SetString(triggerName, string.Join("\n", scripts));
+                request.AddScripts(scripts);
+            }
+        }
+        protected override bool TriggerIsEquals(DatabaseReader reader, EffectTriggerAAModelRequest request, string triggerName)
+        {
+            if (TriggerDataStore != null)
+            {
+                var store = TriggerDataStore.GetString(triggerName);
+                if (!string.IsNullOrEmpty(store) && SqlEqualityComparer != null)
+                {
+                    var genScripts = string.Join("\n", GetTriggerScripts(reader, request, triggerName));
+                    if (SqlEqualityComparer.Equals(store!, genScripts))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 }

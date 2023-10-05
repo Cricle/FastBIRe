@@ -3,6 +3,7 @@ using FastBIRe.AAMode;
 using FastBIRe.Comparing;
 using FastBIRe.Creating;
 using FastBIRe.Querying;
+using FastBIRe.Store;
 using FastBIRe.Timing;
 using rsa;
 using System.Data;
@@ -73,14 +74,20 @@ namespace FastBIRe.Mig
                 return Task.CompletedTask;
             },default);
             var inter = new AATableHelper("guidang", dbc);
+            var store = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "triggers");
+            if (!Directory.Exists(store))
+            {
+                Directory.CreateDirectory(store);
+            }
+            inter.TriggerDataStore = new FolderDataStore(store, "triggers");
             var r = inter.Table.Triggers;
-            await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer);
-            await MigTableAsync("JuHeTable.json", "juhe", dbc, executer);
+            await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer,inter.TriggerDataStore);
+            await MigTableAsync("JuHeTable.json", "juhe", dbc, executer, inter.TriggerDataStore);
             await GoAsync(executer, inter);
             Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp()-sw));
         }
 
-        private static async Task MigTableAsync(string file,string tableName,DbConnection dbConnection,IScriptExecuter executer)
+        private static async Task MigTableAsync(string file,string tableName,DbConnection dbConnection,IScriptExecuter executer,IDataStore triggerDataStore)
         {
             var content = File.ReadAllText(file);
             var vtb = JsonSerializer.Deserialize<VTable>(content, new JsonSerializerOptions
@@ -91,6 +98,7 @@ namespace FastBIRe.Mig
                 }
             });
             var tableHelper = new AATableHelper(tableName, dbConnection);
+            tableHelper.TriggerDataStore = triggerDataStore;
             var scripts = tableHelper.CreateTableOrMigrationScript(() =>
             {
                 var table = new DatabaseTable { Name = tableHelper.TableName,PrimaryKey=new DatabaseConstraint { Name = tableHelper.PrimaryKeyName,TableName= tableHelper.TableName } };

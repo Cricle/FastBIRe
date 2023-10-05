@@ -1,5 +1,6 @@
 ﻿using DatabaseSchemaReader;
 using FastBIRe.Naming;
+using FastBIRe.Store;
 using FastBIRe.Triggering;
 
 namespace FastBIRe.AAMode
@@ -17,24 +18,33 @@ namespace FastBIRe.AAMode
 
         public ITriggerWriter TriggerWriter { get; }
 
+        public IDataStore? TriggerDataStore { get; set; }
+
+        public IEqualityComparer<string>? SqlEqualityComparer { get; set; }
+
         public void Apply(DatabaseReader reader, TModelRequest request)
         {
             var triggerName = GetTriggerName(reader, request);
-            if (IsTriggerExists(reader,request,triggerName))
+            var exists = IsTriggerExists(reader, request, triggerName);
+            var equals = exists ? TriggerIsEquals(reader, request, triggerName) : false;
+            if (exists && !equals)
             {
                 var dropSqls = TriggerWriter.Drop(reader.SqlType!.Value, triggerName);
                 request.AddScripts(dropSqls);
             }
-            AddTrigger(reader, request, triggerName);
+            AddTrigger(reader, request, triggerName, equals);
         }
 
-        protected abstract void AddTrigger(DatabaseReader reader, TModelRequest request,string triggerName);
+        protected abstract void AddTrigger(DatabaseReader reader, TModelRequest request,string triggerName,bool triggerIsEquals);
 
         protected virtual string GetTriggerName(DatabaseReader reader, TModelRequest request)
         {
             return TriggerNameGenerator.Create(new[] { request.ArchiveTable.Name });
         }
-
+        protected virtual bool TriggerIsEquals(DatabaseReader reader, TModelRequest request, string triggerName)
+        {
+            return false;
+        }
         protected virtual bool IsTriggerExists(DatabaseReader reader, TModelRequest request,string triggerName)
         {
             return request.ArchiveTable.Triggers.Any(x => x.Name == triggerName);

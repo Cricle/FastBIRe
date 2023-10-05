@@ -2,11 +2,13 @@
 
 namespace FastBIRe.Comparing
 {
-    public static partial class SqlComparer
+    public class SqlComparer : IEqualityComparer<string?>
     {
         private static Regex spaceMatch = new Regex("\\s{1,}");
         private static Regex spaceLeftMatch = new Regex("\\s{1,}\\(");
         private static Regex spaceRightMatch = new Regex("\\s{1,}\\)");
+
+        public static readonly SqlComparer Instance = new SqlComparer();
 
         private static string MiniSql(string sql)
         {
@@ -16,6 +18,24 @@ namespace FastBIRe.Comparing
         public static bool Compare(string left, string right)
         {
             return string.Equals(MiniSql(left).Replace(";", string.Empty), MiniSql(right).Replace(";", string.Empty), StringComparison.OrdinalIgnoreCase);
+        }
+
+        public bool Equals(string? x, string? y)
+        {
+            if (x==null&&y==null)
+            {
+                return true;
+            }
+            if (x==null||y==null)
+            {
+                return false;
+            }
+            return Compare(x, y);
+        }
+
+        public int GetHashCode(string obj)
+        {
+            return obj?.GetHashCode() ?? 0;
         }
     }
 }
