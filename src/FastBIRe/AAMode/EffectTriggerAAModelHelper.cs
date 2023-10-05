@@ -42,6 +42,11 @@ namespace FastBIRe.AAMode
                 if (!string.IsNullOrEmpty(store) && SqlEqualityComparer != null)
                 {
                     var genScripts = string.Join("\n", GetTriggerScripts(reader, request, triggerName));
+                    var remoteScript = request.ArchiveTable.Triggers.First(x => x.Name == triggerName);
+                    if (CheckRemote&& !SqlEqualityComparer.Equals(store!, remoteScript.TriggerBody))
+                    {
+                        return false;
+                    }
                     if (SqlEqualityComparer.Equals(store!, genScripts))
                     {
                         return true;

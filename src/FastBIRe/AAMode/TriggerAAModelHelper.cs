@@ -22,6 +22,8 @@ namespace FastBIRe.AAMode
 
         public IEqualityComparer<string>? SqlEqualityComparer { get; set; }
 
+        public bool CheckRemote { get; set; }
+
         public void Apply(DatabaseReader reader, TModelRequest request)
         {
             var triggerName = GetTriggerName(reader, request);

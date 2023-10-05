@@ -17,7 +17,7 @@ namespace FastBIRe.Comparing
 
         public static bool Compare(string left, string right)
         {
-            return string.Equals(MiniSql(left).Replace(";", string.Empty), MiniSql(right).Replace(";", string.Empty), StringComparison.OrdinalIgnoreCase);
+            return string.Equals(MiniSql(left).Trim().Replace(";", string.Empty), MiniSql(right).Trim().Replace(";", string.Empty), StringComparison.OrdinalIgnoreCase);
         }
 
         public bool Equals(string? x, string? y)
@@ -33,7 +33,7 @@ namespace FastBIRe.Comparing
             return Compare(x, y);
         }
 
-        public int GetHashCode(string obj)
+        public int GetHashCode(string? obj)
         {
             return obj?.GetHashCode() ?? 0;
         }
