@@ -4,7 +4,6 @@ using FastBIRe.Querying;
 using FastBIRe.Store;
 using FastBIRe.Timing;
 using rsa;
-using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
@@ -13,50 +12,6 @@ using System.Text.Json.Serialization;
 
 namespace FastBIRe.Mig
 {
-    public class VObject
-    {
-        public string Id { get; set; }
-    }
-    public class VTable: VObject
-    {
-        public string Name { get; set; }
-
-        public List<VColumn> Columns { get; set; }
-    }
-    public class VColumn : VObject
-    {
-        public string Name { get; set; }
-
-        public DbType Type { get; set; }
-
-        public int Length { get; set; } = 255;
-
-        public int Scale { get; set; } = 2;
-
-        public int Precision { get; set; } = 22;
-
-        public bool Nullable { get; set; } = true;
-
-        public bool PK { get; set; }
-
-        public bool IX { get; set; }
-
-        public bool AI { get; set; }
-
-        public void ToDatabaseColumn(DatabaseColumn column, SqlType sqlType)
-        {
-            column.Name = Name;
-            column.Length = Length;
-            column.Scale = Scale;
-            column.Precision = Precision;
-            column.SetTypeDefault(sqlType, Type);
-        }
-    }
-    public class Data
-    {
-        [DisplayName("a")]
-        public int A { get; set; }
-    }
     internal class Program
     {
         static async Task Main(string[] args)
@@ -66,7 +21,7 @@ namespace FastBIRe.Mig
             var dbc = ConnectionProvider.GetDbMigration(sqlType, dbName);
             var executer = new DefaultScriptExecuter(dbc) { CaptureStackTrace = true };
             executer.ScriptStated += OnExecuterScriptStated;
-            var res = await executer.ReadAsync<Data>("SELECT 1 AS a");
+            await Orm(executer);
             var inter = new AATableHelper("guidang", dbc);
             var sw = Stopwatch.GetTimestamp();
             var store = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "triggers");
@@ -83,7 +38,10 @@ namespace FastBIRe.Mig
             Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw));
             dataStore.Dispose();
         }
-
+        private static async Task Orm(IScriptExecuter executer)
+        {
+            var res = await executer.ReadAsync<Data>("SELECT 1 AS a");
+        }
         private static async Task MigTableAsync(string file,string tableName,DbConnection dbConnection,IScriptExecuter executer,IDataStore triggerDataStore)
         {
             var content = File.ReadAllText(file);

@@ -12,15 +12,13 @@ namespace FastBIRe.Copying
             var sqlType = SqlType.MySql;
             var c = ConnectionProvider.GetDbMigration(sqlType, "sakila");
             var s = Stopwatch.GetTimestamp();
-            using (var comm=c.CreateCommand())
+            using (var comm = c.CreateCommand())
             {
                 comm.CommandText = "SELECT * FROM `weather`;";
                 using (var reader = await comm.ExecuteReaderAsync())
-                using (var csvFile = File.Open("weather.csv", FileMode.Create))
-                using (var sw = new StreamWriter(csvFile))
+                using (var cop = CsvMirrorCopy.FromFile(reader, "weather.csv"))
                 {
-                    var cop = new CsvMirrorCopy(reader, sw);
-                    await cop.CopyAsync(default);
+                    await cop.CopyAsync();
                 }
             }
             Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - s));

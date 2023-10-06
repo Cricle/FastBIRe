@@ -38,7 +38,7 @@ namespace FastBIRe.Data
                 disposable.Dispose();
             }
         }
-        public async Task<IList<TResult>> CopyAsync(CancellationToken token)
+        public async Task<IList<TResult>> CopyAsync(CancellationToken token = default)
         {
             var storeWriteResult = StoreWriteResult;
             var result = CreateResultStore();
