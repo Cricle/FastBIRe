@@ -9,6 +9,7 @@ using rsa;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -59,7 +60,6 @@ namespace FastBIRe.Mig
     {
         static async Task Main(string[] args)
         {
-            var sw = Stopwatch.GetTimestamp();
             var sqlType = SqlType.SQLite;
             var dbName = "test1";
             var dbc = ConnectionProvider.GetDbMigration(sqlType, dbName);
@@ -74,17 +74,20 @@ namespace FastBIRe.Mig
                 return Task.CompletedTask;
             },default);
             var inter = new AATableHelper("guidang", dbc);
+            var sw = Stopwatch.GetTimestamp();
             var store = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "triggers");
             if (!Directory.Exists(store))
             {
                 Directory.CreateDirectory(store);
             }
-            inter.TriggerDataStore = new FolderDataStore(store, "triggers");
-            var r = inter.Table.Triggers;
-            await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer,inter.TriggerDataStore);
+            var fipath = Path.Combine(store, "cache.zip");
+            var dataStore = ZipDataStore.FromFile("triggers", fipath);
+            inter.TriggerDataStore = dataStore;
+            await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer, inter.TriggerDataStore);
             await MigTableAsync("JuHeTable.json", "juhe", dbc, executer, inter.TriggerDataStore);
             await GoAsync(executer, inter);
-            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp()-sw));
+            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw));
+            dataStore.Dispose();
         }
 
         private static async Task MigTableAsync(string file,string tableName,DbConnection dbConnection,IScriptExecuter executer,IDataStore triggerDataStore)
