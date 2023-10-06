@@ -31,7 +31,13 @@ namespace FastBIRe.Data
         {
             return Array.Empty<TResult>();
         }
-
+        protected virtual void CloseInput(TInput? input)
+        {
+            if (input is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
         public async Task<IList<TResult>> CopyAsync(CancellationToken token)
         {
             var storeWriteResult = StoreWriteResult;
@@ -54,10 +60,7 @@ namespace FastBIRe.Data
                     {
                         result.Add(res);
                     }
-                    if (input is IDisposable disposable)
-                    {
-                        disposable.Dispose();
-                    }
+                    CloseInput(input);
                     input = CreateInput();
                     currentSize = 0;
                     if (token.IsCancellationRequested)

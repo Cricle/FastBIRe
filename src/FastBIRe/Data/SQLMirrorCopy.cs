@@ -24,11 +24,9 @@ namespace FastBIRe.Data
 
         public IEscaper Escaper { get; }
 
-        private string[]? names;
+        protected string[]? names;
 
         public IReadOnlyList<string>? Names => names;
-
-        public int CommandTimeout { get; set; } = 60;
 
         protected override Task OnFirstReadAsync()
         {

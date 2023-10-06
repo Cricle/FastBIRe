@@ -176,6 +176,14 @@ namespace FastBIRe
         {
             return $"COUNT(DISTINCT {input})";
         }
+        public string? StandardDeviation(string input)
+        {
+            return $"{Sqrt(Var(input)!)}";
+        }
+        public string? Range(string input)
+        {
+            return $"{MaxC(input)} - {MinC(input)}";
+        }
         public string? Min(params string[] inputs)
         {
             switch (SqlType)

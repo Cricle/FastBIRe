@@ -122,13 +122,9 @@ namespace FastBIRe.Mig
                     if (column == null)
                     {
                         column = new DatabaseColumn();
-                        item.ToDatabaseColumn(column, tableHelper.SqlType);
                         @new.AddColumn(column);
                     }
-                    else
-                    {
-                        item.ToDatabaseColumn(column, tableHelper.SqlType);
-                    }
+                    item.ToDatabaseColumn(column, tableHelper.SqlType);
                     if (column.DataType.IsDateTime)
                     {
                         var result = tableHelper.TimeExpandHelper.Create(column.Name, TimeTypes.ExceptSecond);

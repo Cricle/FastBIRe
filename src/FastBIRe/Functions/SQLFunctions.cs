@@ -84,6 +84,8 @@
         HourTo,
         DayTo,
         MonthTo,
-        YearTo
+        YearTo,
+        StandardDeviation,
+        Range
     }
 }
