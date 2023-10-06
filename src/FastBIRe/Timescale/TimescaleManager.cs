@@ -41,12 +41,13 @@
         {
             var sql = TimescaleViews.GetHypertable(Table, true);
             var isHyper = false;
-            var res = await ScriptExecuter.ReadAsync(sql, (o, e) =>
+            await ScriptExecuter.ReadAsync(sql, (o, e) =>
             {
                 if (e.Reader.Read())
                 {
                     isHyper = !e.Reader.IsDBNull(0);
                 }
+                return Task.CompletedTask;
             });
             return isHyper;
         }

@@ -1,18 +1,15 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using FastBIRe.AAMode;
-using FastBIRe.Comparing;
-using FastBIRe.Creating;
 using FastBIRe.Querying;
 using FastBIRe.Store;
 using FastBIRe.Timing;
 using rsa;
+using System.ComponentModel;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
-using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 
 namespace FastBIRe.Mig
 {
@@ -55,7 +52,11 @@ namespace FastBIRe.Mig
             column.SetTypeDefault(sqlType, Type);
         }
     }
-
+    public class Data
+    {
+        [DisplayName("a")]
+        public int A { get; set; }
+    }
     internal class Program
     {
         static async Task Main(string[] args)
@@ -65,14 +66,7 @@ namespace FastBIRe.Mig
             var dbc = ConnectionProvider.GetDbMigration(sqlType, dbName);
             var executer = new DefaultScriptExecuter(dbc) { CaptureStackTrace = true };
             executer.ScriptStated += OnExecuterScriptStated;
-            await executer.ReadAsync("SELECT 1", (o, e) =>
-            {
-                while (e.Reader.Read())
-                {
-
-                }
-                return Task.CompletedTask;
-            },default);
+            var res = await executer.ReadAsync<Data>("SELECT 1 AS a");
             var inter = new AATableHelper("guidang", dbc);
             var sw = Stopwatch.GetTimestamp();
             var store = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "triggers");
@@ -169,7 +163,6 @@ namespace FastBIRe.Mig
             await executer.ExecuteAsync(scripts, default);
             scripts = tableHelper.EffectScript("juhe", "juhe_effect");
             await executer.ExecuteAsync(scripts, default);
-            var juheTable = tableHelper.DatabaseReader.Table("juhe");
             var builder = TableFieldLinkBuilder.From(tableHelper.DatabaseReader, "guidang", "juhe");
             var funcMapper = tableHelper.FunctionMapper;
             var query = tableHelper.MakeInsertQuery(MergeQuerying.Default, "juhe", new ITableFieldLink[]
@@ -178,8 +171,8 @@ namespace FastBIRe.Mig
                 builder.Expand("ca4",DefaultExpandResult.Expression("a4",funcMapper.CountC("{0}")))
             }, new ITableFieldLink[]
             {
-                builder.Direct("a1","ja1"),
-                builder.Direct("a2","ja2")
+                builder.Direct("ja1","a1"),
+                builder.Direct("ja2","a2")
             });
             Console.WriteLine(query);
         }

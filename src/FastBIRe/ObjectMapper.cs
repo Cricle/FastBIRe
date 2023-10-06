@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace Ao.Stock.Mirror
+namespace FastBIRe
 {
 #if NETSTANDARD2_0
     public static class ObjectMapper<T>
@@ -62,6 +62,16 @@ namespace Ao.Stock.Mirror
         public static T Fill(IDataReader reader)
         {
             return creator(reader);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static IList<T> FillList(IDataReader reader)
+        {
+            var lst = new List<T>();
+            while (reader.Read())
+            {
+                lst.Add(creator(reader));
+            }
+            return lst;
         }
         private static readonly MethodInfo OrMethod = typeof(IDataRecord).GetMethod(nameof(IDataRecord.GetOrdinal), new Type[] { typeof(string) }) ??
             throw new NotSupportedException("IDataRecord.GetOrdinal not found");
