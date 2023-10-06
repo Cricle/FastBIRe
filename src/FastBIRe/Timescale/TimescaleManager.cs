@@ -1,33 +1,17 @@
-﻿using System.Data.Common;
-
-namespace FastBIRe.Timescale
+﻿namespace FastBIRe.Timescale
 {
-    public interface ITimescaleManager
-    {
-        string Table { get; }
-
-        string TimeColumn { get; }
-
-        string? ChuckTimeInterval { get; }
-
-        int CommandTimeout { get; }
-
-        Task<bool> IsHypertableAsync();
-
-        Task<bool> CreateHypertableAsync(bool quto);
-    }
     public class TimescaleManager : ITimescaleManager
     {
-        public TimescaleManager(string table, string timeColumn, DbConnection connection)
-            : this(table, timeColumn, TimescaleHelper.Default, connection)
+        public TimescaleManager(string table, string timeColumn, IScriptExecuter scriptExecuter)
+            : this(table, timeColumn, TimescaleHelper.Default, scriptExecuter)
         {
         }
-        public TimescaleManager(string table, string timeColumn, TimescaleHelper helper, DbConnection connection)
+        public TimescaleManager(string table, string timeColumn, TimescaleHelper helper, IScriptExecuter scriptExecuter)
         {
             Table = table;
             TimeColumn = timeColumn;
             Helper = helper;
-            Connection = connection;
+            ScriptExecuter = scriptExecuter;
         }
 
         public string Table { get; }
@@ -40,7 +24,7 @@ namespace FastBIRe.Timescale
 
         public TimescaleHelper Helper { get; }
 
-        public DbConnection Connection { get; }
+        public IScriptExecuter ScriptExecuter { get; }
 
         public async Task<bool> CreateHypertableAsync(bool quto)
         {
@@ -49,25 +33,22 @@ namespace FastBIRe.Timescale
             var sql = "SELECT " + Helper.CreateHypertable(table, timeColumn,
                 if_not_exists: true,
                 chunk_time_interval: ChuckTimeInterval);
-            using (var comm = Connection.CreateCommand())
-            {
-                comm.CommandTimeout = CommandTimeout;
-                comm.CommandText = sql;
-                var res = await comm.ExecuteNonQueryAsync();
-                return true;
-            }
+            var res=await ScriptExecuter.ExecuteAsync(sql);
+            return true;
         }
 
         public async Task<bool> IsHypertableAsync()
         {
             var sql = TimescaleViews.GetHypertable(Table, true);
-            using (var comm = Connection.CreateCommand())
+            var isHyper = false;
+            var res = await ScriptExecuter.ReadAsync(sql, (o, e) =>
             {
-                comm.CommandTimeout = CommandTimeout;
-                comm.CommandText = sql;
-                var res = await comm.ExecuteScalarAsync();
-                return res != null;
-            }
+                if (e.Reader.Read())
+                {
+                    isHyper = !e.Reader.IsDBNull(0);
+                }
+            });
+            return isHyper;
         }
     }
 }

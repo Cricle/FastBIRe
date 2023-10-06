@@ -4,7 +4,7 @@
     {
         protected SyncDataStore(string nameSpace)
         {
-            NameSpace = nameSpace;
+            NameSpace = nameSpace ?? throw new ArgumentNullException(nameof(nameSpace));
         }
 
         public string NameSpace { get; }
