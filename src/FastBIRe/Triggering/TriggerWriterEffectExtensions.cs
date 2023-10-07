@@ -157,9 +157,11 @@ END IF;
                     }
                 case SqlType.PostgreSql:
                     {
-                        when = string.Join(" AND ", settingItems.Select(x => x.Field).Distinct().Select(x => $"NEW.\"{x}\" IS NOT NULL"));
-                        body = $@"INSERT INTO ""{targetTable}"" ({string.Join(",", settingItems.Select(x => $"\"{x.Field}\""))}) VALUES ({string.Join(",", settingItems.Select(x => x.Raw))})
-    ON CONFLICT DO NOTHING;";
+                        body = $@"
+IF NOT EXISTS (SELECT 1 FROM ""{targetTable}"" WHERE {string.Join(" AND ", settingItems.Select(x => $"(\"{x.Field}\" = {x.Raw} OR (\"{x.Field}\" IS NULL AND {x.Raw} IS NULL))"))}) THEN
+INSERT INTO ""{targetTable}""({string.Join(", ", settingItems.Select(x => x.Field))}) VALUES ({string.Join(", ", settingItems.Select(x => x.Raw))});
+END IF;
+";
                         break;
                     }
                 case SqlType.Db2:

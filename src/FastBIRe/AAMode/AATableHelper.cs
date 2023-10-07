@@ -248,7 +248,7 @@ namespace FastBIRe.AAMode
             IEnumerable<string>? dropTriggers = null;
             if (trigger != null)
             {
-                dropTriggers = TriggerWriter.Drop(SqlType, triggerName);
+                dropTriggers = TriggerWriter.Drop(SqlType, triggerName,TableName);
             }
 
             var expandResults = columns.SelectMany(x => TimeExpandHelper.Create(x, timeTypes)).OfType<IExpandResult>().ToList();
@@ -299,19 +299,19 @@ namespace FastBIRe.AAMode
             IEnumerable<string>? dropUpdateTriggers = null;
             if (triggerInsert != null)
             {
-                dropInsertTriggers = TriggerWriter.Drop(SqlType, triggerInsertName);
+                dropInsertTriggers = TriggerWriter.Drop(SqlType, triggerInsertName, TableName);
             }
             if (triggerUpdate != null)
             {
-                dropUpdateTriggers = TriggerWriter.Drop(SqlType, triggerUpdateName);
+                dropUpdateTriggers = TriggerWriter.Drop(SqlType, triggerUpdateName, TableName);
             }
 
             var expandResults = columns.SelectMany(x => TimeExpandHelper.Create(x, timeTypes)).OfType<IExpandResult>().ToList();
 
             //Re read table 
             table = Table;
-            var insertTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfInsert : TriggerTypes.AfterInsert;
-            var updateTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfUpdate : TriggerTypes.AfterUpdate;
+            var insertTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfInsert : TriggerTypes.BeforeInsert;
+            var updateTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfUpdate : TriggerTypes.BeforeUpdate;
             var insertScripts = TriggerWriter.CreateExpand(SqlType, triggerInsertName, insertTriggerTypes, table, expandResults);
             var updateScripts = TriggerWriter.CreateExpand(SqlType, triggerUpdateName, updateTriggerTypes, table, expandResults);
             var insertStoredScript = GetStoredTriggerScripts(triggerInsertName);

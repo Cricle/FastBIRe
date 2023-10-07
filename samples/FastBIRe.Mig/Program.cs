@@ -1,5 +1,6 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using FastBIRe.AAMode;
+using FastBIRe.Creating;
 using FastBIRe.Querying;
 using FastBIRe.Store;
 using FastBIRe.Timing;
@@ -16,8 +17,19 @@ namespace FastBIRe.Mig
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.SQLite;
+            var sqlType = SqlType.PostgreSql;
             var dbName = "test1";
+            using (var dbct = ConnectionProvider.GetDbMigration(sqlType, null))
+            {
+                var ada = DatabaseCreateAdapter.Get(sqlType);
+                var executeDbc =new DefaultScriptExecuter(dbct) { CaptureStackTrace=true};
+                executeDbc.ScriptStated += OnExecuterScriptStated;
+                var dbExists = await executeDbc.ReadAsync<int>(ada.CheckDatabaseExists(dbName));
+                if (dbExists.Count == 0)
+                {
+                    await executeDbc.ExecuteAsync(ada.CreateDatabase(dbName));
+                }
+            }
             var dbc = ConnectionProvider.GetDbMigration(sqlType, dbName);
             var executer = new DefaultScriptExecuter(dbc) { CaptureStackTrace = true };
             executer.ScriptStated += OnExecuterScriptStated;

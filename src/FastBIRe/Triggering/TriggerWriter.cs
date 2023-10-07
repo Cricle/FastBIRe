@@ -47,7 +47,7 @@ namespace FastBIRe.Triggering
                     return string.Empty;
             }
         }
-        public virtual IEnumerable<string> Drop(SqlType sqlType, string name)
+        public virtual IEnumerable<string> Drop(SqlType sqlType, string name,string table)
         {
             switch (sqlType)
             {
@@ -63,7 +63,12 @@ namespace FastBIRe.Triggering
                     break;
                 case SqlType.PostgreSql:
                     var pgFunName = PostgresqlFunctionNameGenerator.Create(new[] { name });
-                    yield return $"DROP TRIGGER IF EXISTS \"{name}\";";
+                    yield return $@"DO $$ 
+BEGIN 
+  IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = '{name}') THEN 
+    DROP TRIGGER ""{name}"" ON ""{table}""; 
+  END IF;
+END $$;";
                     yield return $"DROP FUNCTION IF EXISTS \"{pgFunName}\";";
                     break;
                 case SqlType.Db2:

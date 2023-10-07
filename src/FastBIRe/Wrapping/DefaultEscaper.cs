@@ -4,20 +4,21 @@ namespace FastBIRe.Wrapping
 {
     public class DefaultEscaper : IEscaper
     {
-        public static readonly DefaultEscaper MySql = new DefaultEscaper("`", "`", "'", "'", true);
+        public static readonly DefaultEscaper MySql = new DefaultEscaper("`", "`", "'", "'", true,true);
         public static readonly DefaultEscaper SqlServer = new DefaultEscaper("[", "]", "'", "'", true);
         public static readonly DefaultEscaper MariaDB = MySql;
         public static readonly DefaultEscaper Sqlite = new DefaultEscaper("`", "`", "'", "'", true);
         public static readonly DefaultEscaper Oracle = new DefaultEscaper("\"", "\"", "'", "'", false);
         public static readonly DefaultEscaper PostgreSql = new DefaultEscaper("\"", "\"", "'", "'", false);
 
-        public DefaultEscaper(string qutoStart, string qutoEnd, string valueStart, string valueEnd, bool boolAsInteger)
+        public DefaultEscaper(string qutoStart, string qutoEnd, string valueStart, string valueEnd, bool boolAsInteger, bool escapeBackslash=false)
         {
             QutoStart = qutoStart;
             QutoEnd = qutoEnd;
             ValueStart = valueStart;
             ValueEnd = valueEnd;
             BoolAsInteger = boolAsInteger;
+            EscapeBackslash = escapeBackslash;
         }
 
         public string QutoStart { get; }
@@ -29,6 +30,8 @@ namespace FastBIRe.Wrapping
         public string ValueEnd { get; }
 
         public bool BoolAsInteger { get; }
+
+        public bool EscapeBackslash { get; }
 
         public string Quto<T>(T? input)
         {
@@ -43,7 +46,12 @@ namespace FastBIRe.Wrapping
             }
             else if (input is string||input is Guid)
             {
-                return ValueStart + input + ValueEnd;
+                var str= ValueStart + input + ValueEnd;
+                if (EscapeBackslash)
+                {
+                    str = str.Replace("\\", "\\\\");
+                }
+                return str;
             }
             else if (input is DateTime)
             {

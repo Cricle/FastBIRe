@@ -111,7 +111,7 @@ END
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                return $"date_trunc('day',{time})";
+                return $"LEFT(date_trunc('day',{time})::VARCHAR,10)";
             }
             return $"LEFT({time},10)";
         }
@@ -131,7 +131,7 @@ END
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                return $"date_trunc('hour',{time})";
+                return $"LEFT(date_trunc('hour',{time})::VARCHAR,13)";
             }
             return $"LEFT({time},13)";
         }
@@ -151,7 +151,7 @@ END
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                return $"date_trunc('minute',{time})";
+                return $"LEFT(date_trunc('minute',{time})::VARCHAR,16)";
             }
             return $"LEFT({time},16)";
         }
@@ -171,7 +171,7 @@ END
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                return $"date_trunc('day',{time}::timestamp) - ((EXTRACT(DOW FROM {time}::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL";
+                return $"(date_trunc('day',{time}) - ((EXTRACT(DOW FROM {time})::INTEGER+6)%7 || ' days')::INTERVAL)::timestamp with time zone";
             }
             return $"DATE_FORMAT(DATE_SUB({time}, INTERVAL WEEKDAY({time}) DAY),'%Y-%m-%d')";
 
@@ -184,7 +184,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
         }
         public string? WeekFull(string time)
         {
-            return Concatenate(WeekTo(time), "':00'");
+            return WeekTo(time);
         }
         public string QuarterFull(string time)
         {
@@ -246,7 +246,7 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                return $"date_trunc('month',{time})";
+                return $"LEFT(date_trunc('month',{time})::VARCHAR,7)";
             }
             return $"LEFT({time},7)";
         }
@@ -266,7 +266,7 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
             }
             else if (SqlType == SqlType.PostgreSql)
             {
-                return $"date_trunc('year',{time})";
+                return $"LEFT(date_trunc('year',{time})::VARCHAR,4)";
             }
             return $"LEFT({time},4)";
         }

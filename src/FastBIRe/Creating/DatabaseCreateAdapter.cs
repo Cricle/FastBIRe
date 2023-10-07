@@ -72,7 +72,7 @@ END $$;",
             @"DROP DATABASE IF EXISTS ""{0}"";",
             @"DROP TABLE ""{0}"";",
             @"DROP TABLE IF EXISTS ""{0}"";",
-            @"SELECT 1 FROM pg_database WHERE datname = ""{0}"";");
+            @"SELECT 1 FROM pg_database WHERE datname = '{0}';");
 
         public DatabaseCreateAdapter(string createDatabaseSqlFormatSqlFormat,
             string createDatabaseSqlFormatIfNotExistsFormat,
