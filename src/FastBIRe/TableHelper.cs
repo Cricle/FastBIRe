@@ -39,6 +39,7 @@ namespace FastBIRe
                     return $"DROP INDEX {SqlType.Wrap(table)}.{SqlType.Wrap(name)};";
                 case SqlType.SQLite:
                 case SqlType.PostgreSql:
+                case SqlType.DuckdDB:
                     return $"DROP INDEX {SqlType.Wrap(name)};";
                 default:
                     return string.Empty;
@@ -93,6 +94,7 @@ namespace FastBIRe
                         }
                         return $"LIMIT {take} OFFSET 0";
                     }
+                case SqlType.DuckdDB:
                 case SqlType.PostgreSql:
                     {
                         if (skip != null && take != null)
@@ -144,6 +146,7 @@ namespace FastBIRe
                 case SqlType.SQLite:
                     return $"DELETE FROM `{table}`;";
                 case SqlType.PostgreSql:
+                case SqlType.DuckdDB:
                     return $"TRUNCATE TABLE \"{table}\";";
                 case SqlType.Oracle:
                     return $"TRUNCATE TABLE \"{table}\";";

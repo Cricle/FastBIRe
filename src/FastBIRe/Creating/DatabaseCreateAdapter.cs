@@ -31,6 +31,14 @@ END",
             @"DROP TABLE ""{0}"";",
             @"DROP TABLE IF EXISTS ""{0}"";",
             @"SELECT 1;");
+        public static readonly DatabaseCreateAdapter DuckDb = new DatabaseCreateAdapter(@"SELECT true",
+            @"SELECT true",
+            string.Empty,
+            string.Empty,
+            @"DROP TABLE ""{0}"";",
+            @"DROP TABLE IF EXISTS ""{0}"";",
+            @"SELECT 1;");
+
         public static readonly DatabaseCreateAdapter Oracle = new DatabaseCreateAdapter(@"CREATE DATABASE {0};", @"
 DECLARE
   db_count NUMBER := 0;
@@ -152,6 +160,8 @@ END $$;",
                     return Sqlite;
                 case SqlType.PostgreSql:
                     return PostgreSql;
+                case SqlType.DuckdDB:
+                    return DuckDb;
                 default:
                     return null;
             }

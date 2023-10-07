@@ -1,6 +1,5 @@
-﻿using DatabaseSchemaReader;
-using DatabaseSchemaReader.DataSchema;
-using FastBIRe;
+﻿using DatabaseSchemaReader.DataSchema;
+using DuckDB.NET.Data;
 using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using MySqlConnector;
@@ -42,6 +41,18 @@ namespace rsa
                     break;
                 case SqlType.PostgreSql:
                     conn = new NpgsqlConnection($"host=127.0.0.1;port=5432;username=postgres;password=355343;{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+                    break;
+                case SqlType.DuckdDB:
+                    var builder=new DuckDBConnectionStringBuilder();
+                    if (database == null)
+                    {
+                        builder.DataSource = ":memory:";
+                    }
+                    else
+                    {
+                        builder.DataSource = database;
+                    }
+                    conn = new DuckDBConnection(builder.ConnectionString);
                     break;
                 default:
                     break;

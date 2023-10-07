@@ -10,6 +10,7 @@ namespace FastBIRe.Wrapping
         public static readonly DefaultEscaper Sqlite = new DefaultEscaper("`", "`", "'", "'", true);
         public static readonly DefaultEscaper Oracle = new DefaultEscaper("\"", "\"", "'", "'", false);
         public static readonly DefaultEscaper PostgreSql = new DefaultEscaper("\"", "\"", "'", "'", false);
+        public static readonly DefaultEscaper DuckDB = new DefaultEscaper("\"", "\"", "'", "'", false);
 
         public DefaultEscaper(string qutoStart, string qutoEnd, string valueStart, string valueEnd, bool boolAsInteger, bool escapeBackslash=false)
         {

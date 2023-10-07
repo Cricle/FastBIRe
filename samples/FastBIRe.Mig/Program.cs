@@ -17,7 +17,7 @@ namespace FastBIRe.Mig
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.PostgreSql;
+            var sqlType = SqlType.DuckdDB;
             var dbName = "test1";
             using (var dbct = ConnectionProvider.GetDbMigration(sqlType, null))
             {
@@ -81,6 +81,18 @@ namespace FastBIRe.Mig
                     if (item.AI)
                     {
                         column.AddIdentity();
+                    }
+                }
+                var columns = table.Columns.ToList();
+                foreach (var item in columns)
+                {
+                    if (item.DataType.IsDateTime)
+                    {
+                        var result = tableHelper.TimeExpandHelper.Create(item.Name, TimeTypes.ExceptSecond);
+                        foreach (var res in result)
+                        {
+                            table.AddColumn(res.Name, DbType.DateTime);
+                        }
                     }
                 }
                 return table;

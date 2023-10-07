@@ -45,6 +45,8 @@ namespace FastBIRe
                     return DefaultEscaper.Sqlite;
                 case SqlType.PostgreSql:
                     return DefaultEscaper.PostgreSql;
+                case SqlType.DuckdDB:
+                    return DefaultEscaper.DuckDB;
                 case SqlType.Db2:
                 default:
                     throw new NotSupportedException(sqlType.ToString());
