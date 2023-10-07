@@ -20,7 +20,7 @@ namespace FastBIRe.Querying
             var sql = new StringBuilder();
             //UPDATE [dest] {AS destAlias}
             sql.Append($"UPDATE {destTableQuto}");
-            if (request.SqlType.Ors(SqlType.PostgreSql, SqlType.MySql))
+            if (request.SqlType.Ors(SqlType.PostgreSql, SqlType.MySql, SqlType.SQLite))
             {
                 sql.AppendLine($" AS {destTableAliasQuto}");
             }
@@ -37,7 +37,7 @@ namespace FastBIRe.Querying
 
             var updateSelect = CompileUpdateSelect(request, SourceTableAlias);
             var destGroupOn = string.Join(" AND ",request.GroupLinks.Select(x=>$"{destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} = {tmpQuto}.{request.Wrap(x.DestColumn.Name)}"));
-            var destGroupCheck = string.Join(" AND ", request.NoGroupLinks.Where(x => !request.IgnoreCompareFields.Contains(x.DestColumn.Name)).Select(x => $"{destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} != {tmpQuto}.{request.Wrap(x.DestColumn.Name)}"));
+            var destGroupCheck = string.Join(" OR ", request.NoGroupLinks.Where(x => !request.IgnoreCompareFields.Contains(x.DestColumn.Name)).Select(x => $"({destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} != {tmpQuto}.{request.Wrap(x.DestColumn.Name)} OR ({destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} IS NULL AND {tmpQuto}.{request.Wrap(x.DestColumn.Name)} IS NOT NULL) OR ({destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} IS NOT NULL AND {tmpQuto}.{request.Wrap(x.DestColumn.Name)} IS NULL))"));
 
             var updateFrom = CompileUpdateFrom(request, updateSelect, destGroupOn, destGroupCheck, tmpQuto);
             sql.AppendLine(updateFrom);

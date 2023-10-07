@@ -101,6 +101,11 @@ namespace FastBIRe.AAMode
 
         public IDataStore? TriggerDataStore { get; set; }
 
+        public string GetEffectTableName(string table)
+        {
+            return EffectTableCreateAAModelHelper.Default.EffectNameGenerator.Create(new[] { table });
+        }
+
         public virtual IList<string> ExpandTimeMigrationScript(IEnumerable<string> columns, TimeTypes timeTypes = TimeTypes.ExceptSecond)
         {
             var exp = new TableExpandTimeAAModelHelper(new TimeExpandHelper(SqlType));
@@ -312,6 +317,11 @@ namespace FastBIRe.AAMode
             table = Table;
             var insertTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfInsert : TriggerTypes.BeforeInsert;
             var updateTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfUpdate : TriggerTypes.BeforeUpdate;
+            if (SqlType== SqlType.SQLite)
+            {
+                insertTriggerTypes = TriggerTypes.AfterInsert;
+                updateTriggerTypes = TriggerTypes.AfterUpdate;
+            }
             var insertScripts = TriggerWriter.CreateExpand(SqlType, triggerInsertName, insertTriggerTypes, table, expandResults);
             var updateScripts = TriggerWriter.CreateExpand(SqlType, triggerUpdateName, updateTriggerTypes, table, expandResults);
             var insertStoredScript = GetStoredTriggerScripts(triggerInsertName);

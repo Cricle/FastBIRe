@@ -11,7 +11,7 @@ namespace FastBIRe.Querying
             //Make the insert field string
             var selectFieldLists = request.AllLinks.Select(x => request.Wrap(x.DestColumn.Name));
             var selectFieldString = string.Join(", ", selectFieldLists);
-            sql.AppendLine($"INSERT INTO {request.Wrap(request.SourceTable.Name)}({selectFieldString})");
+            sql.AppendLine($"INSERT INTO {request.Wrap(request.DestTable.Name)}({selectFieldString})");
             if (request.UseView)
             {
                 //By select view, use sequential fields
@@ -70,12 +70,6 @@ namespace FastBIRe.Querying
             var links = request.AllLinks.Select(x => x.FormatSql(request.SqlType, sourceTableAlias)).ToList();
             var linkStrings = string.Join(", ", links);
             sql.AppendLine($"SELECT {linkStrings} ");
-            //From is redirect to effect table
-            if (request.SqlType == SqlType.SQLite)
-            {
-                // Sqlite needs SELECT *
-                sql.Append("FROM ( SELECT * ");
-            }
             var sourceTableAsExp = $"{request.Wrap(request.SourceTable.Name)} AS {sourceTableAliasQuto}";
             sql.Append(" FROM ");
             //Is use effect table?
@@ -86,29 +80,21 @@ namespace FastBIRe.Querying
             var destTableAsExp = $"{destTableQuto} AS {destTableAliasQuto}";
             var groupLinkWhere = request.GroupLinks.Select(x => $"{x.FormatExpression(request.SqlType, sourceTableAlias)} = {destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)}").ToList();
             var groupLinkStrings = string.Join(" AND ", groupLinkWhere);
-            if (request.SqlType == SqlType.SQLite)
+            if (request.SqlType.Ors(SqlType.SqlServer, SqlType.SqlServerCe, SqlType.PostgreSql, SqlType.SQLite) && request.UseEffectTable)
             {
-                sql.AppendLine($") AS {resultQuto} LEFT JOIN {destTableAsExp} ON {groupLinkStrings}");
-                sql.AppendLine($"WHERE {string.Join(" AND ", request.NoGroupLinks.Select(x => $"{request.Wrap(x.DestColumn.Name)} IS NULL"))}");
+                sql.Append(" AND ");
             }
             else
             {
-                if (request.SqlType.Ors(SqlType.SqlServer, SqlType.SqlServerCe, SqlType.PostgreSql, SqlType.SQLite) && request.UseEffectTable)
-                {
-                    sql.Append(" AND ");
-                }
-                else
-                {
-                    sql.Append(" WHERE ");
-                }
-                var hasAdditionWhere = !string.IsNullOrEmpty(request.AdditionWhere);
-                if (hasAdditionWhere)
-                {
-                    sql.Append(request.AdditionWhere);
-                    sql.Append(" AND ");
-                }
-                sql.AppendLine($"NOT EXISTS ( SELECT 1 AS {request.Wrap("tmp")} FROM {destTableAsExp} WHERE {groupLinkStrings} )");
+                sql.Append(" WHERE ");
             }
+            var hasAdditionWhere = !string.IsNullOrEmpty(request.AdditionWhere);
+            if (hasAdditionWhere)
+            {
+                sql.Append(request.AdditionWhere);
+                sql.Append(" AND ");
+            }
+            sql.AppendLine($"NOT EXISTS ( SELECT 1 AS {request.Wrap("tmp")} FROM {destTableAsExp} WHERE {groupLinkStrings} )");
             var grouping = string.Join(", ", request.GroupLinks.Select(x => x.FormatExpression(request.SqlType, sourceTableAlias)));
             sql.AppendLine($"GROUP BY {grouping}");
         }

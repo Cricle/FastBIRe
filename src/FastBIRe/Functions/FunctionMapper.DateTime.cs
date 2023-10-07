@@ -139,6 +139,22 @@ END
         {
             return Concatenate(HourTo(time), "':00:00'");
         }
+        public string SecondTo(string time)
+        {
+            if (SqlType == SqlType.SqlServer)
+            {
+                return $"CONVERT(VARCHAR(19),{time} ,120)";
+            }
+            else if (SqlType == SqlType.SQLite)
+            {
+                return $"strftime('%Y-%m-%d %H:%M:%s', {time})";
+            }
+            else if (SqlType == SqlType.PostgreSql)
+            {
+                return $"LEFT(date_trunc('second',{time})::VARCHAR,19)";
+            }
+            return $"LEFT({time},19)";
+        }
         public string MinuteTo(string time)
         {
             if (SqlType == SqlType.SqlServer)
