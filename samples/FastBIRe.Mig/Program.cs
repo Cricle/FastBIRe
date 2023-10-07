@@ -119,13 +119,22 @@ namespace FastBIRe.Mig
                 return @new;
             });
             await executer.ExecuteAsync(scripts);
-
+            var table = tableHelper.Table;
             foreach (var item in vtb.Columns)
             {
                 if (item.IX)
                 {
                     scripts = tableHelper.CreateIndexScript(item.Name, true);
                     await executer.ExecuteAsync(scripts);
+                }
+                else if(!item.PK)
+                {
+                    var idxName = tableHelper.IndexNameGenerator.Create(new[] { tableHelper.TableName,item.Name });
+                    var idx = table.Indexes.FirstOrDefault(x => x.Name == idxName);
+                    if (idx != null)
+                    {
+                        await executer.ExecuteAsync(tableHelper.DropIndexScript(item.Name));
+                    }
                 }
             }
             var expandColumns = vtb.Columns.Where(x => x.Type == DbType.DateTime).Select(x=>x.Name).ToList();

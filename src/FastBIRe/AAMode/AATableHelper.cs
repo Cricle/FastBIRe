@@ -169,7 +169,7 @@ namespace FastBIRe.AAMode
         public virtual IList<string> DropIndexScript(string field)
         {
             var table = Table;
-            var name = IndexNameGenerator.Create(new[] { field });
+            var name = IndexNameGenerator.Create(new[] { TableName, field });
             var index = table.Indexes.FirstOrDefault(x => x.Name == name);
             if (index != null)
             {

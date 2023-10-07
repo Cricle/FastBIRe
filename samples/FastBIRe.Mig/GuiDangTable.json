@@ -19,8 +19,7 @@
     {
       "Id": "weibingzaixuerust_2",
       "Name": "a1",
-      "Type": "Datetime",
-      "IX": true
+      "Type": "Datetime"
     },
     {
       "Id": "weibingzaixuerust_3",
