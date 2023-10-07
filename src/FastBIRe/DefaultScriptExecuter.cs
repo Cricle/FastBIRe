@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32.SafeHandles;
-using System.Data.Common;
+﻿using System.Data.Common;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -63,7 +62,7 @@ namespace FastBIRe
 
         public event EventHandler<ScriptExecuteEventArgs>? ScriptStated;
 
-        public Task<int> ExecuteAsync(string script, CancellationToken token)
+        public Task<int> ExecuteAsync(string script, CancellationToken token = default)
         {
             return ExecuteAsync(script, null, GetStackTrace(), token);
         }
@@ -140,8 +139,12 @@ namespace FastBIRe
             }
             return res;
         }
-        public async Task<int> ExecuteAsync(IEnumerable<string> scripts, CancellationToken token)
+        public async Task<int> ExecuteAsync(IEnumerable<string> scripts, CancellationToken token = default)
         {
+            if (!scripts.Any())
+            {
+                return 0;
+            }
             var stackTrace = GetStackTrace();
 #if !NETSTANDARD2_0
             if (UseBatch && Connection.CanCreateBatch)

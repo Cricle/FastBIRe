@@ -2,22 +2,16 @@
 
 namespace FastBIRe.Data
 {
-    public readonly record struct SQLMirrorTarget : IDisposable
+    public readonly record struct SQLMirrorTarget
     {
-        public SQLMirrorTarget(DbConnection connection, string named)
+        public SQLMirrorTarget(IScriptExecuter scriptExecuter, string named)
         {
-            Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            ScriptExecuter = scriptExecuter ?? throw new ArgumentNullException(nameof(scriptExecuter));
             Named = named ?? throw new ArgumentNullException(nameof(named));
         }
 
-        public DbConnection Connection { get; }
+        public IScriptExecuter ScriptExecuter { get; }
 
         public string Named { get; }
-
-        public void Dispose()
-        {
-            Connection?.Dispose();
-            GC.SuppressFinalize(this);
-        }
     }
 }

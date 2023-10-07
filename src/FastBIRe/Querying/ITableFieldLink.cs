@@ -16,7 +16,7 @@ namespace FastBIRe.Querying
 
         public DatabaseTable DestTable { get; }
 
-        public ITableFieldLink Direct(string sourceFieldName, string destFieldName)
+        public ITableFieldLink Direct(string destFieldName, string sourceFieldName)
         {
             var sourceField = SourceTable.FindColumn(sourceFieldName);
             if (sourceField == null)

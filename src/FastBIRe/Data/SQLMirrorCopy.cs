@@ -24,11 +24,9 @@ namespace FastBIRe.Data
 
         public IEscaper Escaper { get; }
 
-        private string[]? names;
+        protected string[]? names;
 
         public IReadOnlyList<string>? Names => names;
-
-        public int CommandTimeout { get; set; } = 60;
 
         protected override Task OnFirstReadAsync()
         {
@@ -74,19 +72,19 @@ namespace FastBIRe.Data
 
         protected override void AppendRecord(StringBuilder input, IDataReader reader, bool lastBatch)
         {
-            input.Append("(");
+            input.Append('(');
             for (int i = 0; i < reader.FieldCount; i++)
             {
                 input.Append(Escaper.WrapValue(reader[i]));
                 if (reader.FieldCount-1 != i)
                 {
-                    input.Append(",");
+                    input.Append(',');
                 }
             }
-            input.Append(")");
+            input.Append(')');
             if (!lastBatch)
             {
-                input.Append(",");
+                input.Append(',');
             }
         }
 
@@ -100,16 +98,12 @@ namespace FastBIRe.Data
             {
                 datas.Remove(datas.Length - 1, 1);
             }
-            using (var command = Target.Connection.CreateCommand())
-            {
-                command.CommandText = datas.ToString();
-                command.CommandTimeout = CommandTimeout;
-                var affect = await command.ExecuteNonQueryAsync(token);
-                return new RowWriteResult<string>(
-                    names,
-                    new IQueryTranslateResult[] { new QueryTranslateResult(command.CommandText) },
-                    affect);
-            }
+            var sciprt = datas.ToString();
+            var affect = await Target.ScriptExecuter.ExecuteAsync(sciprt, token);
+            return new RowWriteResult<string>(
+                names,
+                new IQueryTranslateResult[] { new QueryTranslateResult(sciprt) },
+                affect);
         }
     }
 }

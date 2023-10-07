@@ -479,6 +479,10 @@ namespace FastBIRe
                     return MonthTo(args[0]);
                 case SQLFunctions.YearTo:
                     return YearTo(args[0]);
+                case SQLFunctions.StandardDeviation:
+                    return StandardDeviation(args[0]);
+                case SQLFunctions.Range:
+                    return Range(args[0]);
                 default:
                     return null;
             }

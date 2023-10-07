@@ -2,8 +2,10 @@
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
+using FastBIRe.Comparing;
 using FastBIRe.Creating;
 using FastBIRe.Naming;
+using FastBIRe.Store;
 using FastBIRe.Timing;
 using FastBIRe.Triggering;
 using System.Data.Common;
@@ -39,10 +41,11 @@ namespace FastBIRe.AAMode
                   DefaultPrimaryKeyNameGenerator,
                   DefaultInsertTag,
                   DefaultUpdateTag,
-                  null)
+                  null,
+                  SqlComparer.Instance)
         {
         }
-        public AATableHelper(string tableName, DbConnection dbConnection, ITriggerWriter triggerWriter, INameGenerator expandTriggerNameGenerator, INameGenerator indexNameGenerator, INameGenerator effectInsertTriggerNameGenerator, INameGenerator effectUpdateTriggerNameGenerator, INameGenerator effectTableNameGenerator, INameGenerator primaryKeyNameGenerator, string insertTag, string updateTag, ITimeExpandHelper? timeExpandHelper)
+        public AATableHelper(string tableName, DbConnection dbConnection, ITriggerWriter triggerWriter, INameGenerator expandTriggerNameGenerator, INameGenerator indexNameGenerator, INameGenerator effectInsertTriggerNameGenerator, INameGenerator effectUpdateTriggerNameGenerator, INameGenerator effectTableNameGenerator, INameGenerator primaryKeyNameGenerator, string insertTag, string updateTag, ITimeExpandHelper? timeExpandHelper, IEqualityComparer<string?> sqlComparer)
         {
             TableName = tableName ?? throw new ArgumentNullException(nameof(tableName));
             DbConnection = dbConnection ?? throw new ArgumentNullException(nameof(dbConnection));
@@ -57,6 +60,7 @@ namespace FastBIRe.AAMode
             TriggerWriter = triggerWriter;
             TimeExpandHelper = timeExpandHelper ?? Timing.TimeExpandHelper.GetDefault(SqlType) ?? throw new ArgumentNullException($"{nameof(timeExpandHelper)} null or sql type not support");
             PrimaryKeyNameGenerator = primaryKeyNameGenerator;
+            SqlEqualityComparer = sqlComparer;
         }
 
         public string TableName { get; }
@@ -92,6 +96,10 @@ namespace FastBIRe.AAMode
         public FunctionMapper? FunctionMapper => FunctionMapper.Get(SqlType);
 
         public string PrimaryKeyName => PrimaryKeyNameGenerator.Create(new[] { TableName });
+
+        public IEqualityComparer<string?> SqlEqualityComparer { get; }
+
+        public IDataStore? TriggerDataStore { get; set; }
 
         public virtual IList<string> ExpandTimeMigrationScript(IEnumerable<string> columns, TimeTypes timeTypes = TimeTypes.ExceptSecond)
         {
@@ -134,12 +142,18 @@ namespace FastBIRe.AAMode
             var scripts = new List<string>();
 
             var extInsert = new EffectInsertTriggerAAModelHelper(EffectInsertTriggerNameGenerator, TriggerWriter);
+            extInsert.TriggerDataStore = TriggerDataStore;
+            extInsert.SqlEqualityComparer = SqlEqualityComparer;
+            extInsert.CheckRemote = SqlType != SqlType.PostgreSql;
             var request = new EffectTriggerAAModelRequest(sourceTable, destTable, effectTable);
             request.SettingItems.AddRange(effectTable.Columns.Select(x => EffectTriggerSettingItem.Trigger(x.Name, SqlType)));
             extInsert.Apply(DatabaseReader, request);
             scripts.AddRange(request.Scripts);
 
             var extUpdate = new EffectUpdateTriggerAAModelHelper(EffectUpdateTriggerNameGenerator, TriggerWriter);
+            extUpdate.TriggerDataStore = TriggerDataStore;
+            extUpdate.SqlEqualityComparer = SqlEqualityComparer;
+            extUpdate.CheckRemote = SqlType != SqlType.PostgreSql;
             request = new EffectTriggerAAModelRequest(sourceTable, destTable, effectTable);
             request.SettingItems.AddRange(effectTable.Columns.Select(x => EffectTriggerSettingItem.Trigger(x.Name, SqlType)));
             extUpdate.Apply(DatabaseReader, request);
@@ -220,6 +234,59 @@ namespace FastBIRe.AAMode
             scripts.Add(ddl.AddConstraint(table, table.PrimaryKey));
             return scripts;
         }
+        private string? GetStoredTriggerScripts(string name)
+        {
+            return TriggerDataStore?.GetString(name);
+        }
+        protected virtual IList<string> CreateExpandTriggerScript(IEnumerable<string> columns, TriggerTypes triggerType, TimeTypes timeTypes = TimeTypes.ExceptSecond)
+        {
+            var scripts = new List<string>();
+            var table = Table;
+            var tag = triggerType == TriggerTypes.InsteadOfInsert || triggerType == TriggerTypes.AfterInsert ? InsertTag : UpdateTag;
+            var triggerName = ExpandTriggerNameGenerator.Create(new[] { TableName, tag });
+            var trigger = table.Triggers.FirstOrDefault(x => x.Name == triggerName);
+            IEnumerable<string>? dropTriggers = null;
+            if (trigger != null)
+            {
+                dropTriggers = TriggerWriter.Drop(SqlType, triggerName);
+            }
+
+            var expandResults = columns.SelectMany(x => TimeExpandHelper.Create(x, timeTypes)).OfType<IExpandResult>().ToList();
+
+            //Re read table 
+            table = Table;
+            var insertScripts = TriggerWriter.CreateExpand(SqlType, triggerName, triggerType, table, expandResults);
+            var insertStoredScript = GetStoredTriggerScripts(triggerName);
+
+            var nowScripts = string.Join("\n", insertScripts);
+            var needReCreate = trigger == null;
+            if (!needReCreate)
+            {
+                //Check remote if need
+                if (SqlType!= SqlType.PostgreSql)
+                {
+                    if (!SqlEqualityComparer.Equals(trigger!.TriggerBody, nowScripts))
+                    {
+                        needReCreate = true;
+                    }
+                }
+                else if(string.IsNullOrEmpty(insertStoredScript) ||
+                    !SqlEqualityComparer.Equals(insertStoredScript, nowScripts))
+                {
+                    needReCreate = true;
+                }
+            }
+            if (needReCreate)
+            {
+                if (dropTriggers != null)
+                {
+                    scripts.AddRange(dropTriggers);
+                }
+                scripts.AddRange(insertScripts);
+                TriggerDataStore?.SetString(triggerName, nowScripts);
+            }
+            return scripts;
+        } 
         public virtual IList<string> ExpandTriggerScript(IEnumerable<string> columns, TimeTypes timeTypes = TimeTypes.ExceptSecond)
         {
             var scripts = new List<string>();
@@ -228,29 +295,52 @@ namespace FastBIRe.AAMode
             var triggerUpdateName = ExpandTriggerNameGenerator.Create(new[] { TableName, UpdateTag });
             var triggerInsert = table.Triggers.FirstOrDefault(x => x.Name == triggerInsertName);
             var triggerUpdate = table.Triggers.FirstOrDefault(x => x.Name == triggerUpdateName);
+            IEnumerable<string>? dropInsertTriggers = null;
+            IEnumerable<string>? dropUpdateTriggers = null;
             if (triggerInsert != null)
             {
-                scripts.AddRange(TriggerWriter.Drop(SqlType, triggerInsertName));
+                dropInsertTriggers = TriggerWriter.Drop(SqlType, triggerInsertName);
             }
             if (triggerUpdate != null)
             {
-                scripts.AddRange(TriggerWriter.Drop(SqlType, triggerUpdateName));
+                dropUpdateTriggers = TriggerWriter.Drop(SqlType, triggerUpdateName);
             }
 
             var expandResults = columns.SelectMany(x => TimeExpandHelper.Create(x, timeTypes)).OfType<IExpandResult>().ToList();
 
             //Re read table 
             table = Table;
-            if (SqlType == SqlType.SqlServer ||
-                SqlType == SqlType.SqlServerCe)
+            var insertTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfInsert : TriggerTypes.AfterInsert;
+            var updateTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfUpdate : TriggerTypes.AfterUpdate;
+            var insertScripts = TriggerWriter.CreateExpand(SqlType, triggerInsertName, insertTriggerTypes, table, expandResults);
+            var updateScripts = TriggerWriter.CreateExpand(SqlType, triggerUpdateName, updateTriggerTypes, table, expandResults);
+            var insertStoredScript = GetStoredTriggerScripts(triggerInsertName);
+            var updateStoredScript = GetStoredTriggerScripts(triggerUpdateName);
+
+            var insertStored = string.Join("\n", insertScripts);
+            var updateStored = string.Join("\n", updateScripts);
+
+            if (triggerInsert == null||
+                string.IsNullOrEmpty(insertStoredScript) ||
+                !SqlEqualityComparer.Equals(insertStoredScript, insertStored))
             {
-                scripts.AddRange(TriggerWriter.CreateExpand(SqlType, triggerInsertName, TriggerTypes.InsteadOfInsert, table, expandResults));
-                scripts.AddRange(TriggerWriter.CreateExpand(SqlType, triggerUpdateName, TriggerTypes.InsteadOfUpdate, table, expandResults));
+                if (dropInsertTriggers!=null)
+                {
+                    scripts.AddRange(dropInsertTriggers);
+                }
+                scripts.AddRange(insertScripts);
+                TriggerDataStore?.SetString(triggerInsertName, insertStored);
             }
-            else
+            if (triggerUpdate==null||
+                string.IsNullOrEmpty(updateStoredScript) ||
+                !SqlEqualityComparer.Equals(updateStoredScript, updateStored))
             {
-                scripts.AddRange(TriggerWriter.CreateExpand(SqlType, triggerInsertName, TriggerTypes.AfterInsert, table, expandResults));
-                scripts.AddRange(TriggerWriter.CreateExpand(SqlType, triggerUpdateName, TriggerTypes.AfterUpdate, table, expandResults));
+                if (dropUpdateTriggers != null)
+                {
+                    scripts.AddRange(dropUpdateTriggers);
+                }
+                scripts.AddRange(updateScripts);
+                TriggerDataStore?.SetString(triggerUpdateName, updateStored);
             }
             return scripts;
         }

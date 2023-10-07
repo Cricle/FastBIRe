@@ -1,55 +1,17 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using FastBIRe.AAMode;
-using FastBIRe.Creating;
 using FastBIRe.Querying;
+using FastBIRe.Store;
 using FastBIRe.Timing;
 using rsa;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace FastBIRe.Mig
 {
-    public class VObject
-    {
-        public string Id { get; set; }
-    }
-    public class VTable: VObject
-    {
-        public string Name { get; set; }
-
-        public List<VColumn> Columns { get; set; }
-    }
-    public class VColumn : VObject
-    {
-        public string Name { get; set; }
-
-        public DbType Type { get; set; }
-
-        public int Length { get; set; } = 255;
-
-        public int Scale { get; set; } = 2;
-
-        public int Precision { get; set; } = 22;
-
-        public bool Nullable { get; set; } = true;
-
-        public bool PK { get; set; }
-
-        public bool IX { get; set; }
-
-        public bool AI { get; set; }
-
-        public void ToDatabaseColumn(DatabaseColumn column, SqlType sqlType)
-        {
-            column.Name = Name;
-            column.Length = Length;
-            column.Scale = Scale;
-            column.Precision = Precision;
-            column.SetTypeDefault(sqlType, Type);
-        }
-    }
     internal class Program
     {
         static async Task Main(string[] args)
@@ -59,21 +21,28 @@ namespace FastBIRe.Mig
             var dbc = ConnectionProvider.GetDbMigration(sqlType, dbName);
             var executer = new DefaultScriptExecuter(dbc) { CaptureStackTrace = true };
             executer.ScriptStated += OnExecuterScriptStated;
-            await executer.ReadAsync("SELECT 1", (o, e) =>
+            await Orm(executer);
+            var inter = new AATableHelper("guidang", dbc);
+            var sw = Stopwatch.GetTimestamp();
+            var store = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "triggers");
+            if (!Directory.Exists(store))
             {
-                while (e.Reader.Read())
-                {
-
-                }
-                return Task.CompletedTask;
-            });
-            //var inter = new AATableHelper("guidang", dbc);
-            //await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer);
-            //await MigTableAsync("JuHeTable.json", "juhe", dbc, executer);
-            //await GoAsync(executer, inter);
+                Directory.CreateDirectory(store);
+            }
+            var fipath = Path.Combine(store, "cache.zip");
+            var dataStore = ZipDataStore.FromFile("triggers", fipath);
+            inter.TriggerDataStore = dataStore;
+            await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer, inter.TriggerDataStore);
+            await MigTableAsync("JuHeTable.json", "juhe", dbc, executer, inter.TriggerDataStore);
+            await GoAsync(executer, inter);
+            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw));
+            dataStore.Dispose();
         }
-
-        private static async Task MigTableAsync(string file,string tableName,DbConnection dbConnection,IScriptExecuter executer)
+        private static async Task Orm(IScriptExecuter executer)
+        {
+            var res = await executer.ReadAsync<Data>("SELECT 1 AS a");
+        }
+        private static async Task MigTableAsync(string file,string tableName,DbConnection dbConnection,IScriptExecuter executer,IDataStore triggerDataStore)
         {
             var content = File.ReadAllText(file);
             var vtb = JsonSerializer.Deserialize<VTable>(content, new JsonSerializerOptions
@@ -84,6 +53,7 @@ namespace FastBIRe.Mig
                 }
             });
             var tableHelper = new AATableHelper(tableName, dbConnection);
+            tableHelper.TriggerDataStore = triggerDataStore;
             var scripts = tableHelper.CreateTableOrMigrationScript(() =>
             {
                 var table = new DatabaseTable { Name = tableHelper.TableName,PrimaryKey=new DatabaseConstraint { Name = tableHelper.PrimaryKeyName,TableName= tableHelper.TableName } };
@@ -110,27 +80,35 @@ namespace FastBIRe.Mig
                     if (column == null)
                     {
                         column = new DatabaseColumn();
-                        item.ToDatabaseColumn(column, tableHelper.SqlType);
                         @new.AddColumn(column);
                     }
-                    else
+                    item.ToDatabaseColumn(column, tableHelper.SqlType);
+                    if (column.DataType.IsDateTime)
                     {
-                        item.ToDatabaseColumn(column, tableHelper.SqlType);
+                        var result = tableHelper.TimeExpandHelper.Create(column.Name, TimeTypes.ExceptSecond);
+                        foreach (var res in result)
+                        {
+                            @new.AddColumn(res.Name, DbType.DateTime);
+                        }
                     }
                 }
-                @new.Columns.RemoveAll(x => !vtb.Columns.Any(y => y.Name == x.Name));
                 return @new;
             });
-            await executer.ExecuteAsync(scripts, default);
+            await executer.ExecuteAsync(scripts);
 
             foreach (var item in vtb.Columns)
             {
                 if (item.IX)
                 {
                     scripts = tableHelper.CreateIndexScript(item.Name, true);
-                    await executer.ExecuteAsync(scripts, default);
+                    await executer.ExecuteAsync(scripts);
                 }
             }
+            var expandColumns = vtb.Columns.Where(x => x.Type == DbType.DateTime).Select(x=>x.Name).ToList();
+            scripts = tableHelper.ExpandTimeMigrationScript(expandColumns);
+            await executer.ExecuteAsync(scripts);
+            scripts = tableHelper.ExpandTriggerScript(expandColumns);
+            await executer.ExecuteAsync(scripts);
         }
 
         private static async Task GoAsync(IScriptExecuter executer, AATableHelper tableHelper)
@@ -139,7 +117,6 @@ namespace FastBIRe.Mig
             await executer.ExecuteAsync(scripts, default);
             scripts = tableHelper.EffectScript("juhe", "juhe_effect");
             await executer.ExecuteAsync(scripts, default);
-            var juheTable = tableHelper.DatabaseReader.Table("juhe");
             var builder = TableFieldLinkBuilder.From(tableHelper.DatabaseReader, "guidang", "juhe");
             var funcMapper = tableHelper.FunctionMapper;
             var query = tableHelper.MakeInsertQuery(MergeQuerying.Default, "juhe", new ITableFieldLink[]
@@ -148,8 +125,8 @@ namespace FastBIRe.Mig
                 builder.Expand("ca4",DefaultExpandResult.Expression("a4",funcMapper.CountC("{0}")))
             }, new ITableFieldLink[]
             {
-                builder.Direct("a1","ja1"),
-                builder.Direct("a2","ja2")
+                builder.Direct("ja1","a1"),
+                builder.Direct("ja2","a2")
             });
             Console.WriteLine(query);
         }
@@ -187,12 +164,12 @@ namespace FastBIRe.Mig
 
                 Console.Write("ExecutedTime: ");
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.Write($"{e.ExecutionTime.Value.TotalMilliseconds:F4}ms ");
+                Console.Write($"{e.ExecutionTime?.TotalMilliseconds:F4}ms ");
                 Console.ResetColor();
 
                 Console.Write(", FullTime: ");
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine($"{e.FullTime.Value.TotalMilliseconds:F4}ms");
+                Console.WriteLine($"{e.FullTime?.TotalMilliseconds:F4}ms");
                 Console.ResetColor();
 
                 Console.ForegroundColor = ConsoleColor.Cyan;
