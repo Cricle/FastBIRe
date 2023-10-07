@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
+    <ProjectReference Include="..\..\src\FastBIRe\FastBIRe.csproj" />
   </ItemGroup>
 
 </Project>
