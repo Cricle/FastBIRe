@@ -30,8 +30,8 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.MySql, "__$field_minute", "CONCAT(CAST(LEFT({0},16) AS CHAR) , CAST(':00' AS CHAR))")]
         [DataRow(SqlType.SqlServer, "__$field_minute", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(16),{0} ,120),120) , CONVERT(VARCHAR,':00',120))")]
         [DataRow(SqlType.SqlServerCe, "__$field_minute", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(16),{0} ,120),120) , CONVERT(VARCHAR,':00',120))")]
-        [DataRow(SqlType.SQLite, "__$field_minute", "CAST(strftime('%Y-%m-%d %H:%M:00', {0}) AS TEXT) || CAST(':00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_minute", "date_trunc('minute',{0})::VARCHAR || ':00'::VARCHAR")]
+        [DataRow(SqlType.SQLite, "__$field_minute", "CAST(strftime('%Y-%m-%d %H:%M', {0}) AS TEXT) || CAST(':00' AS TEXT)")]
+        [DataRow(SqlType.PostgreSql, "__$field_minute", "LEFT(date_trunc('minute',{0})::VARCHAR,16)::VARCHAR || ':00'::VARCHAR")]
         public void Create_Minute(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
@@ -46,8 +46,8 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.MySql, "__$field_hour", "CONCAT(CAST(LEFT({0},13) AS CHAR) , CAST(':00:00' AS CHAR))")]
         [DataRow(SqlType.SqlServer, "__$field_hour", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(13),{0} ,120),120) , CONVERT(VARCHAR,':00:00',120))")]
         [DataRow(SqlType.SqlServerCe, "__$field_hour", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(13),{0} ,120),120) , CONVERT(VARCHAR,':00:00',120))")]
-        [DataRow(SqlType.SQLite, "__$field_hour", "CAST(strftime('%Y-%m-%d %H:00:00', {0}) AS TEXT) || CAST(':00:00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_hour", "date_trunc('hour',{0})::VARCHAR || ':00:00'::VARCHAR")]
+        [DataRow(SqlType.SQLite, "__$field_hour", "CAST(strftime('%Y-%m-%d %H', {0}) AS TEXT) || CAST(':00:00' AS TEXT)")]
+        [DataRow(SqlType.PostgreSql, "__$field_hour", "LEFT(date_trunc('hour',{0})::VARCHAR,13)::VARCHAR || ':00:00'::VARCHAR")]
         public void Create_Hour(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
@@ -62,8 +62,8 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.MySql, "__$field_day", "CONCAT(CAST(LEFT({0},10) AS CHAR) , CAST(' 00:00:00' AS CHAR))")]
         [DataRow(SqlType.SqlServer, "__$field_day", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(10),{0} ,120),120) , CONVERT(VARCHAR,' 00:00:00',120))")]
         [DataRow(SqlType.SqlServerCe, "__$field_day", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(10),{0} ,120),120) , CONVERT(VARCHAR,' 00:00:00',120))")]
-        [DataRow(SqlType.SQLite, "__$field_day", "CAST(strftime('%Y-%m-%d 00:00:00', {0}) AS TEXT) || CAST(' 00:00:00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_day", "date_trunc('day',{0})::VARCHAR || ' 00:00:00'::VARCHAR")]
+        [DataRow(SqlType.SQLite, "__$field_day", "CAST(strftime('%Y-%m-%d', {0}) AS TEXT) || CAST(' 00:00:00' AS TEXT)")]
+        [DataRow(SqlType.PostgreSql, "__$field_day", "LEFT(date_trunc('day',{0})::VARCHAR,10)::VARCHAR || ' 00:00:00'::VARCHAR")]
         public void Create_Day(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
@@ -75,11 +75,11 @@ namespace FastBIRe.Test.Timing
             Assert.AreEqual(formatExp, res[0].ExparessionFormatter!.Trim());
         }
         [TestMethod]
-        [DataRow(SqlType.MySql, "__$field_week", "CONCAT(CAST(DATE_FORMAT(DATE_SUB({0}, INTERVAL WEEKDAY({0}) DAY),'%Y-%m-%d') AS CHAR) , CAST(':00' AS CHAR))")]
-        [DataRow(SqlType.SqlServer, "__$field_week", "CONCAT(CONVERT(VARCHAR,DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {0}, 120) - 1), 0),120) , CONVERT(VARCHAR,':00',120))")]
-        [DataRow(SqlType.SqlServerCe, "__$field_week", "CONCAT(CONVERT(VARCHAR,DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {0}, 120) - 1), 0),120) , CONVERT(VARCHAR,':00',120))")]
-        [DataRow(SqlType.SQLite, "__$field_week", "CAST(date({0}, 'weekday 0', '-6 day')||' 00:00:00' AS TEXT) || CAST(':00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_week", "date_trunc('day',{0}::timestamp) - ((EXTRACT(DOW FROM {0}::TIMESTAMP)::INTEGER+6)%7 || ' days')::INTERVAL::VARCHAR || ':00'::VARCHAR")]
+        [DataRow(SqlType.MySql, "__$field_week", "DATE_FORMAT(DATE_SUB({0}, INTERVAL WEEKDAY({0}) DAY),'%Y-%m-%d')")]
+        [DataRow(SqlType.SqlServer, "__$field_week", "DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {0}, 120) - 1), 0)")]
+        [DataRow(SqlType.SqlServerCe, "__$field_week", "DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {0}, 120) - 1), 0)")]
+        [DataRow(SqlType.SQLite, "__$field_week", "date({0}, 'weekday 0', '-6 day')||' 00:00:00'")]
+        [DataRow(SqlType.PostgreSql, "__$field_week", "(date_trunc('day',{0}) - ((EXTRACT(DOW FROM {0})::INTEGER+6)%7 || ' days')::INTERVAL)::timestamp with time zone")]
         public void Create_Week(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
@@ -94,8 +94,8 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.MySql, "__$field_month", "CONCAT(CAST(LEFT({0},7) AS CHAR) , CAST('-01 00:00:00' AS CHAR))")]
         [DataRow(SqlType.SqlServer, "__$field_month", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(7),{0} ,120),120) , CONVERT(VARCHAR,'-01 00:00:00',120))")]
         [DataRow(SqlType.SqlServerCe, "__$field_month", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(7),{0} ,120),120) , CONVERT(VARCHAR,'-01 00:00:00',120))")]
-        [DataRow(SqlType.SQLite, "__$field_month", "CAST(strftime('%Y-%m-01 00:00:00', {0}) AS TEXT) || CAST('-01 00:00:00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_month", "date_trunc('month',{0})::VARCHAR || '-01 00:00:00'::VARCHAR")]
+        [DataRow(SqlType.SQLite, "__$field_month", "CAST(strftime('%Y-%m', {0}) AS TEXT) || CAST('-01 00:00:00' AS TEXT)")]
+        [DataRow(SqlType.PostgreSql, "__$field_month", "LEFT(date_trunc('month',{0})::VARCHAR,7)::VARCHAR || '-01 00:00:00'::VARCHAR")]
         public void Create_Month(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
@@ -126,8 +126,8 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.MySql, "__$field_year", "CONCAT(CAST(LEFT({0},4) AS CHAR) , CAST('-01-01 00:00:00' AS CHAR))")]
         [DataRow(SqlType.SqlServer, "__$field_year", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(4),{0} ,120),120) , CONVERT(VARCHAR,'-01-01 00:00:00',120))")]
         [DataRow(SqlType.SqlServerCe, "__$field_year", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(4),{0} ,120),120) , CONVERT(VARCHAR,'-01-01 00:00:00',120))")]
-        [DataRow(SqlType.SQLite, "__$field_year", "CAST(strftime('%Y-01-01 00:00:00', {0}) AS TEXT) || CAST('-01-01 00:00:00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_year", "date_trunc('year',{0})::VARCHAR || '-01-01 00:00:00'::VARCHAR")]
+        [DataRow(SqlType.SQLite, "__$field_year", "CAST(strftime('%Y', {0}) AS TEXT) || CAST('-01-01 00:00:00' AS TEXT)")]
+        [DataRow(SqlType.PostgreSql, "__$field_year", "LEFT(date_trunc('year',{0})::VARCHAR,4)::VARCHAR || '-01-01 00:00:00'::VARCHAR")]
         public void Create_Year(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);

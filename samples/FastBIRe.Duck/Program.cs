@@ -16,29 +16,33 @@ namespace FastBIRe.Duck
             var duckConn = new DuckDBConnection(builder.ConnectionString);
             duckConn.Open();
             var executer = new DefaultScriptExecuter(duckConn);
-            var table = new DatabaseTable
-            {
-                Name = "test"
-            };
-            table.AddColumn("id").SetTypeDefault(SqlType.DuckdDB, DbType.Int32).AddIdentity();
-            table.AddColumn("a1").SetTypeDefault(SqlType.DuckdDB, DbType.DateTime).AddIndex("IDX_11");
-            table.AddColumn("a2").SetTypeDefault(SqlType.DuckdDB, DbType.Double);
-            table.AddColumn("a3").SetTypeDefault(SqlType.DuckdDB, DbType.Decimal);
-            table.AddColumn("a4").SetTypeDefault(SqlType.DuckdDB, DbType.Boolean);
-            table.PrimaryKey = new DatabaseConstraint { Columns = { table.Columns[0].Name } };
-            var ddl = new DdlGeneratorFactory(SqlType.DuckdDB).TableGenerator(table).Write();
-            Console.WriteLine(ddl);
-            await executer.ExecuteAsync(ddl);
             var reader = new DatabaseReader(duckConn);
+            var hasTable = reader.TableExists("test");
+            if (!hasTable)
+            {
+                var table = new DatabaseTable
+                {
+                    Name = "test"
+                };
+                table.AddColumn("id").SetTypeDefault(SqlType.DuckdDB, DbType.Int32).AddIdentity();
+                table.AddColumn("a1").SetTypeDefault(SqlType.DuckdDB, DbType.DateTime).AddIndex("IDX_11");
+                table.AddColumn("a2").SetTypeDefault(SqlType.DuckdDB, DbType.Double);
+                table.AddColumn("a3").SetTypeDefault(SqlType.DuckdDB, DbType.Decimal);
+                table.AddColumn("a4").SetTypeDefault(SqlType.DuckdDB, DbType.Boolean);
+                table.PrimaryKey = new DatabaseConstraint { Columns = { table.Columns[0].Name } };
+                var ddl = new DdlGeneratorFactory(SqlType.DuckdDB).TableGenerator(table).Write();
+                Console.WriteLine(ddl);
+                await executer.ExecuteAsync(ddl);
+            }
             var tb = reader.Table("test");
             var cptb = reader.Table("test");
             cptb.Columns[1].Id = 1;
             tb.Columns[1].Id = 1;
 
             cptb.Columns[1].Name = "qweqewdawda";
-            ddl = CompareSchemas.FromTable(builder.DataSource, SqlType.DuckdDB, tb, cptb).Execute();
-            Console.WriteLine(ddl);
-            await executer.ExecuteAsync(ddl);
+            var script= CompareSchemas.FromTable(builder.DataSource, SqlType.DuckdDB, tb, cptb).Execute();
+            Console.WriteLine(script);
+            await executer.ExecuteAsync(script);
         }
     }
 }
