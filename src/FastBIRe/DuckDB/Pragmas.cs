@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FastBIRe.DuckDB
+﻿namespace FastBIRe.DuckDB
 {
     public static class Pragmas
     {

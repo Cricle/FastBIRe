@@ -118,14 +118,14 @@ namespace FastBIRe.Mig
                 }
                 return @new;
             });
-            await executer.ExecuteAsync(scripts);
+            await executer.ExecuteBatchAsync(scripts);
             var table = tableHelper.Table;
             foreach (var item in vtb.Columns)
             {
                 if (item.IX)
                 {
                     scripts = tableHelper.CreateIndexScript(item.Name, true);
-                    await executer.ExecuteAsync(scripts);
+                    await executer.ExecuteBatchAsync(scripts);
                 }
                 else if(!item.PK)
                 {
@@ -133,23 +133,23 @@ namespace FastBIRe.Mig
                     var idx = table.Indexes.FirstOrDefault(x => x.Name == idxName);
                     if (idx != null)
                     {
-                        await executer.ExecuteAsync(tableHelper.DropIndexScript(item.Name));
+                        await executer.ExecuteBatchAsync(tableHelper.DropIndexScript(item.Name));
                     }
                 }
             }
             var expandColumns = vtb.Columns.Where(x => x.Type == DbType.DateTime).Select(x=>x.Name).ToList();
             scripts = tableHelper.ExpandTimeMigrationScript(expandColumns);
-            await executer.ExecuteAsync(scripts);
+            await executer.ExecuteBatchAsync(scripts);
             scripts = tableHelper.ExpandTriggerScript(expandColumns);
-            await executer.ExecuteAsync(scripts);
+            await executer.ExecuteBatchAsync(scripts);
         }
 
         private static async Task GoAsync(IScriptExecuter executer, AATableHelper tableHelper)
         {
             var scripts = tableHelper.EffectTableScript("juhe", new[] { "a1", "a2" });
-            await executer.ExecuteAsync(scripts, default);
+            await executer.ExecuteBatchAsync(scripts, default);
             scripts = tableHelper.EffectScript("juhe", "juhe_effect");
-            await executer.ExecuteAsync(scripts, default);
+            await executer.ExecuteBatchAsync(scripts, default);
             var builder = TableFieldLinkBuilder.From(tableHelper.DatabaseReader, "guidang", "juhe");
             var funcMapper = tableHelper.FunctionMapper;
             var query = tableHelper.MakeInsertQuery(MergeQuerying.Default, "juhe", new ITableFieldLink[]

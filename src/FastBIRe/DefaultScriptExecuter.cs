@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
-    public class DefaultScriptExecuter : IScriptExecuter
+    public class DefaultScriptExecuter : IScriptExecuter, IStackTraceScriptExecuter
     {
         private static readonly IReadOnlyList<MethodBase> Methods = typeof(DefaultScriptExecuter).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Where(x => !x.IsSpecialName && x.DeclaringType == typeof(DefaultScriptExecuter))
@@ -130,7 +130,7 @@ namespace FastBIRe
             }
             return true;
         }
-        private async Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, StackTrace? stackTrace, CancellationToken token = default)
+        private async Task<int> ExecuteBatchSlowAsync(IEnumerable<string> scripts, StackTrace? stackTrace, CancellationToken token = default)
         {
             var res = 0;
             foreach (var item in scripts)
@@ -139,14 +139,9 @@ namespace FastBIRe
             }
             return res;
         }
-        public async Task<int> ExecuteAsync(IEnumerable<string> scripts, CancellationToken token = default)
-        {
-            if (!scripts.Any())
-            {
-                return 0;
-            }
-            var stackTrace = GetStackTrace();
 #if !NETSTANDARD2_0
+        protected async Task<int?> BatchExecuteAdoAsync(IEnumerable<string> scripts,StackTrace? stackTrace, CancellationToken token = default)
+        {
             if (UseBatch && Connection.CanCreateBatch)
             {
                 var fullStartTime = Stopwatch.GetTimestamp();
@@ -180,8 +175,12 @@ namespace FastBIRe
                     }
                 }
             }
+            return null;
+        }
 #endif
-            return await ExecuteBatchAsync(scripts, stackTrace, token).ConfigureAwait(false);
+        public Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, CancellationToken token = default)
+        {
+            return ExecuteBatchAsync(scripts,GetStackTrace(), token);
         }
 
         public async Task ReadAsync(string script, ReadDataHandler handler, CancellationToken token=default)
@@ -210,6 +209,28 @@ namespace FastBIRe
                     throw;
                 }
             }
+        }
+
+        public Task<int> ExecuteAsync(string script, StackTrace? stackTrace, CancellationToken token = default)
+        {
+            return ExecuteAsync(script, null, stackTrace, token);
+        }
+
+        public async Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, StackTrace? stackTrace, CancellationToken token = default)
+        {
+            if (!scripts.Any())
+            {
+                return 0;
+            }
+            stackTrace ??= GetStackTrace();
+#if !NETSTANDARD2_0
+            var res = await BatchExecuteAdoAsync(scripts, stackTrace, token).ConfigureAwait(false);
+            if (res != null)
+            {
+                return res.Value;
+            }
+#endif
+            return await ExecuteBatchSlowAsync(scripts, stackTrace, token).ConfigureAwait(false);
         }
     }
 }
