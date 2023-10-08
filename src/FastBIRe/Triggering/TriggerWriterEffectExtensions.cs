@@ -12,7 +12,8 @@ namespace FastBIRe.Triggering
             DatabaseTable table,
             IEnumerable<string> expandFields,
             ITimeExpandHelper? timeExpandHelper = null,
-            TimeTypes timeTypes = TimeTypes.ExceptSecond)
+            TimeTypes timeTypes = TimeTypes.ExceptSecond,
+            bool hasIdentity = false)
         {
             if (expandFields == null)
             {
@@ -25,14 +26,16 @@ namespace FastBIRe.Triggering
             }
 
             var exps = expandFields.SelectMany(x => timeExpandHelper!.Create(x, timeTypes)).Cast<IExpandResult>().ToList();
-            return CreateExpand(triggerWriter!, sqlType, name, type, table, exps);
+            return CreateExpand(triggerWriter!, sqlType, name, type, table, exps,hasIdentity);
         }
         public static IEnumerable<string> CreateExpand(this ITriggerWriter triggerWriter,
             SqlType sqlType,
             string name,
             TriggerTypes type,
             DatabaseTable table,
-            IEnumerable<IExpandResult> expandResults)
+            IEnumerable<IExpandResult> expandResults,
+            bool hasIdentity = false,
+            IEnumerable<string>? autoNumberColumns=null)
         {
             var body = string.Empty;
             var when = string.Empty;
@@ -41,6 +44,13 @@ namespace FastBIRe.Triggering
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
                     {
+                        var identitySet = string.Empty;
+                        var identitySetRestore = string.Empty;
+                        if (hasIdentity)
+                        {
+                            identitySet = $"SET IDENTITY_INSERT [{table.Name}] ON;";
+                            identitySetRestore = $"SET IDENTITY_INSERT [{table.Name}] OFF;";
+                        }
                         //https://www.sqlservertutorial.net/sql-server-triggers/sql-server-instead-of-trigger
                         if (type == TriggerTypes.InsteadOfInsert)
                         {
@@ -49,14 +59,41 @@ namespace FastBIRe.Triggering
                             var insertColumnExpression = allColumnExceptExpands.Concat(expandResults.Select(x => x.Name))
                                 .Select(x => $"[{x}]")
                                 .ToList();
+                            var dbcc =string.Empty;
+                            if (hasIdentity)
+                            {
+                                identitySet += $@"
+DECLARE @ident bigint;
+DECLARE @incr bigint;
+SET @incr = IDENT_INCR('{table.Name}');
+SET @ident = IDENT_CURRENT('{table.Name}');
+";
+                                identitySetRestore = $@"
+DECLARE @count bigint;
+SELECT @count = COUNT(*) FROM INSERTED;
+SET @ident = @ident + @incr * @count;
+DBCC CHECKIDENT ('{table.Name}', RESEED, @ident);
+{identitySetRestore}
+";
+                            }
                             //The expand field was let it to end insert, now make insert expressions exception
                             for (int i = 0; i < allColumnExceptExpands.Count; i++)
                             {
-                                allColumnExceptExpands[i] = $"[{allColumnExceptExpands[i]}]";//Replace to quto
+                                if (autoNumberColumns != null && autoNumberColumns.Contains(allColumnExceptExpands[i]))
+                                {
+                                    allColumnExceptExpands[i] = "@ident+(ROW_NUMBER() OVER(ORDER BY (SELECT NULL)))*@incr";//Replace to quto
+                                }
+                                else
+                                {
+                                    allColumnExceptExpands[i] = $"[{allColumnExceptExpands[i]}]";//Replace to quto
+                                }
                             }
                             //Add expressions
                             allColumnExceptExpands.AddRange(expandResults.Select(x => $"({x.FormatExpression($"[NEW].[{x.OriginName}]")}) AS [{x.Name}]"));
-                            body = $@"INSERT INTO [{table.Name}]({string.Join(",", insertColumnExpression)}) SELECT {string.Join(",", allColumnExceptExpands)} FROM INSERTED AS [NEW];";
+                            body = $@"
+{identitySet}
+INSERT INTO [{table.Name}]({string.Join(",", insertColumnExpression)}) SELECT {string.Join(",", allColumnExceptExpands)} FROM INSERTED AS [NEW];
+{identitySetRestore}";
                         }
                         else if (type == TriggerTypes.InsteadOfUpdate)
                         {
@@ -68,11 +105,15 @@ namespace FastBIRe.Triggering
                             }
                             var setList = table.Columns.Select(x => x.Name)
                                 .Except(expandResults.Select(x => x.Name))
+                                .Where(x=> table.PrimaryKey==null||!table.PrimaryKey.Columns.Contains(x))
                                 .Distinct()
                                 .Select(x => $"[{x}] = [NEW].[{x}]")
                                 .ToList();
                             var pkWhereList = table.PrimaryKey.Columns.Select(x => $"[{table.Name}].[{x}] = [NEW].[{x}]");
-                            body = $"UPDATE [{table.Name}] SET {string.Join(",", setList)} FROM INSERTED AS [NEW] WHERE {string.Join(" AND ", pkWhereList)};";
+                            body = @$"
+{identitySet}
+UPDATE [{table.Name}] SET {string.Join(",", setList)} FROM INSERTED AS [NEW] WHERE {string.Join(" AND ", pkWhereList)};
+{identitySetRestore}";
                         }
                         else
                         {
@@ -111,7 +152,8 @@ namespace FastBIRe.Triggering
             TriggerTypes type,
             string sourceTable,
             string targetTable,
-            IEnumerable<EffectTriggerSettingItem> settingItems)
+            IEnumerable<EffectTriggerSettingItem> settingItems,
+            bool hasIdentity = false)
         {
             var body = string.Empty;
             var when = string.Empty;
@@ -120,8 +162,16 @@ namespace FastBIRe.Triggering
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
                     {
+                        var identitySet = string.Empty;
+                        var identitySetRestore = string.Empty;
+                        if (hasIdentity)
+                        {
+                            identitySet = $"SET IDENTITY_INSERT [{targetTable}] ON;";
+                            identitySetRestore = $"SET IDENTITY_INSERT [{targetTable}] OFF;";
+                        }
                         body = $@"
     SET NOCOUNT ON;
+    {identitySet}
     INSERT INTO [{targetTable}] ({string.Join(",", settingItems.Select(x => $"[{x.Field}]"))})
     SELECT {string.Join(",", settingItems.Select(x => x.Raw))}
     FROM (
@@ -134,6 +184,7 @@ namespace FastBIRe.Triggering
             WHERE {string.Join(" AND ", settingItems.Select(x => $"{string.Format(x.RawFormat, $"[t].[{x.Field}]")} = {string.Format(x.RawFormat, $"[NEW].[{x.Field}]")}"))}
         )
     ) AS [NEW];
+    {identitySetRestore}
 ";
                         break;
                     }
@@ -141,7 +192,7 @@ namespace FastBIRe.Triggering
                     {
                         body = $@"
 DECLARE has_row INT;
-SELECT 1 INTO has_row FROM `{targetTable}` WHERE {string.Join(" AND ", settingItems.Select(x => $"(NEW.`{x.Field}` = {x.Raw} OR (NEW.`{x.Field}` IS NULL AND {x.Raw} IS NULL))"))} LIMIT 1;
+SELECT 1 INTO has_row FROM `{targetTable}` WHERE {string.Join(" AND ", settingItems.Select(x => $"(`{x.Field}` = {x.Raw} OR (`{x.Field}` IS NULL AND {x.Raw} IS NULL))"))} LIMIT 1;
 IF has_row IS NULL THEN
     INSERT INTO `{targetTable}`({string.Join(",", settingItems.Select(x => $"`{x.Field}`"))}) VALUES({string.Join(",", settingItems.Select(x => x.Raw))});
 END IF;

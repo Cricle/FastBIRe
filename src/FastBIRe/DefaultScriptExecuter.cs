@@ -232,5 +232,10 @@ namespace FastBIRe
 #endif
             return await ExecuteBatchSlowAsync(scripts, stackTrace, token).ConfigureAwait(false);
         }
+
+        public void Dispose()
+        {
+            Connection?.Dispose();
+        }
     }
 }

@@ -21,7 +21,8 @@ namespace FastBIRe.AAMode
                 triggerTypes,
                 request.ArchiveTable.Name,
                 request.EffectTable.Name,
-                request.SettingItems);
+                request.SettingItems,
+                request.EffectTable.PrimaryKey != null && request.EffectTable.Columns.Any(x => x.IsAutoNumber && x.IsPrimaryKey));
 
         }
 

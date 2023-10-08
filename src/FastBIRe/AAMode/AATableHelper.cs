@@ -259,7 +259,9 @@ namespace FastBIRe.AAMode
 
             //Re read table 
             table = Table;
-            var insertScripts = TriggerWriter.CreateExpand(SqlType, triggerName, triggerType, table, expandResults);
+            var autoColumns =table.Columns.Where(x=>x.IsAutoNumber).Select(x=>x.Name).ToList();
+            var hasIdentity = autoColumns.Count != 0;
+            var insertScripts = TriggerWriter.CreateExpand(SqlType, triggerName, triggerType, table, expandResults, hasIdentity, autoColumns);
             var insertStoredScript = GetStoredTriggerScripts(triggerName);
 
             var nowScripts = string.Join("\n", insertScripts);
@@ -321,8 +323,10 @@ namespace FastBIRe.AAMode
                 insertTriggerTypes = TriggerTypes.AfterInsert;
                 updateTriggerTypes = TriggerTypes.AfterUpdate;
             }
-            var insertScripts = TriggerWriter.CreateExpand(SqlType, triggerInsertName, insertTriggerTypes, table, expandResults);
-            var updateScripts = TriggerWriter.CreateExpand(SqlType, triggerUpdateName, updateTriggerTypes, table, expandResults);
+            var autoColumns = table.Columns.Where(x => x.IsAutoNumber).Select(x => x.Name).ToList();
+            var hasIdentity = autoColumns.Count!=0;
+            var insertScripts = TriggerWriter.CreateExpand(SqlType, triggerInsertName, insertTriggerTypes, table, expandResults, hasIdentity, autoColumns);
+            var updateScripts = TriggerWriter.CreateExpand(SqlType, triggerUpdateName, updateTriggerTypes, table, expandResults, hasIdentity, autoColumns);
             var insertStoredScript = GetStoredTriggerScripts(triggerInsertName);
             var updateStoredScript = GetStoredTriggerScripts(triggerUpdateName);
 

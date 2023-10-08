@@ -29,7 +29,8 @@ namespace FastBIRe.Querying
                 sql.AppendLine();
             }
             var tmpQuto = request.Wrap("tmp");
-            var setString = string.Join(", ", request.NoGroupLinks.Select(x => $"{request.Wrap(x.DestColumn.Name)} = {tmpQuto}.{request.Wrap(x.DestColumn.Name)}"));
+            var setPrefx = request.SqlType == SqlType.MySql ? $"{destTableAliasQuto}.":string.Empty;
+            var setString = string.Join(", ", request.NoGroupLinks.Select(x => $"{setPrefx}{request.Wrap(x.DestColumn.Name)} = {tmpQuto}.{request.Wrap(x.DestColumn.Name)}"));
             if (request.SqlType != SqlType.MySql)
             {
                 sql.AppendLine($"SET {setString}");
