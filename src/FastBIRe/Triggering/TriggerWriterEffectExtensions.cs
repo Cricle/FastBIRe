@@ -175,13 +175,12 @@ UPDATE [{table.Name}] SET {string.Join(",", setList)} FROM INSERTED AS [NEW] WHE
     INSERT INTO [{targetTable}] ({string.Join(",", settingItems.Select(x => $"[{x.Field}]"))})
     SELECT {string.Join(",", settingItems.Select(x => x.Raw))}
     FROM (
-        SELECT {string.Join(",", settingItems.Select(x => $"{string.Format(x.RawFormat, $"[NEW].[{x.Field}]")} AS [{x.Field}]"))} 
+        SELECT {string.Join(",", settingItems.Select(x => $"[NEW].[{x.Field}] AS [{x.Field}]"))} 
         FROM INSERTED AS [NEW] 
-        WHERE {string.Join(" AND ", settingItems.Select(x => x.Field).Distinct().Select(x => $"[NEW].[{x}] IS NOT NULL"))}
-        GROUP BY {string.Join(",", settingItems.Select(x => string.Format(x.RawFormat, $"[NEW].[{x.Field}]")))}
+        GROUP BY {string.Join(",", settingItems.Select(x => $"[NEW].[{x.Field}]"))}
         HAVING NOT EXISTS(
             SELECT 1 FROM [{targetTable}] AS [t] 
-            WHERE {string.Join(" AND ", settingItems.Select(x => $"{string.Format(x.RawFormat, $"[t].[{x.Field}]")} = {string.Format(x.RawFormat, $"[NEW].[{x.Field}]")}"))}
+            WHERE {string.Join(" AND ", settingItems.Select(x => $"([t].[{x.Field}] = [NEW].[{x.Field}] OR ([t].[{x.Field}] IS NULL AND [NEW].[{x.Field}] IS NULL))"))}
         )
     ) AS [NEW];
     {identitySetRestore}
