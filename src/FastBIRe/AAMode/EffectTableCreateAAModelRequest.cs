@@ -13,7 +13,7 @@ namespace FastBIRe.AAMode
 
         public IReadOnlyList<EffectTableSettingItem> SettingItems { get; }
 
-        public static EffectTableCreateAAModelRequest From(DatabaseReader reader,string archiveTableName, string aggregationTableName, IEnumerable<string> sourceColumnNames)
+        public static EffectTableCreateAAModelRequest From(DatabaseReader reader, string archiveTableName, string aggregationTableName, IEnumerable<string> sourceColumnNames)
         {
             var archiveTable = reader.Table(archiveTableName);
             var aggregationTable = reader.Table(aggregationTableName);

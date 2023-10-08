@@ -33,7 +33,7 @@
             var sql = "SELECT " + Helper.CreateHypertable(table, timeColumn,
                 if_not_exists: true,
                 chunk_time_interval: ChuckTimeInterval);
-            var res=await ScriptExecuter.ExecuteAsync(sql);
+            var res = await ScriptExecuter.ExecuteAsync(sql);
             return true;
         }
 

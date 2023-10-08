@@ -6,11 +6,11 @@
         {
             return Over(expression, string.Empty);
         }
-        public static string Over(string expression,string over)
+        public static string Over(string expression, string over)
         {
             return $"{expression} OVER ({over})";
         }
-        public static string OverOrderBy(string expression,string orderBy)
+        public static string OverOrderBy(string expression, string orderBy)
         {
             return Over(expression, $"ORDER BY {orderBy}");
         }
@@ -22,7 +22,7 @@
         {
             return Over(expression, $"PARTITION BY {partitionBy} ORDER BY {orderBy}");
         }
-        public static string Frame(string up,string down)
+        public static string Frame(string up, string down)
         {
             return $"ORWS BETWEEN {up} PRECEDING AND {down} FOLLOWING";
         }

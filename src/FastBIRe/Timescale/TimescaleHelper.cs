@@ -23,7 +23,7 @@ namespace FastBIRe.Timescale
         public string CreateInterval(int value, string unit)
         {
             var unitStr = string.Empty;
-            if (unit==Quarter)
+            if (unit == Quarter)
             {
                 value *= 3;
             }

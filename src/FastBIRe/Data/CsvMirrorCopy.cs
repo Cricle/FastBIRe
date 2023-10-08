@@ -5,7 +5,7 @@ namespace FastBIRe.Data
 {
     public class CsvMirrorCopy : UndefinedDataMirrorCopy<string, RowWriteResult<string>, StreamWriter>, IDisposable
     {
-        public static CsvMirrorCopy FromFile(IDataReader dataReader,string path,Encoding? encoding=null,FileMode fileMode= FileMode.Create,FileAccess fileAccess= FileAccess.ReadWrite,FileShare fileShare= FileShare.Read)
+        public static CsvMirrorCopy FromFile(IDataReader dataReader, string path, Encoding? encoding = null, FileMode fileMode = FileMode.Create, FileAccess fileAccess = FileAccess.ReadWrite, FileShare fileShare = FileShare.Read)
         {
             var fs = File.Open(path, fileMode, fileAccess, fileShare);
             encoding ??= Encoding.UTF8;

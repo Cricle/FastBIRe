@@ -2,9 +2,9 @@
 
 namespace FastBIRe.AAMode
 {
-    public class TableExpandTimeRequest: ScriptingRequest
+    public class TableExpandTimeRequest : ScriptingRequest
     {
-        public TableExpandTimeRequest(string tableName, IEnumerable<string> columns, TimeTypes timeTypes= TimeTypes.ExceptSecond)
+        public TableExpandTimeRequest(string tableName, IEnumerable<string> columns, TimeTypes timeTypes = TimeTypes.ExceptSecond)
         {
             TableName = tableName ?? throw new ArgumentNullException(nameof(tableName));
             Columns = columns ?? throw new ArgumentNullException(nameof(columns));

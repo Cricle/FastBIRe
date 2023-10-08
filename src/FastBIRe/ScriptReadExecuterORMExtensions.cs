@@ -4,14 +4,14 @@ namespace FastBIRe
 {
     public static class ScriptReadExecuterORMExtensions
     {
-        public static async Task<IList<T>> ReadAsync<T>(this IScriptExecuter scriptExecuter,string script, CancellationToken token = default)
+        public static async Task<IList<T>> ReadAsync<T>(this IScriptExecuter scriptExecuter, string script, CancellationToken token = default)
         {
             IList<T> result = Array.Empty<T>();
             await scriptExecuter.ReadAsync(script, (o, e) =>
             {
                 result = Parser<T>.parser(e.Reader);
                 return Task.CompletedTask;
-            },token);
+            }, token);
             return result;
         }
 

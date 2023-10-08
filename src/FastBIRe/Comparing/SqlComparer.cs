@@ -22,11 +22,11 @@ namespace FastBIRe.Comparing
 
         public bool Equals(string? x, string? y)
         {
-            if (x==null&&y==null)
+            if (x == null && y == null)
             {
                 return true;
             }
-            if (x==null||y==null)
+            if (x == null || y == null)
             {
                 return false;
             }

@@ -4,7 +4,7 @@ namespace FastBIRe.AAMode
 {
     public partial class AATableHelper
     {
-        public string MakeInsertQuery(MergeQuerying mergeQuerying, string destTableName, IReadOnlyList<ITableFieldLink> noGroupLinks, IReadOnlyList<ITableFieldLink> groupLinks,Func<MergeQueryInsertRequest, MergeQueryInsertRequest>? requestFun=null)
+        public string MakeInsertQuery(MergeQuerying mergeQuerying, string destTableName, IReadOnlyList<ITableFieldLink> noGroupLinks, IReadOnlyList<ITableFieldLink> groupLinks, Func<MergeQueryInsertRequest, MergeQueryInsertRequest>? requestFun = null)
         {
             var destTable = DatabaseReader.Table(destTableName);
             if (destTable == null)

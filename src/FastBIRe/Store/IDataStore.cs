@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace FastBIRe.Store
+﻿namespace FastBIRe.Store
 {
     public interface IDataStore
     {

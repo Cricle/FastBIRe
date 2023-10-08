@@ -2,7 +2,7 @@
 
 namespace FastBIRe.Querying
 {
-    public record class DirectTableFieldLink: TableFieldLink
+    public record class DirectTableFieldLink : TableFieldLink
     {
         public DirectTableFieldLink(DatabaseColumn destColumn, DatabaseColumn sourceColumn)
             : base(destColumn)
@@ -26,7 +26,7 @@ namespace FastBIRe.Querying
 
         public override string FormatSql(SqlType type, string? tableAlias)
         {
-            return $"{FormatExpression(type,tableAlias)} AS {type.Wrap(DestColumn.Name)}";
+            return $"{FormatExpression(type, tableAlias)} AS {type.Wrap(DestColumn.Name)}";
         }
     }
 }

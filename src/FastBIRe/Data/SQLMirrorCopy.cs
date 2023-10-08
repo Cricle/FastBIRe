@@ -76,7 +76,7 @@ namespace FastBIRe.Data
             for (int i = 0; i < reader.FieldCount; i++)
             {
                 input.Append(Escaper.WrapValue(reader[i]));
-                if (reader.FieldCount-1 != i)
+                if (reader.FieldCount - 1 != i)
                 {
                     input.Append(',');
                 }
@@ -88,7 +88,7 @@ namespace FastBIRe.Data
             }
         }
 
-        protected override async Task<RowWriteResult<string>> WriteAsync(StringBuilder datas, bool storeWriteResult,bool unbound, CancellationToken token)
+        protected override async Task<RowWriteResult<string>> WriteAsync(StringBuilder datas, bool storeWriteResult, bool unbound, CancellationToken token)
         {
             if (datas.Length == 0)
             {

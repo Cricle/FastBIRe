@@ -1,5 +1,4 @@
-﻿using System.Data;
-using System.Data.Common;
+﻿using System.Data.Common;
 
 namespace FastBIRe.Creating
 {
@@ -33,18 +32,18 @@ namespace FastBIRe.Creating
                 var ok = false;
                 await ScriptExecuter.ReadAsync(ExistsSql, (o, e) =>
                 {
-                    ok=e.Reader.Read();
+                    ok = e.Reader.Read();
                     return Task.CompletedTask;
                 }, token);
                 return ok;
             }
         }
 
-        public static IDatabaseCreator GetDatabaseCreator(this IDatabaseCreateAdapter adapter,string database,IScriptExecuter scriptExecuter,Action<DbCommand>? commandAction=null)
+        public static IDatabaseCreator GetDatabaseCreator(this IDatabaseCreateAdapter adapter, string database, IScriptExecuter scriptExecuter, Action<DbCommand>? commandAction = null)
         {
             var existsSql = adapter.CheckDatabaseExists(database);
             var createSql = adapter.CreateDatabase(database);
-            return new DatabaseCreator(scriptExecuter, existsSql, createSql,commandAction);
+            return new DatabaseCreator(scriptExecuter, existsSql, createSql, commandAction);
         }
     }
     public interface IDatabaseCreator
@@ -55,7 +54,7 @@ namespace FastBIRe.Creating
 
         Task<bool> ExistsAsync(CancellationToken token = default);
 
-        Task<int> CreateAsync(CancellationToken token=default);
+        Task<int> CreateAsync(CancellationToken token = default);
     }
     public interface IDatabaseCreateAdapter
     {

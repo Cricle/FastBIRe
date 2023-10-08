@@ -91,7 +91,7 @@ namespace FastBIRe.Querying
         /// <returns>Dest column is duplicate</returns>
         protected virtual bool IsLinkDestColumnDuplice(out string? name)
         {
-            name = AllLinks.GroupBy(x => x.DestColumn.Name).Where(x => x.Skip(1).Any()).Select(x=>x.Key).FirstOrDefault();
+            name = AllLinks.GroupBy(x => x.DestColumn.Name).Where(x => x.Skip(1).Any()).Select(x => x.Key).FirstOrDefault();
             return !string.IsNullOrEmpty(name);
         }
     }

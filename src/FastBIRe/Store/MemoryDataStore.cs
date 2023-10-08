@@ -49,7 +49,7 @@ namespace FastBIRe.Store
             if (datas.TryGetValue(key, out var s))
             {
                 var mem = new MemoryStream();
-                await s.CopyToAsync(mem, 81920,token);
+                await s.CopyToAsync(mem, 81920, token);
             }
             return s;
         }

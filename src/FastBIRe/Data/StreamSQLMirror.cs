@@ -6,10 +6,10 @@ namespace FastBIRe.Data
 {
     public class StreamSQLMirror : SQLMirrorCopy
     {
-        public StreamSQLMirror(IDataReader dataReader, SQLMirrorTarget target, IEscaper escaper, StreamWriter stream) 
+        public StreamSQLMirror(IDataReader dataReader, SQLMirrorTarget target, IEscaper escaper, StreamWriter stream)
             : base(dataReader, target, escaper)
         {
-            StreamWriter= stream;
+            StreamWriter = stream;
         }
 
         public StreamSQLMirror(IDataReader dataReader, SQLMirrorTarget target, IEscaper escaper, StreamWriter stream, int batchSize)
@@ -30,7 +30,7 @@ namespace FastBIRe.Data
             var script = datas.ToString();
             await StreamWriter.WriteLineAsync(script);
 #else
-                await StreamWriter.WriteLineAsync(datas,token);
+            await StreamWriter.WriteLineAsync(datas, token);
 #endif
             return RowWriteResult<string>.Empty;
         }

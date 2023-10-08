@@ -1,5 +1,4 @@
 ﻿using System.Data;
-using System.Text;
 
 namespace FastBIRe.Data
 {
@@ -55,7 +54,7 @@ namespace FastBIRe.Data
                 }
                 if (currentSize >= BatchSize)
                 {
-                    var res = await WriteAsync(input, storeWriteResult,false, token);
+                    var res = await WriteAsync(input, storeWriteResult, false, token);
                     if (storeWriteResult)
                     {
                         result.Add(res);
@@ -76,7 +75,7 @@ namespace FastBIRe.Data
             }
             if (currentSize != 0)
             {
-                var res = await WriteAsync(input, storeWriteResult,true, token);
+                var res = await WriteAsync(input, storeWriteResult, true, token);
                 if (storeWriteResult)
                 {
                     result.Add(res);
@@ -108,9 +107,9 @@ namespace FastBIRe.Data
 
         protected abstract TInput CreateInput();
 
-        protected abstract void AppendRecord(TInput input, IDataReader reader,bool lastBatch);
+        protected abstract void AppendRecord(TInput input, IDataReader reader, bool lastBatch);
 
-        protected abstract Task<TResult> WriteAsync(TInput datas, bool storeWriteResult,bool unbounded, CancellationToken token);
+        protected abstract Task<TResult> WriteAsync(TInput datas, bool storeWriteResult, bool unbounded, CancellationToken token);
     }
 
 }

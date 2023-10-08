@@ -18,10 +18,10 @@ namespace FastBIRe.Store
             }
             return null;
         }
-        public static async Task<string?> GetStringAsync(this IDataStore dataStore,string key,Encoding? encoding=null,CancellationToken token = default)
+        public static async Task<string?> GetStringAsync(this IDataStore dataStore, string key, Encoding? encoding = null, CancellationToken token = default)
         {
             encoding ??= Encoding.UTF8;
-            var stream = await dataStore.GetAsync(key,token);
+            var stream = await dataStore.GetAsync(key, token);
             if (stream != null)
             {
                 using (stream)

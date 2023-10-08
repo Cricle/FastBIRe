@@ -26,14 +26,14 @@ namespace FastBIRe.Querying
                 Throws.ThrowFieldNotFound(destFieldName, DestTable.Name);
             return new DirectTableFieldLink(destField!, sourceField!);
         }
-        public ITableFieldLink Expand(string destFieldName,IExpandResult expandResult)
+        public ITableFieldLink Expand(string destFieldName, IExpandResult expandResult)
         {
             var destField = DestTable.FindColumn(destFieldName);
             if (destField == null)
                 Throws.ThrowFieldNotFound(destFieldName, DestTable.Name);
             return new ExpandTableFieldLink(destField!, expandResult);
         }
-        public static TableFieldLinkBuilder From(DatabaseReader reader,string sourceTableName,string destTableName)
+        public static TableFieldLinkBuilder From(DatabaseReader reader, string sourceTableName, string destTableName)
         {
             var sourceTable = reader.Table(sourceTableName);
             if (sourceTable == null)

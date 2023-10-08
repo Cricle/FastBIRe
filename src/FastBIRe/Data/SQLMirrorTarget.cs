@@ -1,6 +1,4 @@
-﻿using System.Data.Common;
-
-namespace FastBIRe.Data
+﻿namespace FastBIRe.Data
 {
     public readonly record struct SQLMirrorTarget
     {

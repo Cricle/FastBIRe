@@ -32,7 +32,7 @@ namespace FastBIRe.Querying
         /// <inheritdoc/>
         public override string FormatSql(SqlType type, string? tableAlias)
         {
-            return $"{FormatExpression(type,tableAlias)} AS {type.Wrap(DestColumn.Name)}";
+            return $"{FormatExpression(type, tableAlias)} AS {type.Wrap(DestColumn.Name)}";
         }
     }
 }

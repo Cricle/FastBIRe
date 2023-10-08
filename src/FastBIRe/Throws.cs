@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FastBIRe
+﻿namespace FastBIRe
 {
     internal static class Throws
     {
@@ -10,7 +6,7 @@ namespace FastBIRe
         {
             throw new ArgumentException($"Table {tableName} not found");
         }
-        public static void ThrowFieldNotFound(string fieldName,string tableName)
+        public static void ThrowFieldNotFound(string fieldName, string tableName)
         {
             throw new ArgumentException($"Field {fieldName} not found on table {tableName}");
         }

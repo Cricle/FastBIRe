@@ -35,11 +35,11 @@ namespace FastBIRe.AAMode
                     col.SetType(dbType);
                     changedTable.AddColumn(col);
                 }
-                else if (!string.Equals(dbType,col.DbDataType, StringComparison.OrdinalIgnoreCase))
+                else if (!string.Equals(dbType, col.DbDataType, StringComparison.OrdinalIgnoreCase))
                 {
                     col.SetType(dbType);
                 }
-            } 
+            }
             var cmp = CompareSchemas.FromTable(reader.DatabaseSchema.ConnectionString, reader.SqlType!.Value, rawTable, changedTable).ExecuteResult();
             request.AddScripts(cmp.Select(x => x.Script));
         }

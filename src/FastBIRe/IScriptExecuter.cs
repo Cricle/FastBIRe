@@ -1,6 +1,6 @@
 ﻿namespace FastBIRe
 {
-    public delegate Task ReadDataHandler(IScriptExecuter executer,ReadingDataArgs args);
+    public delegate Task ReadDataHandler(IScriptExecuter executer, ReadingDataArgs args);
     public interface IScriptExecuter
     {
         Task<int> ExecuteAsync(string script, CancellationToken token = default);

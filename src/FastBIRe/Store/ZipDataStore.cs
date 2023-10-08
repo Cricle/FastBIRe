@@ -4,14 +4,14 @@ namespace FastBIRe.Store
 {
     public class ZipDataStore : SyncDataStore, IDisposable
     {
-        public static ZipDataStore FromFile(string nameSpace,string path, FileShare fileShare= FileShare.Read)
+        public static ZipDataStore FromFile(string nameSpace, string path, FileShare fileShare = FileShare.Read)
         {
             var fs = File.Open(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, fileShare);
             var zip = new ZipArchive(fs, ZipArchiveMode.Update);
             return new ZipDataStore(nameSpace, zip);
         }
 
-        public ZipDataStore(string nameSpace, ZipArchive zipArchive) 
+        public ZipDataStore(string nameSpace, ZipArchive zipArchive)
             : base(nameSpace)
         {
             ZipArchive = zipArchive;
@@ -39,7 +39,7 @@ namespace FastBIRe.Store
         public override bool Remove(string key)
         {
             var entity = ZipArchive.Entries.FirstOrDefault(x => x.Name == key);
-            if (entity!=null)
+            if (entity != null)
             {
                 entity.Delete();
                 return true;
@@ -62,7 +62,7 @@ namespace FastBIRe.Store
             entity ??= ZipArchive.CreateEntry(key);
             using (var stream = entity.Open())
             {
-                await value.CopyToAsync(stream,81920, token);
+                await value.CopyToAsync(stream, 81920, token);
             }
         }
 

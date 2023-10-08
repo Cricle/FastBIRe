@@ -25,7 +25,7 @@ namespace FastBIRe.AAMode
 
         }
 
-        protected override void AddTrigger(DatabaseReader reader, EffectTriggerAAModelRequest request, string triggerName,bool equals)
+        protected override void AddTrigger(DatabaseReader reader, EffectTriggerAAModelRequest request, string triggerName, bool equals)
         {
             if (!equals)
             {
@@ -43,7 +43,7 @@ namespace FastBIRe.AAMode
                 {
                     var genScripts = string.Join("\n", GetTriggerScripts(reader, request, triggerName));
                     var remoteScript = request.ArchiveTable.Triggers.First(x => x.Name == triggerName);
-                    if (CheckRemote&& !SqlEqualityComparer.Equals(store!, remoteScript.TriggerBody))
+                    if (CheckRemote && !SqlEqualityComparer.Equals(store!, remoteScript.TriggerBody))
                     {
                         return false;
                     }

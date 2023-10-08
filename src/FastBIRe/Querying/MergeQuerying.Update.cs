@@ -36,7 +36,7 @@ namespace FastBIRe.Querying
             }
 
             var updateSelect = CompileUpdateSelect(request, SourceTableAlias);
-            var destGroupOn = string.Join(" AND ",request.GroupLinks.Select(x=>$"{destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} = {tmpQuto}.{request.Wrap(x.DestColumn.Name)}"));
+            var destGroupOn = string.Join(" AND ", request.GroupLinks.Select(x => $"{destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} = {tmpQuto}.{request.Wrap(x.DestColumn.Name)}"));
             var destGroupCheck = string.Join(" OR ", request.NoGroupLinks.Where(x => !request.IgnoreCompareFields.Contains(x.DestColumn.Name)).Select(x => $"({destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} != {tmpQuto}.{request.Wrap(x.DestColumn.Name)} OR ({destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} IS NULL AND {tmpQuto}.{request.Wrap(x.DestColumn.Name)} IS NOT NULL) OR ({destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} IS NOT NULL AND {tmpQuto}.{request.Wrap(x.DestColumn.Name)} IS NULL))"));
 
             var updateFrom = CompileUpdateFrom(request, updateSelect, destGroupOn, destGroupCheck, tmpQuto);
@@ -49,7 +49,7 @@ namespace FastBIRe.Querying
 
             return sql.ToString();
         }
-        private string CompileUpdateFrom(MergeQueryUpdateRequest request,string updateSelect,string destGroupOn,string destGroupCheck,string tmpQuto)
+        private string CompileUpdateFrom(MergeQueryUpdateRequest request, string updateSelect, string destGroupOn, string destGroupCheck, string tmpQuto)
         {
             switch (request.SqlType)
             {
@@ -90,7 +90,7 @@ AND(
                     throw new NotSupportedException($"Only support sqlserver/mysql/sqlite/postgresql");
             }
         }
-        private string CompileUpdateSelect(MergeQueryUpdateRequest request,string? sourceTableAlias)
+        private string CompileUpdateSelect(MergeQueryUpdateRequest request, string? sourceTableAlias)
         {
             //View select?
             if (request.UseView)
@@ -111,7 +111,7 @@ AND(
             //Groups
             var groups = request.GroupLinks.Select(x => x.FormatExpression(request.SqlType, sourceTableAlias));
             var groupString = string.Join(", ", groups);
-            var tableRef=GetTableRef(request);
+            var tableRef = GetTableRef(request);
             return @$"SELECT {rawSelectString}
 FROM {tableRef}
 {where}

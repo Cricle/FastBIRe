@@ -31,13 +31,13 @@ namespace FastBIRe.AAMode
             var equals = exists ? TriggerIsEquals(reader, request, triggerName) : false;
             if (exists && !equals)
             {
-                var dropSqls = TriggerWriter.Drop(reader.SqlType!.Value, triggerName,request.ArchiveTable.Name);
+                var dropSqls = TriggerWriter.Drop(reader.SqlType!.Value, triggerName, request.ArchiveTable.Name);
                 request.AddScripts(dropSqls);
             }
             AddTrigger(reader, request, triggerName, equals);
         }
 
-        protected abstract void AddTrigger(DatabaseReader reader, TModelRequest request,string triggerName,bool triggerIsEquals);
+        protected abstract void AddTrigger(DatabaseReader reader, TModelRequest request, string triggerName, bool triggerIsEquals);
 
         protected virtual string GetTriggerName(DatabaseReader reader, TModelRequest request)
         {
@@ -47,7 +47,7 @@ namespace FastBIRe.AAMode
         {
             return false;
         }
-        protected virtual bool IsTriggerExists(DatabaseReader reader, TModelRequest request,string triggerName)
+        protected virtual bool IsTriggerExists(DatabaseReader reader, TModelRequest request, string triggerName)
         {
             return request.ArchiveTable.Triggers.Any(x => x.Name == triggerName);
         }

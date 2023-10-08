@@ -9,12 +9,12 @@ namespace FastBIRe.Triggering
         {
         }
 
-        protected EffectTriggerSettingItem(FieldRaw original) 
+        protected EffectTriggerSettingItem(FieldRaw original)
             : base(original)
         {
         }
 
-        public static EffectTriggerSettingItem Trigger(string field,SqlType sqlType)
+        public static EffectTriggerSettingItem Trigger(string field, SqlType sqlType)
         {
             var qutoName = sqlType.Wrap(field);
             var triggerField = $"NEW.{qutoName}";

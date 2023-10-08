@@ -47,7 +47,7 @@ namespace FastBIRe.Triggering
                     return string.Empty;
             }
         }
-        public virtual IEnumerable<string> Drop(SqlType sqlType, string name,string table)
+        public virtual IEnumerable<string> Drop(SqlType sqlType, string name, string table)
         {
             switch (sqlType)
             {

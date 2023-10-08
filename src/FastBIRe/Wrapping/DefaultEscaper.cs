@@ -4,7 +4,7 @@ namespace FastBIRe.Wrapping
 {
     public class DefaultEscaper : IEscaper
     {
-        public static readonly DefaultEscaper MySql = new DefaultEscaper("`", "`", "'", "'", true,true);
+        public static readonly DefaultEscaper MySql = new DefaultEscaper("`", "`", "'", "'", true, true);
         public static readonly DefaultEscaper SqlServer = new DefaultEscaper("[", "]", "'", "'", true);
         public static readonly DefaultEscaper MariaDB = MySql;
         public static readonly DefaultEscaper Sqlite = new DefaultEscaper("`", "`", "'", "'", true);
@@ -12,7 +12,7 @@ namespace FastBIRe.Wrapping
         public static readonly DefaultEscaper PostgreSql = new DefaultEscaper("\"", "\"", "'", "'", false);
         public static readonly DefaultEscaper DuckDB = new DefaultEscaper("\"", "\"", "'", "'", false);
 
-        public DefaultEscaper(string qutoStart, string qutoEnd, string valueStart, string valueEnd, bool boolAsInteger, bool escapeBackslash=false)
+        public DefaultEscaper(string qutoStart, string qutoEnd, string valueStart, string valueEnd, bool boolAsInteger, bool escapeBackslash = false)
         {
             QutoStart = qutoStart;
             QutoEnd = qutoEnd;
@@ -45,9 +45,9 @@ namespace FastBIRe.Wrapping
             {
                 return "NULL";
             }
-            else if (input is string||input is Guid)
+            else if (input is string || input is Guid)
             {
-                var str= ValueStart + input + ValueEnd;
+                var str = ValueStart + input + ValueEnd;
                 if (EscapeBackslash)
                 {
                     str = str.Replace("\\", "\\\\");

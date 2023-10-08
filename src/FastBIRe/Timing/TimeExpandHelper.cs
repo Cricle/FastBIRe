@@ -39,7 +39,7 @@ namespace FastBIRe.Timing
 
         }
         public TimeExpandHelper(FunctionMapper functionMapper)
-            :this(DefaultNameGenerator,Timing.TimeNameMapper.Instance,functionMapper)
+            : this(DefaultNameGenerator, Timing.TimeNameMapper.Instance, functionMapper)
         {
 
         }
@@ -65,7 +65,7 @@ namespace FastBIRe.Timing
             {
                 args[1] = TimeNameMapper.ToName(TimeTypes.Second);
                 var timeField = NameGenerator.Create(args);
-                yield return new TimeExpandResult(TimeTypes.Second, timeField,name, timeField);
+                yield return new TimeExpandResult(TimeTypes.Second, timeField, name, timeField);
             }
             if ((type & TimeTypes.Minute) != 0)
             {

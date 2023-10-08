@@ -2,7 +2,7 @@
 
 namespace FastBIRe.Querying
 {
-    public abstract record class TableFieldLink: ITableFieldLink
+    public abstract record class TableFieldLink : ITableFieldLink
     {
         protected TableFieldLink(DatabaseColumn destColumn)
         {

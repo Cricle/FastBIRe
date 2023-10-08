@@ -23,7 +23,7 @@
 
         public bool TryParse(string input, out IReadOnlyList<string>? results)
         {
-            results = null ;
+            results = null;
             return false;
         }
     }

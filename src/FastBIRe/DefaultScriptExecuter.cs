@@ -140,7 +140,7 @@ namespace FastBIRe
             return res;
         }
 #if !NETSTANDARD2_0
-        protected async Task<int?> BatchExecuteAdoAsync(IEnumerable<string> scripts,StackTrace? stackTrace, CancellationToken token = default)
+        protected async Task<int?> BatchExecuteAdoAsync(IEnumerable<string> scripts, StackTrace? stackTrace, CancellationToken token = default)
         {
             if (UseBatch && Connection.CanCreateBatch)
             {
@@ -180,10 +180,10 @@ namespace FastBIRe
 #endif
         public Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, CancellationToken token = default)
         {
-            return ExecuteBatchAsync(scripts,GetStackTrace(), token);
+            return ExecuteBatchAsync(scripts, GetStackTrace(), token);
         }
 
-        public async Task ReadAsync(string script, ReadDataHandler handler, CancellationToken token=default)
+        public async Task ReadAsync(string script, ReadDataHandler handler, CancellationToken token = default)
         {
             var stackTrace = GetStackTrace();
             var fullStartTime = Stopwatch.GetTimestamp();

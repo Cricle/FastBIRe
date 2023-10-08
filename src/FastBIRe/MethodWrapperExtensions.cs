@@ -6,11 +6,11 @@ namespace FastBIRe
 {
     public static class MethodWrapperExtensions
     {
-        public static bool Ors(this SqlType sqlType,params SqlType[] types)
+        public static bool Ors(this SqlType sqlType, params SqlType[] types)
         {
             foreach (var item in types)
             {
-                if (sqlType==item)
+                if (sqlType == item)
                 {
                     return true;
                 }

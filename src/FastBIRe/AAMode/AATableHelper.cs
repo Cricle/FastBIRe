@@ -3,7 +3,6 @@ using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
 using FastBIRe.Comparing;
-using FastBIRe.Creating;
 using FastBIRe.Naming;
 using FastBIRe.Store;
 using FastBIRe.Timing;
@@ -113,7 +112,7 @@ namespace FastBIRe.AAMode
             exp.Apply(DatabaseReader, request);
             return request.Scripts;
         }
-        
+
         public virtual IList<string> EffectTableScript(string destTableName, IEnumerable<string> sourceColumnNames)
         {
             var request = EffectTableCreateAAModelRequest.From(DatabaseReader, TableName, destTableName, sourceColumnNames);
@@ -174,7 +173,7 @@ namespace FastBIRe.AAMode
             if (index != null)
             {
                 var tableHelper = new TableHelper(SqlType);
-                return new[] { tableHelper.DropIndex(name, TableName) }; 
+                return new[] { tableHelper.DropIndex(name, TableName) };
             }
             return Array.Empty<string>();
         }
@@ -183,7 +182,7 @@ namespace FastBIRe.AAMode
             var scripts = new List<string>();
             var table = Table;
             //Check the index exists
-            var name = IndexNameGenerator.Create(new[] { TableName,field });
+            var name = IndexNameGenerator.Create(new[] { TableName, field });
             var index = table.Indexes.FirstOrDefault(x => x.Name == name);
             var tableHelper = new TableHelper(SqlType);
             if (index != null)
@@ -253,7 +252,7 @@ namespace FastBIRe.AAMode
             IEnumerable<string>? dropTriggers = null;
             if (trigger != null)
             {
-                dropTriggers = TriggerWriter.Drop(SqlType, triggerName,TableName);
+                dropTriggers = TriggerWriter.Drop(SqlType, triggerName, TableName);
             }
 
             var expandResults = columns.SelectMany(x => TimeExpandHelper.Create(x, timeTypes)).OfType<IExpandResult>().ToList();
@@ -268,14 +267,14 @@ namespace FastBIRe.AAMode
             if (!needReCreate)
             {
                 //Check remote if need
-                if (SqlType!= SqlType.PostgreSql)
+                if (SqlType != SqlType.PostgreSql)
                 {
                     if (!SqlEqualityComparer.Equals(trigger!.TriggerBody, nowScripts))
                     {
                         needReCreate = true;
                     }
                 }
-                else if(string.IsNullOrEmpty(insertStoredScript) ||
+                else if (string.IsNullOrEmpty(insertStoredScript) ||
                     !SqlEqualityComparer.Equals(insertStoredScript, nowScripts))
                 {
                     needReCreate = true;
@@ -291,7 +290,7 @@ namespace FastBIRe.AAMode
                 TriggerDataStore?.SetString(triggerName, nowScripts);
             }
             return scripts;
-        } 
+        }
         public virtual IList<string> ExpandTriggerScript(IEnumerable<string> columns, TimeTypes timeTypes = TimeTypes.ExceptSecond)
         {
             var scripts = new List<string>();
@@ -317,7 +316,7 @@ namespace FastBIRe.AAMode
             table = Table;
             var insertTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfInsert : TriggerTypes.BeforeInsert;
             var updateTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfUpdate : TriggerTypes.BeforeUpdate;
-            if (SqlType== SqlType.SQLite)
+            if (SqlType == SqlType.SQLite)
             {
                 insertTriggerTypes = TriggerTypes.AfterInsert;
                 updateTriggerTypes = TriggerTypes.AfterUpdate;
@@ -330,18 +329,18 @@ namespace FastBIRe.AAMode
             var insertStored = string.Join("\n", insertScripts);
             var updateStored = string.Join("\n", updateScripts);
 
-            if (triggerInsert == null||
+            if (triggerInsert == null ||
                 string.IsNullOrEmpty(insertStoredScript) ||
                 !SqlEqualityComparer.Equals(insertStoredScript, insertStored))
             {
-                if (dropInsertTriggers!=null)
+                if (dropInsertTriggers != null)
                 {
                     scripts.AddRange(dropInsertTriggers);
                 }
                 scripts.AddRange(insertScripts);
                 TriggerDataStore?.SetString(triggerInsertName, insertStored);
             }
-            if (triggerUpdate==null||
+            if (triggerUpdate == null ||
                 string.IsNullOrEmpty(updateStoredScript) ||
                 !SqlEqualityComparer.Equals(updateStoredScript, updateStored))
             {
@@ -354,7 +353,7 @@ namespace FastBIRe.AAMode
             }
             return scripts;
         }
-        public virtual IList<string> CreateTableOrMigrationScript(Func<DatabaseTable> tableCreator,MigrationTableHandler changeFun)
+        public virtual IList<string> CreateTableOrMigrationScript(Func<DatabaseTable> tableCreator, MigrationTableHandler changeFun)
         {
             if (DatabaseReader.TableExists(TableName))
             {
