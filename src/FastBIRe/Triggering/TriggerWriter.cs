@@ -157,7 +157,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER ""{name}"" {GetTriggerName(type, sqlType)} ON ""{table}""
+CREATE TRIGGER ""{name}"" {GetTriggerName(type, sqlType)} ON ""{table}""
 FOR EACH ROW
 EXECUTE FUNCTION {funName}();
 ";
