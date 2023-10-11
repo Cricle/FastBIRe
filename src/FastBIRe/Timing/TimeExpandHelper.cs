@@ -23,7 +23,7 @@ namespace FastBIRe.Timing
                     return MySqlDefault;
                 case SqlType.SQLite:
                     return SqliteDefault;
-                case SqlType.DuckdDB:
+                case SqlType.DuckDB:
                 case SqlType.PostgreSql:
                     return PostgresqlDefault;
                 case SqlType.Db2:

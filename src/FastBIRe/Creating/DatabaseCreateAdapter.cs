@@ -160,7 +160,7 @@ END $$;",
                     return Sqlite;
                 case SqlType.PostgreSql:
                     return PostgreSql;
-                case SqlType.DuckdDB:
+                case SqlType.DuckDB:
                     return DuckDb;
                 default:
                     return null;

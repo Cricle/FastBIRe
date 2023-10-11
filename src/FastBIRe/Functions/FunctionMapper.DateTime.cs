@@ -57,16 +57,129 @@ namespace FastBIRe
         }
 
         //public string 
-
+        public string DateDifSecond(string timeA, string timeB)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return $"DATEDIFF(SECOND, {timeA}, {timeB})";
+                case SqlType.MySql:
+                    return $"TIMESTAMPDIFF(SECOND, {timeA},{timeB})";
+                case SqlType.SQLite:
+                    return $"strftime('%s', {timeB}) - strftime('%s', {timeA})";
+                case SqlType.PostgreSql:
+                    return $"EXTRACT(EPOCH FROM ({timeB}::TIMESTAMP - {timeA}::TIMESTAMP))";
+                case SqlType.Oracle:
+                case SqlType.Db2:
+                default:
+                    return string.Empty;
+            }
+        }
+        public string DateDifMinute(string timeA, string timeB)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return $"DATEDIFF(MINUTE, {timeA}, {timeB})";
+                case SqlType.MySql:
+                    return $"TIMESTAMPDIFF(MINUTE, {timeA},{timeB})";
+                case SqlType.SQLite:
+                    return $"(strftime('%s', {timeB}) - strftime('%s', {timeA}))/60";
+                case SqlType.PostgreSql:
+                    return $"FLOOR((EXTRACT(EPOCH FROM ({timeB}::TIMESTAMP - {timeA}::TIMESTAMP)))/60)";
+                case SqlType.Oracle:
+                case SqlType.Db2:
+                default:
+                    return string.Empty;
+            }
+        }
+        public string DateDifHour(string timeA, string timeB)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return $"DATEDIFF(HOUR, {timeA}, {timeB})";
+                case SqlType.MySql:
+                    return $"TIMESTAMPDIFF(HOUR, {timeA},{timeB})";
+                case SqlType.SQLite:
+                    return $"(strftime('%s', {timeB}) - strftime('%s', {timeA}))/60/60";
+                case SqlType.PostgreSql:
+                    return $"FLOOR((EXTRACT(EPOCH FROM ({timeB}::TIMESTAMP - {timeA}::TIMESTAMP)))/60/60)";
+                case SqlType.Oracle:
+                case SqlType.Db2:
+                default:
+                    return string.Empty;
+            }
+        }
+        public string DateDifDay(string timeA, string timeB)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return $"DATEDIFF(DAY, {timeA}, {timeB})";
+                case SqlType.MySql:
+                    return $"TIMESTAMPDIFF(DAY, {timeA},{timeB})";
+                case SqlType.SQLite:
+                    return $"(strftime('%s', {timeB}) - strftime('%s', {timeA}))/60/60/24";
+                case SqlType.PostgreSql:
+                    return $"FLOOR((EXTRACT(EPOCH FROM ({timeB}::TIMESTAMP - {timeA}::TIMESTAMP)))/60/60/24)";
+                case SqlType.Oracle:
+                case SqlType.Db2:
+                default:
+                    return string.Empty;
+            }
+        }
+        public string DateDifMonth(string timeA, string timeB)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return $"DATEDIFF(MONTH, {timeA}, {timeB})";
+                case SqlType.MySql:
+                    return $"TIMESTAMPDIFF(MONTH, {timeA},{timeB})";
+                case SqlType.SQLite:
+                    return $"((strftime('%Y',{timeB})-strftime('%Y',{timeA}))*12 + (strftime('%m',{timeB})-strftime('%m',{timeA})))";
+                case SqlType.PostgreSql:
+                    return $"((DATE_PART('year',{timeB}::TIMESTAMP)-DATE_PART('year',{timeA}::TIMESTAMP))*12+(DATE_PART('month',{timeB}::TIMESTAMP)-DATE_PART('month',{timeA}::TIMESTAMP)))";
+                case SqlType.Oracle:
+                case SqlType.Db2:
+                default:
+                    return string.Empty;
+            }
+        }
+        public string DateDifYear(string timeA, string timeB)
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return $"DATEDIFF(YEAR, {timeA}, {timeB})";
+                case SqlType.MySql:
+                    return $"TIMESTAMPDIFF(YEAR, {timeA},{timeB})";
+                case SqlType.SQLite:
+                    return $"(strftime('%Y',{timeB})-strftime('%Y',{timeA}))";
+                case SqlType.PostgreSql:
+                    return $"(DATE_PART('year',{timeB}::TIMESTAMP)-DATE_PART('year',{timeA}::TIMESTAMP))";
+                case SqlType.Oracle:
+                case SqlType.Db2:
+                default:
+                    return string.Empty;
+            }
+        }
         public string DateDif(string timeA, string timeB, string unit)
         {
             return $@"
-CASE WHEN {Ascii(unit)}={Ascii("'Y'")} THEN {Year(timeA)}-{Year(timeB)}
-WHEN {Ascii(unit)}={Ascii("'M'")} THEN {Month(timeA)}-{Month(timeB)} 
-WHEN {Ascii(unit)}={Ascii("'D'")} THEN {Day(timeA)}-{Day(timeB)}
-WHEN {Ascii(unit)}={Ascii("'h'")} THEN {Hour(timeA)}-{Hour(timeB)}
-WHEN {Ascii(unit)}={Ascii("'m'")} THEN {Minute(timeA)}-{Minute(timeB)}
-WHEN {Ascii(unit)}={Ascii("'s'")} THEN {Second(timeA)}-{Second(timeB)}
+CASE WHEN {Ascii(unit)}={Ascii("'Y'")} THEN {DateDifYear(timeA,timeB)}
+WHEN {Ascii(unit)}={Ascii("'M'")} THEN {DateDifMonth(timeA, timeB)}
+WHEN {Ascii(unit)}={Ascii("'D'")} THEN {DateDifDay(timeA, timeB)}
+WHEN {Ascii(unit)}={Ascii("'h'")} THEN {DateDifHour(timeA, timeB)}
+WHEN {Ascii(unit)}={Ascii("'m'")} THEN {DateDifMinute(timeA, timeB)}
+WHEN {Ascii(unit)}={Ascii("'s'")} THEN {DateDifSecond(timeA, timeB)}
 END
 ";
         }

@@ -42,7 +42,7 @@ namespace rsa
                 case SqlType.PostgreSql:
                     conn = new NpgsqlConnection($"host=127.0.0.1;port=5432;username=postgres;password=355343;{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
                     break;
-                case SqlType.DuckdDB:
+                case SqlType.DuckDB:
                     var builder=new DuckDBConnectionStringBuilder();
                     if (database == null)
                     {

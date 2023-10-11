@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
-    public class DefaultScriptExecuter : IScriptExecuter, IStackTraceScriptExecuter
+    public class DefaultScriptExecuter : IDbScriptExecuter, IDbStackTraceScriptExecuter
     {
         private static readonly IReadOnlyList<MethodBase> Methods = typeof(DefaultScriptExecuter).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Where(x => !x.IsSpecialName && x.DeclaringType == typeof(DefaultScriptExecuter))

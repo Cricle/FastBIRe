@@ -25,7 +25,7 @@ namespace FastBIRe
                     return MySql;
                 case SqlType.SQLite:
                     return Sqlite;
-                case SqlType.DuckdDB:
+                case SqlType.DuckDB:
                 case SqlType.PostgreSql:
                     return PostgreSql;
                 case SqlType.Db2:

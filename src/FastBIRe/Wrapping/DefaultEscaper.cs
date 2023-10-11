@@ -54,9 +54,8 @@ namespace FastBIRe.Wrapping
                 }
                 return str;
             }
-            else if (input is DateTime)
+            else if (input is DateTime dt)
             {
-                var dt = Unsafe.As<T, DateTime>(ref input);
                 if (dt.Date == dt)
                 {
                     return ValueStart + dt.ToString("yyyy-MM-dd") + ValueEnd;

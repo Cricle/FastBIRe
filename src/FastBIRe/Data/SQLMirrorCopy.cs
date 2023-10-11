@@ -28,6 +28,8 @@ namespace FastBIRe.Data
 
         public IReadOnlyList<string>? Names => names;
 
+        public HashSet<string>? IncludeNames { get; set; }
+
         protected override Task OnFirstReadAsync()
         {
             names = new string[DataReader.FieldCount];
@@ -72,9 +74,14 @@ namespace FastBIRe.Data
 
         protected override void AppendRecord(StringBuilder input, IDataReader reader, bool lastBatch)
         {
+            var includeNames = IncludeNames;
             input.Append('(');
             for (int i = 0; i < reader.FieldCount; i++)
             {
+                if (includeNames != null && names != null && !includeNames.Contains(names[i]))
+                {
+                    continue;
+                }
                 input.Append(Escaper.WrapValue(reader[i]));
                 if (reader.FieldCount - 1 != i)
                 {
@@ -94,7 +101,7 @@ namespace FastBIRe.Data
             {
                 return RowWriteResult<string>.Empty;
             }
-            if (unbound)
+            if (unbound&& datas[datas.Length - 1]==',')
             {
                 datas.Remove(datas.Length - 1, 1);
             }

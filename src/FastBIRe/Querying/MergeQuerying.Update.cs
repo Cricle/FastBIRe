@@ -7,7 +7,7 @@ namespace FastBIRe.Querying
     {
         private string GenerateColumnCompare(MergeQueryUpdateRequest request, ITableFieldLink x, string destTableAliasQuto, string tmpQuto)
         {
-            if (request.SqlType == SqlType.PostgreSql)
+            if (request.SqlType == SqlType.PostgreSql||request.SqlType== SqlType.DuckDB)
             {
                 if (x is DirectTableFieldLink direct)
                 {
@@ -48,7 +48,7 @@ namespace FastBIRe.Querying
             var sql = new StringBuilder();
             //UPDATE [dest] {AS destAlias}
             sql.Append($"UPDATE {destTableQuto}");
-            if (request.SqlType.Ors(SqlType.PostgreSql, SqlType.MySql, SqlType.SQLite))
+            if (request.SqlType.Ors(SqlType.PostgreSql, SqlType.DuckDB, SqlType.MySql, SqlType.SQLite))
             {
                 sql.AppendLine($" AS {destTableAliasQuto}");
             }
@@ -105,6 +105,7 @@ WHERE {destGroupOn}
 AND (
 {destGroupCheck}
 )";
+                case SqlType.DuckDB:
                 case SqlType.PostgreSql:
                     return $@"FROM (
 {updateSelect}
@@ -116,7 +117,7 @@ AND(
                 case SqlType.Db2:
                 case SqlType.Oracle:
                 default:
-                    throw new NotSupportedException($"Only support sqlserver/mysql/sqlite/postgresql");
+                    throw new NotSupportedException($"Only support sqlserver/mysql/sqlite/postgresql/duckdb");
             }
         }
         private string CompileUpdateSelect(MergeQueryUpdateRequest request, string? sourceTableAlias)

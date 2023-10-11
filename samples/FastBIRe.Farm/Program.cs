@@ -1,0 +1,153 @@
+﻿using DatabaseSchemaReader;
+using DuckDB.NET.Data;
+using MySqlConnector;
+using System.Diagnostics;
+
+namespace FastBIRe.Farm
+{
+    internal class Program
+    {
+        static async Task Main(string[] args)
+        {
+            var duck = new DuckDBConnection("Data source=a.db");
+            var mysql = new MySqlConnection("Server=192.168.1.101;Port=3306;Uid=root;Pwd=Syc123456.;Connection Timeout=2000;Character Set=utf8;Database=test2");
+
+            duck.Open();
+            mysql.Open();
+
+            var reader = new DatabaseReader(mysql) { Owner = mysql.Database };
+            var table = reader.Table("juhe_effect");
+            var mysqlExecuter = new DefaultScriptExecuter(mysql);
+            var mysqlExecuter1 = new DefaultScriptExecuter(mysql);
+            mysqlExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
+            var duckExecuter = new DefaultScriptExecuter(duck);
+            duckExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
+            var selector = new DefaultCursorRowHandlerSelector(_ => DefaultCursorRowHandler.FromDefault(mysqlExecuter1, duckExecuter, "juhe_effect"));
+            var farm = new FarmManager(table, new FarmWarehouse(mysqlExecuter, selector), new DuckFarmWarehouse(duckExecuter, selector));
+            await farm.SyncAsync();
+            //duckExecuter.ScriptStated -= DebugHelper.OnExecuterScriptStated!;
+            await Elp(() => farm.InsertAsync(DataSet()));
+            //duckExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
+            await farm.DestFarmWarehouse.CreateCheckPointIfNotExistsAsync("*");
+            await Elp(async () =>
+             {
+                 await farm.CheckPointAsync();
+             });
+            duck.Dispose();
+            mysql.Dispose();
+        }
+        static IEnumerable<IEnumerable<object>> DataSet()
+        {
+            for (int i = 0; i < 10000; i++)
+            {
+                yield return DataSetRow(i);
+            }
+        }
+        static IEnumerable<object> DataSetRow(int i)
+        {
+            yield return i * 123.0;
+            yield return i;
+        }
+        static void Elp(Action action)
+        {
+            var gc = GC.GetTotalMemory(false);
+            var sw = Stopwatch.GetTimestamp();
+
+            action();
+            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw));
+            Console.WriteLine($"{(GC.GetTotalMemory(false) - gc) / 1024 / 1024.0:F5}MB");
+        }
+        static async Task Elp(Func<Task> action)
+        {
+            var gc = GC.GetTotalMemory(false);
+            var sw = Stopwatch.GetTimestamp();
+
+            await action();
+            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw));
+            Console.WriteLine($"{(GC.GetTotalMemory(false) - gc) / 1024 / 1024.0:F5}MB");
+        }
+    }
+    public class DuckFarmWarehouse : FarmWarehouse
+    {
+        private readonly DuckDBConnection duckDBConnection;
+        public DuckFarmWarehouse(IDbScriptExecuter scriptExecuter, ICursorRowHandlerSelector cursorRowHandlerSelector)
+            : base(scriptExecuter, cursorRowHandlerSelector)
+        {
+            duckDBConnection = (DuckDBConnection)scriptExecuter.Connection;
+        }
+
+        public DuckFarmWarehouse(IDbScriptExecuter scriptExecuter, DatabaseReader databaseReader, ICursorRowHandlerSelector cursorRowHandlerSelector) 
+            : base(scriptExecuter, databaseReader, cursorRowHandlerSelector)
+        {
+            duckDBConnection = (DuckDBConnection)scriptExecuter.Connection;
+        }
+        public override async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<IEnumerable<object>> values, CancellationToken token = default)
+        {
+            using (var trans = duckDBConnection.BeginTransaction())
+            {
+                var id = await GetCurrentSeqAsync(token);
+                using (var appender = duckDBConnection.CreateAppender(tableName))
+                {
+                    foreach (var row in values)
+                    {
+                        id++;
+                        var rowAppender = appender.CreateRow();
+                        foreach (var item in row)
+                        {
+                            Add(rowAppender, item);
+                        }
+                        rowAppender.AppendValue(id);
+                        rowAppender.EndRow();
+                    }
+                }
+                await UpdateCurrentSeqAsync(id,token);
+                await trans.CommitAsync(token);
+            }
+        }
+        public override async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<object> values, CancellationToken token = default)
+        {
+            using (var trans = duckDBConnection.BeginTransaction())
+            {
+                var id = await GetCurrentSeqAsync(token);
+                using (var appender = duckDBConnection.CreateAppender(tableName))
+                {
+                    id++;
+                    var row = appender.CreateRow();
+                    foreach (var item in values)
+                    {
+                        Add(row, item);
+                    }
+                    row.AppendValue(id);
+                    row.EndRow();
+                }
+                await UpdateCurrentSeqAsync(id,token);
+                await trans.CommitAsync(token);
+            }
+        }
+        private static void Add(DuckDBAppenderRow row, object item)
+        {
+            switch (item)
+            {
+                case null: row.AppendNullValue(); break;
+                case bool: row.AppendValue((bool)item); break;
+                case string: row.AppendValue((string)item); break;
+                case sbyte: row.AppendValue((sbyte)item); break;
+                case short: row.AppendValue((short)item); break;
+                case int: row.AppendValue((int)item); break;
+                case long: row.AppendValue((long)item); break;
+                case byte: row.AppendValue((byte)item); break;
+                case ushort: row.AppendValue((ushort)item); break;
+                case uint: row.AppendValue((uint)item); break;
+                case ulong: row.AppendValue((ulong)item); break;
+                case float: row.AppendValue((float)item); break;
+                case double: row.AppendValue((double)item); break;
+                case DateTime: row.AppendValue(((DateTime)item)); break;
+                case DateOnly: row.AppendValue((DateOnly)item); break;
+                case TimeOnly: row.AppendValue((TimeOnly)item); break;
+                default:
+                    break;
+            }
+        }
+
+    }
+}

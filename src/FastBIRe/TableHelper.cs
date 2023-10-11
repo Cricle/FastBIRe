@@ -39,7 +39,7 @@ namespace FastBIRe
                     return $"DROP INDEX {SqlType.Wrap(table)}.{SqlType.Wrap(name)};";
                 case SqlType.SQLite:
                 case SqlType.PostgreSql:
-                case SqlType.DuckdDB:
+                case SqlType.DuckDB:
                     return $"DROP INDEX {SqlType.Wrap(name)};";
                 default:
                     return string.Empty;
@@ -94,7 +94,7 @@ namespace FastBIRe
                         }
                         return $"LIMIT {take} OFFSET 0";
                     }
-                case SqlType.DuckdDB:
+                case SqlType.DuckDB:
                 case SqlType.PostgreSql:
                     {
                         if (skip != null && take != null)
@@ -133,7 +133,19 @@ namespace FastBIRe
                     throw new NotSupportedException(SqlType.ToString());
             }
         }
-
+        public string InsertUnionValues(string tableName,IEnumerable<string> names, IEnumerable<object> values,string? where)
+        {
+            var sql = $@"INSERT INTO {SqlType.Wrap(tableName)}({string.Join(",", names.Select(x => SqlType.Wrap(x)))}) {UnionValues(values)} ";
+            if (!string.IsNullOrEmpty(where))
+            {
+                sql += "WHERE " + where;
+            }
+            return sql;
+        }
+        public string UnionValues(IEnumerable<object> values)
+        {
+            return $"SELECT {string.Join(",", values.Select(x => $"{SqlType.WrapValue(x)}"))}";
+        }
         public string Truncate(string table)
         {
             switch (SqlType)
@@ -146,7 +158,7 @@ namespace FastBIRe
                 case SqlType.SQLite:
                     return $"DELETE FROM `{table}`;";
                 case SqlType.PostgreSql:
-                case SqlType.DuckdDB:
+                case SqlType.DuckDB:
                     return $"TRUNCATE TABLE \"{table}\";";
                 case SqlType.Oracle:
                     return $"TRUNCATE TABLE \"{table}\";";
