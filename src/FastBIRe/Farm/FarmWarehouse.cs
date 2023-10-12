@@ -227,7 +227,7 @@ namespace FastBIRe.Farm
             var sql = TableHelper.InsertUnionValues(CursorTable, new[] { SyncNamer,SyncPoint }, new object[] { name,0 }, $"NOT EXISTS (SELECT 1 FROM {SqlType.Wrap(CursorTable)} WHERE {SqlType.Wrap(SyncNamer)} = {SqlType.WrapValue(name)})");
             await ScriptExecuter.ExecuteAsync(sql);
         }
-        public async Task CheckPointAsync(string tableName,IEnumerable<string>? cursorNames=null,CancellationToken token = default)
+        public async Task<IList<ICursorRowHandlerResult>> CheckPointAsync(string tableName,IEnumerable<string>? cursorNames=null,CancellationToken token = default)
         {
             var querySql = $"SELECT {SqlType.Wrap(SyncNamer)} AS Name,{SqlType.Wrap(SyncPoint)} AS Point FROM {SqlType.Wrap(CursorTable)}";
             if (cursorNames != null && cursorNames.Any())
@@ -245,11 +245,14 @@ namespace FastBIRe.Farm
                 }
                 return Task.CompletedTask;
             }, token);
-            var dataLastId = await GetDataLastIdAsync(tableName);
+            var dataLastId = await GetDataLastIdAsync(tableName, token);
+            var results = new List<ICursorRowHandlerResult>();
             foreach (var item in cursors)
             {
-                await CursorRowHandlerSelector.GetHandler(item).HandlerCursorRowAsync(item);
+                var res = await CursorRowHandlerSelector.GetHandler(item).HandlerCursorRowAsync(item, token);
+                results.Add(res);
             }
+            return results;
         }
     }
 }

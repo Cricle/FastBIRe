@@ -37,9 +37,9 @@ namespace FastBIRe.Farm
             await DestFarmWarehouse.InsertAsync(TableName, Columns, values, token);
         }
 
-        public async Task CheckPointAsync(CancellationToken token = default)
+        public Task<IList<ICursorRowHandlerResult>> CheckPointAsync(CancellationToken token = default)
         {
-            await DestFarmWarehouse.CheckPointAsync(TableName, null, token);
+            return DestFarmWarehouse.CheckPointAsync(TableName, null, token);
         }
     }
 }

@@ -7,7 +7,7 @@ namespace FastBIRe.Farm
 {
     internal class Program
     {
-        static async Task Main(string[] args)
+        static FarmManager CreateFarm(bool listen)
         {
             var duck = new DuckDBConnection("Data source=a.db");
             var mysql = new MySqlConnection("Server=192.168.1.101;Port=3306;Uid=root;Pwd=Syc123456.;Connection Timeout=2000;Character Set=utf8;Database=test2");
@@ -18,27 +18,55 @@ namespace FastBIRe.Farm
             var reader = new DatabaseReader(mysql) { Owner = mysql.Database };
             var table = reader.Table("juhe_effect");
             var mysqlExecuter = new DefaultScriptExecuter(mysql);
-            var mysqlExecuter1 = new DefaultScriptExecuter(mysql);
-            mysqlExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
             var duckExecuter = new DefaultScriptExecuter(duck);
-            duckExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
-            var selector = new DefaultCursorRowHandlerSelector(_ => DefaultCursorRowHandler.FromDefault(mysqlExecuter1, duckExecuter, "juhe_effect"));
-            var farm = new FarmManager(table, new FarmWarehouse(mysqlExecuter, selector), new DuckFarmWarehouse(duckExecuter, selector));
+            if (listen)
+            {
+                mysqlExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
+                duckExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
+            }
+            var selector = new DefaultCursorRowHandlerSelector(_ => DefaultCursorRowHandler.FromDefault(mysqlExecuter, duckExecuter, "juhe_effect"));
+            var sourceHouse = new FarmWarehouse(mysqlExecuter, selector);
+            var destHouse = new DuckFarmWarehouse(duckExecuter, selector);
+            return new FarmManager(table, sourceHouse, destHouse);
+        }
+
+        static async Task Main(string[] args)
+        {
+            var farm = CreateFarm(false);
             await farm.SyncAsync();
             //duckExecuter.ScriptStated -= DebugHelper.OnExecuterScriptStated!;
-            await Elp(() => farm.InsertAsync(DataSet()));
+            //await Elp(() => farm.InsertAsync(DataSet()));
             //duckExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
             await farm.DestFarmWarehouse.CreateCheckPointIfNotExistsAsync("*");
-            await Elp(async () =>
-             {
-                 await farm.CheckPointAsync();
-             });
-            duck.Dispose();
-            mysql.Dispose();
+            //await Elp(async () =>
+            // {
+            //     await farm.CheckPointAsync();
+            // });
+
+            _ = Task.Factory.StartNew(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(Random.Shared.Next(500, 1000));
+                    await farm.InsertAsync(DataSet());
+                }
+            });
+            _ = Task.Factory.StartNew(async () =>
+            {
+                var checkPointfarm = CreateFarm(false);
+                while (true)
+                {
+                    var bgCp = Stopwatch.GetTimestamp();
+                    var results = await checkPointfarm.CheckPointAsync();
+                    Console.WriteLine($"Complated check point take {new TimeSpan(Stopwatch.GetTimestamp() - bgCp).TotalMilliseconds:F4}ms, AffectedCount:{results.Sum(x=>x.AffectedCount)}");
+                    await Task.Delay(Random.Shared.Next(1000, 5000));
+                }
+            });
+            Console.ReadLine();
         }
         static IEnumerable<IEnumerable<object>> DataSet()
         {
-            for (int i = 0; i < 10000; i++)
+            for (int i = 0; i < Random.Shared.Next(50,1000); i++)
             {
                 yield return DataSetRow(i);
             }
@@ -54,7 +82,7 @@ namespace FastBIRe.Farm
             var sw = Stopwatch.GetTimestamp();
 
             action();
-            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw));
+            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw).TotalMilliseconds.ToString("F3") + "ms");
             Console.WriteLine($"{(GC.GetTotalMemory(false) - gc) / 1024 / 1024.0:F5}MB");
         }
         static async Task Elp(Func<Task> action)
@@ -63,7 +91,7 @@ namespace FastBIRe.Farm
             var sw = Stopwatch.GetTimestamp();
 
             await action();
-            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw));
+            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw).TotalMilliseconds.ToString("F3") + "ms");
             Console.WriteLine($"{(GC.GetTotalMemory(false) - gc) / 1024 / 1024.0:F5}MB");
         }
     }

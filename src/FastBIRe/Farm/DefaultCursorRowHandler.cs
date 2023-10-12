@@ -40,12 +40,14 @@ namespace FastBIRe.Farm
 
         public int CopyBatchSize { get; set; } = 1000;
 
-        public async Task HandlerCursorRowAsync(CursorRow rows, CancellationToken token = default)
+        public bool CaptureRowWriteResult { get; set; }
+
+        public async Task<ICursorRowHandlerResult> HandlerCursorRowAsync(CursorRow rows, CancellationToken token = default)
         {
             var sourceReader = new DatabaseReader(SourceConnection.Connection);
             var destReader = new DatabaseReader(DestConnection.Connection);
 
-            var sourceTable = sourceReader.Table(TableName);
+            var sourceTable = sourceReader.Table(TableName, token);
 
             var sourceSqlType = sourceReader.SqlType!.Value;
             var destSqlType = destReader.SqlType!.Value;
@@ -56,25 +58,45 @@ namespace FastBIRe.Farm
             var escaper = sourceSqlType.GetMethodWrapper();
             var includeNames= new HashSet<string>(sourceTable.Columns.Select(x => x.Name));
             var currentPoint = rows.Point;
+            var queryBatchSize = QueryBatchSize;
+            ulong prevMaxId = 0;
+            ulong maxId = 0;
+            long affectedCount = 0;
+            var capture = new FieldDataCapture(IdColumn, o =>
+            {
+                var id = Convert.ToUInt64(o);
+                if (id > maxId)
+                {
+                    prevMaxId = maxId;
+                    maxId = id;
+                }
+            });
+            var captureRowWriteResult = CaptureRowWriteResult;
+            var rowWriteResults = new List<RowWriteResult<string>>();
+            var round = 0;
             while (true)
             {
+                round++;
                 using (var trans = DestConnection.Connection.BeginTransaction())
                 {
-                    ulong maxId = 0;
-                    var queryDataSql = $"SELECT {destSqlType.Wrap(IdColumn)},{string.Join(",", sourceTable.Columns.Select(x => destSqlType.Wrap(x.Name)))} FROM {destSqlType.Wrap(TableName)} WHERE {destSqlType.Wrap(IdColumn)} > {currentPoint} {destTableHelper.Pagging(null, QueryBatchSize)}";
+                    var queryDataSql = $"SELECT {destSqlType.Wrap(IdColumn)},{string.Join(",", sourceTable.Columns.Select(x => destSqlType.Wrap(x.Name)))} FROM {destSqlType.Wrap(TableName)} WHERE {destSqlType.Wrap(IdColumn)} > {currentPoint} {destTableHelper.Pagging(null, queryBatchSize)}";
                     await DestConnection.ReadAsync(queryDataSql, async (s, e) =>
                     {
-                        var cop = new SQLMirrorCopy(e.Reader, target, escaper, CopyBatchSize);
-                        cop.IncludeNames = includeNames;
-                        cop.DataCapturer = new FieldDataCapture(IdColumn, o =>
+                        var cop = new SQLMirrorCopy(e.Reader, target, escaper, CopyBatchSize)
                         {
-                            var id = Convert.ToUInt64(o);
-                            if (id > maxId)
-                            {
-                                maxId = id;
-                            }
-                        });
-                        await cop.CopyAsync();
+                            IncludeNames = includeNames,
+                            DataCapturer = capture,
+                            StoreWriteResult = true
+                        };
+                        var result = await cop.CopyAsync();
+                        for (int i = 0; i < result.Count; i++)
+                        {
+                            affectedCount += result[i].AffectRows;
+                        }
+                        if (captureRowWriteResult)
+                        {
+                            rowWriteResults.AddRange(result);
+                        }
                     }, token);
                     currentPoint = maxId;
                     if (maxId != 0)
@@ -83,12 +105,13 @@ namespace FastBIRe.Farm
                         await DestConnection.ExecuteAsync(updateSql, token);
                     }
                     trans.Commit();
-                    if (maxId == 0)
+                    if (maxId == 0 || (maxId - prevMaxId) < (ulong)queryBatchSize)
                     {
                         break;
                     }
                 }
             }
+            return new CopyCursorRowHandlerResult<string>((long)maxId, affectedCount, round, rowWriteResults);
         }
     }
 }
