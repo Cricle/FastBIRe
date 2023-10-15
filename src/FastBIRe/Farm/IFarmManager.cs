@@ -1,6 +1,6 @@
 ﻿namespace FastBIRe.Farm
 {
-    public interface IFarmManager
+    public interface IFarmManager : IDisposable
     {
         Task SyncAsync(CancellationToken token=default);
 

@@ -1,4 +1,6 @@
-﻿using System.Data;
+﻿using DatabaseSchemaReader.Data;
+using System.Data;
+using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
@@ -19,11 +21,7 @@ namespace FastBIRe
             T? result = default;
             await scriptExecuter.ReadAsync(script, (o, e) =>
             {
-                var lst = Parser<T>.parser(e.Reader);
-                if (lst.Count != 0)
-                {
-                    result = lst[0];
-                }
+                Parser<T>.TryPreParse(e.Reader, out result);
                 return Task.CompletedTask;
             }, token);
             return result;
@@ -44,22 +42,45 @@ namespace FastBIRe
             internal static readonly Func<IDataReader, IList<T>> parser;
 
             internal static readonly Type type = typeof(T);
+            internal static readonly Type actualType;
+
+            internal static bool IsPreParse;
+
+            public static bool TryPreParse(IDataReader reader, out T? result)
+            {
+                if (reader.Read() && reader.FieldCount > 0)
+                {
+                    if (reader.IsDBNull(0))
+                    {
+                        result = default;
+                        return false;
+                    }
+                    if (typeof(T) == typeof(int))
+                    {
+                        var dt = reader.GetInt32(0);
+                        result = Unsafe.As<int, T>(ref dt);
+                        return true;
+                    }
+                    var res = reader.GetValue(0);
+                    result = (T)Convert.ChangeType(res, actualType);
+                    return true;
+                }
+                result = default;
+                return false;
+            }
 
             static Parser()
             {
-                if (type.IsPrimitive||(type.IsGenericType&&type.GetGenericTypeDefinition()==typeof(Nullable<>)) || type == typeof(string) || type == typeof(decimal))
+                actualType = type;
+                IsPreParse = type.IsPrimitive || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)) || type == typeof(string) || type == typeof(decimal);
+                if (IsPreParse)
                 {
-                    var actualType = type.IsGenericType ? type.GetGenericArguments()[0] : type;
+                    actualType = type.IsGenericType ? type.GetGenericArguments()[0] : type;
                     parser = reader =>
                     {
-                        if (reader.Read() && reader.FieldCount > 0)
+                        if (TryPreParse(reader,out var result))
                         {
-                            var val = reader.GetValue(0);
-                            if (val != DBNull.Value)
-                            {
-                                var res = (T)Convert.ChangeType(val, actualType);
-                                return new T[] { res };
-                            }
+                            return new[] { result! };
                         }
                         return Array.Empty<T>();
                     };

@@ -2,6 +2,11 @@
 {
     public class DefaultCursorRowHandlerSelector : ICursorRowHandlerSelector
     {
+        public static DefaultCursorRowHandlerSelector Single(IDbScriptExecuter sourceConnection, IDbScriptExecuter destConnection, string tableName)
+        {
+            return new DefaultCursorRowHandlerSelector(_ => DefaultCursorRowHandler.FromDefault(sourceConnection, destConnection, tableName));
+        }
+
         public DefaultCursorRowHandlerSelector(Func<CursorRow, ICursorRowHandler> handlerGetter)
         {
             HandlerGetter = handlerGetter;

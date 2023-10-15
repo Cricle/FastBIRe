@@ -1,5 +1,4 @@
 ﻿using DatabaseSchemaReader.DataSchema;
-using System.Data;
 
 namespace FastBIRe.Farm
 {
@@ -40,6 +39,12 @@ namespace FastBIRe.Farm
         public Task<IList<ICursorRowHandlerResult>> CheckPointAsync(CancellationToken token = default)
         {
             return DestFarmWarehouse.CheckPointAsync(TableName, null, token);
+        }
+
+        public void Dispose()
+        {
+            SourceFarmWarehouse.Dispose();
+            DestFarmWarehouse.Dispose();
         }
     }
 }

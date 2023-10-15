@@ -8,7 +8,7 @@ using System.Text;
 
 namespace FastBIRe.Farm
 {
-    public class FarmWarehouse
+    public class FarmWarehouse : IDisposable
     {
         public const string CursorTable = "cursor";
 
@@ -20,18 +20,19 @@ namespace FastBIRe.Farm
 
         public const string Id = "id";
 
-        public FarmWarehouse(IDbScriptExecuter scriptExecuter, ICursorRowHandlerSelector cursorRowHandlerSelector)
-            : this(scriptExecuter, new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database }, cursorRowHandlerSelector)
+        public FarmWarehouse(IDbScriptExecuter scriptExecuter, ICursorRowHandlerSelector cursorRowHandlerSelector, bool attackId)
+            : this(scriptExecuter, new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database }, cursorRowHandlerSelector,attackId)
         {
-
+            AttackId = attackId;
         }
-        public FarmWarehouse(IDbScriptExecuter scriptExecuter, DatabaseReader databaseReader, ICursorRowHandlerSelector cursorRowHandlerSelector)
+        public FarmWarehouse(IDbScriptExecuter scriptExecuter, DatabaseReader databaseReader, ICursorRowHandlerSelector cursorRowHandlerSelector, bool attackId)
         {
             ScriptExecuter = scriptExecuter;
             DatabaseReader = databaseReader;
             SqlType = databaseReader.SqlType!.Value;
             TableHelper = new TableHelper(SqlType);
             CursorRowHandlerSelector = cursorRowHandlerSelector;
+            AttackId = attackId;
         }
 
         public IDbScriptExecuter ScriptExecuter { get; }
@@ -61,16 +62,21 @@ namespace FastBIRe.Farm
             return cursorTable;
         }
 
+        public bool AttackId { get; }
+
         public async Task<IList<string>> GetSyncScriptsAsync(DatabaseTable table, CancellationToken token = default)
         {
             var scripts = new List<string>();
             var copyTable = table.Clone();
             copyTable.SchemaOwner = DatabaseReader.Owner;
             copyTable.DatabaseSchema = DatabaseReader.DatabaseSchema;
-            copyTable.AddColumn(Id, DbType.UInt64, c => c.Nullable = true);
-            var constr = new DatabaseConstraint { Name = $"PK_{table.Name}", Columns = { Id }, ConstraintType = ConstraintType.PrimaryKey };
-            copyTable.PrimaryKey = null;
-            copyTable.AddConstraint(constr);
+            if (AttackId)
+            {
+                copyTable.AddColumn(Id, DbType.UInt64, c => c.Nullable = true);
+                var constr = new DatabaseConstraint { Name = $"PK_{table.Name}", Columns = { Id }, ConstraintType = ConstraintType.PrimaryKey };
+                copyTable.PrimaryKey = null;
+                copyTable.AddConstraint(constr);
+            }
             copyTable.Indexes = new List<DatabaseIndex>();
             if (DatabaseReader.TableExists(copyTable.Name))
             {
@@ -102,22 +108,31 @@ namespace FastBIRe.Farm
                 {
                     return scripts;
                 }
-                var anyDatas = await HasAnyDatasAsync(table.Name);
+                var anyDatas = await AnyCheckpointNotComplatedAsync(table.Name);
                 if (anyDatas)
                 {
                     await CheckPointAsync(table.Name, cursorNames: null, token: token);
                 }
                 scripts.Add(TableHelper.CreateDropTable(copyTable.Name));
-                scripts.Add(TableHelper.CreateDropTable(CursorTable));
-                scripts.Add(TableHelper.CreateDropTable(SeqTable));
+                if (DatabaseReader.TableExists(CursorTable))
+                {
+                    scripts.Add(TableHelper.CreateDropTable(CursorTable));
+                }
+                if (DatabaseReader.TableExists(SeqTable))
+                {
+                    scripts.Add(TableHelper.CreateDropTable(SeqTable));
+                }
             }
             var ddlFactory = new DdlGeneratorFactory(SqlType);
             var ddlTable = ddlFactory.TableGenerator(copyTable).Write();
             var ddlCursor = ddlFactory.TableGenerator(CreateCursorTable()).Write();
-            var ddlSeq = ddlFactory.TableGenerator(CreateSeqTable()).Write();
             scripts.Add(ddlTable);
             scripts.Add(ddlCursor);
-            scripts.Add(ddlSeq);
+            if (AttackId)
+            {
+                var ddlSeq = ddlFactory.TableGenerator(CreateSeqTable()).Write();
+                scripts.Add(ddlSeq);
+            }
             return scripts;
         }
         public async Task SyncAsync(DatabaseTable table,CancellationToken token = default)
@@ -136,19 +151,22 @@ namespace FastBIRe.Farm
         public Task<long> GetDataLastIdAsync(string tableName,CancellationToken token=default)
         {
             var maxIdSql = $"SELECT MAX({SqlType.Wrap(Id)}) FROM {SqlType.Wrap(tableName)}";
-            return ScriptExecuter.ReadOneAsync<long>(maxIdSql);
+            return ScriptExecuter.ReadOneAsync<long>(maxIdSql,token);
         }
-        public virtual async Task<bool> HasAnyDatasAsync(string tableName, CancellationToken token = default)
+        public virtual async Task<bool> AnyCheckpointNotComplatedAsync(string tableName, CancellationToken token = default)
         {
-            var count = await GetDataLastIdAsync(tableName, token);
-            var anyDataSql = $"SELECT 1 FROM {SqlType.Wrap(CursorTable)} WHERE {SqlType.Wrap(SyncPoint)} <= {count} {TableHelper.Pagging(null, 1)}";
+            var anyDataSql = $"SELECT 1 FROM {SqlType.Wrap(CursorTable)} WHERE {SqlType.Wrap(SyncPoint)} <= (SELECT MAX({SqlType.Wrap(Id)}) FROM {SqlType.Wrap(tableName)}) {TableHelper.Pagging(null, 1)}";
             return await ScriptExecuter.ExistsAsync(anyDataSql);
         }
         public virtual async Task InsertAsync(string tableName,IEnumerable<string> columnNames,IEnumerable<IEnumerable<object>> values, CancellationToken token = default)
         {
             using (var trans = Connection.BeginTransaction())
             {
-                var id = await GetCurrentSeqAsync(token);
+                ulong id = 0;
+                if (AttackId)
+                {
+                    id = await GetCurrentSeqAsync(token);
+                }
                 var batchSize = 10;
                 var header = $"INSERT INTO {SqlType.Wrap(tableName)}({string.Join(",", columnNames.Select(x => SqlType.Wrap(x)))}) VALUES";
                 using (var cur = values.GetEnumerator())
@@ -159,10 +177,13 @@ namespace FastBIRe.Farm
                     {
                         id++;//seq ++
                         var str = $"({string.Join(",", cur.Current.Select(x => SqlType.WrapValue(x)))}";
-                        sb.Append(str);
-                        sb.Append(',');
-                        sb.Append(id);
-                        sb.Append(')');
+                        if (AttackId)
+                        {
+                            sb.Append(str);
+                            sb.Append(',');
+                            sb.Append(id);
+                        }
+                            sb.Append(')');
                         count++;
                         if (count >= batchSize && count > 0)
                         {
@@ -181,7 +202,10 @@ namespace FastBIRe.Farm
                         token.ThrowIfCancellationRequested();
                     }
                 }
-                await UpdateCurrentSeqAsync(id);
+                if (AttackId)
+                {
+                    await UpdateCurrentSeqAsync(id);
+                }
                 trans.Commit();
             }
         }
@@ -199,11 +223,24 @@ namespace FastBIRe.Farm
         {
             using (var trans = Connection.BeginTransaction())
             {
-                var id = await GetCurrentSeqAsync();
+                ulong id = 0;
+                if (AttackId)
+                {
+                    id = await GetCurrentSeqAsync();
+                }
                 id++;
-                var sql = $"INSERT INTO {SqlType.Wrap(tableName)}({string.Join(",", columnNames.Select(x => SqlType.Wrap(x)))}) VALUES({string.Join(",", values.Select(x => SqlType.WrapValue(x)))},{id})";
+                var sql = $"INSERT INTO {SqlType.Wrap(tableName)}({string.Join(",", columnNames.Select(x => SqlType.Wrap(x)))}) VALUES({string.Join(",", values.Select(x => SqlType.WrapValue(x)))}";
+                if (AttackId)
+                {
+                    sql += $",{id}";
+                }
+                sql += ")";
                 await ScriptExecuter.ExecuteAsync(sql, token);
-                await UpdateCurrentSeqAsync(id);
+                if (AttackId)
+                {
+                    await UpdateCurrentSeqAsync(id);
+                }
+
                 trans.Commit();
             }
         }
@@ -253,6 +290,11 @@ namespace FastBIRe.Farm
                 results.Add(res);
             }
             return results;
+        }
+
+        public void Dispose()
+        {
+            ScriptExecuter.Dispose();
         }
     }
 }

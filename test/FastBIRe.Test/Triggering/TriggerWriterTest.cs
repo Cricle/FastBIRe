@@ -154,7 +154,7 @@ RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER ""trigger"" BEFORE INSERT ON ""table""
+CREATE TRIGGER ""trigger"" BEFORE INSERT ON ""table""
 FOR EACH ROW
 EXECUTE FUNCTION fun_trigger();
 " })]
@@ -168,7 +168,7 @@ RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER ""trigger"" AFTER INSERT ON ""table""
+CREATE TRIGGER ""trigger"" AFTER INSERT ON ""table""
 FOR EACH ROW
 EXECUTE FUNCTION fun_trigger();
 " })]

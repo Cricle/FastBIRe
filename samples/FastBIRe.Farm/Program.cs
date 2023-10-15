@@ -24,9 +24,9 @@ namespace FastBIRe.Farm
                 mysqlExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
                 duckExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
             }
-            var selector = new DefaultCursorRowHandlerSelector(_ => DefaultCursorRowHandler.FromDefault(mysqlExecuter, duckExecuter, "juhe_effect"));
-            var sourceHouse = new FarmWarehouse(mysqlExecuter, selector);
-            var destHouse = new DuckFarmWarehouse(duckExecuter, selector);
+            var selector = DefaultCursorRowHandlerSelector.Single(mysqlExecuter, duckExecuter, "juhe_effect");
+            var sourceHouse = new FarmWarehouse(mysqlExecuter, selector,false);
+            var destHouse = new DuckFarmWarehouse(duckExecuter, selector, false);
             return new FarmManager(table, sourceHouse, destHouse);
         }
 
@@ -58,7 +58,7 @@ namespace FastBIRe.Farm
                 {
                     var bgCp = Stopwatch.GetTimestamp();
                     var results = await checkPointfarm.CheckPointAsync();
-                    Console.WriteLine($"Complated check point take {new TimeSpan(Stopwatch.GetTimestamp() - bgCp).TotalMilliseconds:F4}ms, AffectedCount:{results.Sum(x=>x.AffectedCount)}");
+                    Console.WriteLine($"Complated check point take {Stopwatch.GetElapsedTime(bgCp).TotalMilliseconds:F4}ms, AffectedCount:{results.Sum(x => x.AffectedCount)}");
                     await Task.Delay(Random.Shared.Next(1000, 5000));
                 }
             });
@@ -66,7 +66,7 @@ namespace FastBIRe.Farm
         }
         static IEnumerable<IEnumerable<object>> DataSet()
         {
-            for (int i = 0; i < Random.Shared.Next(50,1000); i++)
+            for (int i = 0; i < Random.Shared.Next(500, 2000); i++)
             {
                 yield return DataSetRow(i);
             }
@@ -98,14 +98,14 @@ namespace FastBIRe.Farm
     public class DuckFarmWarehouse : FarmWarehouse
     {
         private readonly DuckDBConnection duckDBConnection;
-        public DuckFarmWarehouse(IDbScriptExecuter scriptExecuter, ICursorRowHandlerSelector cursorRowHandlerSelector)
-            : base(scriptExecuter, cursorRowHandlerSelector)
+        public DuckFarmWarehouse(IDbScriptExecuter scriptExecuter, ICursorRowHandlerSelector cursorRowHandlerSelector, bool attackId)
+            : base(scriptExecuter, cursorRowHandlerSelector, attackId)
         {
             duckDBConnection = (DuckDBConnection)scriptExecuter.Connection;
         }
 
-        public DuckFarmWarehouse(IDbScriptExecuter scriptExecuter, DatabaseReader databaseReader, ICursorRowHandlerSelector cursorRowHandlerSelector) 
-            : base(scriptExecuter, databaseReader, cursorRowHandlerSelector)
+        public DuckFarmWarehouse(IDbScriptExecuter scriptExecuter, DatabaseReader databaseReader, ICursorRowHandlerSelector cursorRowHandlerSelector, bool attackId)
+            : base(scriptExecuter, databaseReader, cursorRowHandlerSelector, attackId)
         {
             duckDBConnection = (DuckDBConnection)scriptExecuter.Connection;
         }
@@ -113,7 +113,11 @@ namespace FastBIRe.Farm
         {
             using (var trans = duckDBConnection.BeginTransaction())
             {
-                var id = await GetCurrentSeqAsync(token);
+                ulong id = 0;
+                if (AttackId)
+                {
+                    id = await GetCurrentSeqAsync(token);
+                }
                 using (var appender = duckDBConnection.CreateAppender(tableName))
                 {
                     foreach (var row in values)
@@ -124,11 +128,17 @@ namespace FastBIRe.Farm
                         {
                             Add(rowAppender, item);
                         }
-                        rowAppender.AppendValue(id);
+                        if (AttackId)
+                        {
+                            rowAppender.AppendValue(id);
+                        }
                         rowAppender.EndRow();
                     }
                 }
-                await UpdateCurrentSeqAsync(id,token);
+                if (AttackId)
+                {
+                    await UpdateCurrentSeqAsync(id, token);
+                }
                 await trans.CommitAsync(token);
             }
         }
@@ -136,7 +146,11 @@ namespace FastBIRe.Farm
         {
             using (var trans = duckDBConnection.BeginTransaction())
             {
-                var id = await GetCurrentSeqAsync(token);
+                ulong id = 0;
+                if (AttackId)
+                {
+                    id = await GetCurrentSeqAsync(token);
+                }
                 using (var appender = duckDBConnection.CreateAppender(tableName))
                 {
                     id++;
@@ -145,10 +159,16 @@ namespace FastBIRe.Farm
                     {
                         Add(row, item);
                     }
-                    row.AppendValue(id);
+                    if (AttackId)
+                    {
+                        row.AppendValue(id);
+                    }
                     row.EndRow();
                 }
-                await UpdateCurrentSeqAsync(id,token);
+                if (AttackId)
+                {
+                    await UpdateCurrentSeqAsync(id, token);
+                }
                 await trans.CommitAsync(token);
             }
         }

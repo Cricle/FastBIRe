@@ -59,15 +59,14 @@ namespace FastBIRe.Farm
             var includeNames= new HashSet<string>(sourceTable.Columns.Select(x => x.Name));
             var currentPoint = rows.Point;
             var queryBatchSize = QueryBatchSize;
-            ulong prevMaxId = 0;
-            ulong maxId = 0;
+            ulong prevMaxId = currentPoint;
+            ulong maxId = currentPoint;
             long affectedCount = 0;
             var capture = new FieldDataCapture(IdColumn, o =>
             {
                 var id = Convert.ToUInt64(o);
                 if (id > maxId)
                 {
-                    prevMaxId = maxId;
                     maxId = id;
                 }
             });
@@ -109,6 +108,7 @@ namespace FastBIRe.Farm
                     {
                         break;
                     }
+                    prevMaxId = maxId;
                 }
             }
             return new CopyCursorRowHandlerResult<string>((long)maxId, affectedCount, round, rowWriteResults);
