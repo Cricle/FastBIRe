@@ -24,7 +24,7 @@ namespace FastBIRe.Creating
 
             public Task<int> CreateAsync(CancellationToken token = default)
             {
-                return ScriptExecuter.ExecuteAsync(ExistsSql, token);
+                return ScriptExecuter.ExecuteAsync(ExistsSql, token: token);
             }
 
             public async Task<bool> ExistsAsync(CancellationToken token = default)
@@ -34,7 +34,7 @@ namespace FastBIRe.Creating
                 {
                     ok = e.Reader.Read();
                     return Task.CompletedTask;
-                }, token);
+                }, token:token);
                 return ok;
             }
         }

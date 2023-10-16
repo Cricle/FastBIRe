@@ -96,12 +96,12 @@ namespace FastBIRe.Farm
                         {
                             rowWriteResults.AddRange(result);
                         }
-                    }, token);
+                    }, token: token);
                     currentPoint = maxId;
                     if (maxId != 0)
                     {
                         var updateSql = $"UPDATE {destSqlType.Wrap(CursorTable)} SET {destSqlType.Wrap(PointColumn)} = {maxId} WHERE {destSqlType.Wrap(NameColumn)} = {destSqlType.WrapValue(rows.Name)}";
-                        await DestConnection.ExecuteAsync(updateSql, token);
+                        await DestConnection.ExecuteAsync(updateSql, token: token);
                     }
                     trans.Commit();
                     if (maxId == 0 || (maxId - prevMaxId) < (ulong)queryBatchSize)

@@ -106,7 +106,7 @@ namespace FastBIRe.Data
                 datas.Remove(datas.Length - 1, 1);
             }
             var sciprt = datas.ToString();
-            var affect = await Target.ScriptExecuter.ExecuteAsync(sciprt, token);
+            var affect = await Target.ScriptExecuter.ExecuteAsync(sciprt, token: token);
             return new RowWriteResult<string>(
                 names,
                 new IQueryTranslateResult[] { new QueryTranslateResult(sciprt) },

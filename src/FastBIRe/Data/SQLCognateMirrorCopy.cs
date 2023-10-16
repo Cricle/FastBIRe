@@ -25,7 +25,7 @@
         public async Task<IList<SQLMirrorCopyResult>> CopyAsync(CancellationToken token)
         {
             var query = GetInsertQuery();
-            var result = await ScriptExecuter.ExecuteAsync(query, token);
+            var result = await ScriptExecuter.ExecuteAsync(query, token: token);
             return new[]
             {
                 new SQLMirrorCopyResult(result,query)

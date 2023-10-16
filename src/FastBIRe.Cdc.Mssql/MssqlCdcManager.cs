@@ -1,0 +1,108 @@
+﻿using Microsoft.Data.SqlClient;
+
+namespace FastBIRe.Cdc.Mssql
+{
+    public class MssqlCdcManager : ICdcManager, IDisposable
+    {
+        public MssqlCdcManager(Func<IDbScriptExecuter> scriptExecuterFactory, TimeSpan delayScan)
+        {
+            ScriptExecuterFactory = scriptExecuterFactory;
+            ScriptExecuter = scriptExecuterFactory();
+            disposables.Add(ScriptExecuter);
+            DelayScan = delayScan;
+        }
+
+        private readonly IList<IDisposable> disposables = new List<IDisposable>();
+
+        public IDbScriptExecuter ScriptExecuter { get; }
+
+        public Func<IDbScriptExecuter> ScriptExecuterFactory { get; }
+
+        public TimeSpan DelayScan { get; }
+
+        public SqlConnection Connection => (SqlConnection)ScriptExecuter.Connection;
+
+        public Task<ICdcListener> GetCdcListenerAsync(CancellationToken token = default)
+        {
+            var executer = ScriptExecuterFactory();
+            disposables.Add(executer);
+            return Task.FromResult<ICdcListener>(new MssqlCdcListener(this, executer, DelayScan));
+        }
+
+        public Task<ICdcLogService> GetCdcLogServiceAsync(CancellationToken token = default)
+        {
+            return Task.FromResult<ICdcLogService>(new MssqlCdcLogService(ScriptExecuter));
+        }
+        public Task<byte[]?> GetMinLsnAsync(string tableName,CancellationToken token = default)
+        {
+            return GetLsnAsync($@"DECLARE @from_lsn binary (10)
+SET @from_lsn = sys.fn_cdc_get_min_lsn('{tableName}')
+IF @from_lsn = 0x00000000000000000000
+	SET @from_lsn = (SELECT TOP 1 __$start_lsn FROM [cdc].[dbo_{tableName}_CT] ORDER BY __$start_lsn)
+SELECT @from_lsn", token);
+        }
+        public Task<byte[]?> GetMaxLSNAsync(CancellationToken token=default)
+        {
+            return GetLsnAsync("SELECT sys.fn_cdc_get_max_lsn()",token);
+        }
+
+        private async Task<byte[]?> GetLsnAsync(string script, CancellationToken token = default)
+        {
+            byte[]? lsn = null;
+            await ScriptExecuter.ReadAsync(script, (s, r) =>
+            {
+                if (r.Reader.Read())
+                {
+                    lsn = (byte[])r.Reader[0];
+                }
+                return Task.CompletedTask;
+            }, token: token);
+            return lsn;
+        }
+
+        public async Task<DbVariables> GetCdcVariablesAsync(CancellationToken token = default)
+        {
+            var var = new MssqlVariables();
+            await ScriptExecuter.ReadAsync("EXEC master.dbo.xp_servicecontrol N'QUERYSTATE',N'SQLSERVERAGENT'", (s, r) =>
+            {
+                while (r.Reader.Read())
+                {
+                    var[MssqlVariables.AgentStateKey] = r.Reader.GetString(0);
+                }
+                return Task.CompletedTask;
+            }, token:token);
+            return var;
+        }
+
+        public Task<bool> IsDatabaseCdcEnableAsync(string databaseName, CancellationToken token = default)
+        {
+            return ScriptExecuter.ExistsAsync($"SELECT 1 from sys.databases where name ='{databaseName}' AND is_cdc_enabled = 1",token);
+        }
+        public async Task<IList<string>> GetEnableCdcTableNamesAsync(CancellationToken token = default)
+        {
+            var var = new List<string>();
+            await ScriptExecuter.ReadAsync("SELECT name from sys.tables where is_tracked_by_cdc = 1", (s, r) =>
+            {
+                while (r.Reader.Read())
+                {
+                    var.Add(r.Reader.GetString(0));
+                }
+                return Task.CompletedTask;
+            }, token: token);
+            return var;
+        }
+        public Task<bool> IsTableCdcEnableAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            return ScriptExecuter.ExistsAsync($"SELECT 1 from sys.tables where name ='{tableName}' AND is_tracked_by_cdc = 1", token);
+        }
+
+        public void Dispose()
+        {
+            foreach (var item in disposables)
+            {
+                item.Dispose();
+            }
+            disposables.Clear();
+        }
+    }
+}

@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -62,9 +63,9 @@ namespace FastBIRe
 
         public event EventHandler<ScriptExecuteEventArgs>? ScriptStated;
 
-        public Task<int> ExecuteAsync(string script, CancellationToken token = default)
+        public Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object>>? args = null, CancellationToken token = default)
         {
-            return ExecuteAsync(script, null, GetStackTrace(), token);
+            return ExecuteAsync(script, null, args, GetStackTrace(), token);
         }
 
         private StackTrace? GetStackTrace()
@@ -75,7 +76,67 @@ namespace FastBIRe
             }
             return null;
         }
-        protected virtual async Task<int> ExecuteAsync(string script, IEnumerable<string>? scripts, StackTrace? stackTrace, CancellationToken token = default)
+        private static DbType GetDbType(object input)
+        {
+            var typeCode = Type.GetTypeCode(input.GetType());
+
+            switch (typeCode)
+            {
+                case TypeCode.Boolean:
+                    return DbType.Boolean;
+                case TypeCode.Byte:
+                    return DbType.Byte;
+                case TypeCode.SByte:
+                    return DbType.SByte;
+                case TypeCode.Int16:
+                    return DbType.Int16;
+                case TypeCode.Int32:
+                    return DbType.Int32;
+                case TypeCode.Int64:
+                    return DbType.Int64;
+                case TypeCode.UInt16:
+                    return DbType.UInt16;
+                case TypeCode.UInt32:
+                    return DbType.UInt32;
+                case TypeCode.UInt64:
+                    return DbType.UInt64;
+                case TypeCode.Single:
+                    return DbType.Single;
+                case TypeCode.Double:
+                    return DbType.Double;
+                case TypeCode.Decimal:
+                    return DbType.Decimal;
+                case TypeCode.DateTime:
+                    return DbType.DateTime;
+                case TypeCode.String:
+                case TypeCode.Empty:
+                default:
+                    return DbType.String;
+            }
+        }
+
+        protected virtual void LoadParamters(DbCommand command, IEnumerable<KeyValuePair<string, object>>? args = null) 
+        {
+            if (args != null)
+            {
+                foreach (var item in args)
+                {
+                    if (item.Value is DbParameter dbp)
+                    {
+                        command.Parameters.Add(dbp);
+                    }
+                    else
+                    {
+                        var par = command.CreateParameter();
+                        par.ParameterName = item.Key;
+                        par.DbType = GetDbType(item.Value);
+                        command.Parameters.Add(par);
+                    }
+                }
+            }
+        }
+
+        protected virtual async Task<int> ExecuteAsync(string script, IEnumerable<string>? scripts,IEnumerable<KeyValuePair<string,object>>? args, StackTrace? stackTrace, CancellationToken token = default)
         {
             if (IsEmptyScript(script))
             {
@@ -85,6 +146,7 @@ namespace FastBIRe
             var fullStartTime = Stopwatch.GetTimestamp();
             using (var command = Connection.CreateCommand())
             {
+                LoadParamters(command, args);
                 try
                 {
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, scripts, stackTrace, token));
@@ -130,29 +192,47 @@ namespace FastBIRe
             }
             return true;
         }
-        private async Task<int> ExecuteBatchSlowAsync(IEnumerable<string> scripts, StackTrace? stackTrace, CancellationToken token = default)
+        private async Task<int> ExecuteBatchSlowAsync(IEnumerable<string> scripts,  StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object>>>? argss = null, CancellationToken token = default)
         {
             var res = 0;
-            foreach (var item in scripts)
+            var argEnumerator = argss?.GetEnumerator();
+            try
             {
-                res += await ExecuteAsync(item, scripts, stackTrace, token).ConfigureAwait(false);
+                IEnumerable<KeyValuePair<string, object>>? args = null;
+                if (argss != null && argEnumerator!.MoveNext())
+                {
+                    args = argEnumerator.Current;
+                }
+                foreach (var item in scripts)
+                {
+                    res += await ExecuteAsync(item, scripts, args, stackTrace, token).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                argEnumerator?.Dispose();
             }
             return res;
         }
 #if !NETSTANDARD2_0
-        protected async Task<int?> BatchExecuteAdoAsync(IEnumerable<string> scripts, StackTrace? stackTrace, CancellationToken token = default)
+        protected async Task<int?> BatchExecuteAdoAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string,object>>>? argss = null, CancellationToken token = default)
         {
             if (UseBatch && Connection.CanCreateBatch)
             {
                 var fullStartTime = Stopwatch.GetTimestamp();
                 using (var batch = Connection.CreateBatch())
                 {
+                    var enu = argss?.GetEnumerator();
                     try
                     {
                         ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedBatch(Connection, scripts, batch, stackTrace, token));
-
                         foreach (var item in scripts)
                         {
+                            IEnumerable<KeyValuePair<string, object>>? args = null;
+                            if (enu!=null&&enu.MoveNext())
+                            {
+                                args = enu.Current;
+                            }
                             if (IsEmptyScript(item))
                             {
                                 ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { item }, stackTrace, token));
@@ -160,6 +240,14 @@ namespace FastBIRe
                             }
                             var comm = batch.CreateBatchCommand();
                             comm.CommandText = item;
+                            if (args != null)
+                            {
+                                foreach (var arg in args)
+                                {
+                                    //TODO: par load
+                                    comm.Parameters.Add(arg.Value);
+                                }
+                            }
                             ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadBatchItem(Connection, scripts, batch, comm, stackTrace, token));
                         }
                         batch.Timeout = CommandTimeout;
@@ -173,17 +261,21 @@ namespace FastBIRe
                         ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BatchException(Connection, scripts, batch, ex, null, GetElapsedTime(fullStartTime), stackTrace, token));
                         throw;
                     }
+                    finally
+                    {
+                        enu?.Dispose();
+                    }
                 }
             }
             return null;
         }
 #endif
-        public Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, CancellationToken token = default)
+        public Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object>>>? argss = null, CancellationToken token = default)
         {
-            return ExecuteBatchAsync(scripts, GetStackTrace(), token);
+            return ExecuteBatchAsync(scripts, GetStackTrace(),argss, token);
         }
 
-        public async Task ReadAsync(string script, ReadDataHandler handler, CancellationToken token = default)
+        public async Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object>>? args = null, CancellationToken token = default)
         {
             var stackTrace = GetStackTrace();
             var fullStartTime = Stopwatch.GetTimestamp();
@@ -194,6 +286,7 @@ namespace FastBIRe
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, null, stackTrace, token));
                     command.CommandText = script;
                     command.CommandTimeout = CommandTimeout;
+                    LoadParamters(command, args);
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoaedCommand(Connection, command, null, stackTrace, token));
                     var startTime = Stopwatch.GetTimestamp();
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.StartReading(Connection, command, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
@@ -211,12 +304,12 @@ namespace FastBIRe
             }
         }
 
-        public Task<int> ExecuteAsync(string script, StackTrace? stackTrace, CancellationToken token = default)
+        public Task<int> ExecuteAsync(string script, StackTrace? stackTrace, IEnumerable<KeyValuePair<string, object>>? args = null, CancellationToken token = default)
         {
-            return ExecuteAsync(script, null, stackTrace, token);
+            return ExecuteAsync(script, null, args, stackTrace, token);
         }
 
-        public async Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, StackTrace? stackTrace, CancellationToken token = default)
+        public async Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object>>>? argss = null, CancellationToken token = default)
         {
             if (!scripts.Any())
             {
@@ -224,18 +317,19 @@ namespace FastBIRe
             }
             stackTrace ??= GetStackTrace();
 #if !NETSTANDARD2_0
-            var res = await BatchExecuteAdoAsync(scripts, stackTrace, token).ConfigureAwait(false);
+            var res = await BatchExecuteAdoAsync(scripts, stackTrace, argss, token).ConfigureAwait(false);
             if (res != null)
             {
                 return res.Value;
             }
 #endif
-            return await ExecuteBatchSlowAsync(scripts, stackTrace, token).ConfigureAwait(false);
+            return await ExecuteBatchSlowAsync(scripts, stackTrace, argss, token).ConfigureAwait(false);
         }
 
         public void Dispose()
         {
             Connection?.Dispose();
         }
+
     }
 }

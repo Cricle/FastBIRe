@@ -140,7 +140,7 @@ namespace FastBIRe.Farm
             var scripts = await GetSyncScriptsAsync(table);
             if (scripts.Count != 0)
             {
-                await ScriptExecuter.ExecuteBatchAsync(scripts, token);
+                await ScriptExecuter.ExecuteBatchAsync(scripts, token: token);
             }
         }
         public virtual async Task AddIfSeqNothingAsync()
@@ -198,7 +198,7 @@ namespace FastBIRe.Farm
                     }
                     if (count > 0)
                     {
-                        await ScriptExecuter.ExecuteAsync(sb.ToString(), token);
+                        await ScriptExecuter.ExecuteAsync(sb.ToString(), token: token);
                         token.ThrowIfCancellationRequested();
                     }
                 }
@@ -212,12 +212,12 @@ namespace FastBIRe.Farm
         public virtual Task<ulong> GetCurrentSeqAsync(CancellationToken token=default)
         {
             var sql = $"SELECT {SqlType.Wrap(Id)} FROM {SqlType.Wrap(SeqTable)} {TableHelper.Pagging(null, 1)}";
-            return ScriptExecuter.ReadOneAsync<ulong>(sql, token);
+            return ScriptExecuter.ReadOneAsync<ulong>(sql, token: token);
         }
         public virtual Task<int> UpdateCurrentSeqAsync(ulong seq, CancellationToken token = default)
         {
             var sql = $"UPDATE {SqlType.Wrap(SeqTable)} SET {SqlType.Wrap(Id)} = {SqlType.WrapValue(seq)}";
-            return ScriptExecuter.ExecuteAsync(sql, token);
+            return ScriptExecuter.ExecuteAsync(sql, token: token);
         }
         public virtual async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<object> values, CancellationToken token = default)
         {
@@ -235,7 +235,7 @@ namespace FastBIRe.Farm
                     sql += $",{id}";
                 }
                 sql += ")";
-                await ScriptExecuter.ExecuteAsync(sql, token);
+                await ScriptExecuter.ExecuteAsync(sql, token: token);
                 if (AttackId)
                 {
                     await UpdateCurrentSeqAsync(id);
@@ -247,7 +247,7 @@ namespace FastBIRe.Farm
         public virtual async Task RemoveCheckpointAsync(string name,CancellationToken token=default)
         {
             var sql = $"DELETE FROM {SqlType.Wrap(CursorTable)} WHERE {SqlType.Wrap(SyncNamer)} = {SqlType.WrapValue(name)}";
-            await ScriptExecuter.ExecuteAsync(sql,token);
+            await ScriptExecuter.ExecuteAsync(sql, token: token);
         }
         public virtual Task<long?> GetCheckpointAsync(string name, CancellationToken token = default)
         {
@@ -281,7 +281,7 @@ namespace FastBIRe.Farm
                     cursors.Add(new CursorRow(name, (ulong)point));
                 }
                 return Task.CompletedTask;
-            }, token);
+            }, token: token);
             var dataLastId = await GetDataLastIdAsync(tableName, token);
             var results = new List<ICursorRowHandlerResult>();
             foreach (var item in cursors)

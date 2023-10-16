@@ -13,7 +13,7 @@ namespace FastBIRe
             {
                 exists = e.Reader.Read();
                 return Task.CompletedTask;
-            }, token);
+            }, token: token);
             return exists;
         }
         public static async Task<T?> ReadOneAsync<T>(this IScriptExecuter scriptExecuter, string script, CancellationToken token = default)
@@ -23,7 +23,7 @@ namespace FastBIRe
             {
                 Parser<T>.TryPreParse(e.Reader, out result);
                 return Task.CompletedTask;
-            }, token);
+            }, token: token);
             return result;
         }
         public static async Task<IList<T>> ReadAsync<T>(this IScriptExecuter scriptExecuter, string script, CancellationToken token = default)
@@ -33,7 +33,7 @@ namespace FastBIRe
             {
                 result = Parser<T>.parser(e.Reader);
                 return Task.CompletedTask;
-            }, token);
+            }, token: token);
             return result;
         }
 

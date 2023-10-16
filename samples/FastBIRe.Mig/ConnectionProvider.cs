@@ -40,7 +40,7 @@ namespace rsa
                     conn = new SqliteConnection($"{(string.IsNullOrEmpty(database) ? string.Empty : $"Data Source={database}.db;")}");
                     break;
                 case SqlType.PostgreSql:
-                    conn = new NpgsqlConnection($"host=127.0.0.1;port=5432;username=postgres;password=355343;{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
+                    conn = new NpgsqlConnection($"host=192.168.1.101;port=5432;username=postgres;password=Syc123456.;{(string.IsNullOrEmpty(database) ? string.Empty : $";Database={database};")}");
                     break;
                 case SqlType.DuckDB:
                     var builder=new DuckDBConnectionStringBuilder();
