@@ -1,15 +1,7 @@
 ﻿using FastBIRe.Cdc.Events;
 using FastBIRe.Cdc.Mssql;
-using FastBIRe.Cdc.MySql;
-using FastBIRe.Cdc.NpgSql;
 using Microsoft.Data.SqlClient;
-using MySqlConnector;
-using Npgsql;
-using Npgsql.Replication;
-using Npgsql.Replication.PgOutput;
 using rsa;
-using System.Numerics;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace FastBIRe.CdcSample
 {
@@ -19,8 +11,8 @@ namespace FastBIRe.CdcSample
         {
             var mssql = ConnectionProvider.GetDbMigration(DatabaseSchemaReader.DataSchema.SqlType.SqlServer, "test");
             SqlDependency.Start("Server=192.168.1.101;Uid=sa;Pwd=Syc123456.;Connection Timeout=2000;TrustServerCertificate=true;Database=test");
-            var comm = new MssqlCdcManager(() => new DefaultScriptExecuter(mssql), TimeSpan.FromSeconds(5));
-            var listen = await comm.GetCdcListenerAsync();
+            var comm = new MssqlCdcManager(() => new DefaultScriptExecuter(mssql));
+            var listen = await comm.GetCdcListenerAsync(new MssqlGetCdcListenerOptions(null, TimeSpan.FromSeconds(1), comm.ScriptExecuterFactory()));
             listen.EventRaised += Vars_EventRaised;
             await listen.StartAsync();
             Console.ReadLine();

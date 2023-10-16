@@ -1,15 +1,16 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using FastBIRe.Cdc.Checkpoints;
+using FastBIRe.Cdc.Mssql.Checkpoints;
+using Microsoft.Data.SqlClient;
 
 namespace FastBIRe.Cdc.Mssql
 {
     public class MssqlCdcManager : ICdcManager, IDisposable
     {
-        public MssqlCdcManager(Func<IDbScriptExecuter> scriptExecuterFactory, TimeSpan delayScan)
+        public MssqlCdcManager(Func<IDbScriptExecuter> scriptExecuterFactory)
         {
             ScriptExecuterFactory = scriptExecuterFactory;
             ScriptExecuter = scriptExecuterFactory();
             disposables.Add(ScriptExecuter);
-            DelayScan = delayScan;
         }
 
         private readonly IList<IDisposable> disposables = new List<IDisposable>();
@@ -18,17 +19,18 @@ namespace FastBIRe.Cdc.Mssql
 
         public Func<IDbScriptExecuter> ScriptExecuterFactory { get; }
 
-        public TimeSpan DelayScan { get; }
-
         public SqlConnection Connection => (SqlConnection)ScriptExecuter.Connection;
 
-        public Task<ICdcListener> GetCdcListenerAsync(CancellationToken token = default)
+        public Task<ICdcListener> GetCdcListenerAsync(MssqlGetCdcListenerOptions options, CancellationToken token = default)
         {
             var executer = ScriptExecuterFactory();
             disposables.Add(executer);
-            return Task.FromResult<ICdcListener>(new MssqlCdcListener(this, executer, DelayScan));
+            return Task.FromResult<ICdcListener>(new MssqlCdcListener(this, options));
         }
-
+        Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options, CancellationToken token = default)
+        {
+            return GetCdcListenerAsync((MssqlGetCdcListenerOptions)options, token);
+        }
         public Task<ICdcLogService> GetCdcLogServiceAsync(CancellationToken token = default)
         {
             return Task.FromResult<ICdcLogService>(new MssqlCdcLogService(ScriptExecuter));
@@ -103,6 +105,11 @@ SELECT @from_lsn", token);
                 item.Dispose();
             }
             disposables.Clear();
+        }
+
+        public Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default)
+        {
+            return Task.FromResult<ICheckPointManager>(MssqlCheckpointManager.Instance);
         }
     }
 }

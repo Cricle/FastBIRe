@@ -10,12 +10,13 @@ namespace FastBIRe.Cdc.Mssql
         private Task? task;
         private readonly Dictionary<string, MssqlTableMapInfo> tableMapInfos = new Dictionary<string, MssqlTableMapInfo>(StringComparer.OrdinalIgnoreCase);
 
-        public MssqlCdcListener(MssqlCdcManager cdcManager, IDbScriptExecuter scriptExecuter, TimeSpan delayScan)
+        public MssqlCdcListener(MssqlCdcManager cdcManager, MssqlGetCdcListenerOptions options)
+            :base(options)
         {
             CdcManager = cdcManager;
-            ScriptExecuter = scriptExecuter;
-            DelayScan = delayScan;
-            SqlConnection = (SqlConnection)scriptExecuter.Connection;
+            ScriptExecuter = options.ScriptExecuter;
+            DelayScan = options.DelayScan;
+            SqlConnection = (SqlConnection)options.ScriptExecuter.Connection;
             DatabaseReader = new DatabaseReader(SqlConnection) { Owner = SqlConnection.Database };
         }
         private IList<string>? cdcTables;
@@ -65,6 +66,58 @@ namespace FastBIRe.Cdc.Mssql
             task = null;
             return Task.CompletedTask;
         }
+        protected virtual async Task ReadEventAsync(string lsnStr,IList<CdcEventArgs> raiseList, MssqlReadEventOptions options,CancellationToken token=default)
+        {
+            var listener = options.Listener;
+            var table= options.Table;
+            await listener.ScriptExecuter.ReadAsync($"SELECT [__$seqval] AS [seqval],[__$operation] AS [op],{table.ColumnNameJoined} FROM [cdc].[dbo_{table.TableName}_CT] WITH (NOLOCK) WHERE [__$seqval]>{lsnStr}", (s, r) =>
+            {
+                while (r.Reader.Read())
+                {
+                    var seq = (byte[])r.Reader[0];
+                    var seqInteger = LsnHelper.LsnToBitInteger(seq);
+                    if (seqInteger > options.LsnBigInteger)
+                    {
+                        options.Lsn = seq;
+                        options.LsnBigInteger = seqInteger;
+                    }
+                    var op = (SqlServerOperator)r.Reader.GetInt32(1);
+                    if (op == SqlServerOperator.BeforeUpdate)
+                    {
+                        continue;
+                    }
+                    var row = new CdcDataRow();
+                    for (int i = 2; i < r.Reader.FieldCount; i++)
+                    {
+                        var val = r.Reader[i];
+                        if (val == DBNull.Value)
+                        {
+                            val = null;
+                        }
+                        row.Add(val);
+                    }
+                    switch (op)
+                    {
+                        case SqlServerOperator.Delete:
+                            raiseList.Add(new DeleteEventArgs(null, table.TableName, table, new ICdcDataRow[] { row }));
+                            break;
+                        case SqlServerOperator.Insert:
+                            raiseList.Add(new InsertEventArgs(null, table.TableName, table, new ICdcDataRow[] { row }));
+                            break;
+                        case SqlServerOperator.AfterUpdate:
+                            raiseList.Add(new UpdateEventArgs(null, table.TableName, table, new ICdcUpdateRow[] { new CdcUpdateRow(null, row) }));
+                            break;
+                        case SqlServerOperator.BeforeUpdate:
+                        case SqlServerOperator.Unknow:
+                        default:
+                            break;
+                    }
+                }
+                return Task.CompletedTask;
+            }, token: token);
+
+        }
+
         private async Task Handler(object? state)
         {
             var listener = (MssqlCdcListener)state!;
@@ -74,63 +127,23 @@ namespace FastBIRe.Cdc.Mssql
             var lsnBigInt = LsnHelper.LsnToBitInteger(lsn);
             while (!source.IsCancellationRequested)
             {
-                var lastLsn = lsn;
+                var lsnStr = LsnHelper.LsnToString(lsn);
                 foreach (var item in tables)
                 {
                     var table = (MssqlTableMapInfo)GetTableMapInfo(item)!;
-                    var lsnStr = LsnHelper.LsnToString(lsn);
                     var raiseList = new List<CdcEventArgs>();
                     try
                     {
-                        await listener.ScriptExecuter.ReadAsync($"SELECT [__$seqval] AS [seqval],[__$operation] AS [op],{table.ColumnNameJoined} FROM [cdc].[dbo_{item}_CT] WHERE [__$seqval]>{lsnStr}", (s, r) =>
+                        await ReadEventAsync(lsnStr, raiseList, new MssqlReadEventOptions(listener, table)
                         {
-                            while (r.Reader.Read())
-                            {
-                                var seq = (byte[])r.Reader[0];
-                                var seqInteger = LsnHelper.LsnToBitInteger(seq);
-                                if (seqInteger > lsnBigInt)
-                                {
-                                    lsn = seq;
-                                    lsnBigInt = seqInteger;
-                                }
-                                var op = (SqlServerOperator)r.Reader.GetInt32(1);
-                                if (op == SqlServerOperator.BeforeUpdate)
-                                {
-                                    continue;
-                                }
-                                var row = new CdcDataRow();
-                                for (int i = 2; i < r.Reader.FieldCount; i++)
-                                {
-                                    var val = r.Reader[i];
-                                    if (val == DBNull.Value)
-                                    {
-                                        val = null;
-                                    }
-                                    row.Add(val);
-                                }
-                                switch (op)
-                                {
-                                    case SqlServerOperator.Delete:
-                                        raiseList.Add(new DeleteEventArgs(null, item, table, new ICdcDataRow[] { row }));
-                                        break;
-                                    case SqlServerOperator.Insert:
-                                        raiseList.Add(new InsertEventArgs(null, item, table, new ICdcDataRow[] { row }));
-                                        break;
-                                    case SqlServerOperator.AfterUpdate:
-                                        raiseList.Add(new UpdateEventArgs(null, item, table, new ICdcUpdateRow[] { new CdcUpdateRow(null, row) }));
-                                        break;
-                                    case SqlServerOperator.BeforeUpdate:
-                                    case SqlServerOperator.Unknow:
-                                    default:
-                                        break;
-                                }
-                            }
-                            return Task.CompletedTask;
-                        }, token: source.Token);
+                            Lsn = lsn,
+                            LsnBigInteger = lsnBigInt,
+                        },source.Token);
                     }
                     catch (Exception ex)
+                        when (ex is not ObjectDisposedException)
                     {
-                        Console.WriteLine(ex);
+                        RaiseError(new CdcErrorEventArgs(ex));
                     }
                     foreach (var raiseItem in raiseList)
                     {

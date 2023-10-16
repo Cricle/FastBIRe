@@ -1,22 +1,26 @@
-﻿using Npgsql;
+﻿using FastBIRe.Cdc.Checkpoints;
+using FastBIRe.Cdc.NpgSql.Checkpoints;
 using Npgsql.Replication;
 using Npgsql.Replication.PgOutput;
 using NpgsqlTypes;
 
 namespace FastBIRe.Cdc.NpgSql
 {
-    public class PgSqlCdcManager : ICdcManager
+    public class PgSqlGetCdcListenerOptions : IGetCdcListenerOptions
     {
-        public PgSqlCdcManager(IDbScriptExecuter scriptExecuter, LogicalReplicationConnection logicalReplicationConnection , PgOutputReplicationSlot outputReplicationSlot, PgOutputReplicationOptions outputReplicationOptions, NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber = null)
+        public PgSqlGetCdcListenerOptions(LogicalReplicationConnection logicalReplicationConnection, 
+            PgOutputReplicationSlot outputReplicationSlot, 
+            PgOutputReplicationOptions outputReplicationOptions,
+            NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber, IReadOnlyList<string>? tableNames)
         {
-            ScriptExecuter = scriptExecuter;
+            TableNames = tableNames;
+            LogicalReplicationConnection = logicalReplicationConnection;
             OutputReplicationSlot = outputReplicationSlot;
             OutputReplicationOptions = outputReplicationOptions;
             NpgsqlLogSequenceNumber = npgsqlLogSequenceNumber;
-            LogicalReplicationConnection = logicalReplicationConnection;
         }
 
-        public IDbScriptExecuter ScriptExecuter { get; }
+        public IReadOnlyList<string>? TableNames { get; }
 
         public LogicalReplicationConnection LogicalReplicationConnection { get; }
 
@@ -25,14 +29,23 @@ namespace FastBIRe.Cdc.NpgSql
         public PgOutputReplicationOptions OutputReplicationOptions { get; }
 
         public NpgsqlLogSequenceNumber? NpgsqlLogSequenceNumber { get; }
-
-        public Task<ICdcListener> GetCdcListenerAsync(CancellationToken token = default)
+    }
+    public class PgSqlCdcManager : ICdcManager
+    {
+        public PgSqlCdcManager(IDbScriptExecuter scriptExecuter)
         {
-            return Task.FromResult<ICdcListener>(new PgSqlCdcListener(
-                LogicalReplicationConnection,
-                OutputReplicationSlot,
-                OutputReplicationOptions,
-                NpgsqlLogSequenceNumber));
+            ScriptExecuter = scriptExecuter;
+        }
+
+        public IDbScriptExecuter ScriptExecuter { get; }
+
+        public Task<ICdcListener> GetCdcListenerAsync(PgSqlGetCdcListenerOptions options, CancellationToken token = default)
+        {
+            return Task.FromResult<ICdcListener>(new PgSqlCdcListener(options));
+        }
+        Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options,CancellationToken token = default)
+        {
+            return GetCdcListenerAsync((PgSqlGetCdcListenerOptions)options, token);
         }
 
         public Task<ICdcLogService> GetCdcLogServiceAsync(CancellationToken token = default)
@@ -64,6 +77,11 @@ namespace FastBIRe.Cdc.NpgSql
         public Task<bool> IsTableCdcEnableAsync(string databaseName, string tableName, CancellationToken token = default)
         {
             return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_catalog.pg_publication_tables WHERE tablename='{tableName}';", token);
+        }
+
+        public Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default)
+        {
+            return Task.FromResult<ICheckPointManager>(NpgSqlCheckpointManager.Instance);
         }
     }
 }

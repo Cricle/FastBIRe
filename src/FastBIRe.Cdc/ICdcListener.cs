@@ -9,6 +9,10 @@ namespace FastBIRe.Cdc
     {
         event EventHandler<CdcEventArgs>? EventRaised;
 
+        event EventHandler<CdcErrorEventArgs>? Error;
+
+        IGetCdcListenerOptions Options { get; }
+
         bool IsStarted { get; }
 
         Task StopAsync(CancellationToken token = default);

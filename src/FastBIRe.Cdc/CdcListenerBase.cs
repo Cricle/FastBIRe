@@ -10,11 +10,24 @@ namespace FastBIRe.Cdc
         private CancellationTokenSource? tokenSource;
         private int isStarted;
 
+        protected CdcListenerBase(IGetCdcListenerOptions options)
+        {
+            Options = options;
+        }
+
         public bool IsStarted => Volatile.Read(ref isStarted) != 0;
 
         protected CancellationTokenSource? TokenSource => tokenSource;
 
+        public IGetCdcListenerOptions Options { get; }
+
         public event EventHandler<CdcEventArgs>? EventRaised;
+        public event EventHandler<CdcErrorEventArgs>? Error;
+
+        protected void RaiseError(CdcErrorEventArgs e)
+        {
+            Error?.Invoke(this, e);
+        }
 
         protected void RaiseEvent(CdcEventArgs e)
         {

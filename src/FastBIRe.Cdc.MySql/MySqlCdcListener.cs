@@ -12,11 +12,14 @@ namespace FastBIRe.Cdc.MySql
     public class MySqlCdcListener : CdcListenerBase
     {
         private Task? task;
+        private readonly MySqlGetCdcListenerOptions options;
         private readonly Dictionary<long, ITableMapInfo> tableMapInfos=new Dictionary<long, ITableMapInfo>();
 
-        public MySqlCdcListener(BinlogClient binlogClient)
+        public MySqlCdcListener(BinlogClient binlogClient,MySqlGetCdcListenerOptions options)
+            :base(options)
         {
             BinlogClient = binlogClient;
+            this.options = options;
         }
 
         public BinlogClient BinlogClient { get; }

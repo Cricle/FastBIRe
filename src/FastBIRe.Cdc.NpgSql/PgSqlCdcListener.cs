@@ -11,12 +11,13 @@ namespace FastBIRe.Cdc.NpgSql
         private Task? task;
         private readonly Dictionary<uint, ITableMapInfo> tableMapInfos = new Dictionary<uint, ITableMapInfo>();
 
-        public PgSqlCdcListener(LogicalReplicationConnection replicationConnectionConnection, PgOutputReplicationSlot outputReplicationSlot, PgOutputReplicationOptions outputReplicationOptions, NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber=null)
+        public PgSqlCdcListener(PgSqlGetCdcListenerOptions options)
+            :base(options)
         {
-            ReplicationConnectionConnection = replicationConnectionConnection;
-            OutputReplicationSlot = outputReplicationSlot;
-            OutputReplicationOptions = outputReplicationOptions;
-            NpgsqlLogSequenceNumber = npgsqlLogSequenceNumber;
+            ReplicationConnectionConnection = options.LogicalReplicationConnection;
+            OutputReplicationSlot = options.OutputReplicationSlot;
+            OutputReplicationOptions = options.OutputReplicationOptions;
+            NpgsqlLogSequenceNumber = options.NpgsqlLogSequenceNumber;
         }
 
         public LogicalReplicationConnection ReplicationConnectionConnection { get; }

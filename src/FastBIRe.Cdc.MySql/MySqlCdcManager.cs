@@ -1,4 +1,6 @@
-﻿using MySqlCdc;
+﻿using FastBIRe.Cdc.Checkpoints;
+using FastBIRe.Cdc.MySql.Checkpoints;
+using MySqlCdc;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,10 +45,14 @@ namespace FastBIRe.Cdc.MySql
             return on;
 
         }
-
-        public Task<ICdcListener> GetCdcListenerAsync(CancellationToken token = default)
+        public Task<ICdcListener> GetCdcListenerAsync(MySqlGetCdcListenerOptions options, CancellationToken token = default)
         {
-            return Task.FromResult<ICdcListener>(new MySqlCdcListener(BinlogClient));
+            return Task.FromResult<ICdcListener>(new MySqlCdcListener(BinlogClient, options));
+        }
+
+        Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options,CancellationToken token = default)
+        {
+            return GetCdcListenerAsync((MySqlGetCdcListenerOptions)options, token);
         }
 
         public async Task<DbVariables> GetCdcVariablesAsync(CancellationToken token = default)
@@ -66,6 +72,10 @@ namespace FastBIRe.Cdc.MySql
         public Task<ICdcLogService> GetCdcLogServiceAsync(CancellationToken token = default)
         {
             return Task.FromResult<ICdcLogService>(new MySqlCdcLogService(ScriptExecuter));
+        }
+        public Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default)
+        {
+            return Task.FromResult<ICheckPointManager>(MysqlCheckpointManager.Instance);
         }
     }
 }

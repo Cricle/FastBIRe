@@ -29,7 +29,7 @@ namespace FastBIRe.CdcSample
             //var ser =await mgr.GetCdcLogServiceAsync();
             //var all=await ser.GetAllAsync();
             //var last=await ser.GetLastAsync();
-            var vars = await mgr.GetCdcListenerAsync();
+            var vars = await mgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(null));
             vars.EventRaised += Program.Vars_EventRaised;
             await vars.StartAsync();
         }
