@@ -1,6 +1,6 @@
 ﻿namespace FastBIRe.Cdc.MySql
 {
-    public class MySqlVariables: DbVariables
+    public class MySqlVariables : DbVariables
     {
         public const string LogBinKey = "log_bin";
 

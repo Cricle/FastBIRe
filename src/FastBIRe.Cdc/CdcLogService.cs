@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,7 +30,7 @@ namespace FastBIRe.Cdc
         public abstract Task<IList<ICdcLog>> GetAllAsync(CancellationToken token = default);
         public abstract Task<ICdcLog?> GetLastAsync(CancellationToken token = default);
 
-        protected virtual void SetRecords(IDataReader reader,ICdcLog log)
+        protected virtual void SetRecords(IDataReader reader, ICdcLog log)
         {
             for (int i = 0; i < reader.FieldCount; i++)
             {

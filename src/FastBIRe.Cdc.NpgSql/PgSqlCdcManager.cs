@@ -8,8 +8,8 @@ namespace FastBIRe.Cdc.NpgSql
 {
     public class PgSqlGetCdcListenerOptions : IGetCdcListenerOptions
     {
-        public PgSqlGetCdcListenerOptions(LogicalReplicationConnection logicalReplicationConnection, 
-            PgOutputReplicationSlot outputReplicationSlot, 
+        public PgSqlGetCdcListenerOptions(LogicalReplicationConnection logicalReplicationConnection,
+            PgOutputReplicationSlot outputReplicationSlot,
             PgOutputReplicationOptions outputReplicationOptions,
             NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber, IReadOnlyList<string>? tableNames)
         {
@@ -43,7 +43,7 @@ namespace FastBIRe.Cdc.NpgSql
         {
             return Task.FromResult<ICdcListener>(new PgSqlCdcListener(options));
         }
-        Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options,CancellationToken token = default)
+        Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options, CancellationToken token)
         {
             return GetCdcListenerAsync((PgSqlGetCdcListenerOptions)options, token);
         }

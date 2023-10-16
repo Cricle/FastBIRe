@@ -1,7 +1,6 @@
 ﻿using FastBIRe.Cdc.Events;
 using MySqlCdc;
 using MySqlCdc.Events;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -13,10 +12,10 @@ namespace FastBIRe.Cdc.MySql
     {
         private Task? task;
         private readonly MySqlGetCdcListenerOptions options;
-        private readonly Dictionary<long, ITableMapInfo> tableMapInfos=new Dictionary<long, ITableMapInfo>();
+        private readonly Dictionary<long, ITableMapInfo> tableMapInfos = new Dictionary<long, ITableMapInfo>();
 
-        public MySqlCdcListener(BinlogClient binlogClient,MySqlGetCdcListenerOptions options)
-            :base(options)
+        public MySqlCdcListener(BinlogClient binlogClient, MySqlGetCdcListenerOptions options)
+            : base(options)
         {
             BinlogClient = binlogClient;
             this.options = options;
@@ -68,7 +67,7 @@ namespace FastBIRe.Cdc.MySql
                         new CdcDataRow(x.BeforeUpdate.Cells),
                         new CdcDataRow(x.AfterUpdate.Cells)))
                         .ToList();
-                    var up = new UpdateEventArgs(ure,ure.TableId,GetTableMapInfo(ure.TableId), ups);
+                    var up = new UpdateEventArgs(ure, ure.TableId, GetTableMapInfo(ure.TableId), ups);
                     RaiseEvent(up);
                 }
                 else if (item is DeleteRowsEvent dre)

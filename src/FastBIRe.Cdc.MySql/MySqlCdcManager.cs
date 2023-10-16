@@ -50,7 +50,7 @@ namespace FastBIRe.Cdc.MySql
             return Task.FromResult<ICdcListener>(new MySqlCdcListener(BinlogClient, options));
         }
 
-        Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options,CancellationToken token = default)
+        Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options, CancellationToken token = default)
         {
             return GetCdcListenerAsync((MySqlGetCdcListenerOptions)options, token);
         }

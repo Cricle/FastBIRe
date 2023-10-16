@@ -1,7 +1,4 @@
 ﻿using DatabaseSchemaReader.DataSchema;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FastBIRe.Cdc.Mssql
 {

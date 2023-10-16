@@ -4,8 +4,8 @@ namespace FastBIRe.Cdc.Events
 {
     public class DeleteEventArgs : OperatorCdcEventArgs
     {
-        public DeleteEventArgs(object? rawData, object tableId, ITableMapInfo? tableInfo, IList<ICdcDataRow> rows) 
-            : base(rawData,tableId,tableInfo)
+        public DeleteEventArgs(object? rawData, object tableId, ITableMapInfo? tableInfo, IList<ICdcDataRow> rows)
+            : base(rawData, tableId, tableInfo)
         {
             Rows = rows;
         }

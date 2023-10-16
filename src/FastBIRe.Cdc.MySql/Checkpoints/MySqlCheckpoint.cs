@@ -19,7 +19,7 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
 
         public byte[] ToBytes()
         {
-            var buffer=new List<byte>();
+            var buffer = new List<byte>();
             buffer.AddRange(BitConverter.GetBytes(Position));
             buffer.AddRange(Encoding.UTF8.GetBytes(FileName));
             return buffer.ToArray();

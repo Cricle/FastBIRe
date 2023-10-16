@@ -12,7 +12,7 @@ namespace FastBIRe.Cdc.NpgSql
         private readonly Dictionary<uint, ITableMapInfo> tableMapInfos = new Dictionary<uint, ITableMapInfo>();
 
         public PgSqlCdcListener(PgSqlGetCdcListenerOptions options)
-            :base(options)
+            : base(options)
         {
             ReplicationConnectionConnection = options.LogicalReplicationConnection;
             OutputReplicationSlot = options.OutputReplicationSlot;
@@ -54,7 +54,7 @@ namespace FastBIRe.Cdc.NpgSql
             task = null;
             return Task.CompletedTask;
         }
-        private static async Task<IList<object?>> ReadRowAsync(ReplicationTuple tuple,CancellationToken token=default)
+        private static async Task<IList<object?>> ReadRowAsync(ReplicationTuple tuple, CancellationToken token = default)
         {
             var res = new List<object?>();
             await foreach (var item in tuple)
@@ -116,9 +116,9 @@ namespace FastBIRe.Cdc.NpgSql
                     RaiseEvent(ev);
                 }
                 else if (message is InsertMessage im)
-                {                    
+                {
                     var rowData = await ReadRowAsync(im.NewRow);
-                    var ev = new InsertEventArgs(im, im.Relation.RelationId, GetTableMapInfo(im.Relation.RelationId), new ICdcDataRow[] 
+                    var ev = new InsertEventArgs(im, im.Relation.RelationId, GetTableMapInfo(im.Relation.RelationId), new ICdcDataRow[]
                     {
                         new CdcDataRow(rowData)
                     });
@@ -128,7 +128,7 @@ namespace FastBIRe.Cdc.NpgSql
                 {
                     var tbIfo = new TableMapInfo(rm.RelationId, rm.Namespace, rm.RelationName);
                     tableMapInfos[rm.RelationId] = tbIfo;
-                    var ev = new TableMapEventArgs(rm, rm.RelationName,  tbIfo);
+                    var ev = new TableMapEventArgs(rm, rm.RelationName, tbIfo);
                     RaiseEvent(ev);
                 }
                 else

@@ -1,8 +1,5 @@
 ﻿using FastBIRe.Cdc.Checkpoints;
-using System;
-using System.Collections.Generic;
 using System.Numerics;
-using System.Text;
 
 namespace FastBIRe.Cdc.Mssql.Checkpoints
 {

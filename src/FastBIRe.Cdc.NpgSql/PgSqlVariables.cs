@@ -13,7 +13,7 @@
                 {
                     return null;
                 }
-                if (string.Equals(wl,"minimal", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(wl, "minimal", StringComparison.OrdinalIgnoreCase))
                 {
                     return PgSqlWalLevel.Minimal;
                 }

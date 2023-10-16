@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace FastBIRe.Cdc
 {
-    public abstract class CdcListenerBase : DisposeObject,ICdcListener
+    public abstract class CdcListenerBase : DisposeObject, ICdcListener
     {
         private CancellationTokenSource? tokenSource;
         private int isStarted;
@@ -34,7 +34,7 @@ namespace FastBIRe.Cdc
             EventRaised?.Invoke(this, e);
         }
 
-        public async Task StartAsync(CancellationToken token=default)
+        public async Task StartAsync(CancellationToken token = default)
         {
             if (IsStarted)
             {

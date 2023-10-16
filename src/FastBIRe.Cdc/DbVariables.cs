@@ -21,7 +21,7 @@ namespace FastBIRe.Cdc
         public virtual bool GetAndEquals(string key, string value)
         {
             var val = GetOrDefault(key);
-            if (val == null) 
+            if (val == null)
             {
                 return false;
             }

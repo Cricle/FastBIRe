@@ -1,17 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-	  <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<Import Project="..\..\eng\pkg.props" />
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="MySqlCdc" Version="3.0.2" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="MySqlCdc" Version="3.0.2" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\FastBIRe.Cdc\FastBIRe.Cdc.csproj" />
-    <ProjectReference Include="..\FastBIRe\FastBIRe.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\FastBIRe.Cdc\FastBIRe.Cdc.csproj" />
+		<ProjectReference Include="..\FastBIRe\FastBIRe.csproj" />
+	</ItemGroup>
 
 </Project>

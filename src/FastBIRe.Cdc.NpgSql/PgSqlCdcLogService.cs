@@ -16,7 +16,7 @@
             {
                 while (e.Reader.Read())
                 {
-                    logs.Add(new CdcLog(e.Reader.GetString(0),null));
+                    logs.Add(new CdcLog(e.Reader.GetString(0), null));
                 }
                 return Task.CompletedTask;
             }, token: token);

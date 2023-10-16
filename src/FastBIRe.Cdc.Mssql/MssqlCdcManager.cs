@@ -35,7 +35,7 @@ namespace FastBIRe.Cdc.Mssql
         {
             return Task.FromResult<ICdcLogService>(new MssqlCdcLogService(ScriptExecuter));
         }
-        public Task<byte[]?> GetMinLsnAsync(string tableName,CancellationToken token = default)
+        public Task<byte[]?> GetMinLsnAsync(string tableName, CancellationToken token = default)
         {
             return GetLsnAsync($@"DECLARE @from_lsn binary (10)
 SET @from_lsn = sys.fn_cdc_get_min_lsn('{tableName}')
@@ -43,9 +43,9 @@ IF @from_lsn = 0x00000000000000000000
 	SET @from_lsn = (SELECT TOP 1 __$start_lsn FROM [cdc].[dbo_{tableName}_CT] ORDER BY __$start_lsn)
 SELECT @from_lsn", token);
         }
-        public Task<byte[]?> GetMaxLSNAsync(CancellationToken token=default)
+        public Task<byte[]?> GetMaxLSNAsync(CancellationToken token = default)
         {
-            return GetLsnAsync("SELECT sys.fn_cdc_get_max_lsn()",token);
+            return GetLsnAsync("SELECT sys.fn_cdc_get_max_lsn()", token);
         }
 
         private async Task<byte[]?> GetLsnAsync(string script, CancellationToken token = default)
@@ -72,13 +72,13 @@ SELECT @from_lsn", token);
                     var[MssqlVariables.AgentStateKey] = r.Reader.GetString(0);
                 }
                 return Task.CompletedTask;
-            }, token:token);
+            }, token: token);
             return var;
         }
 
         public Task<bool> IsDatabaseCdcEnableAsync(string databaseName, CancellationToken token = default)
         {
-            return ScriptExecuter.ExistsAsync($"SELECT 1 from sys.databases where name ='{databaseName}' AND is_cdc_enabled = 1",token);
+            return ScriptExecuter.ExistsAsync($"SELECT 1 from sys.databases where name ='{databaseName}' AND is_cdc_enabled = 1", token);
         }
         public async Task<IList<string>> GetEnableCdcTableNamesAsync(CancellationToken token = default)
         {

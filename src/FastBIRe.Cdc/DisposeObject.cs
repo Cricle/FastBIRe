@@ -2,7 +2,7 @@
 
 namespace FastBIRe.Cdc
 {
-    public abstract class DisposeObject:IDisposable
+    public abstract class DisposeObject : IDisposable
     {
         private bool isDisposed;
 

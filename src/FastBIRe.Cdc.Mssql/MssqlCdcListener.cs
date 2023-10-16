@@ -1,7 +1,6 @@
 ﻿using DatabaseSchemaReader;
 using FastBIRe.Cdc.Events;
 using Microsoft.Data.SqlClient;
-using System.Numerics;
 
 namespace FastBIRe.Cdc.Mssql
 {
@@ -11,7 +10,7 @@ namespace FastBIRe.Cdc.Mssql
         private readonly Dictionary<string, MssqlTableMapInfo> tableMapInfos = new Dictionary<string, MssqlTableMapInfo>(StringComparer.OrdinalIgnoreCase);
 
         public MssqlCdcListener(MssqlCdcManager cdcManager, MssqlGetCdcListenerOptions options)
-            :base(options)
+            : base(options)
         {
             CdcManager = cdcManager;
             ScriptExecuter = options.ScriptExecuter;
@@ -56,7 +55,7 @@ namespace FastBIRe.Cdc.Mssql
         {
             maxLsn = await CdcManager.GetMaxLSNAsync(token);
             cdcTables = await CdcManager.GetEnableCdcTableNamesAsync(token);
-            task = Task.Factory.StartNew(Handler, this, token, TaskCreationOptions.LongRunning| TaskCreationOptions.AttachedToParent, TaskScheduler.Current)
+            task = Task.Factory.StartNew(Handler, this, token, TaskCreationOptions.LongRunning | TaskCreationOptions.AttachedToParent, TaskScheduler.Current)
                 .Unwrap();
         }
 
@@ -66,10 +65,10 @@ namespace FastBIRe.Cdc.Mssql
             task = null;
             return Task.CompletedTask;
         }
-        protected virtual async Task ReadEventAsync(string lsnStr,IList<CdcEventArgs> raiseList, MssqlReadEventOptions options,CancellationToken token=default)
+        protected virtual async Task ReadEventAsync(string lsnStr, IList<CdcEventArgs> raiseList, MssqlReadEventOptions options, CancellationToken token = default)
         {
             var listener = options.Listener;
-            var table= options.Table;
+            var table = options.Table;
             await listener.ScriptExecuter.ReadAsync($"SELECT [__$seqval] AS [seqval],[__$operation] AS [op],{table.ColumnNameJoined} FROM [cdc].[dbo_{table.TableName}_CT] WITH (NOLOCK) WHERE [__$seqval]>{lsnStr}", (s, r) =>
             {
                 while (r.Reader.Read())
@@ -138,7 +137,7 @@ namespace FastBIRe.Cdc.Mssql
                         {
                             Lsn = lsn,
                             LsnBigInteger = lsnBigInt,
-                        },source.Token);
+                        }, source.Token);
                     }
                     catch (Exception ex)
                         when (ex is not ObjectDisposedException)

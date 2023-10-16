@@ -17,7 +17,7 @@ namespace FastBIRe.Cdc.NpgSql.Checkpoints
 
         public byte[] ToBytes()
         {
-            var buffer=new List<byte>();
+            var buffer = new List<byte>();
             buffer.AddRange(BitConverter.GetBytes(CurrentLsn.Length));
             buffer.AddRange(Encoding.UTF8.GetBytes(CurrentLsn));
             buffer.AddRange(BitConverter.GetBytes(FileName.Length));
@@ -26,7 +26,7 @@ namespace FastBIRe.Cdc.NpgSql.Checkpoints
         }
         public static NpgSqlCheckpoint FromBytes(byte[] bytes)
         {
-            var lsnLength = BitConverter.ToInt32(bytes);
+            var lsnLength = BitConverter.ToInt32(bytes,0);
             var lsn = Encoding.UTF8.GetString(bytes, sizeof(int), lsnLength);
             lsnLength = BitConverter.ToInt32(bytes, sizeof(int) + lsnLength);
             var offset = lsnLength + sizeof(int) * 2;

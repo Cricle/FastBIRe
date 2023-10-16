@@ -31,7 +31,7 @@ namespace FastBIRe.Cdc.MySql
         {
             var name = reader.GetString(0);
             var length = reader.GetInt64(1);
-            var log= new MySqlCdcLog(name, (ulong)length);
+            var log = new MySqlCdcLog(name, (ulong)length);
             SetRecords(reader, log);
             return log;
         }
@@ -42,7 +42,7 @@ namespace FastBIRe.Cdc.MySql
             {
                 if (e.Reader.Read())
                 {
-                    log=ReadLog(e.Reader);
+                    log = ReadLog(e.Reader);
                 }
                 return Task.CompletedTask;
             }, token: token);

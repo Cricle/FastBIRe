@@ -1,7 +1,7 @@
-﻿using System.Threading.Tasks;
-using System.Threading;
-using FastBIRe.Cdc.Checkpoints;
+﻿using FastBIRe.Cdc.Checkpoints;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace FastBIRe.Cdc
 {
@@ -17,9 +17,9 @@ namespace FastBIRe.Cdc
 
         Task<DbVariables> GetCdcVariablesAsync(CancellationToken token = default);
 
-        Task<ICdcListener> GetCdcListenerAsync(IGetCdcListenerOptions options,CancellationToken token = default);
+        Task<ICdcListener> GetCdcListenerAsync(IGetCdcListenerOptions options, CancellationToken token = default);
 
-        Task<ICdcLogService > GetCdcLogServiceAsync(CancellationToken token = default);
+        Task<ICdcLogService> GetCdcLogServiceAsync(CancellationToken token = default);
 
         Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default);
     }
