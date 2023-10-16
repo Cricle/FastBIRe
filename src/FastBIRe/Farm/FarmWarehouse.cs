@@ -108,10 +108,14 @@ namespace FastBIRe.Farm
                 {
                     return scripts;
                 }
-                var anyDatas = await AnyCheckpointNotComplatedAsync(table.Name);
-                if (anyDatas)
+                var hasCurTable = DatabaseReader.TableExists(CursorTable);
+                if (hasCurTable&&AttackId)
                 {
-                    await CheckPointAsync(table.Name, cursorNames: null, token: token);
+                    var anyDatas = await AnyCheckpointNotComplatedAsync(table.Name);
+                    if (anyDatas)
+                    {
+                        await CheckPointAsync(table.Name, cursorNames: null, token: token);
+                    }
                 }
                 scripts.Add(TableHelper.CreateDropTable(copyTable.Name));
                 if (DatabaseReader.TableExists(CursorTable))
@@ -137,10 +141,50 @@ namespace FastBIRe.Farm
         }
         public async Task SyncAsync(DatabaseTable table,CancellationToken token = default)
         {
-            var scripts = await GetSyncScriptsAsync(table);
+            var scripts = await GetSyncScriptsAsync(table,token);
             if (scripts.Count != 0)
             {
                 await ScriptExecuter.ExecuteBatchAsync(scripts, token: token);
+            }
+        }
+        public Task SyncDataAsync(string tableName, IDataReader reader, int batchSize, CancellationToken token = default)
+        {
+            var columnNames = new string[reader.FieldCount];
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                columnNames[i] = reader.GetName(i);
+            }
+            return SyncDataAsync(tableName, columnNames, reader, batchSize, token);
+        }
+        public async Task SyncDataAsync(string tableName, IEnumerable<string> columnNames, IDataReader reader, int batchSize, CancellationToken token = default)
+        {
+            var batchs = new object?[batchSize][];
+            for (int i = 0; i < batchs.Length; i++)
+            {
+                batchs[i] = new object?[reader.FieldCount];
+            }
+            var pos = 0;
+            while (reader.Read())
+            {
+                var posItem = batchs[pos++];
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    var item = reader[i];
+                    if (item == DBNull.Value)
+                    {
+                        item = null;
+                    }
+                    posItem[i] = item;
+                }
+                if (pos >= batchSize)
+                {
+                    await InsertAsync(tableName, columnNames, batchs, token);
+                    pos = 0;
+                }
+            }
+            if (pos != 0)
+            {
+                await InsertAsync(tableName, columnNames, batchs.Take(pos), token);
             }
         }
         public virtual async Task AddIfSeqNothingAsync()
@@ -155,10 +199,10 @@ namespace FastBIRe.Farm
         }
         public virtual async Task<bool> AnyCheckpointNotComplatedAsync(string tableName, CancellationToken token = default)
         {
-            var anyDataSql = $"SELECT 1 FROM {SqlType.Wrap(CursorTable)} WHERE {SqlType.Wrap(SyncPoint)} <= (SELECT MAX({SqlType.Wrap(Id)}) FROM {SqlType.Wrap(tableName)}) {TableHelper.Pagging(null, 1)}";
+            var anyDataSql = $"SELECT 1 FROM {SqlType.Wrap(CursorTable)} AS {SqlType.Wrap("ct")} WHERE {SqlType.Wrap("ct")}.{SqlType.Wrap(SyncPoint)} <= (SELECT MAX({SqlType.Wrap("t")}.{SqlType.Wrap(Id)}) FROM {SqlType.Wrap(tableName)} AS {SqlType.Wrap("t")}) {TableHelper.Pagging(null, 1)}";
             return await ScriptExecuter.ExistsAsync(anyDataSql);
         }
-        public virtual async Task InsertAsync(string tableName,IEnumerable<string> columnNames,IEnumerable<IEnumerable<object>> values, CancellationToken token = default)
+        public virtual async Task InsertAsync(string tableName,IEnumerable<string> columnNames,IEnumerable<IEnumerable<object?>> values, CancellationToken token = default)
         {
             using (var trans = Connection.BeginTransaction())
             {

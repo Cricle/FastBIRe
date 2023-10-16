@@ -24,7 +24,10 @@ namespace FastBIRe.Farm
         public async Task SyncAsync(CancellationToken token = default)
         {
             await DestFarmWarehouse.SyncAsync(SourceTable,token);
-            await DestFarmWarehouse.AddIfSeqNothingAsync();
+            if (DestFarmWarehouse.AttackId)
+            {
+                await DestFarmWarehouse.AddIfSeqNothingAsync();
+            }
         }
 
         public virtual async Task InsertAsync(IEnumerable<IEnumerable<object>> values, CancellationToken token = default)
