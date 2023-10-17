@@ -1,6 +1,8 @@
 ﻿using FastBIRe.Cdc.Events;
 using FastBIRe.Cdc.Mssql;
 using Microsoft.Data.SqlClient;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using rsa;
 
 namespace FastBIRe.CdcSample
@@ -9,12 +11,21 @@ namespace FastBIRe.CdcSample
     {
         static async Task Main(string[] args)
         {
-            var mssql = ConnectionProvider.GetDbMigration(DatabaseSchemaReader.DataSchema.SqlType.SqlServer, "test");
-            SqlDependency.Start("Server=192.168.1.101;Uid=sa;Pwd=Syc123456.;Connection Timeout=2000;TrustServerCertificate=true;Database=test");
-            var comm = new MssqlCdcManager(() => new DefaultScriptExecuter(mssql));
-            var listen = await comm.GetCdcListenerAsync(new MssqlGetCdcListenerOptions(null, TimeSpan.FromSeconds(1), comm.ScriptExecuterFactory()));
-            listen.EventRaised += Vars_EventRaised;
-            await listen.StartAsync();
+            var mongo = new MongoClient("mongodb://localhost:27017/admin");
+            var db = mongo.GetDatabase("test");
+            //var command = new BsonDocument { { "replSetGetStatus", 1 } };
+            //var result = mongo.GetDatabase("admin").RunCommand<BsonDocument>(command);
+            var a = db.Watch(new ChangeStreamOptions
+            {
+                  FullDocument=  ChangeStreamFullDocumentOption.UpdateLookup
+            });
+            while (await a.MoveNextAsync())
+            {
+                if (a.Current.Any())
+                {
+
+                }
+            }
             Console.ReadLine();
         }
         private static void Dep_OnChange(object sender, SqlNotificationEventArgs e)

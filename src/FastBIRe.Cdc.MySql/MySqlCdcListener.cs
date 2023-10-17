@@ -1,4 +1,5 @@
 ﻿using FastBIRe.Cdc.Events;
+using FastBIRe.Cdc.MySql.Checkpoints;
 using MySqlCdc;
 using MySqlCdc.Events;
 using System.Collections.Generic;
@@ -55,10 +56,11 @@ namespace FastBIRe.Cdc.MySql
             var source = listener.TokenSource;
             await foreach (var item in BinlogClient.Replicate(source!.Token))
             {
+                var checkpoint = new MySqlCheckpoint(item.Header.NextEventPosition, null);
                 if (item is WriteRowsEvent wre)
                 {
                     var rows = wre.Rows.Select(x => (ICdcDataRow)new CdcDataRow(x.Cells)).ToList();
-                    var insertArg = new InsertEventArgs(wre, wre.TableId, GetTableMapInfo(wre.TableId), rows);
+                    var insertArg = new InsertEventArgs(wre, wre.TableId, GetTableMapInfo(wre.TableId), rows, checkpoint);
                     RaiseEvent(insertArg);
                 }
                 else if (item is UpdateRowsEvent ure)
@@ -67,24 +69,24 @@ namespace FastBIRe.Cdc.MySql
                         new CdcDataRow(x.BeforeUpdate.Cells),
                         new CdcDataRow(x.AfterUpdate.Cells)))
                         .ToList();
-                    var up = new UpdateEventArgs(ure, ure.TableId, GetTableMapInfo(ure.TableId), ups);
+                    var up = new UpdateEventArgs(ure, ure.TableId, GetTableMapInfo(ure.TableId), ups, checkpoint);
                     RaiseEvent(up);
                 }
                 else if (item is DeleteRowsEvent dre)
                 {
                     var rows = dre.Rows.Select(x => (ICdcDataRow)new CdcDataRow(x.Cells)).ToList();
-                    var insertArg = new DeleteEventArgs(dre, dre.TableId, GetTableMapInfo(dre.TableId), rows);
+                    var insertArg = new DeleteEventArgs(dre, dre.TableId, GetTableMapInfo(dre.TableId), rows, checkpoint);
                     RaiseEvent(insertArg);
                 }
                 else if (item is TableMapEvent tme)
                 {
                     var mapInfo = new TableMapInfo(tme.TableId, tme.DatabaseName, tme.TableName);
                     tableMapInfos[tme.TableId] = mapInfo;
-                    RaiseEvent(new TableMapEventArgs(item, tme.TableId, mapInfo));
+                    RaiseEvent(new TableMapEventArgs(item, tme.TableId, mapInfo, checkpoint));
                 }
                 else
                 {
-                    RaiseEvent(new CdcEventArgs(item));
+                    RaiseEvent(new CdcEventArgs(item, checkpoint));
                 }
             }
         }

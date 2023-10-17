@@ -7,7 +7,7 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
 {
     public class MySqlCheckpoint : ICheckpoint
     {
-        public MySqlCheckpoint(long position, string fileName)
+        public MySqlCheckpoint(long position, string? fileName)
         {
             Position = position;
             FileName = fileName;
@@ -15,13 +15,19 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
 
         public long Position { get; }
 
-        public string FileName { get; }
-
+        public string? FileName { get; }
+        public override string ToString()
+        {
+            return $"{{FileName: {FileName}, Pos: {Position}}}";
+        }
         public byte[] ToBytes()
         {
             var buffer = new List<byte>();
             buffer.AddRange(BitConverter.GetBytes(Position));
-            buffer.AddRange(Encoding.UTF8.GetBytes(FileName));
+            if (!string.IsNullOrEmpty(FileName))
+            {
+                buffer.AddRange(Encoding.UTF8.GetBytes(FileName));
+            }
             return buffer.ToArray();
         }
     }

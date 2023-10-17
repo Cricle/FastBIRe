@@ -1,5 +1,6 @@
 ﻿using DatabaseSchemaReader;
 using FastBIRe.Cdc.Events;
+using FastBIRe.Cdc.Mssql.Checkpoints;
 using Microsoft.Data.SqlClient;
 
 namespace FastBIRe.Cdc.Mssql
@@ -95,20 +96,22 @@ namespace FastBIRe.Cdc.Mssql
                         }
                         row.Add(val);
                     }
+                    var checkpoint = new MssqlCheckpoint(seq);
                     switch (op)
                     {
                         case SqlServerOperator.Delete:
-                            raiseList.Add(new DeleteEventArgs(null, table.TableName, table, new ICdcDataRow[] { row }));
+                            raiseList.Add(new DeleteEventArgs(null, table.TableName, table, new ICdcDataRow[] { row },checkpoint));
                             break;
                         case SqlServerOperator.Insert:
-                            raiseList.Add(new InsertEventArgs(null, table.TableName, table, new ICdcDataRow[] { row }));
+                            raiseList.Add(new InsertEventArgs(null, table.TableName, table, new ICdcDataRow[] { row }, checkpoint));
                             break;
                         case SqlServerOperator.AfterUpdate:
-                            raiseList.Add(new UpdateEventArgs(null, table.TableName, table, new ICdcUpdateRow[] { new CdcUpdateRow(null, row) }));
+                            raiseList.Add(new UpdateEventArgs(null, table.TableName, table, new ICdcUpdateRow[] { new CdcUpdateRow(null, row) }, checkpoint));
                             break;
                         case SqlServerOperator.BeforeUpdate:
                         case SqlServerOperator.Unknow:
                         default:
+                            raiseList.Add(new CdcEventArgs(row, checkpoint));
                             break;
                     }
                 }

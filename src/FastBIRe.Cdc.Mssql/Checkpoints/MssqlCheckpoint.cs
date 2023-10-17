@@ -20,5 +20,9 @@ namespace FastBIRe.Cdc.Mssql.Checkpoints
         {
             return Lsn;
         }
+        public override string ToString()
+        {
+            return $"{{LsnHex: {LsnInteger}}}";
+        }
     }
 }

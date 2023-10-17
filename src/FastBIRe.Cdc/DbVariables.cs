@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace FastBIRe.Cdc
 {
-    public class DbVariables : Dictionary<string, string>
+    public class DbVariables : Dictionary<string, string?>
     {
         public DbVariables()
             : base(StringComparer.OrdinalIgnoreCase)

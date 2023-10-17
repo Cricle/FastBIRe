@@ -81,7 +81,7 @@ namespace FastBIRe.Cdc.NpgSql
 
         public Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default)
         {
-            return Task.FromResult<ICheckPointManager>(NpgSqlCheckpointManager.Instance);
+            return Task.FromResult<ICheckPointManager>(PgSqlCheckpointManager.Instance);
         }
     }
 }

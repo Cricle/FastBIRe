@@ -1,9 +1,11 @@
-﻿namespace FastBIRe.Cdc.Events
+﻿using FastBIRe.Cdc.Checkpoints;
+
+namespace FastBIRe.Cdc.Events
 {
     public class TableMapEventArgs : OperatorCdcEventArgs
     {
-        public TableMapEventArgs(object? rawData, object tableId, ITableMapInfo? tableInfo)
-            : base(rawData, tableId, tableInfo)
+        public TableMapEventArgs(object? rawData, object tableId, ITableMapInfo? tableInfo, ICheckpoint? checkpoint)
+            : base(rawData, tableId, tableInfo,checkpoint)
         {
         }
 
