@@ -64,10 +64,15 @@ namespace FastBIRe.Farm
 
         public bool AttackId { get; }
 
-        public async Task<IList<string>> GetSyncScriptsAsync(DatabaseTable table, CancellationToken token = default)
+        public async Task<IList<string>> GetSyncScriptsAsync(DatabaseTable table, IEnumerable<int>? maskColumns=null, CancellationToken token = default)
         {
             var scripts = new List<string>();
             var copyTable = table.Clone();
+            if (maskColumns!=null)
+            {
+                var removes = copyTable.Columns.Where((x, i) => maskColumns.Contains(i)).ToList();
+                copyTable.Columns.RemoveAll(x => !removes.Contains(x));
+            }
             copyTable.SchemaOwner = DatabaseReader.Owner;
             copyTable.DatabaseSchema = DatabaseReader.DatabaseSchema;
             if (AttackId)
@@ -139,9 +144,9 @@ namespace FastBIRe.Farm
             }
             return scripts;
         }
-        public async Task SyncAsync(DatabaseTable table,CancellationToken token = default)
+        public async Task SyncAsync(DatabaseTable table, IEnumerable<int>? maskColumns = null, CancellationToken token = default)
         {
-            var scripts = await GetSyncScriptsAsync(table,token);
+            var scripts = await GetSyncScriptsAsync(table, maskColumns,token);
             if (scripts.Count != 0)
             {
                 await ScriptExecuter.ExecuteBatchAsync(scripts, token: token);
@@ -263,7 +268,7 @@ namespace FastBIRe.Farm
             var sql = $"UPDATE {SqlType.Wrap(SeqTable)} SET {SqlType.Wrap(Id)} = {SqlType.WrapValue(seq)}";
             return ScriptExecuter.ExecuteAsync(sql, token: token);
         }
-        public virtual async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<object> values, CancellationToken token = default)
+        public virtual async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<object?> values, CancellationToken token = default)
         {
             using (var trans = Connection.BeginTransaction())
             {

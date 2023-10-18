@@ -21,20 +21,20 @@ namespace FastBIRe.Farm
         
         public FarmWarehouse DestFarmWarehouse { get; }
 
-        public async Task SyncAsync(CancellationToken token = default)
+        public async Task SyncAsync(IEnumerable<int>? maskColumns = null,CancellationToken token = default)
         {
-            await DestFarmWarehouse.SyncAsync(SourceTable,token);
+            await DestFarmWarehouse.SyncAsync(SourceTable, maskColumns, token);
             if (DestFarmWarehouse.AttackId)
             {
                 await DestFarmWarehouse.AddIfSeqNothingAsync();
             }
         }
 
-        public virtual async Task InsertAsync(IEnumerable<IEnumerable<object>> values, CancellationToken token = default)
+        public virtual async Task InsertAsync(IEnumerable<IEnumerable<object?>> values, CancellationToken token = default)
         {
             await DestFarmWarehouse.InsertAsync(TableName, Columns, values, token);
         }
-        public virtual async Task InsertAsync(IEnumerable<object> values, CancellationToken token = default)
+        public virtual async Task InsertAsync(IEnumerable<object?> values, CancellationToken token = default)
         {
             await DestFarmWarehouse.InsertAsync(TableName, Columns, values, token);
         }

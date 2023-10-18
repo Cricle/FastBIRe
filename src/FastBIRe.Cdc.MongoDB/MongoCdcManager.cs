@@ -33,14 +33,15 @@ namespace FastBIRe.Cdc.MongoDB
             throw new NotImplementedException();
         }
 
-        public Task<DbVariables> GetCdcVariablesAsync(CancellationToken token = default)
+        public async Task<DbVariables> GetCdcVariablesAsync(CancellationToken token = default)
         {
             var command = new BsonDocument { { "replSetGetStatus", 1 } };
-            var status = Client.GetDatabase("admin").RunCommand<BsonDocument>(command);
+            var status =await Client.GetDatabase("admin").RunCommandAsync<BsonDocument>(command);
             var var = new MongoVariables();
-            var[MongoVariables.MemberStateKey] = status["members"]["stateStr"].AsString;
-            var[MongoVariables.MemberIdKey] = status["members"]["_id"].ToString()!;
-            return Task.FromResult<DbVariables>(var);
+            var[MongoVariables.ConfigsvrKey] = status[MongoVariables.ConfigsvrKey].ToString();
+            var[MongoVariables.MemberStateKey] = status["members"][0]["stateStr"].AsString;
+            var[MongoVariables.MemberIdKey] = status["members"][0]["_id"].ToString()!;
+            return var;
         }
 
         public Task<bool> IsDatabaseCdcEnableAsync(string databaseName, CancellationToken token = default)
@@ -52,6 +53,13 @@ namespace FastBIRe.Cdc.MongoDB
         public Task<bool> IsTableCdcEnableAsync(string databaseName, string tableName, CancellationToken token = default)
         {
             return taskTrue;
+        }
+
+        public async Task<bool> IsDatabaseSupportAsync(CancellationToken token = default)
+        {
+            var command = new BsonDocument { { "replSetGetStatus", 1 } };
+            var status =await Client.GetDatabase("admin").RunCommandAsync<BsonDocument>(command);
+            return status[MongoVariables.ConfigsvrKey].AsBoolean;
         }
     }
 }

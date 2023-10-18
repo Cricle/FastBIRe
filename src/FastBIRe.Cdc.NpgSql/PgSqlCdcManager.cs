@@ -6,30 +6,6 @@ using NpgsqlTypes;
 
 namespace FastBIRe.Cdc.NpgSql
 {
-    public class PgSqlGetCdcListenerOptions : IGetCdcListenerOptions
-    {
-        public PgSqlGetCdcListenerOptions(LogicalReplicationConnection logicalReplicationConnection,
-            PgOutputReplicationSlot outputReplicationSlot,
-            PgOutputReplicationOptions outputReplicationOptions,
-            NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber, IReadOnlyList<string>? tableNames)
-        {
-            TableNames = tableNames;
-            LogicalReplicationConnection = logicalReplicationConnection;
-            OutputReplicationSlot = outputReplicationSlot;
-            OutputReplicationOptions = outputReplicationOptions;
-            NpgsqlLogSequenceNumber = npgsqlLogSequenceNumber;
-        }
-
-        public IReadOnlyList<string>? TableNames { get; }
-
-        public LogicalReplicationConnection LogicalReplicationConnection { get; }
-
-        public PgOutputReplicationSlot OutputReplicationSlot { get; }
-
-        public PgOutputReplicationOptions OutputReplicationOptions { get; }
-
-        public NpgsqlLogSequenceNumber? NpgsqlLogSequenceNumber { get; }
-    }
     public class PgSqlCdcManager : ICdcManager
     {
         public PgSqlCdcManager(IDbScriptExecuter scriptExecuter)
@@ -82,6 +58,13 @@ namespace FastBIRe.Cdc.NpgSql
         public Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default)
         {
             return Task.FromResult<ICheckPointManager>(PgSqlCheckpointManager.Instance);
+        }
+
+        public async Task<bool> IsDatabaseSupportAsync(CancellationToken token = default)
+        {
+            var var = await GetCdcVariablesAsync(token);
+            var walLevel = string.Equals(var.GetOrDefault("wal_level"), "logical", StringComparison.OrdinalIgnoreCase);
+            return walLevel;
         }
     }
 }

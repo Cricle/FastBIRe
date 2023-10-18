@@ -111,5 +111,16 @@ SELECT @from_lsn", token);
         {
             return Task.FromResult<ICheckPointManager>(MssqlCheckpointManager.Instance);
         }
+
+        public async Task<bool> IsDatabaseSupportAsync(CancellationToken token = default)
+        {
+            var var = await GetCdcVariablesAsync(token);
+            var state = var.GetOrDefault(MssqlVariables.AgentStateKey);
+            if (state!=null&&state.StartsWith("running", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            return false;
+        }
     }
 }

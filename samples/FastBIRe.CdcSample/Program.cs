@@ -1,4 +1,5 @@
 ﻿using FastBIRe.Cdc.Events;
+using FastBIRe.Cdc.MongoDB;
 using FastBIRe.Cdc.Mssql;
 using Microsoft.Data.SqlClient;
 using MongoDB.Bson;
@@ -15,17 +16,8 @@ namespace FastBIRe.CdcSample
             var db = mongo.GetDatabase("test");
             //var command = new BsonDocument { { "replSetGetStatus", 1 } };
             //var result = mongo.GetDatabase("admin").RunCommand<BsonDocument>(command);
-            var a = db.Watch(new ChangeStreamOptions
-            {
-                  FullDocument=  ChangeStreamFullDocumentOption.UpdateLookup
-            });
-            while (await a.MoveNextAsync())
-            {
-                if (a.Current.Any())
-                {
-
-                }
-            }
+            var mongoCdc = new MongoCdcManager(mongo);
+            var var = await mongoCdc.IsDatabaseSupportAsync();
             Console.ReadLine();
         }
         private static void Dep_OnChange(object sender, SqlNotificationEventArgs e)

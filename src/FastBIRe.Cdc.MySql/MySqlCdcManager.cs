@@ -77,5 +77,13 @@ namespace FastBIRe.Cdc.MySql
         {
             return Task.FromResult<ICheckPointManager>(MysqlCheckpointManager.Instance);
         }
+
+        public async Task<bool> IsDatabaseSupportAsync(CancellationToken token = default)
+        {
+            var var = await GetCdcVariablesAsync(token);
+            var logBin = string.Equals(var.GetOrDefault("log_bin"), "ON", StringComparison.OrdinalIgnoreCase);
+            var binlogFormat = string.Equals(var.GetOrDefault("binlog_format"), "ROW", StringComparison.OrdinalIgnoreCase);
+            return logBin && binlogFormat;
+        }
     }
 }

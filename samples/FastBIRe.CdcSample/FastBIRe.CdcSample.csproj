@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\FastBIRe.Cdc.MongoDB\FastBIRe.Cdc.MongoDB.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe.Cdc.Mssql\FastBIRe.Cdc.Mssql.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe.Cdc.MySql\FastBIRe.Cdc.MySql.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe.Cdc.NpgSql\FastBIRe.Cdc.NpgSql.csproj" />

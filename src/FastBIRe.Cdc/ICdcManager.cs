@@ -11,6 +11,8 @@ namespace FastBIRe.Cdc
     }
     public interface ICdcManager
     {
+        Task<bool> IsDatabaseSupportAsync(CancellationToken token = default);
+
         Task<bool> IsDatabaseCdcEnableAsync(string databaseName, CancellationToken token = default);
 
         Task<bool> IsTableCdcEnableAsync(string databaseName, string tableName, CancellationToken token = default);

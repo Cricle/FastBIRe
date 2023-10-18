@@ -12,5 +12,27 @@ namespace FastBIRe.Cdc.Events
         }
 
         public IList<ICdcDataRow> Rows { get; set; }
+
+        public IEnumerable<IEnumerable<object?>> CreateObjectRange(int[]? mask)
+        {
+            foreach (var item in Rows)
+            {
+                if (mask == null)
+                {
+                    yield return item;
+                }
+                else
+                {
+                    yield return MaskRow(item, mask);
+                }
+            }
+        }
+        private IEnumerable<object> MaskRow(ICdcDataRow row, int[] mask)
+        {
+            for (int i = 0; i < mask.Length; i++)
+            {
+                yield return row[i];
+            }
+        }
     }
 }

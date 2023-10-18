@@ -12,5 +12,20 @@ namespace FastBIRe.Cdc.Events
         }
 
         public IList<ICdcDataRow> Rows { get; set; }
+
+        public IEnumerable<IEnumerable<object>> CreateKeyVisitor(IEnumerable<int> keyMasks)
+        {
+            foreach (var item in Rows)
+            {
+                yield return EnumerableRowKeys(item, keyMasks);
+            }
+        }
+        private IEnumerable<object> EnumerableRowKeys(ICdcDataRow row,IEnumerable<int> keyMasks)
+        {
+            foreach (var item in keyMasks)
+            {
+                yield return row[item];
+            }
+        }
     }
 }
