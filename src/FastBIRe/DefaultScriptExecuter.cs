@@ -8,6 +8,8 @@ namespace FastBIRe
 {
     public class DefaultScriptExecuter : IDbScriptExecuter, IDbStackTraceScriptExecuter
     {
+        private static readonly Task<bool> trueResult=Task.FromResult(true);
+
         private static readonly IReadOnlyList<MethodBase> Methods = typeof(DefaultScriptExecuter).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Where(x => !x.IsSpecialName && x.DeclaringType == typeof(DefaultScriptExecuter))
             .ToArray();
@@ -134,6 +136,7 @@ namespace FastBIRe
                     {
                         var par = command.CreateParameter();
                         par.ParameterName = item.Key;
+                        par.Value = item.Value;
                         par.DbType = GetDbType(item.Value);
                         command.Parameters.Add(par);
                     }
@@ -278,8 +281,7 @@ namespace FastBIRe
         {
             return ExecuteBatchAsync(scripts, GetStackTrace(), argss, token);
         }
-
-        public async Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        public async Task<TResult> ReadResultAsync<TResult>(string script, ReadDataResultHandler<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             var stackTrace = GetStackTrace();
             var fullStartTime = Stopwatch.GetTimestamp();
@@ -294,11 +296,13 @@ namespace FastBIRe
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadCommand(Connection, command, null, args, stackTrace, token));
                     var startTime = Stopwatch.GetTimestamp();
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.StartReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
+                    TResult result;
                     using (var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false))
                     {
-                        await handler(this, new ReadingDataArgs(script, reader, token));
+                        result = await handler(this, new ReadingDataArgs(script, reader, token));
                     }
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.EndReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
+                    return result;
                 }
                 catch (Exception ex)
                 {
@@ -306,6 +310,14 @@ namespace FastBIRe
                     throw;
                 }
             }
+        }
+        public Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        {
+            return ReadResultAsync(script, (o, e) =>
+            {
+                handler(o, e);
+                return trueResult;
+            },args,token);
         }
 
         public Task<int> ExecuteAsync(string script, StackTrace? stackTrace, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)

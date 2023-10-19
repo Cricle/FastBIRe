@@ -1,4 +1,5 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿using Dapper;
+using DatabaseSchemaReader.DataSchema;
 using FastBIRe.Data;
 using rsa;
 using System.Diagnostics;
@@ -9,7 +10,7 @@ namespace FastBIRe.Copying
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.MySql;
+            var sqlType = SqlType.SQLite;
             var c = ConnectionProvider.GetDbMigration(sqlType, "sakila");
             var s = Stopwatch.GetTimestamp();
             using (var comm = c.CreateCommand())

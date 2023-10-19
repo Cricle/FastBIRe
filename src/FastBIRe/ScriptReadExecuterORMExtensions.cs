@@ -1,52 +1,121 @@
-﻿using System.Data;
+﻿using System.Collections;
+using System.Collections.Concurrent;
+using System.Data;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
     public static class ScriptReadExecuterORMExtensions
     {
-        public static async Task<bool> ExistsAsync(this IScriptExecuter scriptExecuter, string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        class ObjectPropertyMap
         {
-            var exists = false;
-            await scriptExecuter.ReadAsync(script, (o, e) =>
+            public ObjectPropertyMap(string propertyName, Func<object, object?> propertyReader)
             {
-                exists = e.Reader.Read();
-                return Task.CompletedTask;
-            }, args: args, token: token);
-            return exists;
+                PropertyName = propertyName;
+                PropertyReader = propertyReader;
+            }
+
+            public string PropertyName { get; }
+
+            public Func<object, object?> PropertyReader { get; }
         }
-        public static async Task<T?> ReadOneAsync<T>(this IScriptExecuter scriptExecuter, string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        class ObjectVisitor
         {
-            T? result = default;
-            await scriptExecuter.ReadAsync(script, (o, e) =>
+            private static readonly Type ObjectType = typeof(Object);
+
+            public readonly Type Type;
+
+            public readonly IList<ObjectPropertyMap> propertyReaders;
+
+            public IEnumerable<KeyValuePair<string, object?>> EnumerableProperties(object instance)
             {
-                Parser<T>.TryPreParse(e.Reader, out result);
-                return Task.CompletedTask;
-            }, args: args, token: token);
-            return result;
+                for (int i = 0; i < propertyReaders.Count; i++)
+                {
+                    var map = propertyReaders[i];
+                    yield return new KeyValuePair<string, object?>(map.PropertyName, map.PropertyReader(instance));
+                }
+            }
+
+            public ObjectVisitor(Type type)
+            {
+                Type = type;
+                propertyReaders = new ObjectPropertyMap[type.GetProperties().Length];
+                Analysis();
+            }
+
+            public void Analysis()
+            {
+                var props = Type.GetProperties();
+                for (int i = 0; i < props.Length; i++)
+                {
+                    var prop = props[i];
+                    var par0 = Expression.Parameter(ObjectType);
+                    var body = Expression.Convert(Expression.Call(Expression.Convert(par0, Type), prop.GetMethod!), ObjectType);
+                    propertyReaders[i] = new ObjectPropertyMap(prop.Name, Expression.Lambda<Func<object, object?>>(body, par0).Compile());
+                }
+            }
         }
-        public static async Task<IList<T?>> ReadRowsAsync<T>(this IScriptExecuter scriptExecuter, string script, Func<IDataReader, T?> reader, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        private static readonly ConcurrentDictionary<Type, ObjectVisitor> objectVisitor = new ConcurrentDictionary<Type, ObjectVisitor>();
+        private static IEnumerable<KeyValuePair<string, object?>>? PrepareArgs(object? obj)
         {
-            var res = new List<T?>();
-            await scriptExecuter.ReadAsync(script, (o, e) =>
+            if (obj == null)
             {
+                return null;
+            }
+            if (obj is IEnumerable<KeyValuePair<string, object?>> args)
+            {
+                return args;
+            }
+            if (obj is IList list)
+            {
+                return EnumerableList(list);
+            }
+            var type = obj.GetType();
+            if (type.IsClass)
+            {
+                return objectVisitor.GetOrAdd(type, static t => new ObjectVisitor(t)).EnumerableProperties(obj);
+            }
+            return Enumerable.Repeat(new KeyValuePair<string, object?>(string.Empty, obj), 1);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static IEnumerable<KeyValuePair<string, object?>>? EnumerableList(IList list)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                yield return new KeyValuePair<string, object?>(i.ToString(), list[i]);
+            }
+        }
+        public static Task<bool> ExistsAsync(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
+        {
+            return scriptExecuter.ReadResultAsync(script, static (o, e) =>
+            {
+                return Task.FromResult(e.Reader.Read());
+            }, args: PrepareArgs(args), token: token);
+        }
+        public static Task<T?> ReadOneAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
+        {
+            return scriptExecuter.ReadResultAsync(script, static (o, e) =>
+            {
+                Parser<T>.TryPreParse(e.Reader, out var result);
+                return Task.FromResult(result);
+            }, args: PrepareArgs(args), token: token);
+        }
+        public static Task<IList<T?>> ReadRowsAsync<T>(this IScriptExecuter scriptExecuter, string script, Func<IDataReader, T?> reader, object? args = null, CancellationToken token = default)
+        {
+            return scriptExecuter.ReadResultAsync(script, (o, e) =>
+            {
+                var res = new List<T?>();
                 while (e.Reader.Read())
                 {
                     res.Add(reader(e.Reader));
                 }
-                return Task.CompletedTask;
-            }, args: args, token: token);
-            return res;
+                return Task.FromResult<IList<T?>>(res);
+            }, args: PrepareArgs(args), token: token);
         }
-        public static async Task<IList<T>> ReadAsync<T>(this IScriptExecuter scriptExecuter, string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        public static Task<IList<T>> ReadAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
         {
-            IList<T> result = Array.Empty<T>();
-            await scriptExecuter.ReadAsync(script, (o, e) =>
-            {
-                result = Parser<T>.parser(e.Reader);
-                return Task.CompletedTask;
-            }, args: args, token: token);
-            return result;
+            return scriptExecuter.ReadResultAsync(script, static (o, e) => Task.FromResult(Parser<T>.parser(e.Reader)), args: PrepareArgs(args), token: token);
         }
 
         static class Parser<T>
@@ -67,10 +136,70 @@ namespace FastBIRe
                         result = default;
                         return false;
                     }
-                    if (typeof(T) == typeof(int))
+                    if (typeof(T) == typeof(bool) || typeof(T) == typeof(bool?))
+                    {
+                        var dt = reader.GetBoolean(0);
+                        result = Unsafe.As<bool, T>(ref dt);
+                        return true;
+                    }
+                    if (typeof(T) == typeof(byte) || typeof(T) == typeof(byte?))
+                    {
+                        var dt = reader.GetByte(0);
+                        result = Unsafe.As<byte, T>(ref dt);
+                        return true;
+                    }
+                    if (typeof(T) == typeof(short) || typeof(T) == typeof(short?))
+                    {
+                        var dt = reader.GetInt16(0);
+                        result = Unsafe.As<short, T>(ref dt);
+                        return true;
+                    }
+                    if (typeof(T) == typeof(int) || typeof(T) == typeof(int?))
                     {
                         var dt = reader.GetInt32(0);
                         result = Unsafe.As<int, T>(ref dt);
+                        return true;
+                    }
+                    if (typeof(T) == typeof(long) || typeof(T) == typeof(long?))
+                    {
+                        var dt = reader.GetInt64(0);
+                        result = Unsafe.As<long, T>(ref dt);
+                        return true;
+                    }
+                    if (typeof(T) == typeof(float) || typeof(T) == typeof(float?))
+                    {
+                        var dt = reader.GetFloat(0);
+                        result = Unsafe.As<float, T>(ref dt);
+                        return true;
+                    }
+                    if (typeof(T) == typeof(double) || typeof(T) == typeof(double?))
+                    {
+                        var dt = reader.GetDouble(0);
+                        result = Unsafe.As<double, T>(ref dt);
+                        return true;
+                    }
+                    if (typeof(T) == typeof(decimal) || typeof(T) == typeof(decimal?))
+                    {
+                        var dt = reader.GetDecimal(0);
+                        result = Unsafe.As<decimal, T>(ref dt);
+                        return true;
+                    }
+                    if (typeof(T) == typeof(DateTime) || typeof(T) == typeof(DateTime?))
+                    {
+                        var dt = reader.GetDateTime(0);
+                        result = (T)(object)dt;
+                        return true;
+                    }
+                    if (typeof(T) == typeof(string))
+                    {
+                        var dt = reader.GetString(0);
+                        result = Unsafe.As<string, T>(ref dt);
+                        return true;
+                    }
+                    if (typeof(T) == typeof(Guid) || typeof(T) == typeof(Guid?))
+                    {
+                        var dt = reader.GetGuid(0);
+                        result = Unsafe.As<Guid, T>(ref dt);
                         return true;
                     }
                     var res = reader.GetValue(0);
