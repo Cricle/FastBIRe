@@ -9,10 +9,10 @@ namespace FastBIRe
     }
     public interface IScriptExecuter : IDisposable
     {
-        Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object>>? args = null, CancellationToken token = default);
+        Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
 
-        Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object>>>? argss=null, CancellationToken token = default);
+        Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss=null, CancellationToken token = default);
 
-        Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object>>? args = null, CancellationToken token = default);
+        Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
     }
 }

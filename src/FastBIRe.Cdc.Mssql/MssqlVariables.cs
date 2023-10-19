@@ -21,9 +21,4 @@
             }
         }
     }
-    public enum MssqlServiceState
-    {
-        Running,
-        Stopped
-    }
 }

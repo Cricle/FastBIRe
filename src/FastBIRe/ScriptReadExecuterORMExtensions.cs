@@ -6,34 +6,47 @@ namespace FastBIRe
 {
     public static class ScriptReadExecuterORMExtensions
     {
-        public static async Task<bool> ExistsAsync(this IScriptExecuter scriptExecuter, string script, CancellationToken token = default)
+        public static async Task<bool> ExistsAsync(this IScriptExecuter scriptExecuter, string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             var exists = false;
             await scriptExecuter.ReadAsync(script, (o, e) =>
             {
                 exists = e.Reader.Read();
                 return Task.CompletedTask;
-            }, token: token);
+            }, args: args, token: token);
             return exists;
         }
-        public static async Task<T?> ReadOneAsync<T>(this IScriptExecuter scriptExecuter, string script, CancellationToken token = default)
+        public static async Task<T?> ReadOneAsync<T>(this IScriptExecuter scriptExecuter, string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             T? result = default;
             await scriptExecuter.ReadAsync(script, (o, e) =>
             {
                 Parser<T>.TryPreParse(e.Reader, out result);
                 return Task.CompletedTask;
-            }, token: token);
+            }, args: args, token: token);
             return result;
         }
-        public static async Task<IList<T>> ReadAsync<T>(this IScriptExecuter scriptExecuter, string script, CancellationToken token = default)
+        public static async Task<IList<T?>> ReadRowsAsync<T>(this IScriptExecuter scriptExecuter, string script,Func<IDataReader,T?> reader, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        {
+            var res = new List<T?>();
+            await scriptExecuter.ReadAsync(script, (o, e) =>
+            {
+                while (e.Reader.Read())
+                {
+                    res.Add(reader(e.Reader));
+                }
+                return Task.CompletedTask;
+            }, args: args, token: token);
+            return res;
+        }
+        public static async Task<IList<T>> ReadAsync<T>(this IScriptExecuter scriptExecuter, string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             IList<T> result = Array.Empty<T>();
             await scriptExecuter.ReadAsync(script, (o, e) =>
             {
                 result = Parser<T>.parser(e.Reader);
                 return Task.CompletedTask;
-            }, token: token);
+            },args:args, token: token);
             return result;
         }
 

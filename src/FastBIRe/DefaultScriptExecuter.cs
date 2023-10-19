@@ -63,7 +63,7 @@ namespace FastBIRe
 
         public event EventHandler<ScriptExecuteEventArgs>? ScriptStated;
 
-        public Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object>>? args = null, CancellationToken token = default)
+        public Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             return ExecuteAsync(script, null, args, GetStackTrace(), token);
         }
@@ -76,8 +76,13 @@ namespace FastBIRe
             }
             return null;
         }
-        private static DbType GetDbType(object input)
+        private static DbType GetDbType(object? input)
         {
+            if (input == null)
+            {
+                return DbType.String;
+            }
+
             var typeCode = Type.GetTypeCode(input.GetType());
 
             switch (typeCode)
@@ -115,7 +120,7 @@ namespace FastBIRe
             }
         }
 
-        protected virtual void LoadParamters(DbCommand command, IEnumerable<KeyValuePair<string, object>>? args = null) 
+        protected virtual void LoadParamters(DbCommand command, IEnumerable<KeyValuePair<string, object?>>? args = null) 
         {
             if (args != null)
             {
@@ -135,12 +140,11 @@ namespace FastBIRe
                 }
             }
         }
-
-        protected virtual async Task<int> ExecuteAsync(string script, IEnumerable<string>? scripts,IEnumerable<KeyValuePair<string,object>>? args, StackTrace? stackTrace, CancellationToken token = default)
+        protected virtual async Task<int> ExecuteAsync(string script, IEnumerable<string>? scripts,IEnumerable<KeyValuePair<string,object?>>? args, StackTrace? stackTrace, CancellationToken token = default)
         {
             if (IsEmptyScript(script))
             {
-                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { script }, stackTrace, token));
+                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { script }, args, stackTrace, token));
                 return 0;
             }
             var fullStartTime = Stopwatch.GetTimestamp();
@@ -149,18 +153,18 @@ namespace FastBIRe
                 LoadParamters(command, args);
                 try
                 {
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, scripts, stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, scripts,args, stackTrace, token));
                     command.CommandText = script;
                     command.CommandTimeout = CommandTimeout;
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoaedCommand(Connection, command, scripts, stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadCommand(Connection, command, scripts, args, stackTrace, token));
                     var startTime = Stopwatch.GetTimestamp();
                     var res = await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Executed(Connection, command, scripts, res, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Executed(Connection, command, scripts, args, res, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), stackTrace, token));
                     return res;
                 }
                 catch (Exception ex)
                 {
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Exception(Connection, command, scripts, ex, null, GetElapsedTime(fullStartTime), stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Exception(Connection, command, scripts, args, ex, null, GetElapsedTime(fullStartTime), stackTrace, token));
                     throw;
                 }
             }
@@ -192,13 +196,13 @@ namespace FastBIRe
             }
             return true;
         }
-        private async Task<int> ExecuteBatchSlowAsync(IEnumerable<string> scripts,  StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object>>>? argss = null, CancellationToken token = default)
+        private async Task<int> ExecuteBatchSlowAsync(IEnumerable<string> scripts,  StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, CancellationToken token = default)
         {
             var res = 0;
             var argEnumerator = argss?.GetEnumerator();
             try
             {
-                IEnumerable<KeyValuePair<string, object>>? args = null;
+                IEnumerable<KeyValuePair<string, object?>>? args = null;
                 if (argss != null && argEnumerator!.MoveNext())
                 {
                     args = argEnumerator.Current;
@@ -215,7 +219,7 @@ namespace FastBIRe
             return res;
         }
 #if !NETSTANDARD2_0
-        protected async Task<int?> BatchExecuteAdoAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string,object>>>? argss = null, CancellationToken token = default)
+        protected async Task<int?> BatchExecuteAdoAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string,object?>>>? argss = null, CancellationToken token = default)
         {
             if (UseBatch && Connection.CanCreateBatch)
             {
@@ -225,17 +229,17 @@ namespace FastBIRe
                     var enu = argss?.GetEnumerator();
                     try
                     {
-                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedBatch(Connection, scripts, batch, stackTrace, token));
+                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedBatch(Connection, scripts,argss, batch, stackTrace, token));
                         foreach (var item in scripts)
                         {
-                            IEnumerable<KeyValuePair<string, object>>? args = null;
+                            IEnumerable<KeyValuePair<string, object?>>? args = null;
                             if (enu!=null&&enu.MoveNext())
                             {
                                 args = enu.Current;
                             }
                             if (IsEmptyScript(item))
                             {
-                                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { item }, stackTrace, token));
+                                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { item }, args, stackTrace, token));
                                 continue;
                             }
                             var comm = batch.CreateBatchCommand();
@@ -248,17 +252,17 @@ namespace FastBIRe
                                     comm.Parameters.Add(arg.Value);
                                 }
                             }
-                            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadBatchItem(Connection, scripts, batch, comm, stackTrace, token));
+                            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadBatchItem(Connection, scripts, argss,batch, comm, stackTrace, token));
                         }
                         batch.Timeout = CommandTimeout;
                         var startTime = Stopwatch.GetTimestamp();
                         var res = await batch.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.ExecutedBatch(Connection, scripts, batch, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), stackTrace, token));
+                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.ExecutedBatch(Connection, scripts,argss, batch, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), stackTrace, token));
                         return res;
                     }
                     catch (Exception ex)
                     {
-                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BatchException(Connection, scripts, batch, ex, null, GetElapsedTime(fullStartTime), stackTrace, token));
+                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BatchException(Connection, scripts, argss, batch, ex, null, GetElapsedTime(fullStartTime), stackTrace, token));
                         throw;
                     }
                     finally
@@ -270,12 +274,12 @@ namespace FastBIRe
             return null;
         }
 #endif
-        public Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object>>>? argss = null, CancellationToken token = default)
+        public Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, CancellationToken token = default)
         {
             return ExecuteBatchAsync(scripts, GetStackTrace(),argss, token);
         }
 
-        public async Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object>>? args = null, CancellationToken token = default)
+        public async Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             var stackTrace = GetStackTrace();
             var fullStartTime = Stopwatch.GetTimestamp();
@@ -283,33 +287,33 @@ namespace FastBIRe
             {
                 try
                 {
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, null, stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, null,args, stackTrace, token));
                     command.CommandText = script;
                     command.CommandTimeout = CommandTimeout;
                     LoadParamters(command, args);
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoaedCommand(Connection, command, null, stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadCommand(Connection, command, null, args, stackTrace, token));
                     var startTime = Stopwatch.GetTimestamp();
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.StartReading(Connection, command, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.StartReading(Connection, command,args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
                     using (var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false))
                     {
                         await handler(this, new ReadingDataArgs(script, reader, token));
                     }
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.EndReading(Connection, command, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.EndReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
                 }
                 catch (Exception ex)
                 {
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Exception(Connection, command, null, ex, null, GetElapsedTime(fullStartTime), stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Exception(Connection, command, null,args, ex, null, GetElapsedTime(fullStartTime), stackTrace, token));
                     throw;
                 }
             }
         }
 
-        public Task<int> ExecuteAsync(string script, StackTrace? stackTrace, IEnumerable<KeyValuePair<string, object>>? args = null, CancellationToken token = default)
+        public Task<int> ExecuteAsync(string script, StackTrace? stackTrace, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             return ExecuteAsync(script, null, args, stackTrace, token);
         }
 
-        public async Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object>>>? argss = null, CancellationToken token = default)
+        public async Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, CancellationToken token = default)
         {
             if (!scripts.Any())
             {

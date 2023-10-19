@@ -78,7 +78,7 @@ SELECT @from_lsn", token);
 
         public Task<bool> IsDatabaseCdcEnableAsync(string databaseName, CancellationToken token = default)
         {
-            return ScriptExecuter.ExistsAsync($"SELECT 1 from sys.databases where name ='{databaseName}' AND is_cdc_enabled = 1", token);
+            return ScriptExecuter.ExistsAsync($"SELECT 1 from sys.databases where name ='{databaseName}' AND is_cdc_enabled = 1", token: token);
         }
         public async Task<IList<string>> GetEnableCdcTableNamesAsync(CancellationToken token = default)
         {
@@ -95,7 +95,7 @@ SELECT @from_lsn", token);
         }
         public Task<bool> IsTableCdcEnableAsync(string databaseName, string tableName, CancellationToken token = default)
         {
-            return ScriptExecuter.ExistsAsync($"SELECT 1 from sys.tables where name ='{tableName}' AND is_tracked_by_cdc = 1", token);
+            return ScriptExecuter.ExistsAsync($"SELECT 1 from sys.tables where name ='{tableName}' AND is_tracked_by_cdc = 1", token: token);
         }
 
         public void Dispose()

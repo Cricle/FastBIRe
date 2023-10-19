@@ -34,7 +34,7 @@ namespace FastBIRe.Cdc.NpgSql
             var var = new PgSqlVariables();
             await ScriptExecuter.ReadAsync("SHOW wal_level;", (s, r) =>
             {
-                while (r.Reader.Read())
+                if (r.Reader.Read())
                 {
                     var["wal_level"] = r.Reader.GetString(0);
                 }
@@ -52,7 +52,7 @@ namespace FastBIRe.Cdc.NpgSql
 
         public Task<bool> IsTableCdcEnableAsync(string databaseName, string tableName, CancellationToken token = default)
         {
-            return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_catalog.pg_publication_tables WHERE tablename='{tableName}';", token);
+            return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_catalog.pg_publication_tables WHERE tablename='{tableName}';", token: token);
         }
 
         public Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default)

@@ -51,7 +51,7 @@ namespace FastBIRe.Farm
         {
             var cursorTable = new DatabaseTable { Name = CursorTable, DatabaseSchema = DatabaseReader.DatabaseSchema };
             cursorTable.AddColumn(SyncNamer).SetType(SqlType, DbType.String, 64);//TODO
-            cursorTable.AddColumn(SyncPoint, DbType.UInt64);
+            cursorTable.AddColumn(SyncPoint, DbType.Int64);
             cursorTable.AddConstraint(new DatabaseConstraint { Name = $"PK_{CursorTable}", Columns = { SyncNamer }, ConstraintType = ConstraintType.PrimaryKey });
             return cursorTable;
         }
@@ -200,7 +200,7 @@ namespace FastBIRe.Farm
         public Task<long> GetDataLastIdAsync(string tableName,CancellationToken token=default)
         {
             var maxIdSql = $"SELECT MAX({SqlType.Wrap(Id)}) FROM {SqlType.Wrap(tableName)}";
-            return ScriptExecuter.ReadOneAsync<long>(maxIdSql,token);
+            return ScriptExecuter.ReadOneAsync<long>(maxIdSql, token: token);
         }
         public virtual async Task<bool> AnyCheckpointNotComplatedAsync(string tableName, CancellationToken token = default)
         {
@@ -301,12 +301,12 @@ namespace FastBIRe.Farm
         public virtual Task<long?> GetCheckpointAsync(string name, CancellationToken token = default)
         {
             var sql = $"SELECT {SqlType.Wrap(SyncPoint)} FROM {SqlType.Wrap(CursorTable)} WHERE {SqlType.Wrap(SyncNamer)} = {SqlType.WrapValue(name)}";
-            return ScriptExecuter.ReadOneAsync<long?>(sql, token);
+            return ScriptExecuter.ReadOneAsync<long?>(sql, token: token);
         }
         public virtual Task<long?> UpdateCheckpointAsync(string name,long point, CancellationToken token = default)
         {
             var sql = $"UPDATE {SqlType.Wrap(CursorTable)} SET {SqlType.Wrap(SyncPoint)} = {point} WHERE {SqlType.Wrap(SyncNamer)} = {SqlType.WrapValue(name)}";
-            return ScriptExecuter.ReadOneAsync<long?>(sql, token);
+            return ScriptExecuter.ReadOneAsync<long?>(sql, token: token);
         }
         public virtual async Task CreateCheckPointIfNotExistsAsync(string name)
         {
