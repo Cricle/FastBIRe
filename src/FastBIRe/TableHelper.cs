@@ -133,7 +133,7 @@ namespace FastBIRe
                     throw new NotSupportedException(SqlType.ToString());
             }
         }
-        public string InsertUnionValues(string tableName,IEnumerable<string> names, IEnumerable<object> values,string? where)
+        public string InsertUnionValues(string tableName, IEnumerable<string> names, IEnumerable<object> values, string? where)
         {
             var sql = $@"INSERT INTO {SqlType.Wrap(tableName)}({string.Join(",", names.Select(x => SqlType.Wrap(x)))}) {UnionValues(values)} ";
             if (!string.IsNullOrEmpty(where))

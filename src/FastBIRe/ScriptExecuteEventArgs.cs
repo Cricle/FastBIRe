@@ -75,7 +75,7 @@ namespace FastBIRe
 
         public CancellationToken CancellationToken { get; }
 
-        public static ScriptExecuteEventArgs Begin(DbConnection connection, IEnumerable<string>? scripts,IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, StackTrace? stackTrace, CancellationToken token)
+        public static ScriptExecuteEventArgs Begin(DbConnection connection, IEnumerable<string>? scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, StackTrace? stackTrace, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.Begin,
                 connection,

@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace FastBIRe
 {
-    public interface IDbStackTraceScriptExecuter: IStackTraceScriptExecuter
+    public interface IDbStackTraceScriptExecuter : IStackTraceScriptExecuter
     {
         DbConnection Connection { get; }
     }

@@ -174,7 +174,7 @@ namespace FastBIRe
         public string DateDif(string timeA, string timeB, string unit)
         {
             return $@"
-CASE WHEN {Ascii(unit)}={Ascii("'Y'")} THEN {DateDifYear(timeA,timeB)}
+CASE WHEN {Ascii(unit)}={Ascii("'Y'")} THEN {DateDifYear(timeA, timeB)}
 WHEN {Ascii(unit)}={Ascii("'M'")} THEN {DateDifMonth(timeA, timeB)}
 WHEN {Ascii(unit)}={Ascii("'D'")} THEN {DateDifDay(timeA, timeB)}
 WHEN {Ascii(unit)}={Ascii("'h'")} THEN {DateDifHour(timeA, timeB)}

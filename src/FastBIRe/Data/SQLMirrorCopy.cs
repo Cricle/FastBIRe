@@ -101,7 +101,7 @@ namespace FastBIRe.Data
             {
                 return RowWriteResult<string>.Empty;
             }
-            if (unbound&& datas[datas.Length - 1]==',')
+            if (unbound && datas[datas.Length - 1] == ',')
             {
                 datas.Remove(datas.Length - 1, 1);
             }

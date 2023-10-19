@@ -259,7 +259,7 @@ namespace FastBIRe.AAMode
 
             //Re read table 
             table = Table;
-            var autoColumns =table.Columns.Where(x=>x.IsAutoNumber).Select(x=>x.Name).ToList();
+            var autoColumns = table.Columns.Where(x => x.IsAutoNumber).Select(x => x.Name).ToList();
             var hasIdentity = autoColumns.Count != 0;
             var insertScripts = TriggerWriter.CreateExpand(SqlType, triggerName, triggerType, table, expandResults, hasIdentity, autoColumns);
             var insertStoredScript = GetStoredTriggerScripts(triggerName);
@@ -324,7 +324,7 @@ namespace FastBIRe.AAMode
                 updateTriggerTypes = TriggerTypes.AfterUpdate;
             }
             var autoColumns = table.Columns.Where(x => x.IsAutoNumber).Select(x => x.Name).ToList();
-            var hasIdentity = autoColumns.Count!=0;
+            var hasIdentity = autoColumns.Count != 0;
             var insertScripts = TriggerWriter.CreateExpand(SqlType, triggerInsertName, insertTriggerTypes, table, expandResults, hasIdentity, autoColumns);
             var updateScripts = TriggerWriter.CreateExpand(SqlType, triggerUpdateName, updateTriggerTypes, table, expandResults, hasIdentity, autoColumns);
             var insertStoredScript = GetStoredTriggerScripts(triggerInsertName);

@@ -26,7 +26,7 @@ namespace FastBIRe.Triggering
             }
 
             var exps = expandFields.SelectMany(x => timeExpandHelper!.Create(x, timeTypes)).Cast<IExpandResult>().ToList();
-            return CreateExpand(triggerWriter!, sqlType, name, type, table, exps,hasIdentity);
+            return CreateExpand(triggerWriter!, sqlType, name, type, table, exps, hasIdentity);
         }
         public static IEnumerable<string> CreateExpand(this ITriggerWriter triggerWriter,
             SqlType sqlType,
@@ -35,7 +35,7 @@ namespace FastBIRe.Triggering
             DatabaseTable table,
             IEnumerable<IExpandResult> expandResults,
             bool hasIdentity = false,
-            IEnumerable<string>? autoNumberColumns=null)
+            IEnumerable<string>? autoNumberColumns = null)
         {
             var body = string.Empty;
             var when = string.Empty;
@@ -59,7 +59,7 @@ namespace FastBIRe.Triggering
                             var insertColumnExpression = allColumnExceptExpands.Concat(expandResults.Select(x => x.Name))
                                 .Select(x => $"[{x}]")
                                 .ToList();
-                            var dbcc =string.Empty;
+                            var dbcc = string.Empty;
                             if (hasIdentity)
                             {
                                 identitySet += $@"
@@ -105,7 +105,7 @@ INSERT INTO [{table.Name}]({string.Join(",", insertColumnExpression)}) SELECT {s
                             }
                             var setList = table.Columns.Select(x => x.Name)
                                 .Except(expandResults.Select(x => x.Name))
-                                .Where(x=> table.PrimaryKey==null||!table.PrimaryKey.Columns.Contains(x))
+                                .Where(x => table.PrimaryKey == null || !table.PrimaryKey.Columns.Contains(x))
                                 .Distinct()
                                 .Select(x => $"[{x}] = [NEW].[{x}]")
                                 .ToList();

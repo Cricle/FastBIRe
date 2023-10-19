@@ -1,6 +1,6 @@
 ﻿namespace FastBIRe.Data
 {
-    public class DataMirrorCreatedInputEventArgs<TKey, TResult, TInput>: DataMirrorEventArgs<TKey, TResult, TInput>
+    public class DataMirrorCreatedInputEventArgs<TKey, TResult, TInput> : DataMirrorEventArgs<TKey, TResult, TInput>
     {
         public DataMirrorCreatedInputEventArgs(UndefinedDataMirrorCopy<TKey, TResult, TInput> mirrorCopy, TInput input) : base(mirrorCopy)
         {
@@ -9,7 +9,7 @@
 
         public TInput Input { get; }
     }
-    public class DataMirrorEventArgs<TKey, TResult, TInput> :EventArgs
+    public class DataMirrorEventArgs<TKey, TResult, TInput> : EventArgs
     {
         public DataMirrorEventArgs(UndefinedDataMirrorCopy<TKey, TResult, TInput> mirrorCopy)
         {

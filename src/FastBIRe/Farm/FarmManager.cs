@@ -15,13 +15,13 @@ namespace FastBIRe.Farm
 
         public string TableName => SourceTable.Name;
 
-        public IEnumerable<string> Columns=>SourceTable.Columns.Select(x=>x.Name);
+        public IEnumerable<string> Columns => SourceTable.Columns.Select(x => x.Name);
 
         public FarmWarehouse SourceFarmWarehouse { get; }
-        
+
         public FarmWarehouse DestFarmWarehouse { get; }
 
-        public async Task SyncAsync(IEnumerable<int>? maskColumns = null,CancellationToken token = default)
+        public async Task SyncAsync(IEnumerable<int>? maskColumns = null, CancellationToken token = default)
         {
             await DestFarmWarehouse.SyncAsync(SourceTable, maskColumns, token);
             if (DestFarmWarehouse.AttackId)

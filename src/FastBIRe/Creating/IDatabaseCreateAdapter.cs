@@ -34,7 +34,7 @@ namespace FastBIRe.Creating
                 {
                     ok = e.Reader.Read();
                     return Task.CompletedTask;
-                }, token:token);
+                }, token: token);
                 return ok;
             }
         }

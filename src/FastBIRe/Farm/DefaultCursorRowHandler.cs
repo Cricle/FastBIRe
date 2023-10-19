@@ -56,7 +56,7 @@ namespace FastBIRe.Farm
 
             var target = new SQLMirrorTarget(SourceConnection, sourceSqlType.Wrap(TableName));
             var escaper = sourceSqlType.GetMethodWrapper();
-            var includeNames= new HashSet<string>(sourceTable.Columns.Select(x => x.Name));
+            var includeNames = new HashSet<string>(sourceTable.Columns.Select(x => x.Name));
             var currentPoint = rows.Point;
             var queryBatchSize = QueryBatchSize;
             ulong prevMaxId = currentPoint;

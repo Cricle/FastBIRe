@@ -1,14 +1,10 @@
 ﻿using DatabaseSchemaReader.DataSchema;
-using DatabaseSchemaReader.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FastBIRe
 {
     public class TableWrapper
     {
-        class TableColumnSnapshot: ITableColumnSnapshot
+        class TableColumnSnapshot : ITableColumnSnapshot
         {
             public string Name { get; }
 
@@ -23,7 +19,7 @@ namespace FastBIRe
                 WrapName = wrapName;
             }
         }
-        public static TableWrapper FromMarsk(DatabaseTable table, SqlType sqlType,Predicate<DatabaseColumn> predicate)
+        public static TableWrapper FromMarsk(DatabaseTable table, SqlType sqlType, Predicate<DatabaseColumn> predicate)
         {
             var selectmask = new List<int>();
             for (int i = 0; i < table.Columns.Count; i++)
@@ -33,7 +29,7 @@ namespace FastBIRe
                     selectmask.Add(i);
                 }
             }
-            return new TableWrapper(table,sqlType, selectmask);
+            return new TableWrapper(table, sqlType, selectmask);
         }
         public TableWrapper(DatabaseTable table, SqlType sqlType, IReadOnlyList<int>? selectMask)
         {
@@ -43,7 +39,7 @@ namespace FastBIRe
             for (int i = 0; i < table.Columns.Count; i++)
             {
                 var col = table.Columns[i];
-                sn[i] = new TableColumnSnapshot(col.Name, i,SqlType.Wrap(col.Name));
+                sn[i] = new TableColumnSnapshot(col.Name, i, SqlType.Wrap(col.Name));
             }
             columnSnapshots = sn;
             if (selectMask == null)
@@ -96,7 +92,7 @@ namespace FastBIRe
 
         public string ColumnNameJoined { get; }
 
-        public string CreateInsertSql(IEnumerable<object> values) 
+        public string CreateInsertSql(IEnumerable<object> values)
         {
             return $"INSERT INTO {WrapTableName}({ColumnNameJoined}) VALUES ({string.Join(", ", values.Select(x => SqlType.WrapValue(x)))})";
         }

@@ -2,7 +2,7 @@
 
 namespace FastBIRe.Farm
 {
-    public class CopyCursorRowHandlerResult<TKey>: CursorRowHandlerResult
+    public class CopyCursorRowHandlerResult<TKey> : CursorRowHandlerResult
     {
         public CopyCursorRowHandlerResult(long currentPoint, long affectedCount, long round, IList<RowWriteResult<TKey>> rowWriteResults)
             : base(currentPoint, affectedCount, round)

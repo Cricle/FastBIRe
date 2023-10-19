@@ -7,27 +7,27 @@ namespace FastBIRe.Querying
     {
         private string GenerateColumnCompare(MergeQueryUpdateRequest request, ITableFieldLink x, string destTableAliasQuto, string tmpQuto)
         {
-            if (request.SqlType == SqlType.PostgreSql||request.SqlType== SqlType.DuckDB)
+            if (request.SqlType == SqlType.PostgreSql || request.SqlType == SqlType.DuckDB)
             {
                 if (x is DirectTableFieldLink direct)
                 {
                     var leftField = request.DestTable.FindColumn(x.DestColumn.Name);
                     var rightField = request.SourceTable.FindColumn(direct.SourceColumn.Name);
-                    if (leftField==null)
+                    if (leftField == null)
                         Throws.ThrowFieldNotFound(direct.DestColumn.Name, request.DestTable.Name);
                     if (rightField == null)
                         Throws.ThrowFieldNotFound(direct.SourceColumn.Name, request.SourceTable.Name);
-                    if (string.Equals(leftField!.DbDataType , rightField!.DbDataType, StringComparison.OrdinalIgnoreCase))
+                    if (string.Equals(leftField!.DbDataType, rightField!.DbDataType, StringComparison.OrdinalIgnoreCase))
                     {
                         //Type equals, raw check
                         return GenerateEqualsSql(null, null);
                     }
                 }
-                return GenerateEqualsSql("::VARCHAR","::VARCHAR");
+                return GenerateEqualsSql("::VARCHAR", "::VARCHAR");
             }
-            return GenerateEqualsSql(null,null);
+            return GenerateEqualsSql(null, null);
 
-            string GenerateEqualsSql(string? leftCast,string? rightCast)
+            string GenerateEqualsSql(string? leftCast, string? rightCast)
             {
                 return $"({destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)}{leftCast} != {tmpQuto}.{request.Wrap(x.DestColumn.Name)}{rightCast} OR ({destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} IS NULL AND {tmpQuto}.{request.Wrap(x.DestColumn.Name)} IS NOT NULL) OR ({destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} IS NOT NULL AND {tmpQuto}.{request.Wrap(x.DestColumn.Name)} IS NULL))";
             }
@@ -57,7 +57,7 @@ namespace FastBIRe.Querying
                 sql.AppendLine();
             }
             var tmpQuto = request.Wrap("tmp");
-            var setPrefx = request.SqlType == SqlType.MySql ? $"{destTableAliasQuto}.":string.Empty;
+            var setPrefx = request.SqlType == SqlType.MySql ? $"{destTableAliasQuto}." : string.Empty;
             var setString = string.Join(", ", request.NoGroupLinks.Select(x => $"{setPrefx}{request.Wrap(x.DestColumn.Name)} = {tmpQuto}.{request.Wrap(x.DestColumn.Name)}"));
             if (request.SqlType != SqlType.MySql)
             {
@@ -66,7 +66,7 @@ namespace FastBIRe.Querying
 
             var updateSelect = CompileUpdateSelect(request, SourceTableAlias);
             var destGroupOn = string.Join(" AND ", request.GroupLinks.Select(x => $"{destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)} = {tmpQuto}.{request.Wrap(x.DestColumn.Name)}"));
-            var destGroupCheck = string.Join(" OR ", request.NoGroupLinks.Where(x => !request.IgnoreCompareFields.Contains(x.DestColumn.Name)).Select(x => GenerateColumnCompare(request,x,destTableAliasQuto,tmpQuto)));
+            var destGroupCheck = string.Join(" OR ", request.NoGroupLinks.Where(x => !request.IgnoreCompareFields.Contains(x.DestColumn.Name)).Select(x => GenerateColumnCompare(request, x, destTableAliasQuto, tmpQuto)));
 
             var updateFrom = CompileUpdateFrom(request, updateSelect, destGroupOn, destGroupCheck, tmpQuto);
             sql.AppendLine(updateFrom);

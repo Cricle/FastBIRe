@@ -1,5 +1,4 @@
-﻿using DatabaseSchemaReader.Data;
-using System.Data;
+﻿using System.Data;
 using System.Runtime.CompilerServices;
 
 namespace FastBIRe
@@ -26,7 +25,7 @@ namespace FastBIRe
             }, args: args, token: token);
             return result;
         }
-        public static async Task<IList<T?>> ReadRowsAsync<T>(this IScriptExecuter scriptExecuter, string script,Func<IDataReader,T?> reader, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        public static async Task<IList<T?>> ReadRowsAsync<T>(this IScriptExecuter scriptExecuter, string script, Func<IDataReader, T?> reader, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             var res = new List<T?>();
             await scriptExecuter.ReadAsync(script, (o, e) =>
@@ -46,7 +45,7 @@ namespace FastBIRe
             {
                 result = Parser<T>.parser(e.Reader);
                 return Task.CompletedTask;
-            },args:args, token: token);
+            }, args: args, token: token);
             return result;
         }
 
@@ -91,7 +90,7 @@ namespace FastBIRe
                     actualType = type.IsGenericType ? type.GetGenericArguments()[0] : type;
                     parser = reader =>
                     {
-                        if (TryPreParse(reader,out var result))
+                        if (TryPreParse(reader, out var result))
                         {
                             return new[] { result! };
                         }

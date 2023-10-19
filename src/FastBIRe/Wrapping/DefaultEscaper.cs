@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace FastBIRe.Wrapping
+﻿namespace FastBIRe.Wrapping
 {
     public class DefaultEscaper : IEscaper
     {

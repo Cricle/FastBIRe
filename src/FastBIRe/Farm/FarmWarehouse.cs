@@ -21,7 +21,7 @@ namespace FastBIRe.Farm
         public const string Id = "id";
 
         public FarmWarehouse(IDbScriptExecuter scriptExecuter, ICursorRowHandlerSelector cursorRowHandlerSelector, bool attackId)
-            : this(scriptExecuter, new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database }, cursorRowHandlerSelector,attackId)
+            : this(scriptExecuter, new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database }, cursorRowHandlerSelector, attackId)
         {
             AttackId = attackId;
         }
@@ -64,11 +64,11 @@ namespace FastBIRe.Farm
 
         public bool AttackId { get; }
 
-        public async Task<IList<string>> GetSyncScriptsAsync(DatabaseTable table, IEnumerable<int>? maskColumns=null, CancellationToken token = default)
+        public async Task<IList<string>> GetSyncScriptsAsync(DatabaseTable table, IEnumerable<int>? maskColumns = null, CancellationToken token = default)
         {
             var scripts = new List<string>();
             var copyTable = table.Clone();
-            if (maskColumns!=null)
+            if (maskColumns != null)
             {
                 var removes = copyTable.Columns.Where((x, i) => maskColumns.Contains(i)).ToList();
                 copyTable.Columns.RemoveAll(x => !removes.Contains(x));
@@ -114,7 +114,7 @@ namespace FastBIRe.Farm
                     return scripts;
                 }
                 var hasCurTable = DatabaseReader.TableExists(CursorTable);
-                if (hasCurTable&&AttackId)
+                if (hasCurTable && AttackId)
                 {
                     var anyDatas = await AnyCheckpointNotComplatedAsync(table.Name);
                     if (anyDatas)
@@ -146,7 +146,7 @@ namespace FastBIRe.Farm
         }
         public async Task SyncAsync(DatabaseTable table, IEnumerable<int>? maskColumns = null, CancellationToken token = default)
         {
-            var scripts = await GetSyncScriptsAsync(table, maskColumns,token);
+            var scripts = await GetSyncScriptsAsync(table, maskColumns, token);
             if (scripts.Count != 0)
             {
                 await ScriptExecuter.ExecuteBatchAsync(scripts, token: token);
@@ -197,7 +197,7 @@ namespace FastBIRe.Farm
             var sql = TableHelper.InsertUnionValues(SeqTable, new[] { Id }, new object[] { 0 }, $"NOT EXISTS (SELECT 1 FROM {SqlType.Wrap(SeqTable)})");
             await ScriptExecuter.ExecuteAsync(sql);
         }
-        public Task<long> GetDataLastIdAsync(string tableName,CancellationToken token=default)
+        public Task<long> GetDataLastIdAsync(string tableName, CancellationToken token = default)
         {
             var maxIdSql = $"SELECT MAX({SqlType.Wrap(Id)}) FROM {SqlType.Wrap(tableName)}";
             return ScriptExecuter.ReadOneAsync<long>(maxIdSql, token: token);
@@ -207,7 +207,7 @@ namespace FastBIRe.Farm
             var anyDataSql = $"SELECT 1 FROM {SqlType.Wrap(CursorTable)} AS {SqlType.Wrap("ct")} WHERE {SqlType.Wrap("ct")}.{SqlType.Wrap(SyncPoint)} <= (SELECT MAX({SqlType.Wrap("t")}.{SqlType.Wrap(Id)}) FROM {SqlType.Wrap(tableName)} AS {SqlType.Wrap("t")}) {TableHelper.Pagging(null, 1)}";
             return await ScriptExecuter.ExistsAsync(anyDataSql);
         }
-        public virtual async Task InsertAsync(string tableName,IEnumerable<string> columnNames,IEnumerable<IEnumerable<object?>> values, CancellationToken token = default)
+        public virtual async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<IEnumerable<object?>> values, CancellationToken token = default)
         {
             using (var trans = Connection.BeginTransaction())
             {
@@ -232,7 +232,7 @@ namespace FastBIRe.Farm
                             sb.Append(',');
                             sb.Append(id);
                         }
-                            sb.Append(')');
+                        sb.Append(')');
                         count++;
                         if (count >= batchSize && count > 0)
                         {
@@ -258,7 +258,7 @@ namespace FastBIRe.Farm
                 trans.Commit();
             }
         }
-        public virtual Task<ulong> GetCurrentSeqAsync(CancellationToken token=default)
+        public virtual Task<ulong> GetCurrentSeqAsync(CancellationToken token = default)
         {
             var sql = $"SELECT {SqlType.Wrap(Id)} FROM {SqlType.Wrap(SeqTable)} {TableHelper.Pagging(null, 1)}";
             return ScriptExecuter.ReadOneAsync<ulong>(sql, token: token);
@@ -293,7 +293,7 @@ namespace FastBIRe.Farm
                 trans.Commit();
             }
         }
-        public virtual async Task RemoveCheckpointAsync(string name,CancellationToken token=default)
+        public virtual async Task RemoveCheckpointAsync(string name, CancellationToken token = default)
         {
             var sql = $"DELETE FROM {SqlType.Wrap(CursorTable)} WHERE {SqlType.Wrap(SyncNamer)} = {SqlType.WrapValue(name)}";
             await ScriptExecuter.ExecuteAsync(sql, token: token);
@@ -303,17 +303,17 @@ namespace FastBIRe.Farm
             var sql = $"SELECT {SqlType.Wrap(SyncPoint)} FROM {SqlType.Wrap(CursorTable)} WHERE {SqlType.Wrap(SyncNamer)} = {SqlType.WrapValue(name)}";
             return ScriptExecuter.ReadOneAsync<long?>(sql, token: token);
         }
-        public virtual Task<long?> UpdateCheckpointAsync(string name,long point, CancellationToken token = default)
+        public virtual Task<long?> UpdateCheckpointAsync(string name, long point, CancellationToken token = default)
         {
             var sql = $"UPDATE {SqlType.Wrap(CursorTable)} SET {SqlType.Wrap(SyncPoint)} = {point} WHERE {SqlType.Wrap(SyncNamer)} = {SqlType.WrapValue(name)}";
             return ScriptExecuter.ReadOneAsync<long?>(sql, token: token);
         }
         public virtual async Task CreateCheckPointIfNotExistsAsync(string name)
         {
-            var sql = TableHelper.InsertUnionValues(CursorTable, new[] { SyncNamer,SyncPoint }, new object[] { name,0 }, $"NOT EXISTS (SELECT 1 FROM {SqlType.Wrap(CursorTable)} WHERE {SqlType.Wrap(SyncNamer)} = {SqlType.WrapValue(name)})");
+            var sql = TableHelper.InsertUnionValues(CursorTable, new[] { SyncNamer, SyncPoint }, new object[] { name, 0 }, $"NOT EXISTS (SELECT 1 FROM {SqlType.Wrap(CursorTable)} WHERE {SqlType.Wrap(SyncNamer)} = {SqlType.WrapValue(name)})");
             await ScriptExecuter.ExecuteAsync(sql);
         }
-        public async Task<IList<ICursorRowHandlerResult>> CheckPointAsync(string tableName,IEnumerable<string>? cursorNames=null,CancellationToken token = default)
+        public async Task<IList<ICursorRowHandlerResult>> CheckPointAsync(string tableName, IEnumerable<string>? cursorNames = null, CancellationToken token = default)
         {
             var querySql = $"SELECT {SqlType.Wrap(SyncNamer)} AS Name,{SqlType.Wrap(SyncPoint)} AS Point FROM {SqlType.Wrap(CursorTable)}";
             if (cursorNames != null && cursorNames.Any())
