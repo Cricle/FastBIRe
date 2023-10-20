@@ -2,8 +2,7 @@
 using FastBIRe.Functions;
 using FastBIRe.Wrapping;
 using System.Data;
-using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
+using System.Text;
 
 namespace FastBIRe
 {
@@ -34,38 +33,40 @@ namespace FastBIRe
                     return null;
             }
         }
+        public static readonly string BracketReplaced = $"{nameof(Bracket)}(";
 
-#if false
-(?<!\\)" "->'
-(?<![\"'])\b[A-Za-z]+\b(?=\()
-#endif
-#if NET7_0_OR_GREATER
-        [GeneratedRegex("(?<!\\\\)\"")]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static partial Regex GetQutoRegex();
-        [GeneratedRegex("(?<![\\\"'])\\b[A-Za-z]+\\b(?=\\()")]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static partial Regex GetMethodNameRegex();
-#else
-        private static readonly Regex qutoRegex = new Regex("(?<!\\\\)\"", RegexOptions.Compiled);
-        private static readonly Regex methodNameRegex = new Regex("(?<![\\\"'])\\b[A-Za-z]+\\b(?=\\()", RegexOptions.Compiled);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Regex GetQutoRegex()
+        /// <summary>
+        /// To make the expression bracket avaliable ( ... ) like (1+2+3)+"(1/2)" => Bracket(1+2+3)+"(1/2)"
+        /// </summary>
+        /// <param name="expression">The input expression</param>
+        /// <returns>Transform result</returns>
+        public static string ReplaceBracket(string input)
         {
-            return qutoRegex;
+            var inQuto = false;
+            var sb = new StringBuilder();
+            for (int i = 0; i < input.Length; i++)
+            {
+                if (input[i] == '(' && (i == 0 || !char.IsLetterOrDigit(input[i - 1])) && !inQuto)
+                {
+                    sb.Append(BracketReplaced);
+                    continue;
+                }
+                if (input[i] == '\"')
+                {
+                    if (i != 0 && input[i - 1] != '\\')
+                    {
+                        inQuto = !inQuto;
+                    }
+                }
+                sb.Append(input[i]);
+            }
+            return sb.ToString();
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Regex GetMethodNameRegex()
-        {
-            return methodNameRegex;
-        }
-#endif
 
         public FunctionMapper(SqlType sqlType)
         {
             SqlType = sqlType;
-            Escaper = sqlType.GetMethodWrapper();
+            Escaper = sqlType.GetEscaper();
         }
 
         public IEscaper Escaper { get; }
@@ -242,6 +243,10 @@ namespace FastBIRe
                 default:
                     return null;
             }
+        }
+        public string? Value(object value)
+        {
+            return Value<object>(value);
         }
         public string? Value<T>(T value)
         {
@@ -488,5 +493,6 @@ namespace FastBIRe
                     return null;
             }
         }
+        
     }
 }

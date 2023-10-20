@@ -9,6 +9,12 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<ItemGroup>
+	  <None Remove="Resources\pg_get_tabledef.sql" />
+	</ItemGroup>
+	<ItemGroup>
+	  <EmbeddedResource Include="Resources\pg_get_tabledef.sql" />
+	</ItemGroup>
+	<ItemGroup>
 	  <ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

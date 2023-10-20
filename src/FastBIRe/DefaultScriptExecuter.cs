@@ -97,6 +97,7 @@ namespace FastBIRe
                     return DbType.SByte;
                 case TypeCode.Int16:
                     return DbType.Int16;
+                case TypeCode.Char:
                 case TypeCode.Int32:
                     return DbType.Int32;
                 case TypeCode.Int64:
@@ -115,6 +116,8 @@ namespace FastBIRe
                     return DbType.Decimal;
                 case TypeCode.DateTime:
                     return DbType.DateTime;
+                case TypeCode.DBNull:
+                case TypeCode.Object:
                 case TypeCode.String:
                 case TypeCode.Empty:
                 default:
@@ -153,9 +156,9 @@ namespace FastBIRe
             var fullStartTime = Stopwatch.GetTimestamp();
             using (var command = Connection.CreateCommand())
             {
-                LoadParamters(command, args);
                 try
                 {
+                    LoadParamters(command, args);
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, scripts, args, stackTrace, token));
                     command.CommandText = script;
                     command.CommandTimeout = CommandTimeout;

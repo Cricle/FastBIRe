@@ -1,5 +1,6 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using System.Data;
+using System.Text.RegularExpressions;
 
 namespace FastBIRe.Function
 {
@@ -7,6 +8,7 @@ namespace FastBIRe.Function
     {
         static void Main(string[] args)
         {
+            _=TableHelper.Sqlite;
             var dbTypes = new SqlType[] { SqlType.MySql, SqlType.SQLite, SqlType.PostgreSql, SqlType.SqlServer };
             foreach (var item in dbTypes)
             {

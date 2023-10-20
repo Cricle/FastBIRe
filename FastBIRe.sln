@@ -30,17 +30,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Farm", "samples\Fa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Benchmarks", "test\FastBIRe.Benchmarks\FastBIRe.Benchmarks.csproj", "{FA9724F8-5B70-417D-B6FE-71DA19E599A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.Cdc", "src\FastBIRe.Cdc\FastBIRe.Cdc.csproj", "{515A87D1-6C9C-44D0-B283-4A9C67869566}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Cdc", "src\FastBIRe.Cdc\FastBIRe.Cdc.csproj", "{515A87D1-6C9C-44D0-B283-4A9C67869566}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.Cdc.MySql", "src\FastBIRe.Cdc.MySql\FastBIRe.Cdc.MySql.csproj", "{76CD4970-EA85-4FBD-8AC0-AD1B79EC1144}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Cdc.MySql", "src\FastBIRe.Cdc.MySql\FastBIRe.Cdc.MySql.csproj", "{76CD4970-EA85-4FBD-8AC0-AD1B79EC1144}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.CdcSample", "samples\FastBIRe.CdcSample\FastBIRe.CdcSample.csproj", "{6264EE49-E702-40AF-B327-1BE43E84F716}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.CdcSample", "samples\FastBIRe.CdcSample\FastBIRe.CdcSample.csproj", "{6264EE49-E702-40AF-B327-1BE43E84F716}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.Cdc.NpgSql", "src\FastBIRe.Cdc.NpgSql\FastBIRe.Cdc.NpgSql.csproj", "{6AF7AF4F-897C-4430-BE1F-A66B856A9B1A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Cdc.NpgSql", "src\FastBIRe.Cdc.NpgSql\FastBIRe.Cdc.NpgSql.csproj", "{6AF7AF4F-897C-4430-BE1F-A66B856A9B1A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.Cdc.Mssql", "src\FastBIRe.Cdc.Mssql\FastBIRe.Cdc.Mssql.csproj", "{CB6F42BC-F7A2-4192-8C84-3E587486EC80}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Cdc.Mssql", "src\FastBIRe.Cdc.Mssql\FastBIRe.Cdc.Mssql.csproj", "{CB6F42BC-F7A2-4192-8C84-3E587486EC80}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.Cdc.MongoDB", "src\FastBIRe.Cdc.MongoDB\FastBIRe.Cdc.MongoDB.csproj", "{1A58F3D8-520A-4921-9EB7-3F0A8F3FA686}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Cdc.MongoDB", "src\FastBIRe.Cdc.MongoDB\FastBIRe.Cdc.MongoDB.csproj", "{1A58F3D8-520A-4921-9EB7-3F0A8F3FA686}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

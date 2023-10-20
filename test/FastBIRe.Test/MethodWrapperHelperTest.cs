@@ -8,33 +8,33 @@ namespace FastBIRe.Test
         [TestMethod]
         public void MethodWrapperSqlServer()
         {
-            Assert.AreEqual(DefaultEscaper.SqlServer, MethodWrapperExtensions.GetMethodWrapper(SqlType.SqlServer));
-            Assert.AreEqual(DefaultEscaper.SqlServer, MethodWrapperExtensions.GetMethodWrapper(SqlType.SqlServerCe));
+            Assert.AreEqual(DefaultEscaper.SqlServer, MethodWrapperExtensions.GetEscaper(SqlType.SqlServer));
+            Assert.AreEqual(DefaultEscaper.SqlServer, MethodWrapperExtensions.GetEscaper(SqlType.SqlServerCe));
         }
         [TestMethod]
         public void MethodWrapperMySql()
         {
-            Assert.AreEqual(DefaultEscaper.MySql, MethodWrapperExtensions.GetMethodWrapper(SqlType.MySql));
+            Assert.AreEqual(DefaultEscaper.MySql, MethodWrapperExtensions.GetEscaper(SqlType.MySql));
         }
         [TestMethod]
         public void MethodWrapperSqlite()
         {
-            Assert.AreEqual(DefaultEscaper.Sqlite, MethodWrapperExtensions.GetMethodWrapper(SqlType.SQLite));
+            Assert.AreEqual(DefaultEscaper.Sqlite, MethodWrapperExtensions.GetEscaper(SqlType.SQLite));
         }
         [TestMethod]
         public void MethodWrapperOracle()
         {
-            Assert.AreEqual(DefaultEscaper.Oracle, MethodWrapperExtensions.GetMethodWrapper(SqlType.Oracle));
+            Assert.AreEqual(DefaultEscaper.Oracle, MethodWrapperExtensions.GetEscaper(SqlType.Oracle));
         }
         [TestMethod]
         public void MethodWrapperPostgreSql()
         {
-            Assert.AreEqual(DefaultEscaper.PostgreSql, MethodWrapperExtensions.GetMethodWrapper(SqlType.PostgreSql));
+            Assert.AreEqual(DefaultEscaper.PostgreSql, MethodWrapperExtensions.GetEscaper(SqlType.PostgreSql));
         }
         [TestMethod]
         public void MethodWrapperOther()
         {
-            Assert.ThrowsException<NotSupportedException>(()=>MethodWrapperExtensions.GetMethodWrapper(SqlType.Db2));
+            Assert.ThrowsException<NotSupportedException>(()=>MethodWrapperExtensions.GetEscaper(SqlType.Db2));
         }
     }
 }

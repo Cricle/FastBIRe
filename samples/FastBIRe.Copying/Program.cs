@@ -10,8 +10,17 @@ namespace FastBIRe.Copying
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.SQLite;
-            var c = ConnectionProvider.GetDbMigration(sqlType, "sakila");
+            var sqlType = SqlType.SqlServer;
+            var c = ConnectionProvider.GetDbMigration(sqlType, "test1");
+            //var executer = new DefaultScriptExecuter(c);
+            //var tb = sqlType.GetTableHelper()!;
+            //if (sqlType== SqlType.PostgreSql)
+            //{
+            //    var pgScripts = TableHelper.GetPgDDLFunctionScripts();
+            //    await executer.ExistsAsync(pgScripts);
+            //}
+            //var ddl =await tb.DumpTableCreateAsync("guidang", executer);
+            //Console.WriteLine(ddl);
             var s = Stopwatch.GetTimestamp();
             using (var comm = c.CreateCommand())
             {

@@ -37,7 +37,7 @@
             return $"{QutoStart}{input}{QutoEnd}";
         }
 
-        public string? WrapValue<T>(T? input)
+        public unsafe string? WrapValue<T>(T? input)
         {
             if (input == null || Equals(input, DBNull.Value))
             {
@@ -58,7 +58,7 @@
                 {
                     return ValueStart + dt.ToString("yyyy-MM-dd") + ValueEnd;
                 }
-                return ValueStart + DateTimeToStringHelper.ToFullString(dt) + ValueEnd;
+                return ValueStart + dt.ToString("yyyy-MM-dd HH:mm:ss") + ValueEnd;
             }
             else if (input is byte[] buffer)
             {

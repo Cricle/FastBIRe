@@ -30,7 +30,7 @@ namespace FastBIRe.Data
         {
             return StreamWriter;
         }
-        private string WrapValue(object value)
+        private string? WrapValue(object value)
         {
             if (value == null)
             {

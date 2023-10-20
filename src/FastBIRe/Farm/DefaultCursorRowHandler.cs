@@ -55,7 +55,7 @@ namespace FastBIRe.Farm
             var destTableHelper = new TableHelper(destSqlType);
 
             var target = new SQLMirrorTarget(SourceConnection, sourceSqlType.Wrap(TableName));
-            var escaper = sourceSqlType.GetMethodWrapper();
+            var escaper = sourceSqlType.GetEscaper();
             var includeNames = new HashSet<string>(sourceTable.Columns.Select(x => x.Name));
             var currentPoint = rows.Point;
             var queryBatchSize = QueryBatchSize;

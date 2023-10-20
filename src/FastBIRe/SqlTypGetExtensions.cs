@@ -4,7 +4,7 @@ using FastBIRe.Wrapping;
 
 namespace FastBIRe
 {
-    public static class MethodWrapperExtensions
+    public static class SqlTypGetExtensions
     {
         public static bool Ors(this SqlType sqlType, params SqlType[] types)
         {
@@ -17,20 +17,41 @@ namespace FastBIRe
             }
             return false;
         }
-
+        public static TableHelper? GetTableHelper(this SqlType sqlType)
+        {
+            switch (sqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return TableHelper.SqlServer;
+                case SqlType.Oracle:
+                   return TableHelper.Oracle;
+                case SqlType.MySql:
+                    return TableHelper.MySql;
+                case SqlType.SQLite:
+                    return TableHelper.Sqlite;
+                case SqlType.PostgreSql:
+                    return TableHelper.PostgreSql;
+                case SqlType.DuckDB:
+                   return TableHelper.DuckDB;
+                case SqlType.Db2:
+                default:
+                    return null;
+            }
+        }
         public static string Wrap(this SqlType sqlType, string? field)
         {
-            return GetMethodWrapper(sqlType).Quto(field);
+            return GetEscaper(sqlType).Quto(field);
         }
         public static string? WrapValue<T>(this SqlType sqlType, T value)
         {
-            return GetMethodWrapper(sqlType).WrapValue(value);
+            return GetEscaper(sqlType).WrapValue(value);
         }
         public static IDatabaseCreateAdapter? GetDatabaseCreateAdapter<T>(this SqlType sqlType)
         {
             return DatabaseCreateAdapter.Get(sqlType);
         }
-        public static IEscaper GetMethodWrapper(this SqlType sqlType)
+        public static IEscaper GetEscaper(this SqlType sqlType)
         {
             switch (sqlType)
             {
