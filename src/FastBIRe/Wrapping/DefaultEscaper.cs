@@ -45,7 +45,7 @@
             }
             else if (input is string || input is Guid)
             {
-                var str = ValueStart + input + ValueEnd;
+                var str = ValueStart + input.ToString().Replace("'", "''") + ValueEnd;
                 if (EscapeBackslash)
                 {
                     str = str.Replace("\\", "\\\\");
