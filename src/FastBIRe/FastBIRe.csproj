@@ -9,10 +9,10 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<ItemGroup>
-	  <None Remove="Resources\pg_get_tabledef.sql" />
+	  <None Remove="Resources\*.sql" />
 	</ItemGroup>
 	<ItemGroup>
-	  <EmbeddedResource Include="Resources\pg_get_tabledef.sql" />
+	  <EmbeddedResource Include="Resources\*.sql" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />

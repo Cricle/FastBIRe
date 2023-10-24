@@ -36,11 +36,12 @@ namespace FastBIRe
             }
             return null;
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected static TimeSpan GetElapsedTime(long startingTimestamp)
         {
             return new TimeSpan((long)((Stopwatch.GetTimestamp() - startingTimestamp) * TickFrequency));
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsExecuterMethod(MethodBase method)
         {
             return Methods.Contains(method);
@@ -189,7 +190,7 @@ namespace FastBIRe
             {
                 if (script[i] == '\n')
                 {
-                    if (!script.AsSpan(startIndex, i - 1 - startIndex).TrimStart().StartsWith("--".AsSpan()))
+                    if (i==startIndex||!script.AsSpan(startIndex, i - 1 - startIndex).TrimStart().StartsWith("--".AsSpan()))
                     {
                         return false;
                     }
@@ -316,10 +317,10 @@ namespace FastBIRe
         }
         public Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
-            return ReadResultAsync(script, (o, e) =>
+            return ReadResultAsync(script, async (o, e) =>
             {
-                handler(o, e);
-                return trueResult;
+                await handler(o, e);
+                return true;
             },args,token);
         }
 
@@ -349,6 +350,17 @@ namespace FastBIRe
         {
             Connection?.Dispose();
         }
-
+        public static implicit operator DbConnection(DefaultScriptExecuter scriptExecuter)
+        {
+            return scriptExecuter.Connection;
+        }
+        public static implicit operator DefaultScriptExecuter(DbConnection dbConnection)
+        {
+            return new  DefaultScriptExecuter(dbConnection);
+        }
+        public override string ToString()
+        {
+            return $"{{Connection: {Connection}}}";
+        }
     }
 }

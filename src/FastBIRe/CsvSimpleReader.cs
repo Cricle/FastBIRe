@@ -1,4 +1,6 @@
-﻿namespace FastBIRe
+﻿using System.Runtime.CompilerServices;
+
+namespace FastBIRe
 {
     public class CsvSimpleReader
     {
@@ -20,11 +22,13 @@
             var line = reader.ReadLine();
             while (!string.IsNullOrEmpty(line))
             {
-                yield return ParseRow(line, buffer);
+                ParseRow(line, buffer);
+                yield return buffer;
                 line = reader.ReadLine();
             }
         }
-        private object?[] ParseRow(string row, object?[] ret)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ParseRow(string row, object?[] ret)
         {
             var index = 0;
             var start = 0;
@@ -58,16 +62,30 @@
                         {
                             value = value.Slice(0, value.Length - 1);
                         }
-                        ret[index++] = Convert.ChangeType(value.ToString(), Schema.Types[index]);
+                        ret[index++] = ToValue(value.ToString(), Schema.Types[index]);
                     }
                     start = i + 1;
                 }
             }
             if (start != row.Length)
             {
-                ret[ret.Length - 1] = Convert.ChangeType(row.Substring(start), Schema.Types[index]);
+                ret[ret.Length - 1] = ToValue(row.Substring(start), Schema.Types[index]);
             }
-            return ret;
+        }
+        private static readonly Type byteArrayType = typeof(byte[]);
+        private static readonly Type stringType = typeof(string);
+
+        private static object ToValue(string value, Type type)
+        {
+            if (type == stringType)
+            {
+                return value;
+            }
+            if (type == byteArrayType)
+            {
+                return Convert.FromBase64String(value.Substring(2));
+            }
+            return Convert.ChangeType(value, type);
         }
     }
 }

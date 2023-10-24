@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -10,10 +10,19 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.9" />
     <PackageReference Include="DuckDB.NET.Data.Full" Version="0.9.0.3" />
+    		<PackageReference Include="Dapper" Version="2.1.11" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.4" />
+		<PackageReference Include="MySqlConnector" Version="2.2.5" />
+		<PackageReference Include="Npgsql" Version="7.0.2" />
+
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FastBIRe\FastBIRe.csproj" />
   </ItemGroup>
-
+  
+	<ItemGroup>
+		<Compile Include="../../samples/FastBIRe.Mig/ConnectionProvider.cs"></Compile>
+	</ItemGroup>
 </Project>

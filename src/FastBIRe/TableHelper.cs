@@ -1,6 +1,7 @@
 ﻿using DatabaseSchemaReader;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
+using System.Text.RegularExpressions;
 
 namespace FastBIRe
 {
@@ -13,6 +14,8 @@ namespace FastBIRe
         public static readonly TableHelper Oracle = new TableHelper(SqlType.Oracle);
         public static readonly TableHelper PostgreSql = new TableHelper(SqlType.PostgreSql);
         public static readonly TableHelper DuckDB = new TableHelper(SqlType.DuckDB);
+
+        public static readonly Regex SqlServerGoMath = new Regex("(?:\\s|\\r?\\n)+GO;?.*", RegexOptions.IgnoreCase);
 
         public TableHelper(SqlType sqlType)
         {
@@ -122,12 +125,18 @@ namespace FastBIRe
             }
         }
         private static readonly string PostgreSqlTableCreateFunctionScripts;
+        private static readonly string SqlServerTableCreateProcedureScripts;
         static TableHelper()
         {
             using (var stream = typeof(TableHelper).Assembly.GetManifestResourceStream("FastBIRe.Resources.pg_get_tabledef.sql"))
             using (var sr = new StreamReader(stream!))
             {
                 PostgreSqlTableCreateFunctionScripts = sr.ReadToEnd();
+            }
+            using (var stream = typeof(TableHelper).Assembly.GetManifestResourceStream("FastBIRe.Resources.sp_getddl.sql"))
+            using (var sr = new StreamReader(stream!))
+            {
+                SqlServerTableCreateProcedureScripts = sr.ReadToEnd();
             }
         }
         public string? GetEnableCheck()
@@ -142,7 +151,7 @@ namespace FastBIRe
                 case SqlType.SQLite:
                     return "PRAGMA foreign_keys=on;";
                 case SqlType.PostgreSql:
-                    return "SET session_replication_role = replica;";
+                    return "SET session_replication_role = origin;";
                 case SqlType.DuckDB:
                 case SqlType.Oracle:
                 case SqlType.Db2:
@@ -162,7 +171,7 @@ namespace FastBIRe
                 case SqlType.SQLite:
                     return "PRAGMA foreign_keys=off;";
                 case SqlType.PostgreSql:
-                    return "SET session_replication_role = origin;";
+                    return "SET session_replication_role = replica;";
                 case SqlType.DuckDB:
                 case SqlType.Oracle:
                 case SqlType.Db2:
@@ -173,6 +182,10 @@ namespace FastBIRe
         public static string GetPgDDLFunctionScripts()
         {
             return PostgreSqlTableCreateFunctionScripts;
+        }
+        public static string GetSqlServerDDLFunctionScripts()
+        {
+            return SqlServerTableCreateProcedureScripts;
         }
         public Task<string?> DumpTableCreateAsync(string table, IDbScriptExecuter scriptExecuter)
         {
@@ -205,6 +218,8 @@ namespace FastBIRe
                             break;
                         case SqlType.SqlServer:
                         case SqlType.SqlServerCe:
+                            result= e.Reader.GetString(0);
+                            break;
                         case SqlType.Oracle:
                         case SqlType.Db2:
                         default:
@@ -214,6 +229,24 @@ namespace FastBIRe
                 return Task.FromResult(result);
             });
         }
+        public static Task<bool> PgSqlHasDDLFunctionDefAsync(IScriptExecuter scriptExecuter, CancellationToken token = default)
+        {
+            return PgSqlHasFunctionDefAsync("pg_get_tabledef", scriptExecuter, token);
+        }
+        public static Task<bool> SqlServerHasDDLFunctionDefAsync(IScriptExecuter scriptExecuter, CancellationToken token = default)
+        {
+            return PgSqlHasFunctionDefAsync("sp_GetDDL", scriptExecuter, token);
+        }
+        public static Task<bool> PgSqlHasFunctionDefAsync(string funName,IScriptExecuter scriptExecuter, CancellationToken token = default)
+        {
+            return scriptExecuter.ExistsAsync($"SELECT 1 FROM pg_proc WHERE proname = '{funName}';", token: token);
+        }
+
+        public static Task<bool> SqlServerHasProcedureDefAsync(string funName, IScriptExecuter scriptExecuter,CancellationToken token=default)
+        {
+            return scriptExecuter.ExistsAsync($"SELECT 1 FROM sys.procedures WHERE name = '{funName}';", token: token);
+        }
+
         public string? DumpTableCreateSql(string table)
         {
             switch (SqlType)
@@ -225,10 +258,11 @@ namespace FastBIRe
                     return $"SELECT sql FROM sqlite_master WHERE type = 'table' AND name = '{table}';";
                 case SqlType.PostgreSql:
                     return $"SELECT pg_get_tabledef('public','{table}',false)";
-                case SqlType.Db2:
-                case SqlType.Oracle:
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
+                    return $"EXEC sp_GetDDL '{table}'";
+                case SqlType.Db2:
+                case SqlType.Oracle:
                 default:
                     break;
             }
@@ -246,6 +280,7 @@ namespace FastBIRe
                     return $"OPTIMIZE TABLE `{table}`;";
                 case SqlType.SQLite:
                     return "VACUUM;";
+                case SqlType.DuckDB:
                 case SqlType.PostgreSql:
                     return $"VACUUM FULL \"{table}\";";
                 case SqlType.Oracle:

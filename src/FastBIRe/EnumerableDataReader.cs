@@ -1,5 +1,7 @@
 ﻿using System.Data;
+#if NET6_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
+#endif
 using System.Runtime.CompilerServices;
 
 namespace FastBIRe
@@ -49,13 +51,22 @@ namespace FastBIRe
             enumerable.Dispose();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private TInst GetOrCase<TInst>(int i)
+        private TInst? GetOrCase<TInst>(int i)
         {
             ThrowIfValuesNull();
             var val = values![i];
+            if (val == null)
+            {
+                return default;
+            }
             if (val is TInst tinst)
             {
                 return tinst;
+            }
+            if (typeof(TInst) == typeof(Guid))
+            {
+                Guid guid = Guid.Parse(val.ToString());
+                return Unsafe.As<Guid, TInst?>(ref guid);
             }
             return (TInst)Convert.ChangeType(val, typeof(TInst))!;
         }
@@ -171,7 +182,6 @@ namespace FastBIRe
 
         public object GetValue(int i)
         {
-            ThrowIfValuesNull();
             return values![i]!;
         }
 

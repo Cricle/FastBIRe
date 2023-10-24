@@ -15,7 +15,7 @@ namespace FastBIRe
     public static class ObjectMapper<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicConstructors | DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>
 #endif
     {
-        private static readonly Func<IDataReader, T> creator;
+        private static readonly Func<IDataRecord, T> creator;
         private static readonly MethodInfo convertMethod;
         private static readonly PropertyInfo dataReadMethod;
 
@@ -59,7 +59,7 @@ namespace FastBIRe
             return tree.Compile();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static T Fill(IDataReader reader)
+        public static T Fill(IDataRecord reader)
         {
             return creator(reader);
         }
@@ -136,35 +136,31 @@ namespace FastBIRe
             {
                 methodValue = ReaderMethod(input, nameof(IDataRecord.GetValue), name);
             }
+            var isDbNullExp = Expression.Call(input, isDbNullMethod, Expression.Call(input, OrMethod, Expression.Constant(name)));
             if (methodValue != null)
             {
                 if (ignoreSet)
                 {
                     return methodValue;
                 }
-                return Expression.Call(instance, property.SetMethod!, methodValue);
+                return Expression.IfThen(Expression.Not(isDbNullExp),
+                        Expression.Call(instance, property.SetMethod!, methodValue));
             }
             if (property.PropertyType.IsGenericType && property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
                 var actualType = property.PropertyType.GenericTypeArguments[0];
                 var exp = GetGetValueExpression(input, name, actualType, property, instance, true);
-                return Expression.IfThenElse(Expression.Call(input, isDbNullMethod, Expression.Call(input, OrMethod, Expression.Constant(name))),
-                     Expression.Call(instance, property.SetMethod!, Expression.Convert(Expression.Constant(null), property.PropertyType)),
+                return Expression.IfThen(Expression.Not(isDbNullExp),
                      Expression.Call(instance, property.SetMethod!, Expression.Convert(exp, property.PropertyType)));
             }
             var result = Expression.Call(input, dataReadMethod.GetMethod!, Expression.Constant(name));
             if (ignoreSet)
             {
-                return Expression.IfThenElse(Expression.TypeIs(result, property.PropertyType),
-                       Expression.Convert(result, property.PropertyType),
-                       Expression.Convert(Expression.Call(null, convertMethod, result, Expression.Constant(typeCode)),
-                        property.PropertyType));
+                return Expression.IfThen(Expression.And(Expression.Not(isDbNullExp), Expression.TypeIs(result, property.PropertyType)),
+                       Expression.Convert(result, property.PropertyType));
             }
-            return Expression.IfThenElse(Expression.TypeIs(result, property.PropertyType),
-                    Expression.Call(instance, property.SetMethod!, Expression.Convert(result, property.PropertyType)),
-                   Expression.Call(instance, property.SetMethod!, Expression.Convert(Expression.Call(null, convertMethod, result, Expression.Constant(typeCode)),
-                    property.PropertyType)));
-
+            return Expression.IfThen(Expression.And(Expression.Not(isDbNullExp), Expression.TypeIs(result, property.PropertyType)),
+                   Expression.Call(instance, property.SetMethod!, Expression.Convert(result, property.PropertyType)));
         }
     }
 }

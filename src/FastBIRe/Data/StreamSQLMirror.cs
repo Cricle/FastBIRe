@@ -22,10 +22,11 @@ namespace FastBIRe.Data
 
         protected override async Task<RowWriteResult<string>> WriteAsync(StringBuilder datas, bool storeWriteResult, bool unbound, CancellationToken token)
         {
-            if (unbound)
+            if (unbound && datas[datas.Length-1] == ',')
             {
                 datas.Remove(datas.Length - 1, 1);
             }
+            datas.Append(';');
 #if NETSTANDARD2_0
             var script = datas.ToString();
             await StreamWriter.WriteLineAsync(script);
