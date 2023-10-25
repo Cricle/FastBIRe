@@ -22,6 +22,8 @@ namespace FastBIRe.Cdc.MySql
 
         public BinlogClient BinlogClient { get; }
 
+        public CdcOperators SupportCdcOperators => CdcOperators.WithoutEnableDisable;
+
         public Task<bool> IsDatabaseCdcEnableAsync(string databaseName, CancellationToken token = default)
         {
             return IsLogBinOnAsync(token);
@@ -31,18 +33,16 @@ namespace FastBIRe.Cdc.MySql
             return IsLogBinOnAsync(token);
         }
 
-        protected async Task<bool> IsLogBinOnAsync(CancellationToken token = default)
+        protected Task<bool> IsLogBinOnAsync(CancellationToken token = default)
         {
-            var on = false;
-            await ScriptExecuter.ReadAsync("SHOW GLOBAL VARIABLES LIKE 'log_bin'", (s, r) =>
+            return ScriptExecuter.ReadResultAsync("SHOW GLOBAL VARIABLES LIKE 'log_bin'", (s, r) =>
             {
-                while (r.Reader.Read())
+                if (r.Reader.Read())
                 {
-                    on = string.Equals(r.Reader.GetString(1), "on", StringComparison.OrdinalIgnoreCase);
+                    return Task.FromResult(string.Equals(r.Reader.GetString(1), "on", StringComparison.OrdinalIgnoreCase));
                 }
-                return Task.CompletedTask;
+                return Task.FromResult(false);
             }, token: token);
-            return on;
 
         }
         public Task<ICdcListener> GetCdcListenerAsync(MySqlGetCdcListenerOptions options, CancellationToken token = default)
@@ -84,6 +84,26 @@ namespace FastBIRe.Cdc.MySql
             var logBin = string.Equals(var.GetOrDefault("log_bin"), "ON", StringComparison.OrdinalIgnoreCase);
             var binlogFormat = string.Equals(var.GetOrDefault("binlog_format"), "ROW", StringComparison.OrdinalIgnoreCase);
             return logBin && binlogFormat;
+        }
+
+        public Task<bool?> TryEnableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
+        {
+            return Task.FromResult<bool?>(null);
+        }
+
+        public Task<bool?> TryEnableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            return Task.FromResult<bool?>(null);
+        }
+
+        public Task<bool?> TryDisableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
+        {
+            return Task.FromResult<bool?>(null);
+        }
+
+        public Task<bool?> TryDisableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            return Task.FromResult<bool?>(null);
         }
     }
 }

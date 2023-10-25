@@ -15,6 +15,8 @@ namespace FastBIRe.Cdc.MongoDB
 
         public IMongoClient Client { get; }
 
+        public CdcOperators SupportCdcOperators => CdcOperators.WithoutEnableDisable;
+
         public Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default)
         {
             return Task.FromResult<ICheckPointManager>(EmptyCheckpointManager.Instance);
@@ -60,6 +62,26 @@ namespace FastBIRe.Cdc.MongoDB
             var command = new BsonDocument { { "replSetGetStatus", 1 } };
             var status =await Client.GetDatabase("admin").RunCommandAsync<BsonDocument>(command);
             return status[MongoVariables.ConfigsvrKey].AsBoolean;
+        }
+
+        public Task<bool?> TryEnableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
+        {
+            return Task.FromResult<bool?>(null);
+        }
+
+        public Task<bool?> TryEnableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            return Task.FromResult<bool?>(null);
+        }
+
+        public Task<bool?> TryDisableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
+        {
+            return Task.FromResult<bool?>(null);
+        }
+
+        public Task<bool?> TryDisableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            return Task.FromResult<bool?>(null);
         }
     }
 }

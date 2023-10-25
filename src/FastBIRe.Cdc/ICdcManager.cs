@@ -1,16 +1,21 @@
 ﻿using FastBIRe.Cdc.Checkpoints;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace FastBIRe.Cdc
 {
-    public interface IGetCdcListenerOptions
-    {
-        IReadOnlyList<string>? TableNames { get; }
-    }
     public interface ICdcManager
     {
+        CdcOperators SupportCdcOperators { get; }
+
+        Task<bool?> TryEnableDatabaseCdcAsync(string databaseName, CancellationToken token = default);
+
+        Task<bool?> TryEnableTableCdcAsync(string databaseName,string tableName, CancellationToken token = default);
+
+        Task<bool?> TryDisableDatabaseCdcAsync(string databaseName, CancellationToken token = default);
+
+        Task<bool?> TryDisableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default);
+
         Task<bool> IsDatabaseSupportAsync(CancellationToken token = default);
 
         Task<bool> IsDatabaseCdcEnableAsync(string databaseName, CancellationToken token = default);

@@ -1,4 +1,5 @@
-﻿using FastBIRe.Cdc.Checkpoints;
+﻿using DatabaseSchemaReader.DataSchema;
+using FastBIRe.Cdc.Checkpoints;
 using FastBIRe.Cdc.Mssql.Checkpoints;
 using Microsoft.Data.SqlClient;
 
@@ -20,6 +21,8 @@ namespace FastBIRe.Cdc.Mssql
         public Func<IDbScriptExecuter> ScriptExecuterFactory { get; }
 
         public SqlConnection Connection => (SqlConnection)ScriptExecuter.Connection;
+
+        public CdcOperators SupportCdcOperators => CdcOperators.All;
 
         public Task<ICdcListener> GetCdcListenerAsync(MssqlGetCdcListenerOptions options, CancellationToken token = default)
         {
@@ -121,6 +124,60 @@ SELECT @from_lsn", token);
                 return true;
             }
             return false;
+        }
+
+        public async Task<bool?> TryEnableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
+        {
+            var dbName = ScriptExecuter.Connection.Database;
+            var scripts = $@"
+USE [{databaseName}];
+EXEC sys.sp_cdc_enable_db;
+USE [{dbName}];
+";
+            await ScriptExecuter.ExecuteAsync(scripts,token:token);
+            return true;
+        }
+
+        public async Task<bool?> TryEnableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            var dbName = ScriptExecuter.Connection.Database;
+            var scripts = $@"
+USE [{databaseName}];
+EXEC sys.sp_cdc_enable_table
+  @source_schema = 'dbo',
+  @source_name = {SqlType.SqlServer.WrapValue(tableName)},
+  @role_name = NULL;
+USE [{dbName}];
+";
+            await ScriptExecuter.ExecuteAsync(scripts, token: token);
+            return true;
+        }
+
+        public async Task<bool?> TryDisableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
+        {
+            var dbName = ScriptExecuter.Connection.Database;
+            var scripts = $@"
+USE [{databaseName}];
+EXEC sys.sp_cdc_disable_db;
+USE [{dbName}];
+";
+            await ScriptExecuter.ExecuteAsync(scripts, token: token);
+            return true;
+        }
+
+        public async Task<bool?> TryDisableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            var dbName = ScriptExecuter.Connection.Database;
+            var scripts = $@"
+USE [{databaseName}];
+EXEC sys.sp_cdc_disable_table
+  @source_schema = 'dbo',
+  @source_name = {SqlType.SqlServer.WrapValue(tableName)},
+  @capture_instance = 'ALL';
+USE [{dbName}];
+";
+            await ScriptExecuter.ExecuteAsync(scripts, token: token);
+            return true;
         }
     }
 }

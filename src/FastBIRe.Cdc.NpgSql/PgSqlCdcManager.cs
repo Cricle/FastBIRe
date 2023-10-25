@@ -1,19 +1,22 @@
-﻿using FastBIRe.Cdc.Checkpoints;
+﻿using DatabaseSchemaReader.DataSchema;
+using FastBIRe.Cdc.Checkpoints;
 using FastBIRe.Cdc.NpgSql.Checkpoints;
-using Npgsql.Replication;
-using Npgsql.Replication.PgOutput;
-using NpgsqlTypes;
 
 namespace FastBIRe.Cdc.NpgSql
 {
     public class PgSqlCdcManager : ICdcManager
     {
+        public const string SlotTail = "_slot";
+        public const string PubTail = "_pub";
+
         public PgSqlCdcManager(IDbScriptExecuter scriptExecuter)
         {
             ScriptExecuter = scriptExecuter;
         }
 
         public IDbScriptExecuter ScriptExecuter { get; }
+
+        public CdcOperators SupportCdcOperators => CdcOperators.All & ~CdcOperators.EnableDatabaseCdc & ~CdcOperators.DisableDatabaseCdc;
 
         public Task<ICdcListener> GetCdcListenerAsync(PgSqlGetCdcListenerOptions options, CancellationToken token = default)
         {
@@ -65,6 +68,60 @@ namespace FastBIRe.Cdc.NpgSql
             var var = await GetCdcVariablesAsync(token);
             var walLevel = string.Equals(var.GetOrDefault("wal_level"), "logical", StringComparison.OrdinalIgnoreCase);
             return walLevel;
+        }
+
+        public Task<bool?> TryEnableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
+        {
+            return Task.FromResult<bool?>(null);
+        }
+
+        public async Task<bool?> TryEnableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            var exists = await IsTableCdcEnableAsync(databaseName, tableName, token);
+            if (!exists)
+            {
+                exists = await IsReplicationSlotsExistsAsync(databaseName, $"{tableName}{SlotTail}", token);
+            }
+            if (exists)
+            {
+                await TryDisableTableCdcAsync(databaseName, tableName, token);
+            }
+            var result = await ScriptExecuter.ExistsAsync($"CREATE PUBLICATION \"{tableName}{PubTail}\" FOR TABLE \"{tableName}\";", token: token);
+            result &= await ScriptExecuter.ExistsAsync($"SELECT * FROM pg_create_logical_replication_slot({GetSlotName(tableName)}, 'pgoutput');", token: token);
+            result &= await ScriptExecuter.ExistsAsync($"ALTER TABLE \"{tableName}\" REPLICA IDENTITY FULL;", token: token);
+            return result;
+        }
+
+        public Task<bool?> TryDisableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
+        {
+            return Task.FromResult<bool?>(null);
+        }
+
+        public async Task<bool?> TryDisableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            var exists = await IsTableCdcEnableAsync(databaseName, tableName, token);
+            if (exists)
+            {
+                await ScriptExecuter.ExistsAsync($"DROP PUBLICATION \"{tableName}{PubTail}\";", token: token);
+            }
+            exists = await IsReplicationSlotsExistsAsync(databaseName, $"{tableName}{SlotTail}", token);
+            if (exists)
+            {
+                await ScriptExecuter.ExistsAsync($"SELECT pg_drop_replication_slot({GetSlotName(tableName)});", token: token);
+            }
+            return true;
+        }
+        public static string? GetPubName(string tableName)
+        {
+            return SqlType.PostgreSql.WrapValue(tableName + PubTail);
+        }
+        public static string? GetSlotName(string tableName)
+        {
+            return SqlType.PostgreSql.WrapValue(tableName + SlotTail);
+        }
+        public Task<bool> IsReplicationSlotsExistsAsync(string database,string name, CancellationToken token = default)
+        {
+            return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_replication_slots WHERE database={SqlType.PostgreSql.WrapValue(database)} AND slot_name={SqlType.PostgreSql.WrapValue(name)};", token: token);
         }
     }
 }

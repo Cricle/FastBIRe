@@ -1,10 +1,4 @@
 ﻿using FastBIRe.Cdc.Events;
-using FastBIRe.Cdc.MongoDB;
-using FastBIRe.Cdc.Mssql;
-using Microsoft.Data.SqlClient;
-using MongoDB.Bson;
-using MongoDB.Driver;
-using rsa;
 
 namespace FastBIRe.CdcSample
 {
@@ -12,21 +6,12 @@ namespace FastBIRe.CdcSample
     {
         static async Task Main(string[] args)
         {
-            var mongo = new MongoClient("mongodb://localhost:27017/admin");
-            var db = mongo.GetDatabase("test");
-            //var command = new BsonDocument { { "replSetGetStatus", 1 } };
-            //var result = mongo.GetDatabase("admin").RunCommand<BsonDocument>(command);
-            var mongoCdc = new MongoCdcManager(mongo);
-            var var = await mongoCdc.IsDatabaseSupportAsync();
-            Console.ReadLine();
-        }
-        private static void Dep_OnChange(object sender, SqlNotificationEventArgs e)
-        {
-            Console.WriteLine($"{e.Info},{e.Type},{e.Source}");
+            await new PgSqlTester().Start();
         }
 
         public static void Vars_EventRaised(object? sender, CdcEventArgs e)
         {
+            Console.Write(e.Checkpoint + " ----> ");
             switch (e)
             {
                 case TableMapEventArgs tme:

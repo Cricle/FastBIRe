@@ -1,9 +1,4 @@
 ﻿using FastBIRe.Wrapping;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FastBIRe.Test.Wrapping
 {
@@ -28,6 +23,9 @@ namespace FastBIRe.Test.Wrapping
                 case SqlType.PostgreSql:
                     escaper = DefaultEscaper.PostgreSql;
                     break;
+                case SqlType.DuckDB:
+                    escaper = DefaultEscaper.DuckDB;
+                    break;
             }
             return escaper;
         }
@@ -38,6 +36,7 @@ namespace FastBIRe.Test.Wrapping
         [DataRow(SqlType.MySql, "field", "`field`")]
         [DataRow(SqlType.SQLite, "field", "`field`")]
         [DataRow(SqlType.PostgreSql, "field", "\"field\"")]
+        [DataRow(SqlType.DuckDB, "field", "\"field\"")]
         public void Quto(SqlType sqlType,string input ,string exp)
         {
            var escaper = GetEscaper(sqlType);
@@ -49,6 +48,7 @@ namespace FastBIRe.Test.Wrapping
         [DataRow(SqlType.MySql)]
         [DataRow(SqlType.SQLite)]
         [DataRow(SqlType.PostgreSql)]
+        [DataRow(SqlType.DuckDB)]
         public void WrapValueNULL(SqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
@@ -61,6 +61,7 @@ namespace FastBIRe.Test.Wrapping
         [DataRow(SqlType.MySql)]
         [DataRow(SqlType.SQLite)]
         [DataRow(SqlType.PostgreSql)]
+        [DataRow(SqlType.DuckDB)]
         public void WrapValueString(SqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
@@ -72,6 +73,25 @@ namespace FastBIRe.Test.Wrapping
         [DataRow(SqlType.MySql)]
         [DataRow(SqlType.SQLite)]
         [DataRow(SqlType.PostgreSql)]
+        [DataRow(SqlType.DuckDB)]
+        public void WrapValueStringWithQutoMask(SqlType sqlType)
+        {
+            var escaper = GetEscaper(sqlType);
+            Assert.AreEqual("'hello'' world'", escaper!.WrapValue("hello' world"));
+        }
+        [TestMethod]
+        public void MySqlWrapValueStringWithQuto()
+        {
+            var escaper = GetEscaper( SqlType.MySql);
+            Assert.AreEqual("'\\\\a'", escaper!.WrapValue("\\a"));
+        }
+        [TestMethod]
+        [DataRow(SqlType.SqlServer)]
+        [DataRow(SqlType.SqlServerCe)]
+        [DataRow(SqlType.MySql)]
+        [DataRow(SqlType.SQLite)]
+        [DataRow(SqlType.PostgreSql)]
+        [DataRow(SqlType.DuckDB)]
         public void WrapValueGuid(SqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
@@ -84,6 +104,7 @@ namespace FastBIRe.Test.Wrapping
         [DataRow(SqlType.MySql)]
         [DataRow(SqlType.SQLite)]
         [DataRow(SqlType.PostgreSql)]
+        [DataRow(SqlType.DuckDB)]
         public void WrapValueDateTime(SqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
@@ -98,6 +119,7 @@ namespace FastBIRe.Test.Wrapping
         [DataRow(SqlType.MySql)]
         [DataRow(SqlType.SQLite)]
         [DataRow(SqlType.PostgreSql)]
+        [DataRow(SqlType.DuckDB)]
         public void WrapValueBytes(SqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
@@ -115,6 +137,8 @@ namespace FastBIRe.Test.Wrapping
         [DataRow(SqlType.SQLite, false, "0")]
         [DataRow(SqlType.PostgreSql, true, "true")]
         [DataRow(SqlType.PostgreSql, false, "false")]
+        [DataRow(SqlType.DuckDB, true, "true")]
+        [DataRow(SqlType.DuckDB, false, "false")]
         public void WrapValueBoolean(SqlType sqlType,bool val,string act)
         {
             var escaper = GetEscaper(sqlType);
