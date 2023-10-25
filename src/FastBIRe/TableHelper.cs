@@ -187,17 +187,50 @@ namespace FastBIRe
         {
             return SqlServerTableCreateProcedureScripts;
         }
-        public Task<string?> DumpTableCreateAsync(string table, IDbScriptExecuter scriptExecuter)
+        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter,Action<string?> scriptReceiver, bool includeSchema = false)
+        {
+            var reader = new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database };
+            var tables = reader.AllTables();
+            var refs = DatabaseHelper.SortTable(tables);
+            var ddl = new DdlGeneratorFactory(SqlType);
+            for (int i = 0; i < refs.Count; i++)
+            {
+                var @ref = refs[i];
+                scriptReceiver(await DumpTableCreateAsync(@ref.Table.Name, 
+                    scriptExecuter,
+                    includeSchema: includeSchema,
+                    ddlGeneratorFactory: ddl,
+                    databaseReader:reader) + ";");
+            }
+        }
+        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, StreamWriter writer,bool includeSchema=false)
+        {
+            await DumpDatabaseCreateAsync(scriptExecuter, s => writer.WriteLine(s),includeSchema);
+        }
+        public async Task<IList<string?>?> DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, bool includeSchema = false)
+        {
+            var res = new List<string?>();
+            await DumpDatabaseCreateAsync(scriptExecuter, s => res.Add(s), includeSchema);
+            return res;
+        }
+        public Task<string?> DumpTableCreateAsync(string table, 
+            IDbScriptExecuter scriptExecuter,
+            bool includeSchema=false,
+            DdlGeneratorFactory? ddlGeneratorFactory=null,
+            DatabaseReader? databaseReader=null)
         {
             var sql = DumpTableCreateSql(table);
             if (sql == null)
             {
-                var reader = new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database };
-                var tableDef = reader.Table(table);
+                databaseReader ??= new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database };
+                ddlGeneratorFactory ??= new DdlGeneratorFactory(SqlType);
+                var tableDef = databaseReader.Table(table);
                 string? ddl = null;
                 if (tableDef != null)
                 {
-                    ddl = new DdlGeneratorFactory(SqlType).TableGenerator(tableDef).Write();
+                    var gen = ddlGeneratorFactory.TableGenerator(tableDef);
+                    gen.IncludeSchema = includeSchema;
+                    ddl = gen.Write();
                 }
                 return Task.FromResult(ddl);
             }
@@ -209,16 +242,16 @@ namespace FastBIRe
                     switch (SqlType)
                     {
                         case SqlType.MySql:
-                            result= e.Reader.GetString(1);
+                            result = e.Reader.GetString(1);
                             break;
                         case SqlType.DuckDB:
                         case SqlType.SQLite:
                         case SqlType.PostgreSql:
-                            result= e.Reader.GetString(0);
+                            result = e.Reader.GetString(0);
                             break;
                         case SqlType.SqlServer:
                         case SqlType.SqlServerCe:
-                            result= e.Reader.GetString(0);
+                            result = e.Reader.GetString(0);
                             break;
                         case SqlType.Oracle:
                         case SqlType.Db2:
@@ -237,12 +270,12 @@ namespace FastBIRe
         {
             return PgSqlHasFunctionDefAsync("sp_GetDDL", scriptExecuter, token);
         }
-        public static Task<bool> PgSqlHasFunctionDefAsync(string funName,IScriptExecuter scriptExecuter, CancellationToken token = default)
+        public static Task<bool> PgSqlHasFunctionDefAsync(string funName, IScriptExecuter scriptExecuter, CancellationToken token = default)
         {
             return scriptExecuter.ExistsAsync($"SELECT 1 FROM pg_proc WHERE proname = '{funName}';", token: token);
         }
 
-        public static Task<bool> SqlServerHasProcedureDefAsync(string funName, IScriptExecuter scriptExecuter,CancellationToken token=default)
+        public static Task<bool> SqlServerHasProcedureDefAsync(string funName, IScriptExecuter scriptExecuter, CancellationToken token = default)
         {
             return scriptExecuter.ExistsAsync($"SELECT 1 FROM sys.procedures WHERE name = '{funName}';", token: token);
         }
