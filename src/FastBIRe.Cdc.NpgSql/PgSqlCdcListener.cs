@@ -76,18 +76,9 @@ namespace FastBIRe.Cdc.NpgSql
         {
             var listener = (PgSqlCdcListener)state!;
             var source = listener.TokenSource;
-            IAsyncEnumerable<PgOutputReplicationMessage> messageChannel;
-            if (NpgsqlLogSequenceNumber==null)
-            {
-                messageChannel = listener.ReplicationConnectionConnection.StartReplication(
-                listener.OutputReplicationSlot, OutputReplicationOptions, source!.Token);
-            }
-            else
-            {
-                messageChannel = listener.ReplicationConnectionConnection.StartReplication(
-                listener.OutputReplicationSlot, OutputReplicationOptions, source!.Token, NpgsqlLogSequenceNumber);
-            }
-            await foreach (var message in messageChannel)
+            var connection = listener.ReplicationConnectionConnection;
+            await foreach (var message in listener.ReplicationConnectionConnection.StartReplication(
+                listener.OutputReplicationSlot, OutputReplicationOptions, source!.Token, NpgsqlLogSequenceNumber))
             {
                 var checkpoint = new PgSqlCheckpoint(message.WalEnd.ToString(), null);
                 if (message is FullUpdateMessage fum)
@@ -147,7 +138,7 @@ namespace FastBIRe.Cdc.NpgSql
                 {
                     RaiseEvent(new CdcEventArgs(message, checkpoint));
                 }
-                listener.ReplicationConnectionConnection.SetReplicationStatus(message.WalEnd);
+                connection.SetReplicationStatus(message.WalEnd);
             }
         }
     }

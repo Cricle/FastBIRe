@@ -31,8 +31,8 @@ namespace FastBIRe.CdcSample
             Console.WriteLine(await mgr.IsDatabaseSupportAsync());
             Console.WriteLine(await mgr.IsDatabaseCdcEnableAsync("test1"));
             Console.WriteLine(await mgr.IsTableCdcEnableAsync("test1", "juhe"));
-            //await mgr.TryDisableTableCdcAsync("test1", "juhe_effect");
-            //await mgr.TryEnableTableCdcAsync("test1","juhe_effect");
+            await mgr.TryDisableTableCdcAsync("test1", "juhe_effect");
+            await mgr.TryEnableTableCdcAsync("test1", "juhe_effect");
             var slotName = "juhe"+PgSqlCdcManager.SlotTail;
             var pubName = "juhe" + PgSqlCdcManager.PubTail;
             var listener = await mgr.GetCdcListenerAsync(new PgSqlGetCdcListenerOptions(
