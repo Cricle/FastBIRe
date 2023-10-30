@@ -75,17 +75,5 @@ namespace FastBIRe.Test
             }
             Assert.AreEqual(exp, act);
         }
-        [TestMethod]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        public void DropTable(SqlType sqlType)
-        {
-            var helper = new TableHelper(sqlType);
-            var act = helper.CreateDropTable("table1");
-            var exp = $"DROP TABLE {Quto(sqlType,"table1")};";
-            Assert.AreEqual(exp , act);
-        }
     }
 }

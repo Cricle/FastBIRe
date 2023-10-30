@@ -17,8 +17,8 @@ namespace FastBIRe.Mig
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.DuckDB;
-            var dbName = "test1";
+            var sqlType = SqlType.MySql;
+            var dbName = "test10";
             using (var dbct = ConnectionProvider.GetDbMigration(sqlType, null))
             {
                 var ada = DatabaseCreateAdapter.Get(sqlType);

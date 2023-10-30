@@ -303,7 +303,7 @@ namespace FastBIRe
                     TResult result;
                     using (var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false))
                     {
-                        result = await handler(this, new ReadingDataArgs(script, reader, token));
+                        result = await handler(this, new ReadingDataArgs(script, reader,QueryTranslateResult.Create(script,args), token));
                     }
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.EndReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
                     return result;

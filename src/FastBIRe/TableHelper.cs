@@ -1,7 +1,6 @@
 ﻿using DatabaseSchemaReader;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
-using System.Text.RegularExpressions;
 
 namespace FastBIRe
 {
@@ -14,8 +13,36 @@ namespace FastBIRe
         public static readonly TableHelper Oracle = new TableHelper(SqlType.Oracle);
         public static readonly TableHelper PostgreSql = new TableHelper(SqlType.PostgreSql);
         public static readonly TableHelper DuckDB = new TableHelper(SqlType.DuckDB);
-
-        public static readonly Regex SqlServerGoMath = new Regex("(?:\\s|\\r?\\n)+GO;?.*", RegexOptions.IgnoreCase);
+        private static readonly char[] goLineTrimChars = new char[] { ' ', ';', '\r', '\n' };
+        public static IList<string> SplitSqlServerByGo(string input)
+        {
+            var sps = input.Split('\n');
+            var lst = new List<string>();
+            var quto = false;
+            var start = 0;
+            for (int i = 0; i < sps.Length; i++)
+            {
+                var sp = sps[i];
+                if (sp.TrimStart().StartsWith("--"))
+                {
+                    continue;
+                }
+                var q = sp.Count(x => x == '\'');
+                if (q % 2 != 0)
+                {
+                    quto = !quto;
+                }
+                if (!quto)
+                {
+                    if (sp.Trim(goLineTrimChars).Equals("GO", StringComparison.OrdinalIgnoreCase))
+                    {
+                        lst.Add(string.Join(Environment.NewLine, sps.Skip(start).Take(i - start)));
+                        start = i + 1;
+                    }
+                }
+            }
+            return lst;
+        }
 
         public TableHelper(SqlType sqlType)
         {
@@ -57,10 +84,6 @@ namespace FastBIRe
                 default:
                     return string.Empty;
             }
-        }
-        public string CreateDropTable(string table)
-        {
-            return $"DROP TABLE {SqlType.Wrap(table)};";
         }
         public string Pagging(int? skip, int? take)
         {
@@ -187,37 +210,46 @@ namespace FastBIRe
         {
             return SqlServerTableCreateProcedureScripts;
         }
-        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter,Action<string?> scriptReceiver, bool includeSchema = false)
+        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, Action<string?> scriptReceiver, Predicate<TableRef>? tableFilter = null,bool hasDropTable=true, bool includeSchema = false)
         {
             var reader = new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database };
             var tables = reader.AllTables();
             var refs = DatabaseHelper.SortTable(tables);
+            var dbAdapter = SqlType.GetDatabaseCreateAdapter()!;
             var ddl = new DdlGeneratorFactory(SqlType);
             for (int i = 0; i < refs.Count; i++)
             {
                 var @ref = refs[i];
-                scriptReceiver(await DumpTableCreateAsync(@ref.Table.Name, 
+                if (tableFilter != null && !tableFilter(@ref))
+                {
+                    continue;
+                }
+                if (hasDropTable)
+                {
+                    scriptReceiver(dbAdapter.DropTableIfExists(@ref.Table.Name));
+                }
+                scriptReceiver(await DumpTableCreateAsync(@ref.Table.Name,
                     scriptExecuter,
                     includeSchema: includeSchema,
                     ddlGeneratorFactory: ddl,
-                    databaseReader:reader) + ";");
+                    databaseReader: reader) + ";");
             }
         }
-        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, StreamWriter writer,bool includeSchema=false)
+        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, StreamWriter writer, Predicate<TableRef>? tableFilter = null, bool hasDropTable = true, bool includeSchema = false)
         {
-            await DumpDatabaseCreateAsync(scriptExecuter, s => writer.WriteLine(s),includeSchema);
+            await DumpDatabaseCreateAsync(scriptExecuter, s => writer.WriteLine(s), tableFilter,hasDropTable:hasDropTable,includeSchema: includeSchema);
         }
-        public async Task<IList<string?>?> DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, bool includeSchema = false)
+        public async Task<IList<string?>?> DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, Predicate<TableRef>? tableFilter = null, bool hasDropTable = true, bool includeSchema = false)
         {
             var res = new List<string?>();
-            await DumpDatabaseCreateAsync(scriptExecuter, s => res.Add(s), includeSchema);
+            await DumpDatabaseCreateAsync(scriptExecuter, s => res.Add(s), tableFilter, hasDropTable: hasDropTable, includeSchema: includeSchema);
             return res;
         }
-        public Task<string?> DumpTableCreateAsync(string table, 
+        public Task<string?> DumpTableCreateAsync(string table,
             IDbScriptExecuter scriptExecuter,
-            bool includeSchema=false,
-            DdlGeneratorFactory? ddlGeneratorFactory=null,
-            DatabaseReader? databaseReader=null)
+            bool includeSchema = false,
+            DdlGeneratorFactory? ddlGeneratorFactory = null,
+            DatabaseReader? databaseReader = null)
         {
             var sql = DumpTableCreateSql(table);
             if (sql == null)

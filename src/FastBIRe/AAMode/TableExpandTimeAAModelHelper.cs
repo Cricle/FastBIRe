@@ -42,6 +42,15 @@ namespace FastBIRe.AAMode
             }
             var cmp = CompareSchemas.FromTable(reader.DatabaseSchema.ConnectionString, reader.SqlType!.Value, rawTable, changedTable).ExecuteResult();
             request.AddScripts(cmp.Select(x => x.Script));
+            if (cmp.Count != 0)
+            {
+                //All column migrate
+                var sqlType = reader.SqlType!.Value;
+                foreach (var item in results)
+                {
+                    request.Scripts.Add($"UPDATE {sqlType.Wrap(request.TableName)} SET {sqlType.Wrap(item.Name)} = {item.FormatExpression(string.Empty)}");
+                }
+            }
         }
     }
 }

@@ -47,7 +47,8 @@ namespace FastBIRe.AAMode
                     return;
                 }
                 //Drop the old table
-                var dropTableSql = new TableHelper(reader.SqlType!.Value).CreateDropTable(effectTableName);
+                var dropTableSql =reader.SqlType!.Value.GetDatabaseCreateAdapter()!
+                    .DropTableIfExists(effectTableName);
                 request.Scripts.Add(dropTableSql);
             }
             //Create the effect table

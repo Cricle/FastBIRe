@@ -25,6 +25,7 @@ namespace FastBIRe.Data
         public IEscaper Escaper { get; }
 
         protected string[]? names;
+        protected string? namesJoined;
 
         public IReadOnlyList<string>? Names => names;
 
@@ -37,12 +38,30 @@ namespace FastBIRe.Data
             {
                 names[i] = DataReader.GetName(i);
             }
+            namesJoined = string.Join(",", names.Select(x => Escaper.Quto(x)));
             return base.OnFirstReadAsync();
         }
-
+        protected string GetFieldJoinedSlow()
+        {
+            var names = new StringBuilder();
+            for (int i = 0; i < DataReader.FieldCount; i++)
+            {
+                names.Append(Escaper.Quto(DataReader.GetName(i)));
+                if (i != DataReader.FieldCount - 1) 
+                {
+                    names.Append(',');
+                }
+            }
+            return names.ToString();
+        }
         protected virtual string GetInsertHeader()
         {
-            return $"INSERT INTO {Target.Named} VALUES ";
+            var fieldLine = namesJoined;
+            if (string.IsNullOrEmpty(fieldLine))
+            {
+                fieldLine = GetFieldJoinedSlow();
+            }
+            return $"INSERT INTO {Target.Named}({fieldLine}) VALUES ";
         }
 
         protected virtual string? CompileInsertScript(IEnumerable<IEnumerable<object?>> datas)

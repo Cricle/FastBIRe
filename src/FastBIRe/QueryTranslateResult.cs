@@ -1,22 +1,31 @@
-﻿namespace FastBIRe
+﻿using System.Runtime.CompilerServices;
+
+namespace FastBIRe
 {
     public readonly struct QueryTranslateResult : IQueryTranslateResult
     {
-        private static readonly IReadOnlyDictionary<string, object> EmptyArgs = new Dictionary<string, object>(0);
+        public static readonly IEnumerable<KeyValuePair<string, object?>> EmptyArgs = Enumerable.Empty<KeyValuePair<string, object?>>();
 
         public QueryTranslateResult(string queryString)
         {
             QueryString = queryString;
             Args = EmptyArgs;
         }
-        public QueryTranslateResult(string queryString, IReadOnlyDictionary<string, object> args)
+
+        public QueryTranslateResult(string queryString, IEnumerable<KeyValuePair<string, object?>> args)
         {
             QueryString = queryString;
-            Args = args;
+            Args = args ?? throw new ArgumentNullException(nameof(args));
         }
 
         public string QueryString { get; }
 
-        public IReadOnlyDictionary<string, object> Args { get; }
+        public IEnumerable<KeyValuePair<string, object?>> Args { get; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static QueryTranslateResult Create(string queryString, IEnumerable<KeyValuePair<string, object?>>? args)
+        {
+            return new QueryTranslateResult(queryString, args ?? EmptyArgs);
+        }
     }
 }

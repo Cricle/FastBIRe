@@ -66,9 +66,9 @@ namespace FastBIRe.Creating
 
         string DropDatabaseIfExists(string database);
 
-        string DropTable(string database);
+        string DropTable(string table);
 
-        string DropTableIfExists(string database);
+        string DropTableIfExists(string table);
 
         string CheckDatabaseExists(string database);
     }

@@ -4,6 +4,6 @@
     {
         string QueryString { get; }
 
-        IReadOnlyDictionary<string, object> Args { get; }
+        IEnumerable<KeyValuePair<string, object?>> Args { get; }
     }
 }

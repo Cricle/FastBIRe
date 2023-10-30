@@ -1,5 +1,3 @@
-USE [master];
-GO
 IF OBJECT_ID('[dbo].[sp_GetDDL]') IS NOT NULL 
 DROP  PROCEDURE [dbo].[sp_GetDDL]; 
 GO

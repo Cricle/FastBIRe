@@ -2,6 +2,7 @@
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
 using DatabaseSchemaReader.Utilities;
+using FastBIRe.Creating;
 using System.Data;
 using System.Data.Common;
 using System.Text;
@@ -33,6 +34,7 @@ namespace FastBIRe.Farm
             TableHelper = new TableHelper(SqlType);
             CursorRowHandlerSelector = cursorRowHandlerSelector;
             AttackId = attackId;
+            DatabaseCreateAdapter = SqlType.GetDatabaseCreateAdapter()!;
         }
 
         public IDbScriptExecuter ScriptExecuter { get; }
@@ -44,6 +46,8 @@ namespace FastBIRe.Farm
         public SqlType SqlType { get; }
 
         public TableHelper TableHelper { get; }
+
+        public IDatabaseCreateAdapter DatabaseCreateAdapter { get; }
 
         public ICursorRowHandlerSelector CursorRowHandlerSelector { get; }
 
@@ -122,14 +126,14 @@ namespace FastBIRe.Farm
                         await CheckPointAsync(table.Name, cursorNames: null, token: token);
                     }
                 }
-                scripts.Add(TableHelper.CreateDropTable(copyTable.Name));
+                scripts.Add(DatabaseCreateAdapter.DropTableIfExists(copyTable.Name));
                 if (DatabaseReader.TableExists(CursorTable))
                 {
-                    scripts.Add(TableHelper.CreateDropTable(CursorTable));
+                    scripts.Add(DatabaseCreateAdapter.DropTableIfExists(CursorTable));
                 }
                 if (DatabaseReader.TableExists(SeqTable))
                 {
-                    scripts.Add(TableHelper.CreateDropTable(SeqTable));
+                    scripts.Add(DatabaseCreateAdapter.DropTableIfExists(SeqTable));
                 }
             }
             var ddlFactory = new DdlGeneratorFactory(SqlType);

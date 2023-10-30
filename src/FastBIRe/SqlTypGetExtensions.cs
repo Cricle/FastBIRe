@@ -47,7 +47,7 @@ namespace FastBIRe
         {
             return GetEscaper(sqlType).WrapValue(value);
         }
-        public static IDatabaseCreateAdapter? GetDatabaseCreateAdapter<T>(this SqlType sqlType)
+        public static IDatabaseCreateAdapter? GetDatabaseCreateAdapter(this SqlType sqlType)
         {
             return DatabaseCreateAdapter.Get(sqlType);
         }
