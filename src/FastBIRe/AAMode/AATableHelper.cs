@@ -2,6 +2,7 @@
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
+using DatabaseSchemaReader.Utilities;
 using FastBIRe.Comparing;
 using FastBIRe.Naming;
 using FastBIRe.Store;
@@ -131,9 +132,18 @@ namespace FastBIRe.AAMode
             EffectTableCreateAAModelHelper.Default.Apply(DatabaseReader, request);
             return request.Scripts;
         }
-
-        public virtual IList<string> EffectScript(string destTableName, string effectTableName)
+        public virtual IList<string> DropEffectScript(string destTableName, string effectTableName)
         {
+            var triggers = DatabaseReader.Table(destTableName);
+            if (triggers==null)
+            {
+                return Array.Empty<string>();
+            }
+            return triggers.Triggers.SelectMany(x => TriggerWriter.Drop(SqlType, x.Name, x.TableName)).ToList();
+        }
+        protected virtual IList<string> EffectScriptCore(string destTableName, string effectTableName,Action<EffectTriggerAAModelHelper>? helperDesc)
+        {
+
             var sourceTable = Table;
             if (sourceTable == null)
                 Throws.ThrowTableNotFound(TableName);
@@ -149,6 +159,7 @@ namespace FastBIRe.AAMode
             extInsert.TriggerDataStore = TriggerDataStore;
             extInsert.SqlEqualityComparer = SqlEqualityComparer;
             extInsert.CheckRemote = SqlType != SqlType.PostgreSql;
+            helperDesc?.Invoke(extInsert);
             var request = new EffectTriggerAAModelRequest(sourceTable, destTable, effectTable);
             request.SettingItems.AddRange(effectTable.Columns.Select(x => EffectTriggerSettingItem.Trigger(x.Name, SqlType)));
             extInsert.Apply(DatabaseReader, request);
@@ -158,12 +169,17 @@ namespace FastBIRe.AAMode
             extUpdate.TriggerDataStore = TriggerDataStore;
             extUpdate.SqlEqualityComparer = SqlEqualityComparer;
             extUpdate.CheckRemote = SqlType != SqlType.PostgreSql;
+            helperDesc?.Invoke(extUpdate);
             request = new EffectTriggerAAModelRequest(sourceTable, destTable, effectTable);
             request.SettingItems.AddRange(effectTable.Columns.Select(x => EffectTriggerSettingItem.Trigger(x.Name, SqlType)));
             extUpdate.Apply(DatabaseReader, request);
             scripts.AddRange(request.Scripts);
 
             return scripts;
+        }
+        public virtual IList<string> EffectScript(string destTableName, string effectTableName)
+        {
+            return EffectScriptCore(destTableName, effectTableName, null);
         }
         public virtual IList<string> DropIndexScript(string field)
         {

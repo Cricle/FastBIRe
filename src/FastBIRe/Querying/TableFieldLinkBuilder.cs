@@ -6,15 +6,18 @@ namespace FastBIRe.Querying
 {
     public class TableFieldLinkBuilder
     {
-        public TableFieldLinkBuilder(DatabaseTable sourceTable, DatabaseTable destTable)
+        public TableFieldLinkBuilder(DatabaseTable sourceTable, DatabaseTable destTable, FunctionMapper functionMapper)
         {
             SourceTable = sourceTable ?? throw new ArgumentNullException(nameof(sourceTable));
             DestTable = destTable ?? throw new ArgumentNullException(nameof(destTable));
+            FunctionMapper = functionMapper ?? throw new ArgumentNullException(nameof(functionMapper));
         }
 
         public DatabaseTable SourceTable { get; }
 
         public DatabaseTable DestTable { get; }
+
+        public FunctionMapper FunctionMapper { get; }
 
         public ITableFieldLink Direct(string destFieldName, string sourceFieldName)
         {
@@ -33,6 +36,10 @@ namespace FastBIRe.Querying
                 Throws.ThrowFieldNotFound(destFieldName, DestTable.Name);
             return new ExpandTableFieldLink(destField!, expandResult);
         }
+        public FluentTableFieldLinkBuilder Fluent()
+        {
+            return new FluentTableFieldLinkBuilder(this, FunctionMapper);
+        }
         public static TableFieldLinkBuilder From(DatabaseReader reader, string sourceTableName, string destTableName)
         {
             var sourceTable = reader.Table(sourceTableName);
@@ -41,7 +48,7 @@ namespace FastBIRe.Querying
             var destTable = reader.Table(destTableName);
             if (destTable == null)
                 Throws.ThrowTableNotFound(destTableName);
-            return new TableFieldLinkBuilder(sourceTable!, destTable!);
+            return new TableFieldLinkBuilder(sourceTable!, destTable!, FunctionMapper.Get(reader.SqlType!.Value)!);
         }
     }
 }
