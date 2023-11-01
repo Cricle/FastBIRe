@@ -7,11 +7,14 @@ namespace FastBIRe.CdcSample
     {
         public async Task Start()
         {
-            var mssql = ConnectionProvider.GetDbMigration(DatabaseSchemaReader.DataSchema.SqlType.SqlServer, "test");
+            var mssql = ConnectionProvider.GetDbMigration(DatabaseSchemaReader.DataSchema.SqlType.SqlServer, "test11");
             var comm = new MssqlCdcManager(() => new DefaultScriptExecuter(mssql));
+            await comm.TryEnableDatabaseCdcAsync("test11");
+            await comm.TryEnableTableCdcAsync("test11","juhe");
             var listen = await comm.GetCdcListenerAsync(new MssqlGetCdcListenerOptions(null, TimeSpan.FromSeconds(1), comm.ScriptExecuterFactory()));
             listen.EventRaised += Program.Vars_EventRaised;
             await listen.StartAsync();
+            Console.ReadLine();
         }
     }
 }

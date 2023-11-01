@@ -7,7 +7,7 @@ namespace FastBIRe.Querying
         public FluentTableFieldLinkBuilder(TableFieldLinkBuilder builder, FunctionMapper? functionMapper)
         {
             Builder = builder ?? throw new ArgumentNullException(nameof(builder));
-            FunctionMapper = functionMapper??builder.FunctionMapper;
+            FunctionMapper = functionMapper ?? builder.FunctionMapper;
         }
 
         public TableFieldLinkBuilder Builder { get; }
@@ -19,11 +19,11 @@ namespace FastBIRe.Querying
             Add(Builder.Direct(destFieldName, sourceFieldName));
             return this;
         }
-        public FluentTableFieldLinkBuilder Expand(string destFieldName,string column, Func<FunctionMapper, string> expandResultCreator)
+        public FluentTableFieldLinkBuilder Expand(string destFieldName, string column, Func<FunctionMapper, string> expandResultCreator)
         {
-            return Expand(destFieldName, DefaultExpandResult.Expression(column,expandResultCreator(FunctionMapper)));
+            return Expand(destFieldName, DefaultExpandResult.Expression(column, expandResultCreator(FunctionMapper)));
         }
-        public FluentTableFieldLinkBuilder Expand(string destFieldName, Func<FunctionMapper,IExpandResult> expandResultCreator)
+        public FluentTableFieldLinkBuilder Expand(string destFieldName, Func<FunctionMapper, IExpandResult> expandResultCreator)
         {
             return Expand(destFieldName, expandResultCreator(FunctionMapper));
         }

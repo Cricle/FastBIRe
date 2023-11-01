@@ -108,7 +108,7 @@ namespace FastBIRe
 
         public IList<T?> ToList(IDataReader reader)
         {
-            var res=new List<T?>();
+            var res = new List<T?>();
             while (reader.Read())
             {
                 res.Add(To(reader));

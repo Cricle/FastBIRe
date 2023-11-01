@@ -16,14 +16,14 @@ namespace FastBIRe.Annotations
             {
                 ThrowRecordToObjectTypeNotMatch(recordToObjectType);
             }
-            
+
             var constructor = recordToObjectType.GetConstructor(BindingFlags.Public | BindingFlags.Instance, Type.DefaultBinder, Type.EmptyTypes, Array.Empty<ParameterModifier>());
-            if (constructor==null)
+            if (constructor == null)
             {
                 ThrowRecordToObjectTypeNotMatch(recordToObjectType);
             }
 
-            var interfaces=recordToObjectType.GetInterfaces();
+            var interfaces = recordToObjectType.GetInterfaces();
             if (!interfaces.Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == RecordToObjectInterfaceType && x.GenericTypeArguments[0] == toType))
             {
                 throw new ArgumentException($"Type {recordToObjectType} is not implement interface {RecordToObjectInterfaceType.MakeGenericType(toType)}");

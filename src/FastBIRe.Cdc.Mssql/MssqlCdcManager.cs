@@ -46,9 +46,10 @@ IF @from_lsn = 0x00000000000000000000
 	SET @from_lsn = (SELECT TOP 1 __$start_lsn FROM [cdc].[dbo_{tableName}_CT] ORDER BY __$start_lsn)
 SELECT @from_lsn", token);
         }
-        public Task<byte[]?> GetMaxLSNAsync(CancellationToken token = default)
+        public async Task<MssqlLsn> GetMaxLSNAsync(CancellationToken token = default)
         {
-            return GetLsnAsync("SELECT sys.fn_cdc_get_max_lsn()", token);
+            var buff =await GetLsnAsync("SELECT sys.fn_cdc_get_max_lsn()", token);
+            return MssqlLsn.Create(buff);
         }
 
         private async Task<byte[]?> GetLsnAsync(string script, CancellationToken token = default)
@@ -140,6 +141,14 @@ USE [{dbName}];
 
         public async Task<bool?> TryEnableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
         {
+            if (!await IsDatabaseCdcEnableAsync(databaseName, token))
+            {
+                return false;
+            }
+            if (await IsTableCdcEnableAsync(databaseName,tableName))
+            {
+                return true;
+            }
             var dbName = ScriptExecuter.Connection.Database;
             var scripts = $@"
 USE [{databaseName}];
@@ -155,6 +164,10 @@ USE [{dbName}];
 
         public async Task<bool?> TryDisableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
         {
+            if (await IsDatabaseCdcEnableAsync(databaseName, token))
+            {
+                return true;
+            }
             var dbName = ScriptExecuter.Connection.Database;
             var scripts = $@"
 USE [{databaseName}];

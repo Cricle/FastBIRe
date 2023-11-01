@@ -8,7 +8,7 @@ namespace FastBIRe
 {
     public class DefaultScriptExecuter : IDbScriptExecuter, IDbStackTraceScriptExecuter
     {
-        private static readonly Task<bool> trueResult=Task.FromResult(true);
+        private static readonly Task<bool> trueResult = Task.FromResult(true);
 
         private static readonly IReadOnlyList<MethodBase> Methods = typeof(DefaultScriptExecuter).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Where(x => !x.IsSpecialName && x.DeclaringType == typeof(DefaultScriptExecuter))
@@ -190,7 +190,7 @@ namespace FastBIRe
             {
                 if (script[i] == '\n')
                 {
-                    if (i==startIndex||!script.AsSpan(startIndex, i - 1 - startIndex).TrimStart().StartsWith("--".AsSpan()))
+                    if (i == startIndex || !script.AsSpan(startIndex, i - 1 - startIndex).TrimStart().StartsWith("--".AsSpan()))
                     {
                         return false;
                     }
@@ -303,7 +303,7 @@ namespace FastBIRe
                     TResult result;
                     using (var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false))
                     {
-                        result = await handler(this, new ReadingDataArgs(script, reader,QueryTranslateResult.Create(script,args), token));
+                        result = await handler(this, new ReadingDataArgs(script, reader, QueryTranslateResult.Create(script, args), token));
                     }
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.EndReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
                     return result;
@@ -321,7 +321,7 @@ namespace FastBIRe
             {
                 await handler(o, e);
                 return true;
-            },args,token);
+            }, args, token);
         }
 
         public Task<int> ExecuteAsync(string script, StackTrace? stackTrace, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
@@ -356,7 +356,7 @@ namespace FastBIRe
         }
         public static implicit operator DefaultScriptExecuter(DbConnection dbConnection)
         {
-            return new  DefaultScriptExecuter(dbConnection);
+            return new DefaultScriptExecuter(dbConnection);
         }
         public override string ToString()
         {

@@ -14,8 +14,6 @@ namespace FastBIRe.Cdc.Mssql
 
         public MssqlTableMapInfo Table { get; }
 
-        public byte[]? Lsn { get; set; }
-
-        public BigInteger LsnBigInteger { get; set; }
+        public MssqlLsn Lsn { get; set; }
     }
 }

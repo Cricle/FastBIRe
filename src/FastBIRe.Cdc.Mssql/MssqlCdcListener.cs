@@ -2,6 +2,7 @@
 using FastBIRe.Cdc.Events;
 using FastBIRe.Cdc.Mssql.Checkpoints;
 using Microsoft.Data.SqlClient;
+using System.Numerics;
 
 namespace FastBIRe.Cdc.Mssql
 {
@@ -9,7 +10,7 @@ namespace FastBIRe.Cdc.Mssql
     {
         private Task? task;
         private readonly Dictionary<string, MssqlTableMapInfo> tableMapInfos = new Dictionary<string, MssqlTableMapInfo>(StringComparer.OrdinalIgnoreCase);
-
+        private readonly Dictionary<string, MssqlLsn> maxLsns = new Dictionary<string, MssqlLsn>();
         public MssqlCdcListener(MssqlCdcManager cdcManager, MssqlGetCdcListenerOptions options)
             : base(options)
         {
@@ -20,7 +21,7 @@ namespace FastBIRe.Cdc.Mssql
             DatabaseReader = new DatabaseReader(SqlConnection) { Owner = SqlConnection.Database };
         }
         private IList<string>? cdcTables;
-        private byte[]? maxLsn;
+        private MssqlLsn? maxLsn;
 
         public MssqlCdcManager CdcManager { get; }
 
@@ -70,16 +71,15 @@ namespace FastBIRe.Cdc.Mssql
         {
             var listener = options.Listener;
             var table = options.Table;
-            await listener.ScriptExecuter.ReadAsync($"SELECT [__$seqval] AS [seqval],[__$operation] AS [op],{table.ColumnNameJoined} FROM [cdc].[dbo_{table.TableName}_CT] WITH (NOLOCK) WHERE [__$seqval]>{lsnStr}", (s, r) =>
+            var sql = $"SELECT [__$seqval] AS [seqval],[__$operation] AS [op],{table.ColumnNameJoined} FROM [cdc].[dbo_{table.TableName}_CT] WITH (NOLOCK) WHERE [__$seqval]>{lsnStr}";
+            await listener.ScriptExecuter.ReadAsync(sql, (s, r) =>
             {
                 while (r.Reader.Read())
                 {
-                    var seq = (byte[])r.Reader[0];
-                    var seqInteger = LsnHelper.LsnToBitInteger(seq);
-                    if (seqInteger > options.LsnBigInteger)
+                    var seq = new MssqlLsn((byte[])r.Reader[0]);
+                    if (seq.Lsn == null || seq > options.Lsn)
                     {
                         options.Lsn = seq;
-                        options.LsnBigInteger = seqInteger;
                     }
                     var op = (SqlServerOperator)r.Reader.GetInt32(1);
                     if (op == SqlServerOperator.BeforeUpdate)
@@ -125,22 +125,21 @@ namespace FastBIRe.Cdc.Mssql
             var listener = (MssqlCdcListener)state!;
             var source = listener.TokenSource!;
             var tables = listener.cdcTables!;
-            var lsn = listener.maxLsn!;
-            var lsnBigInt = LsnHelper.LsnToBitInteger(lsn);
+            var lsn = listener.maxLsn!.Value;
             while (!source.IsCancellationRequested)
             {
-                var lsnStr = LsnHelper.LsnToString(lsn);
                 foreach (var item in tables)
                 {
                     var table = (MssqlTableMapInfo)GetTableMapInfo(item)!;
                     var raiseList = new List<CdcEventArgs>();
                     try
                     {
-                        await ReadEventAsync(lsnStr, raiseList, new MssqlReadEventOptions(listener, table)
+                        var opt = new MssqlReadEventOptions(listener, table)
                         {
-                            Lsn = lsn,
-                            LsnBigInteger = lsnBigInt,
-                        }, source.Token);
+                            Lsn = lsn
+                        };
+                        await ReadEventAsync(lsn.LsnString, raiseList, opt, source.Token);
+                        lsn = opt.Lsn;
                     }
                     catch (Exception ex)
                         when (ex is not ObjectDisposedException)

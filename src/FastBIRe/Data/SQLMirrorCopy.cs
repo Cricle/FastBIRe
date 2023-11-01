@@ -47,7 +47,7 @@ namespace FastBIRe.Data
             for (int i = 0; i < DataReader.FieldCount; i++)
             {
                 names.Append(Escaper.Quto(DataReader.GetName(i)));
-                if (i != DataReader.FieldCount - 1) 
+                if (i != DataReader.FieldCount - 1)
                 {
                     names.Append(',');
                 }

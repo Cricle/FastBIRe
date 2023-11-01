@@ -210,7 +210,7 @@ namespace FastBIRe
         {
             return SqlServerTableCreateProcedureScripts;
         }
-        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, Action<string?> scriptReceiver, Predicate<TableRef>? tableFilter = null,bool hasDropTable=true, bool includeSchema = false)
+        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, Action<string?> scriptReceiver, Predicate<TableRef>? tableFilter = null, bool hasDropTable = true, bool includeSchema = false)
         {
             var reader = new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database };
             var tables = reader.AllTables();
@@ -237,7 +237,7 @@ namespace FastBIRe
         }
         public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, StreamWriter writer, Predicate<TableRef>? tableFilter = null, bool hasDropTable = true, bool includeSchema = false)
         {
-            await DumpDatabaseCreateAsync(scriptExecuter, s => writer.WriteLine(s), tableFilter,hasDropTable:hasDropTable,includeSchema: includeSchema);
+            await DumpDatabaseCreateAsync(scriptExecuter, s => writer.WriteLine(s), tableFilter, hasDropTable: hasDropTable, includeSchema: includeSchema);
         }
         public async Task<IList<string?>?> DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, Predicate<TableRef>? tableFilter = null, bool hasDropTable = true, bool includeSchema = false)
         {

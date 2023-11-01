@@ -25,7 +25,7 @@ namespace FastBIRe
                 case SqlType.SqlServerCe:
                     return TableHelper.SqlServer;
                 case SqlType.Oracle:
-                   return TableHelper.Oracle;
+                    return TableHelper.Oracle;
                 case SqlType.MySql:
                     return TableHelper.MySql;
                 case SqlType.SQLite:
@@ -33,7 +33,7 @@ namespace FastBIRe
                 case SqlType.PostgreSql:
                     return TableHelper.PostgreSql;
                 case SqlType.DuckDB:
-                   return TableHelper.DuckDB;
+                    return TableHelper.DuckDB;
                 case SqlType.Db2:
                 default:
                     return null;

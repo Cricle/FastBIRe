@@ -32,6 +32,7 @@ namespace FastBIRe.CdcSample
             var vars = await mgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(null));
             vars.EventRaised += Program.Vars_EventRaised;
             await vars.StartAsync();
+            Console.ReadLine();
         }
     }
 }

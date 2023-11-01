@@ -79,7 +79,7 @@ namespace FastBIRe
         {
             get
             {
-                if (Command!=null)
+                if (Command != null)
                 {
                     return QueryTranslateResult.Create(Command.CommandText, Args);
                 }

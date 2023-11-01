@@ -37,7 +37,7 @@
             return $"{QutoStart}{input}{QutoEnd}";
         }
 
-        public unsafe string? WrapValue<T>(T? input)
+        public string? WrapValue<T>(T? input)
         {
             if (input == null || Equals(input, DBNull.Value))
             {
@@ -45,7 +45,7 @@
             }
             else if (input is string || input is Guid)
             {
-                var str = ValueStart + input.ToString().Replace("'", "''") + ValueEnd;
+                var str = ValueStart + input.ToString()?.Replace("'", "''") + ValueEnd;
                 if (EscapeBackslash)
                 {
                     str = str.Replace("\\", "\\\\");

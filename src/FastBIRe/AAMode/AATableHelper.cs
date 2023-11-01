@@ -2,7 +2,6 @@
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
-using DatabaseSchemaReader.Utilities;
 using FastBIRe.Comparing;
 using FastBIRe.Naming;
 using FastBIRe.Store;
@@ -135,13 +134,13 @@ namespace FastBIRe.AAMode
         public virtual IList<string> DropEffectScript(string destTableName, string effectTableName)
         {
             var triggers = DatabaseReader.Table(destTableName);
-            if (triggers==null)
+            if (triggers == null)
             {
                 return Array.Empty<string>();
             }
             return triggers.Triggers.SelectMany(x => TriggerWriter.Drop(SqlType, x.Name, x.TableName)).ToList();
         }
-        protected virtual IList<string> EffectScriptCore(string destTableName, string effectTableName,Action<EffectTriggerAAModelHelper>? helperDesc)
+        protected virtual IList<string> EffectScriptCore(string destTableName, string effectTableName, Action<EffectTriggerAAModelHelper>? helperDesc)
         {
 
             var sourceTable = Table;

@@ -43,7 +43,7 @@ namespace FastBIRe
         }
         public override string ToString()
         {
-            return $"{Table.Name}[{string.Join(",",Table.ForeignKeys.Select(x=>$"{x.Name}({string.Join(",",x.Columns.Select(y=>$"{x.RefersToTable}.{y}"))})"))}]";
+            return $"{Table.Name}[{string.Join(",", Table.ForeignKeys.Select(x => $"{x.Name}({string.Join(",", x.Columns.Select(y => $"{x.RefersToTable}.{y}"))})"))}]";
         }
     }
 }

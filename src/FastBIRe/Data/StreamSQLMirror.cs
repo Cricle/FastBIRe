@@ -22,7 +22,7 @@ namespace FastBIRe.Data
 
         protected override async Task<RowWriteResult<string>> WriteAsync(StringBuilder datas, bool storeWriteResult, bool unbound, CancellationToken token)
         {
-            if (unbound && datas[datas.Length-1] == ',')
+            if (unbound && datas[datas.Length - 1] == ',')
             {
                 datas.Remove(datas.Length - 1, 1);
             }

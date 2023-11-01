@@ -1,6 +1,4 @@
 ﻿using DatabaseSchemaReader;
-using DatabaseSchemaReader.Data;
-using DatabaseSchemaReader.DataSchema;
 using FastBIRe.Naming;
 using FastBIRe.Store;
 using FastBIRe.Triggering;
