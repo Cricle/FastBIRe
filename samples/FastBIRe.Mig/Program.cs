@@ -153,7 +153,7 @@ namespace FastBIRe.Mig
             var listner = await cdc.GetCdcListenerAsync(new TriggerGetCdcListenerOptions(cdcExecuter, new string[]
             {
                 "guidang_affect"
-            }, TimeSpan.FromSeconds(1), 200));
+            }, TimeSpan.FromMilliseconds(500), 200));
             listner.EventRaised += Listner_EventRaised;
             wrapper = new TableWrapper(table, SqlType.DuckDB, null);
             await listner.StartAsync();
