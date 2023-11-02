@@ -1,5 +1,6 @@
 ﻿using DatabaseSchemaReader;
 using DatabaseSchemaReader.DataSchema;
+using FastBIRe.Cdc.Checkpoints;
 using FastBIRe.Cdc.Events;
 using FastBIRe.Cdc.Triggers;
 using FastBIRe.Cdc.Triggers.Checkpoints;
@@ -69,6 +70,7 @@ namespace FastBIRe.Cdc.Mssql
             var tableHelper = sqlType.GetTableHelper()!;
             var limit = tableHelper.Pagging(null, options.BatchSize);
             var sql = $"SELECT {sqlType.Wrap(TriggerCdcManager.IdColumn)},{sqlType.Wrap(TriggerCdcManager.ActionsColumn)},{table.ColumnNameJoined} FROM {table.TableName} WHERE {sqlType.Wrap(TriggerCdcManager.OkColumn)} = {sqlType.WrapValue(false)} ORDER BY {sqlType.Wrap(TriggerCdcManager.TimeColumn)} {limit}";
+            var builder = new CdcDataExpandBuilder();
             await listener.ScriptExecuter.ReadAsync(sql, (s, r) =>
             {
                 while (r.Reader.Read())
@@ -98,14 +100,14 @@ namespace FastBIRe.Cdc.Mssql
                     var checkpoint = new TriggerCheckpoint(idBytes);
                     switch (op)
                     {
-                        case TriggerTypes.AfterDelete:
-                            raiseList.Add(new DeleteEventArgs(null, table.TableName, table, new ICdcDataRow[] { row }, checkpoint));
+                        case TriggerTypes.BeforeDelete:
+                            builder.Deletes.AddAndSet(row, checkpoint);
                             break;
                         case TriggerTypes.AfterInsert:
-                            raiseList.Add(new InsertEventArgs(null, table.TableName, table, new ICdcDataRow[] { row }, checkpoint));
+                            builder.Inserts.AddAndSet(row, checkpoint);
                             break;
                         case TriggerTypes.AfterUpdate:
-                            raiseList.Add(new UpdateEventArgs(null, table.TableName, table, new ICdcUpdateRow[] { new CdcUpdateRow(null, row) }, checkpoint));
+                            builder.Updates.AddAndSet(new CdcUpdateRow(null, row), checkpoint);
                             break;
                         default:
                             raiseList.Add(new CdcEventArgs(row, checkpoint));
@@ -114,6 +116,18 @@ namespace FastBIRe.Cdc.Mssql
                 }
                 return Task.CompletedTask;
             }, token: token);
+            if (builder.Deletes.HasRows)
+            {
+                raiseList.Add(new DeleteEventArgs(null, table.TableName, table, builder.Deletes.Rows, builder.Inserts.Checkpoint));
+            }
+            if (builder.Updates.HasRows)
+            {
+                raiseList.Add(new UpdateEventArgs(null, table.TableName, table, builder.Updates.Rows,builder.Updates.Checkpoint));
+            }
+            if (builder.Inserts.HasRows)
+            {
+                raiseList.Add(new InsertEventArgs(null, table.TableName, table, builder.Inserts.Rows, builder.Inserts.Checkpoint));
+            }
         }
 
         private async Task Handler(object? state)

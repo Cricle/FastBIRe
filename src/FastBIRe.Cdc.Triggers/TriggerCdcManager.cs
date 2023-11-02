@@ -156,14 +156,14 @@ namespace FastBIRe.Cdc.Triggers
                     key = "OLD";
                 }
             }
-            var values = table.Columns.OrderBy(x => x.Name).Select(x => $"{key}.{SqlType.Wrap(x.Name)}").Concat(new string[] { FunctionMapper.Now(), SqlType.WrapValue((int)action), SqlType.WrapValue(false),FunctionMapper.GuidBinary() });
+            var values = table.Columns.OrderBy(x => x.Name).Select(x => $"{key}.{SqlType.Wrap(x.Name)}").Concat(new string[] { FunctionMapper.NowWithMill(), SqlType.WrapValue((int)action), SqlType.WrapValue(false),FunctionMapper.GuidBinary() });
             var valueJoined = string.Join(", ", values);
             string body = string.Empty;
             switch (SqlType)
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    body = $"INSERT INTO {SqlType.Wrap(affectTableName)}({columnJoined}) SELECT {columnOnlyJoined}, {FunctionMapper.Now()}, {SqlType.WrapValue((int)action)},{SqlType.WrapValue(false)},{FunctionMapper.GuidBinary()} FROM INSERTED;";
+                    body = $"INSERT INTO {SqlType.Wrap(affectTableName)}({columnJoined}) SELECT {columnOnlyJoined}, {FunctionMapper.NowWithMill()}, {SqlType.WrapValue((int)action)},{SqlType.WrapValue(false)},{FunctionMapper.GuidBinary()} FROM INSERTED;";
                     break;
                 case SqlType.MySql:
                 case SqlType.SQLite:
@@ -197,20 +197,19 @@ namespace FastBIRe.Cdc.Triggers
         {
             var affectTableName = AffectTableNameGenerator.Create(new[] { tableName });
             var scripts = new List<string>(0);
-            var tableExists = Reader.TableExists(tableName);
-            if (tableExists)
+            var table = Reader.Table(tableName, ReadTypes.Triggers);
+            if (table != null)
             {
-                var affectTable = Reader.Table(tableName, ReadTypes.Triggers);
-                if (affectTable != null)
+                //Drop all triggers
+                foreach (var item in table.Triggers)
                 {
-                    //Drop all triggers
-                    foreach (var item in affectTable.Triggers)
-                    {
-                        scripts.AddRange(TriggerWriter.Drop(SqlType, item.Name, tableName));
-                    }
-                    scripts.Add($"DROP TABLE {SqlType.Wrap(affectTableName)};");
-                    await ScriptExecuter.ExecuteBatchAsync(scripts, token: token);
+                    scripts.AddRange(TriggerWriter.Drop(SqlType, item.Name, tableName));
                 }
+                if (Reader.TableExists(affectTableName))
+                {
+                    scripts.Add($"DROP TABLE {SqlType.Wrap(affectTableName)};");
+                }
+                await ScriptExecuter.ExecuteBatchAsync(scripts, token: token);
                 return true;
             }
             return false;
@@ -219,6 +218,25 @@ namespace FastBIRe.Cdc.Triggers
         public Task<bool?> TryEnableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
         {
             return Task.FromResult<bool?>(SqlType != SqlType.DuckDB);
+        }
+        private string GetDateTimeType()
+        {
+            switch (SqlType)
+            {
+                case SqlType.MySql:
+                case SqlType.PostgreSql:
+                case SqlType.DuckDB:
+                    return $"datetime(3)";
+                case SqlType.SQLite:
+                    return "TEXT";
+                case SqlType.SqlServerCe:
+                case SqlType.SqlServer:
+                    return $"datetime2";
+                case SqlType.Db2:
+                case SqlType.Oracle:
+                default:
+                    throw new NotSupportedException(SqlType.ToString());
+            }
         }
         private string GetUUIDType()
         {
@@ -249,15 +267,14 @@ namespace FastBIRe.Cdc.Triggers
                 table.AddColumn(item);
             }
             table.PrimaryKey = null;
-            table.AddColumn(TimeColumn, DbType.DateTime, x => x.Nullable = false);
+            table.AddColumn(TimeColumn, GetDateTimeType(), x => x.Nullable = false);
             table.AddColumn(ActionsColumn, DbType.Byte, x => x.Nullable = false);
             table.AddColumn(OkColumn, DbType.Boolean, x => x.Nullable = false);
             table.AddColumn(IdColumn, GetUUIDType(), x => x.Nullable = false).AddPrimaryKey($"PK_{affectTableName}");
             table.AddIndex(new DatabaseIndex
             {
                 Name = $"IX_{affectTableName}_{TimeColumn}",
-                Columns = { table.FindColumn(TimeColumn) },
-                ColumnOrderDescs = { true }
+                Columns = { table.FindColumn(TimeColumn) }
             });
             return table;
         }

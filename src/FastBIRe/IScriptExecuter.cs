@@ -1,7 +1,15 @@
-﻿using System.Data.Common;
+﻿using DatabaseSchemaReader;
+using System.Data.Common;
 
 namespace FastBIRe
 {
+    public static class DbScriptExecuterGetExtensions
+    {
+        public static DatabaseReader CreateReader(this IDbScriptExecuter dbScriptExecuter)
+        {
+            return new DatabaseReader(dbScriptExecuter.Connection) { Owner = dbScriptExecuter.Connection.Database };
+        }
+    }
     public delegate Task ReadDataHandler(IScriptExecuter executer, ReadingDataArgs args);
     public delegate Task<TResult> ReadDataResultHandler<TResult>(IScriptExecuter executer, ReadingDataArgs args);
     public interface IDbScriptExecuter : IScriptExecuter

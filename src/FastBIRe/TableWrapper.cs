@@ -105,7 +105,7 @@ namespace FastBIRe
         public string CreateDeleteByKeySql(IEnumerable<object> values)
         {
             var keyWhere = string.Join(" AND ", KeysMask.Select(x => $"{x.WrapName} = {SqlType.WrapValue(values.ElementAt(x.Index))}"));
-            return $"DELETE {WrapTableName} WHERE {keyWhere}";
+            return $"DELETE FROM {WrapTableName} WHERE {keyWhere}";
         }
         public string CreateDeleteByKeySql(IEnumerable<IEnumerable<object>> valuess)
         {

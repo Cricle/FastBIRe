@@ -533,6 +533,8 @@ namespace FastBIRe
                     return GuidBinary();
                 case SQLFunctions.GuidString:
                     return GuidString();
+                case SQLFunctions.NowWithMill:
+                    return NowWithMill();
                 default:
                     return null;
             }

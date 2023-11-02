@@ -88,6 +88,7 @@
         StandardDeviation,
         Range,
         GuidBinary,
-        GuidString
+        GuidString,
+        NowWithMill
     }
 }

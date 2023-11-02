@@ -575,6 +575,21 @@ FROM (
                     return "NOW()";
             }
         }
+        public string NowWithMill()
+        {
+            switch (SqlType)
+            {
+                case SqlType.SQLite:
+                    return "strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime')";
+                case SqlType.SqlServer:
+                    return "GETDATE()";
+                case SqlType.PostgreSql:
+                    return "NOW()";
+                case SqlType.MySql:
+                default:
+                    return "NOW(3)";
+            }
+        }
         public string ToDay()
         {
             switch (SqlType)

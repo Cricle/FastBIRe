@@ -1,11 +1,16 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿using DatabaseSchemaReader;
+using DatabaseSchemaReader.DataSchema;
+using DatabaseSchemaReader.ProviderSchemaReaders.Builders;
+using DatabaseSchemaReader.SqlGen;
+using DuckDB.NET.Data;
 using FastBIRe.AAMode;
+using FastBIRe.Cdc.Events;
+using FastBIRe.Cdc.Mssql;
+using FastBIRe.Cdc.Triggers;
 using FastBIRe.Creating;
-using FastBIRe.Querying;
+using FastBIRe.Farm;
 using FastBIRe.Store;
-using FastBIRe.Timing;
 using rsa;
-using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Text.Json;
@@ -18,11 +23,11 @@ namespace FastBIRe.Mig
         static async Task Main(string[] args)
         {
             var sqlType = SqlType.MySql;
-            var dbName = "test10";
+            var dbName = "test-1";
             using (var dbct = ConnectionProvider.GetDbMigration(sqlType, null))
             {
                 var ada = DatabaseCreateAdapter.Get(sqlType);
-                var executeDbc =new DefaultScriptExecuter(dbct) { CaptureStackTrace=true};
+                var executeDbc = new DefaultScriptExecuter(dbct) { CaptureStackTrace = true };
                 executeDbc.ScriptStated += DebugHelper.OnExecuterScriptStated;
                 var dbExists = await executeDbc.ReadAsync<int>(ada.CheckDatabaseExists(dbName));
                 if (dbExists.Count == 0)
@@ -46,8 +51,9 @@ namespace FastBIRe.Mig
             inter.TriggerDataStore = dataStore;
             await MigTableAsync("GuiDangTable.json", "guidang", dbc, executer, inter.TriggerDataStore);
             await MigTableAsync("JuHeTable.json", "juhe", dbc, executer, inter.TriggerDataStore);
-            await GoAsync(executer, inter);
+            await GoAsync(executer);
             Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw));
+            Console.ReadLine();
             dataStore.Dispose();
         }
         private static async Task Orm(IScriptExecuter executer)
@@ -83,18 +89,6 @@ namespace FastBIRe.Mig
                         column.AddIdentity();
                     }
                 }
-                var columns = table.Columns.ToList();
-                foreach (var item in columns)
-                {
-                    if (item.DataType.IsDateTime)
-                    {
-                        var result = tableHelper.TimeExpandHelper.Create(item.Name, TimeTypes.ExceptSecond);
-                        foreach (var res in result)
-                        {
-                            table.AddColumn(res.Name, DbType.DateTime);
-                        }
-                    }
-                }
                 return table;
             }, (old, @new) =>
             {
@@ -107,14 +101,6 @@ namespace FastBIRe.Mig
                         @new.AddColumn(column);
                     }
                     item.ToDatabaseColumn(column, tableHelper.SqlType);
-                    if (column.DataType.IsDateTime)
-                    {
-                        var result = tableHelper.TimeExpandHelper.Create(column.Name, TimeTypes.ExceptSecond);
-                        foreach (var res in result)
-                        {
-                            @new.AddColumn(res.Name, DbType.DateTime);
-                        }
-                    }
                 }
                 return @new;
             });
@@ -137,32 +123,111 @@ namespace FastBIRe.Mig
                     }
                 }
             }
-            var expandColumns = vtb.Columns.Where(x => x.Type == DbType.DateTime).Select(x=>x.Name).ToList();
-            scripts = tableHelper.ExpandTimeMigrationScript(expandColumns);
-            await executer.ExecuteBatchAsync(scripts);
-            scripts = tableHelper.ExpandTriggerScript(expandColumns);
-            await executer.ExecuteBatchAsync(scripts);
         }
+        private static DuckDBConnection duckdbc;
+        private static DefaultScriptExecuter duckExecuter;
+        private static DatabaseTable table;
+        private static TableWrapper wrapper;
 
-        private static async Task GoAsync(IScriptExecuter executer, AATableHelper tableHelper)
+        private static async Task GoAsync(IDbScriptExecuter executer)
         {
-            var scripts = tableHelper.EffectTableScript("juhe", new[] { "a1", "a2" });
-            await executer.ExecuteBatchAsync(scripts, default);
-            scripts = tableHelper.EffectScript("juhe", "juhe_effect");
-            await executer.ExecuteBatchAsync(scripts, default);
-            var builder = TableFieldLinkBuilder.From(tableHelper.DatabaseReader, "guidang", "juhe");
-            var funcMapper = tableHelper.FunctionMapper;
-            var query = tableHelper.MakeInsertQuery(MergeQuerying.Default, "juhe", new ITableFieldLink[]
+            if (File.Exists("guidang.duckdb"))
             {
-                builder.Expand("sa3",DefaultExpandResult.Expression("a3",funcMapper.SumC("{0}"))),
-                builder.Expand("ca4",DefaultExpandResult.Expression("a4",funcMapper.CountC("{0}")))
-            }, new ITableFieldLink[]
+                File.Delete("guidang.duckdb");
+            }
+            duckdbc = new DuckDBConnection("Data Source=guidang.duckdb");
+            duckdbc.Open();
+            var cdcExecuter = new DefaultScriptExecuter(executer.Connection);
+            var reader = executer.CreateReader();
+            table = reader.Table("guidang", ReadTypes.AllColumns & ~ReadTypes.Indexs);
+
+            table.Columns.ForEach(x => x.IsAutoNumber = false);
+
+            duckExecuter = new DefaultScriptExecuter(duckdbc);
+            duckExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated;
+            var scripts = new DdlGeneratorFactory(SqlType.DuckDB).TableGenerator(table).Write();
+            await duckExecuter.ExecuteAsync(scripts);
+            
+            var cdc = new TriggerCdcManager(cdcExecuter);
+            await cdc.TryEnableTableCdcAsync(executer.Connection.Database, "guidang");
+            var listner = await cdc.GetCdcListenerAsync(new TriggerGetCdcListenerOptions(cdcExecuter, new string[]
             {
-                builder.Direct("ja1","a1"),
-                builder.Direct("ja2","a2")
-            });
-            Console.WriteLine(query);
+                "guidang_affect"
+            }, TimeSpan.FromSeconds(1), 200));
+            listner.EventRaised += Listner_EventRaised;
+            wrapper = new TableWrapper(table, SqlType.DuckDB, null);
+            await listner.StartAsync();
         }
 
+        private static async void Listner_EventRaised(object sender, CdcEventArgs e)
+        {
+            switch (e)
+            {
+                case InsertEventArgs iea:
+                    {
+                        using (var append = duckdbc.CreateAppender("guidang"))
+                        {
+                            foreach (var item in iea.Rows)
+                            {
+                                var row = append.CreateRow();
+                                for (int i = 0; i < item.Count; i++)
+                                {
+                                    Add(row, item[i]);
+                                }
+                                row.EndRow();
+                            }
+                        }
+                        Console.WriteLine($"Alread add {iea.Rows.Count}");
+                    }                    
+                    break;
+                case UpdateEventArgs uea:
+                    {
+                        foreach (var item in uea.Rows)
+                        {
+                            var sql = wrapper.CreateUpdateByKeySql(item.AfterRow);
+                            await duckExecuter.ExecuteAsync(sql);
+                        }
+                        Console.WriteLine($"Alread update {uea.Rows.Count}");
+                    }
+                    break;
+                case DeleteEventArgs dea:
+                    {
+                        foreach (var item in dea.Rows)
+                        {
+                            var sql = wrapper.CreateDeleteByKeySql(item);
+                            await duckExecuter.ExecuteAsync(sql);
+                        }
+                        Console.WriteLine($"Alread delete {dea.Rows.Count}");
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        private static void Add(DuckDBAppenderRow row, object item)
+        {
+            switch (item)
+            {
+                case null: row.AppendNullValue(); break;
+                case bool: row.AppendValue((bool)item); break;
+                case string: row.AppendValue((string)item); break;
+                case sbyte: row.AppendValue((sbyte)item); break;
+                case short: row.AppendValue((short)item); break;
+                case int: row.AppendValue((int)item); break;
+                case long: row.AppendValue((long)item); break;
+                case byte: row.AppendValue((byte)item); break;
+                case ushort: row.AppendValue((ushort)item); break;
+                case uint: row.AppendValue((uint)item); break;
+                case ulong: row.AppendValue((ulong)item); break;
+                case float: row.AppendValue((float)item); break;
+                case decimal: row.AppendValue((double)(decimal)item); break;
+                case double: row.AppendValue((double)item); break;
+                case DateTime: row.AppendValue(((DateTime)item)); break;
+                case DateOnly: row.AppendValue((DateOnly)item); break;
+                case TimeOnly: row.AppendValue((TimeOnly)item); break;
+                default:
+                    break;
+            }
+        }
     }
 }
