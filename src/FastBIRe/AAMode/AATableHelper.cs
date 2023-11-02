@@ -1,7 +1,9 @@
 ﻿using DatabaseSchemaReader;
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
+using DatabaseSchemaReader.ProviderSchemaReaders.Builders;
 using DatabaseSchemaReader.SqlGen;
+using DatabaseSchemaReader.Utilities;
 using FastBIRe.Comparing;
 using FastBIRe.Naming;
 using FastBIRe.Store;
@@ -311,7 +313,7 @@ namespace FastBIRe.AAMode
         public virtual IList<string> ExpandTriggerScript(IEnumerable<string> columns, TimeTypes timeTypes = TimeTypes.ExceptSecond)
         {
             var scripts = new List<string>();
-            var table = Table;
+            var table = DatabaseReader.Table(TableName, ReadTypes.Triggers);
             var triggerInsertName = ExpandTriggerNameGenerator.Create(new[] { TableName, InsertTag });
             var triggerUpdateName = ExpandTriggerNameGenerator.Create(new[] { TableName, UpdateTag });
             var triggerInsert = table.Triggers.FirstOrDefault(x => x.Name == triggerInsertName);
@@ -330,7 +332,7 @@ namespace FastBIRe.AAMode
             var expandResults = columns.SelectMany(x => TimeExpandHelper.Create(x, timeTypes)).OfType<IExpandResult>().ToList();
 
             //Re read table 
-            table = Table;
+            table = DatabaseReader.Table(TableName, ReadTypes.Columns | ReadTypes.CheckConstraints | ReadTypes.Pks);
             var insertTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfInsert : TriggerTypes.BeforeInsert;
             var updateTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfUpdate : TriggerTypes.BeforeUpdate;
             if (SqlType == SqlType.SQLite)
@@ -394,8 +396,8 @@ namespace FastBIRe.AAMode
         }
         public virtual IList<string> GetTableMigrationScript(MigrationTableHandler changeFun)
         {
-            var oldTable = DatabaseReader.Table(TableName);
-            var newTable = DatabaseReader.Table(TableName);
+            var oldTable = DatabaseReader.Table(TableName, ReadTypes.AllColumns);
+            var newTable = oldTable.Clone();
             newTable = changeFun(oldTable, newTable);
             var comp = CompareSchemas.FromTable(DatabaseReader.DatabaseSchema.ConnectionString, SqlType, oldTable, newTable).ExecuteResult();
             var scripts = comp.Select(x => x.Script).ToList();

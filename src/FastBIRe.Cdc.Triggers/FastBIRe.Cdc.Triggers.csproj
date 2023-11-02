@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\eng\pkg.props" />
+  <PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FastBIRe.Cdc\FastBIRe.Cdc.csproj" />
+    <ProjectReference Include="..\FastBIRe\FastBIRe.csproj" />
+  </ItemGroup>
+
+</Project>

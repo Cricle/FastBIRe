@@ -13,7 +13,9 @@ namespace FastBIRe
         public static readonly TableHelper Oracle = new TableHelper(SqlType.Oracle);
         public static readonly TableHelper PostgreSql = new TableHelper(SqlType.PostgreSql);
         public static readonly TableHelper DuckDB = new TableHelper(SqlType.DuckDB);
+
         private static readonly char[] goLineTrimChars = new char[] { ' ', ';', '\r', '\n' };
+
         public static IList<string> SplitSqlServerByGo(string input)
         {
             var sps = input.Split('\n');

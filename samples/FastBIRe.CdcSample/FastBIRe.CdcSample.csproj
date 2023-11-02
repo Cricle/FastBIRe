@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\src\FastBIRe.Cdc.Mssql\FastBIRe.Cdc.Mssql.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe.Cdc.MySql\FastBIRe.Cdc.MySql.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe.Cdc.NpgSql\FastBIRe.Cdc.NpgSql.csproj" />
+    <ProjectReference Include="..\..\src\FastBIRe.Cdc.Triggers\FastBIRe.Cdc.Triggers.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe.Cdc\FastBIRe.Cdc.csproj" />
   </ItemGroup>
 	<ItemGroup>

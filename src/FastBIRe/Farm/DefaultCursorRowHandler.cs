@@ -1,4 +1,5 @@
 ﻿using DatabaseSchemaReader;
+using DatabaseSchemaReader.ProviderSchemaReaders.Builders;
 using FastBIRe.Data;
 using System.Data;
 
@@ -47,7 +48,7 @@ namespace FastBIRe.Farm
             var sourceReader = new DatabaseReader(SourceConnection.Connection);
             var destReader = new DatabaseReader(DestConnection.Connection);
 
-            var sourceTable = sourceReader.Table(TableName, token);
+            var sourceTable = sourceReader.Table(TableName, ReadTypes.All, token);
 
             var sourceSqlType = sourceReader.SqlType!.Value;
             var destSqlType = destReader.SqlType!.Value;

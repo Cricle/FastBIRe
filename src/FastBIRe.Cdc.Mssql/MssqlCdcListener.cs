@@ -10,7 +10,6 @@ namespace FastBIRe.Cdc.Mssql
     {
         private Task? task;
         private readonly Dictionary<string, MssqlTableMapInfo> tableMapInfos = new Dictionary<string, MssqlTableMapInfo>(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, MssqlLsn> maxLsns = new Dictionary<string, MssqlLsn>();
         public MssqlCdcListener(MssqlCdcManager cdcManager, MssqlGetCdcListenerOptions options)
             : base(options)
         {

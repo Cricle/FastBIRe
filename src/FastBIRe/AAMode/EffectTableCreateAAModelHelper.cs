@@ -1,5 +1,6 @@
 ﻿using DatabaseSchemaReader;
 using DatabaseSchemaReader.DataSchema;
+using DatabaseSchemaReader.ProviderSchemaReaders.Builders;
 using DatabaseSchemaReader.SqlGen;
 using FastBIRe.Comparing;
 using FastBIRe.Naming;
@@ -36,7 +37,7 @@ namespace FastBIRe.AAMode
             //Check table exists
             var effectTableName = EffectNameGenerator.Create(new[] { request.AggregationTable.Name });
 
-            var effectTable = reader.Table(effectTableName);
+            var effectTable = reader.Table(effectTableName, ReadTypes.Columns);
             if (effectTable != null)
             {
                 //The table exists, check name and db types
@@ -64,7 +65,7 @@ namespace FastBIRe.AAMode
                 //All column was index
                 var idx = new DatabaseIndex
                 {
-                    Name = "IX_" + item.EffectColumn.Name,
+                    Name = "IX_" +item.EffectColumn.TableName+"_"+ item.EffectColumn.Name,
                     Columns =
                     {
                         item.EffectColumn

@@ -86,6 +86,8 @@
         MonthTo,
         YearTo,
         StandardDeviation,
-        Range
+        Range,
+        GuidBinary,
+        GuidString
     }
 }

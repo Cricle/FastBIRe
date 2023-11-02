@@ -317,6 +317,46 @@ namespace FastBIRe
             }
             return $"COALESCE({input}, {nullIf})";
         }
+        public string? GuidString()
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return "NEWID()";
+                case SqlType.MySql:
+                    return "UUID()";
+                case SqlType.SQLite:
+                    return "HEX(randomblob(16))";
+                case SqlType.DuckDB:
+                case SqlType.PostgreSql:
+                    return "gen_random_uuid()::text";
+                case SqlType.Db2:
+                case SqlType.Oracle:
+                default:
+                    return null;
+            }
+        }
+        public string? GuidBinary()
+        {
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    return "NEWID()";
+                case SqlType.MySql:
+                    return "UUID_TO_BIN(UUID())";
+                case SqlType.SQLite:
+                    return "randomblob(16)";
+                case SqlType.DuckDB:
+                case SqlType.PostgreSql:
+                    return "decode(replace(gen_random_uuid()::text, '-', ''), 'hex')";
+                case SqlType.Db2:
+                case SqlType.Oracle:
+                default:
+                    return null;
+            }
+        }
         public string? Map(SQLFunctions func, params string[] args)
         {
             switch (func)
@@ -489,6 +529,10 @@ namespace FastBIRe
                     return StandardDeviation(args[0]);
                 case SQLFunctions.Range:
                     return Range(args[0]);
+                case SQLFunctions.GuidBinary:
+                    return GuidBinary();
+                case SQLFunctions.GuidString:
+                    return GuidString();
                 default:
                     return null;
             }

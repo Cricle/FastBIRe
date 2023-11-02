@@ -48,7 +48,7 @@ namespace FastBIRe
 
         public void Dispose()
         {
-            enumerable.Dispose();
+            Close();
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private TInst? GetOrCase<TInst>(int i)
@@ -65,7 +65,7 @@ namespace FastBIRe
             }
             if (typeof(TInst) == typeof(Guid))
             {
-                Guid guid = Guid.Parse(val.ToString());
+                Guid guid = Guid.Parse(val.ToString()!);
                 return Unsafe.As<Guid, TInst?>(ref guid);
             }
             return (TInst)Convert.ChangeType(val, typeof(TInst))!;

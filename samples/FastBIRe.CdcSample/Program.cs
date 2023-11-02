@@ -6,7 +6,7 @@ namespace FastBIRe.CdcSample
     {
         static async Task Main(string[] args)
         {
-            await new MssqlTester().Start();
+            await new TriggerTester().Start();
         }
 
         public static void Vars_EventRaised(object? sender, CdcEventArgs e)

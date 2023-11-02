@@ -8,6 +8,8 @@ namespace FastBIRe
 {
     public static class RecordToObjectManager<T>
     {
+        private static readonly bool IsPrimitiveOrNullable = typeof(T).IsPrimitive || (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(Nullable<>)) || typeof(T) == typeof(string) || typeof(T) == typeof(decimal);
+
         private static IRecordToObject<T> recordToObject = null!;
 
         public static IRecordToObject<T> RecordToObject => recordToObject;
@@ -30,17 +32,16 @@ namespace FastBIRe
 
         public static void Reset()
         {
-            var type = typeof(T);
-            if (type.IsPrimitive || (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>)) || type == typeof(string) || type == typeof(decimal))
+            if (IsPrimitiveOrNullable)
             {
                 recordToObject = PrimitiveRecordToObject<T>.Instance;
             }
             else
             {
-                var attr = type.GetCustomAttribute<RecordToAttribute>();
+                var attr = typeof(T).GetCustomAttribute<RecordToAttribute>();
                 if (attr != null)
                 {
-                    recordToObject = (IRecordToObject<T>)Activator.CreateInstance(attr.RecordToObjectType);
+                    recordToObject = (IRecordToObject<T>)Activator.CreateInstance(attr.RecordToObjectType)!;
                 }
                 else
                 {

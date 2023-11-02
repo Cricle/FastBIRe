@@ -1,21 +1,16 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using FastBIRe.Creating;
 using FastBIRe.Wrapping;
+using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
     public static class SqlTypGetExtensions
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool Ors(this SqlType sqlType, params SqlType[] types)
         {
-            foreach (var item in types)
-            {
-                if (sqlType == item)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return types.Any(x => x == sqlType);
         }
         public static TableHelper? GetTableHelper(this SqlType sqlType)
         {
@@ -39,14 +34,17 @@ namespace FastBIRe
                     return null;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string Wrap(this SqlType sqlType, string? field)
         {
             return GetEscaper(sqlType).Quto(field);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string? WrapValue<T>(this SqlType sqlType, T value)
         {
             return GetEscaper(sqlType).WrapValue(value);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IDatabaseCreateAdapter? GetDatabaseCreateAdapter(this SqlType sqlType)
         {
             return DatabaseCreateAdapter.Get(sqlType);
