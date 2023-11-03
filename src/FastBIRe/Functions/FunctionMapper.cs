@@ -33,14 +33,13 @@ namespace FastBIRe
                     return null;
             }
         }
-        public static readonly string BracketReplaced = $"{nameof(Bracket)}(";
-
         /// <summary>
-        /// To make the expression bracket avaliable ( ... ) like (1+2+3)+"(1/2)" => Bracket(1+2+3)+"(1/2)"
+        /// To make the expression bracket avaliable ( ... ) like (1+2+3)+"(1/2)" => ?(1+2+3)+"(1/2)"
         /// </summary>
-        /// <param name="expression">The input expression</param>
+        /// <param name="input">The input expression</param>
+        /// <param name="replaced">Replace to value</param>
         /// <returns>Transform result</returns>
-        public static string ReplaceBracket(string input)
+        public static string ReplaceBracket(string input,string replaced)
         {
             var inQuto = false;
             var sb = new StringBuilder();
@@ -48,7 +47,7 @@ namespace FastBIRe
             {
                 if (input[i] == '(' && (i == 0 || !char.IsLetterOrDigit(input[i - 1])) && !inQuto)
                 {
-                    sb.Append(BracketReplaced);
+                    sb.Append(replaced);
                     continue;
                 }
                 if (input[i] == '\"')
