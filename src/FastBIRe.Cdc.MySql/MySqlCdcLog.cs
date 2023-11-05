@@ -1,9 +1,14 @@
-﻿namespace FastBIRe.Cdc.MySql
+﻿using MySqlCdc.Events;
+
+namespace FastBIRe.Cdc.MySql
 {
     public class MySqlCdcLog : CdcLog
     {
-        public MySqlCdcLog(string name, ulong? length) : base(name, length)
+        public MySqlCdcLog(string name, ulong? length, string? gtid) : base(name, length)
         {
+            Gtid = gtid;
         }
+
+        public string? Gtid { get; }
     }
 }

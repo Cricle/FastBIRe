@@ -24,10 +24,6 @@ namespace FastBIRe.Farm
         public async Task SyncAsync(IEnumerable<int>? maskColumns = null, CancellationToken token = default)
         {
             await DestFarmWarehouse.SyncAsync(SourceTable, maskColumns, token);
-            if (DestFarmWarehouse.AttackId)
-            {
-                await DestFarmWarehouse.AddIfSeqNothingAsync();
-            }
         }
 
         public virtual async Task InsertAsync(IEnumerable<IEnumerable<object?>> values, CancellationToken token = default)
@@ -37,11 +33,6 @@ namespace FastBIRe.Farm
         public virtual async Task InsertAsync(IEnumerable<object?> values, CancellationToken token = default)
         {
             await DestFarmWarehouse.InsertAsync(TableName, Columns, values, token);
-        }
-
-        public Task<IList<ICursorRowHandlerResult>> CheckPointAsync(CancellationToken token = default)
-        {
-            return DestFarmWarehouse.CheckPointAsync(TableName, null, token);
         }
 
         public void Dispose()

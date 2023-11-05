@@ -374,11 +374,11 @@ namespace FastBIRe.AAMode
             }
             return scripts;
         }
-        public virtual IList<string> CreateTableOrMigrationScript(Func<DatabaseTable> tableCreator, MigrationTableHandler changeFun)
+        public virtual IList<string> CreateTableOrMigrationScript(Func<DatabaseTable> tableCreator, MigrationTableHandler changeFun,Action<DatabaseTable>? prepareTable=null)
         {
             if (DatabaseReader.TableExists(TableName))
             {
-                return GetTableMigrationScript(changeFun);
+                return GetTableMigrationScript(changeFun,prepareTable);
             }
             var table = tableCreator();
             var script = new DdlGeneratorFactory(SqlType).TableGenerator(table).Write();
@@ -394,10 +394,12 @@ namespace FastBIRe.AAMode
             var script = new DdlGeneratorFactory(SqlType).TableGenerator(table).Write();
             return new[] { script };
         }
-        public virtual IList<string> GetTableMigrationScript(MigrationTableHandler changeFun)
+        public virtual IList<string> GetTableMigrationScript(MigrationTableHandler changeFun,Action<DatabaseTable>? prepareTable=null)
         {
             var oldTable = DatabaseReader.Table(TableName, ReadTypes.AllColumns);
             var newTable = oldTable.Clone();
+            prepareTable?.Invoke(oldTable);
+            prepareTable?.Invoke(newTable);
             newTable = changeFun(oldTable, newTable);
             var comp = CompareSchemas.FromTable(DatabaseReader.DatabaseSchema.ConnectionString, SqlType, oldTable, newTable).ExecuteResult();
             var scripts = comp.Select(x => x.Script).ToList();

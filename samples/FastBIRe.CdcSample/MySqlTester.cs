@@ -25,7 +25,7 @@ namespace FastBIRe.CdcSample
                 opt.Username = mysqlCfg.UserID;
                 opt.Database = mysqlCfg.Database;
                 opt.ServerId = 1;
-            });
+            }, MySqlCdcModes.Gtid);
             //var ser =await mgr.GetCdcLogServiceAsync();
             //var all=await ser.GetAllAsync();
             //var last=await ser.GetLastAsync();

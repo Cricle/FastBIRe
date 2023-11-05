@@ -1,4 +1,5 @@
-﻿using FastBIRe.Cdc.Events;
+﻿using FastBIRe.Cdc.Checkpoints;
+using FastBIRe.Cdc.Events;
 using FastBIRe.Cdc.MySql.Checkpoints;
 using MySqlCdc;
 using MySqlCdc.Events;
@@ -15,14 +16,17 @@ namespace FastBIRe.Cdc.MySql
         private readonly MySqlGetCdcListenerOptions options;
         private readonly Dictionary<long, ITableMapInfo> tableMapInfos = new Dictionary<long, ITableMapInfo>();
 
-        public MySqlCdcListener(BinlogClient binlogClient, MySqlGetCdcListenerOptions options)
+        public MySqlCdcListener(BinlogClient binlogClient, MySqlGetCdcListenerOptions options, MySqlCdcModes mode)
             : base(options)
         {
             BinlogClient = binlogClient;
             this.options = options;
+            Mode = mode;
         }
 
         public BinlogClient BinlogClient { get; }
+
+        public MySqlCdcModes Mode { get; }
 
         protected override Task OnStartAsync(CancellationToken token = default)
         {
@@ -54,9 +58,22 @@ namespace FastBIRe.Cdc.MySql
         {
             var listener = (MySqlCdcListener)state!;
             var source = listener.TokenSource;
+            IGtid? gtid = null;
             await foreach (var item in BinlogClient.Replicate(source!.Token))
             {
-                var checkpoint = new MySqlCheckpoint(item.Header.NextEventPosition, null);
+                ICheckpoint checkpoint;
+                if (Mode == MySqlCdcModes.Gtid)
+                {
+                    if (item is GtidEvent gtidEvent)
+                    {
+                        gtid = gtidEvent.Gtid;
+                    }
+                    checkpoint = new MySqlCheckpoint(gtid);
+                }
+                else
+                {
+                    checkpoint = new MySqlCheckpoint(item.Header.NextEventPosition, null);
+                }
                 if (item is WriteRowsEvent wre)
                 {
                     var rows = wre.Rows.Select(x => (ICdcDataRow)new CdcDataRow(x.Cells)).ToList();

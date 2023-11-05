@@ -1,4 +1,5 @@
 ﻿using FastBIRe.Cdc.Checkpoints;
+using MySqlCdc.Providers.MySql;
 using System;
 using System.Text;
 
@@ -10,13 +11,31 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
 
         public ICheckpoint CreateCheckpoint(byte[] data)
         {
-            var pos = BitConverter.ToInt64(data);
-            string? fn = null;
-            if (data.Length != sizeof(long))
+            var isGtid = data[0] == 1;
+            var isMysqlGtid = data[1] == 1;
+            if (!isGtid)
             {
-                fn = Encoding.UTF8.GetString(data, sizeof(long), (int)(pos - sizeof(long)));
+                var pos = BitConverter.ToInt64(data, 2);
+                string? fn = null;
+                if (data.Length != sizeof(long))
+                {
+                    fn = Encoding.UTF8.GetString(data, sizeof(long) + 2, (int)(pos - sizeof(long)));
+                }
+                return new MySqlCheckpoint(pos, fn);
             }
-            return new MySqlCheckpoint(pos, fn);
+            else if (isMysqlGtid)
+            {
+                var uuid = new Uuid(data.AsSpan(2,16).ToArray());
+                var transId = BitConverter.ToInt64(data, 2 + 16);
+                return new MySqlCheckpoint(new MySqlCdc.Providers.MySql.Gtid(uuid, transId));
+            }
+            else
+            {
+                var domainId = BitConverter.ToInt64(data, 2 + 16);
+                var serviceId = BitConverter.ToInt64(data, 2 + 16*2);
+                var sequence = BitConverter.ToInt64(data, 2 + 16*3);
+                return new MySqlCheckpoint(new MySqlCdc.Providers.MariaDb.Gtid(domainId, serviceId, sequence));
+            }
         }
     }
 }

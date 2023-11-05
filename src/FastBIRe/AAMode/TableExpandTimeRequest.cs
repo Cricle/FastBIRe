@@ -20,5 +20,7 @@ namespace FastBIRe.AAMode
         public IEnumerable<string> Columns { get; }
 
         public TimeTypes TimeTypes { get; }
+
+        public bool WithDataMigration { get; set; } = true;
     }
 }

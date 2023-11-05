@@ -7,13 +7,18 @@ using System.Threading.Tasks;
 
 namespace FastBIRe.Cdc.MySql
 {
+#if false
+    enforce-gtid-consistency = ON
+    gtid-mode = ON
+#endif
     public class MySqlCdcManager : ICdcManager
     {
-        public MySqlCdcManager(IScriptExecuter scriptExecuter, Action<ReplicaOptions> replicaAction)
+        public MySqlCdcManager(IScriptExecuter scriptExecuter, Action<ReplicaOptions> replicaAction, MySqlCdcModes mode)
         {
             ScriptExecuter = scriptExecuter;
             ReplicaAction = replicaAction;
             BinlogClient = new BinlogClient(ReplicaAction);
+            Mode = mode;
         }
 
         public IScriptExecuter ScriptExecuter { get; }
@@ -21,6 +26,8 @@ namespace FastBIRe.Cdc.MySql
         public Action<ReplicaOptions> ReplicaAction { get; }
 
         public BinlogClient BinlogClient { get; }
+
+        public MySqlCdcModes Mode { get; }
 
         public CdcOperators SupportCdcOperators => CdcOperators.WithoutEnableDisable;
 
@@ -35,6 +42,17 @@ namespace FastBIRe.Cdc.MySql
 
         protected Task<bool> IsLogBinOnAsync(CancellationToken token = default)
         {
+            if (Mode== MySqlCdcModes.Gtid)
+            {
+                return ScriptExecuter.ReadResultAsync("SELECT @@GTID_MODE", (s, r) =>
+                {
+                    if (r.Reader.Read())
+                    {
+                        return Task.FromResult(string.Equals(r.Reader.GetString(1), "on", StringComparison.OrdinalIgnoreCase));
+                    }
+                    return Task.FromResult(false);
+                });
+            }
             return ScriptExecuter.ReadResultAsync("SHOW GLOBAL VARIABLES LIKE 'log_bin'", (s, r) =>
             {
                 if (r.Reader.Read())
@@ -47,7 +65,7 @@ namespace FastBIRe.Cdc.MySql
         }
         public Task<ICdcListener> GetCdcListenerAsync(MySqlGetCdcListenerOptions options, CancellationToken token = default)
         {
-            return Task.FromResult<ICdcListener>(new MySqlCdcListener(BinlogClient, options));
+            return Task.FromResult<ICdcListener>(new MySqlCdcListener(BinlogClient, options,Mode));
         }
 
         Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options, CancellationToken token)
@@ -58,6 +76,15 @@ namespace FastBIRe.Cdc.MySql
         public async Task<DbVariables> GetCdcVariablesAsync(CancellationToken token = default)
         {
             var var = new MySqlVariables();
+            await ScriptExecuter.ReadAsync("SELECT @@GTID_MODE,@@ENFORCE_GTID_CONSISTENCY", (s, r) =>
+            {
+                if (r.Reader.Read())
+                {
+                    var[MySqlVariables.GtidModeKey] = r.Reader.GetString(0);
+                    var[MySqlVariables.EnfprceGtodConsistencyKey] = r.Reader.GetString(1);
+                }
+                return Task.CompletedTask;
+            }, token: token);
             await ScriptExecuter.ReadAsync("SHOW GLOBAL VARIABLES LIKE '%bin%'", (s, r) =>
             {
                 while (r.Reader.Read())

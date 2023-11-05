@@ -6,11 +6,12 @@ namespace FastBIRe.CdcSample
     {
         static async Task Main(string[] args)
         {
-            await new TriggerTester().Start();
+            await new MySqlTester().Start();
         }
 
         public static void Vars_EventRaised(object? sender, CdcEventArgs e)
         {
+            Console.WriteLine(e.Checkpoint);
             switch (e)
             {
                 case TableMapEventArgs tme:

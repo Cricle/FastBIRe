@@ -21,6 +21,7 @@ namespace FastBIRe.AAMode
             var rawTable = reader.Table(request.TableName);
             var changedTable = reader.Table(request.TableName);
             var results = request.Columns.SelectMany(x => TimeExpandHelper.Create(x, request.TimeTypes)).ToList();
+            var affectColumns=new List<TimeExpandResult>();
             foreach (var item in results)
             {
                 var dbType = reader.FindDataTypesByDbType(DbType.DateTime);
@@ -34,19 +35,21 @@ namespace FastBIRe.AAMode
                     };
                     col.SetType(dbType);
                     changedTable.AddColumn(col);
+                    affectColumns.Add(item);
                 }
                 else if (!string.Equals(dbType, col.DbDataType, StringComparison.OrdinalIgnoreCase))
                 {
                     col.SetType(dbType);
+                    affectColumns.Add(item);
                 }
             }
             var cmp = CompareSchemas.FromTable(reader.DatabaseSchema.ConnectionString, reader.SqlType!.Value, rawTable, changedTable).ExecuteResult();
             request.AddScripts(cmp.Select(x => x.Script));
-            if (cmp.Count != 0)
+            if (request.WithDataMigration&&cmp.Count != 0)
             {
-                //All column migrate
+                //Some column migrate
                 var sqlType = reader.SqlType!.Value;
-                foreach (var item in results)
+                foreach (var item in affectColumns)
                 {
                     request.Scripts.Add($"UPDATE {sqlType.Wrap(request.TableName)} SET {sqlType.Wrap(item.Name)} = {item.FormatExpression(string.Empty)}");
                 }

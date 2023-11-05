@@ -4,7 +4,7 @@ namespace FastBIRe.Querying
 {
     public class FluentTableFieldLinkBuilder : List<ITableFieldLink>
     {
-        public FluentTableFieldLinkBuilder(TableFieldLinkBuilder builder, FunctionMapper? functionMapper)
+        public FluentTableFieldLinkBuilder(TableFieldLinkBuilder builder, FunctionMapper? functionMapper = null)
         {
             Builder = builder ?? throw new ArgumentNullException(nameof(builder));
             FunctionMapper = functionMapper ?? builder.FunctionMapper;

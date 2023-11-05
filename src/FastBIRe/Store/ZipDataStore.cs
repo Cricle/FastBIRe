@@ -6,6 +6,11 @@ namespace FastBIRe.Store
     {
         public static ZipDataStore FromFile(string nameSpace, string path, FileShare fileShare = FileShare.Read)
         {
+            var dir = new DirectoryInfo(Path.GetDirectoryName(path)!);
+            if (!dir.Exists)
+            {
+                dir.Create();
+            }
             var fs = File.Open(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, fileShare);
             var zip = new ZipArchive(fs, ZipArchiveMode.Update);
             return new ZipDataStore(nameSpace, zip);

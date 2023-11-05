@@ -31,7 +31,8 @@ namespace FastBIRe.Cdc.MySql
         {
             var name = reader.GetString(0);
             var length = reader.GetInt64(1);
-            var log = new MySqlCdcLog(name, (ulong)length);
+            var gtid = reader.FieldCount >= 4 ? reader.GetString(4) : null;
+            var log = new MySqlCdcLog(name, (ulong)length, gtid);
             SetRecords(reader, log);
             return log;
         }
