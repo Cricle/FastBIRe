@@ -38,7 +38,7 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
             var buffer = new List<byte>
             {
                 //Is gtidMode
-                (byte)(Gtid == null ? 1 : 0),
+                (byte)(Gtid == null ? 0 : 1),
                 //Is mysql or mariadb
                 (byte)(Gtid is MySqlCdc.Providers.MySql.Gtid?1:0)
             };
