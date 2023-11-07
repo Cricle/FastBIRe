@@ -28,6 +28,8 @@ namespace FastBIRe.Cdc.MySql
 
         public MySqlCdcModes Mode { get; }
 
+        public Task? Task => task;
+
         protected override Task OnStartAsync(CancellationToken token = default)
         {
             task = Task.Factory.StartNew(Handler, this, token, TaskCreationOptions.LongRunning, TaskScheduler.Current)
@@ -59,6 +61,7 @@ namespace FastBIRe.Cdc.MySql
             var listener = (MySqlCdcListener)state!;
             var source = listener.TokenSource;
             IGtid? gtid = null;
+            long flags = 0;
             await foreach (var item in BinlogClient.Replicate(source!.Token))
             {
                 ICheckpoint checkpoint;
@@ -67,8 +70,9 @@ namespace FastBIRe.Cdc.MySql
                     if (item is GtidEvent gtidEvent)
                     {
                         gtid = gtidEvent.Gtid;
+                        flags = gtidEvent.Header.ServerId;
                     }
-                    checkpoint = new MySqlCheckpoint(gtid);
+                    checkpoint = new MySqlCheckpoint(gtid, flags);
                 }
                 else
                 {

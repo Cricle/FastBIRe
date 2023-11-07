@@ -28,6 +28,10 @@ namespace FastBIRe.Comparing
             }
             if (x.DataType.IsString)
             {
+                if (x.Length==null||y.Length==null)
+                {
+                    return true;
+                }
                 return x.Length == y.Length;
             }
             if (x.DataType.NetDataType == typeof(decimal).FullName)

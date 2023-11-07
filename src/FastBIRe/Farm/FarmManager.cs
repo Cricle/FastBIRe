@@ -2,8 +2,20 @@
 
 namespace FastBIRe.Farm
 {
+    public static class FarmManagerFastExtensions
+    {
+        public static Task SyncDataAsync(this FarmManager manager, string tableName, int batchSize = FarmManager.DefaultBatchSize, CancellationToken token = default)
+        {
+            var sqlType = manager.SourceFarmWarehouse.SqlType;
+            var tableColumns = manager.Columns.Select(x => sqlType.Wrap(x));
+            var tableColumnJoined = string.Join(", ", tableColumns);
+            return manager.SyncDataAsync($"SELECT {tableColumnJoined} FROM {sqlType.Wrap(tableName)}", tableName, batchSize, token);
+        }
+    }
     public class FarmManager : IFarmManager
     {
+        public const int DefaultBatchSize = 1000;
+
         public FarmManager(DatabaseTable sourceTable, FarmWarehouse sourceFarmWarehouse, FarmWarehouse destFarmWarehouse)
         {
             SourceTable = sourceTable;
@@ -21,20 +33,23 @@ namespace FastBIRe.Farm
 
         public FarmWarehouse DestFarmWarehouse { get; }
 
-        public async Task SyncAsync(IEnumerable<int>? maskColumns = null, CancellationToken token = default)
+        public Task<SyncResult> SyncAsync(IEnumerable<int>? maskColumns = null, CancellationToken token = default)
         {
-            await DestFarmWarehouse.SyncAsync(SourceTable, maskColumns, token);
+            return DestFarmWarehouse.SyncAsync(SourceTable, maskColumns, token);
         }
 
-        public virtual async Task InsertAsync(IEnumerable<IEnumerable<object?>> values, CancellationToken token = default)
+        public virtual Task InsertAsync(IEnumerable<IEnumerable<object?>> values, CancellationToken token = default)
         {
-            await DestFarmWarehouse.InsertAsync(TableName, Columns, values, token);
+            return DestFarmWarehouse.InsertAsync(TableName, Columns, values, token);
         }
-        public virtual async Task InsertAsync(IEnumerable<object?> values, CancellationToken token = default)
+        public virtual Task InsertAsync(IEnumerable<object?> values, CancellationToken token = default)
         {
-            await DestFarmWarehouse.InsertAsync(TableName, Columns, values, token);
+            return DestFarmWarehouse.InsertAsync(TableName, Columns, values, token);
         }
-
+        public virtual Task<int> SyncDataAsync(string sql, string tableName, int batchSize = DefaultBatchSize, CancellationToken token = default)
+        {
+            return SourceFarmWarehouse.ScriptExecuter.ReadResultAsync(sql, (e, r) => DestFarmWarehouse.SyncDataAsync(tableName, r.Reader, batchSize, token), token: token);
+        }
         public void Dispose()
         {
             SourceFarmWarehouse.Dispose();

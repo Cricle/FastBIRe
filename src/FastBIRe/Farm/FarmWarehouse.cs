@@ -10,6 +10,11 @@ using System.Text;
 
 namespace FastBIRe.Farm
 {
+    public enum SyncResult
+    {
+        NoModify=0,
+        Modify=1
+    }
     public class FarmWarehouse : IDisposable
     {
         public FarmWarehouse(IDbScriptExecuter scriptExecuter)
@@ -49,6 +54,10 @@ namespace FastBIRe.Farm
             copyTable.SchemaOwner = DatabaseReader.Owner;
             copyTable.DatabaseSchema = DatabaseReader.DatabaseSchema;
             copyTable.Indexes = new List<DatabaseIndex>();
+            foreach (var item in copyTable.Columns)
+            {
+                item.IsAutoNumber = false;
+            }
             if (DatabaseReader.TableExists(copyTable.Name))
             {
                 //Check struct
@@ -67,21 +76,28 @@ namespace FastBIRe.Farm
                 {
                     return scripts;
                 }
+                scripts.Add(DatabaseCreateAdapter.DropTableIfExists(copyTable.Name));
             }
             var ddlFactory = new DdlGeneratorFactory(SqlType);
             var ddlTable = ddlFactory.TableGenerator(copyTable).Write();
             scripts.Add(ddlTable);
             return scripts;
         }
-        public async Task SyncAsync(DatabaseTable table, IEnumerable<int>? maskColumns = null, CancellationToken token = default)
+        public virtual Task<int> DeleteAsync(string tableName,CancellationToken token = default)
+        {
+            return ScriptExecuter.ExecuteAsync($"DELETE FROM {SqlType.Wrap(tableName)}", token: token);
+        }
+        public async Task<SyncResult> SyncAsync(DatabaseTable table, IEnumerable<int>? maskColumns = null, CancellationToken token = default)
         {
             var scripts = GetSyncScripts(table, maskColumns);
             if (scripts.Count != 0)
             {
                 await ScriptExecuter.ExecuteBatchAsync(scripts, token: token);
+                return SyncResult.Modify;
             }
+            return SyncResult.NoModify;
         }
-        public Task SyncDataAsync(string tableName, IDataReader reader, int batchSize, CancellationToken token = default)
+        public Task<int> SyncDataAsync(string tableName, IDataReader reader, int batchSize, CancellationToken token = default)
         {
             var columnNames = new string[reader.FieldCount];
             for (int i = 0; i < reader.FieldCount; i++)
@@ -90,7 +106,7 @@ namespace FastBIRe.Farm
             }
             return SyncDataAsync(tableName, columnNames, reader, batchSize, token);
         }
-        public async Task SyncDataAsync(string tableName, IEnumerable<string> columnNames, IDataReader reader, int batchSize, CancellationToken token = default)
+        public virtual async Task<int> SyncDataAsync(string tableName, IEnumerable<string> columnNames, IDataReader reader, int batchSize, CancellationToken token = default)
         {
             var batchs = new object?[batchSize][];
             for (int i = 0; i < batchs.Length; i++)
@@ -98,6 +114,7 @@ namespace FastBIRe.Farm
                 batchs[i] = new object?[reader.FieldCount];
             }
             var pos = 0;
+            var eff = 0;
             while (reader.Read())
             {
                 var posItem = batchs[pos++];
@@ -112,25 +129,26 @@ namespace FastBIRe.Farm
                 }
                 if (pos >= batchSize)
                 {
-                    await InsertAsync(tableName, columnNames, batchs, token);
+                    eff+=await InsertAsync(tableName, columnNames, batchs, token);
                     pos = 0;
                 }
             }
             if (pos != 0)
             {
-                await InsertAsync(tableName, columnNames, batchs.Take(pos), token);
+                eff+= await InsertAsync(tableName, columnNames, batchs.Take(pos), token);
             }
+            return eff;
         }
-        public virtual async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<IEnumerable<object?>> values, CancellationToken token = default)
+        public virtual async Task<int> InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<IEnumerable<object?>> values, CancellationToken token = default)
         {
             using (var trans = Connection.BeginTransaction())
             {
                 var batchSize = 10;
+                var count = 0;
                 var header = $"INSERT INTO {SqlType.Wrap(tableName)}({string.Join(",", columnNames.Select(x => SqlType.Wrap(x)))}) VALUES";
                 using (var cur = values.GetEnumerator())
                 {
                     var sb = new StringBuilder(header);
-                    var count = 0;
                     while (cur.MoveNext())
                     {
                         sb.Append($"({string.Join(",", cur.Current.Select(x => SqlType.WrapValue(x)))})");
@@ -153,6 +171,7 @@ namespace FastBIRe.Farm
                     }
                 }
                 trans.Commit();
+                return count;
             }
         }
         public virtual async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<object?> values, CancellationToken token = default)

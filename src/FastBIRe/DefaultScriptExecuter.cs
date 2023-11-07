@@ -6,10 +6,8 @@ using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
-    public class DefaultScriptExecuter : IDbScriptExecuter, IDbStackTraceScriptExecuter
+    public partial class DefaultScriptExecuter : IDbScriptExecuter, IDbStackTraceScriptExecuter
     {
-        private static readonly Task<bool> trueResult = Task.FromResult(true);
-
         private static readonly IReadOnlyList<MethodBase> Methods = typeof(DefaultScriptExecuter).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Where(x => !x.IsSpecialName && x.DeclaringType == typeof(DefaultScriptExecuter))
             .ToArray();
@@ -151,7 +149,7 @@ namespace FastBIRe
         {
             if (IsEmptyScript(script))
             {
-                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { script }, args, stackTrace, token));
+                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { script }, args, stackTrace,dbTransaction, token));
                 return 0;
             }
             var fullStartTime = Stopwatch.GetTimestamp();
@@ -160,18 +158,19 @@ namespace FastBIRe
                 try
                 {
                     LoadParamters(command, args);
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, scripts, args, stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, scripts, args, stackTrace, dbTransaction, token));
                     command.CommandText = script;
                     command.CommandTimeout = CommandTimeout;
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadCommand(Connection, command, scripts, args, stackTrace, token));
+                    command.Transaction = dbTransaction;
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadCommand(Connection, command, scripts, args, stackTrace, dbTransaction, token));
                     var startTime = Stopwatch.GetTimestamp();
                     var res = await command.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Executed(Connection, command, scripts, args, res, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Executed(Connection, command, scripts, args, res, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), stackTrace, dbTransaction, token));
                     return res;
                 }
                 catch (Exception ex)
                 {
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Exception(Connection, command, scripts, args, ex, null, GetElapsedTime(fullStartTime), stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Exception(Connection, command, scripts, args, ex, null, GetElapsedTime(fullStartTime), stackTrace, dbTransaction, token));
                     throw;
                 }
             }
@@ -236,7 +235,8 @@ namespace FastBIRe
                     var enu = argss?.GetEnumerator();
                     try
                     {
-                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedBatch(Connection, scripts, argss, batch, stackTrace, token));
+                        batch.Transaction = dbTransaction;
+                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedBatch(Connection, scripts, argss, batch, stackTrace, dbTransaction, token));
                         foreach (var item in scripts)
                         {
                             IEnumerable<KeyValuePair<string, object?>>? args = null;
@@ -246,7 +246,7 @@ namespace FastBIRe
                             }
                             if (IsEmptyScript(item))
                             {
-                                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { item }, args, stackTrace, token));
+                                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { item }, args, stackTrace, dbTransaction, token));
                                 continue;
                             }
                             var comm = batch.CreateBatchCommand();
@@ -259,17 +259,17 @@ namespace FastBIRe
                                     comm.Parameters.Add(arg.Value);
                                 }
                             }
-                            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadBatchItem(Connection, scripts, argss, batch, comm, stackTrace, token));
+                            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadBatchItem(Connection, scripts, argss, batch, comm, stackTrace, dbTransaction, token));
                         }
                         batch.Timeout = CommandTimeout;
                         var startTime = Stopwatch.GetTimestamp();
                         var res = await batch.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.ExecutedBatch(Connection, scripts, argss, batch, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), stackTrace, token));
+                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.ExecutedBatch(Connection, scripts, argss, batch, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), stackTrace, dbTransaction, token));
                         return res;
                     }
                     catch (Exception ex)
                     {
-                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BatchException(Connection, scripts, argss, batch, ex, null, GetElapsedTime(fullStartTime), stackTrace, token));
+                        ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BatchException(Connection, scripts, argss, batch, ex, null, GetElapsedTime(fullStartTime), stackTrace, dbTransaction, token));
                         throw;
                     }
                     finally
@@ -293,24 +293,25 @@ namespace FastBIRe
             {
                 try
                 {
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, null, args, stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, null, args, stackTrace, dbTransaction, token));
                     command.CommandText = script;
                     command.CommandTimeout = CommandTimeout;
+                    command.Transaction = dbTransaction;
                     LoadParamters(command, args);
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadCommand(Connection, command, null, args, stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadCommand(Connection, command, null, args, stackTrace, dbTransaction, token));
                     var startTime = Stopwatch.GetTimestamp();
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.StartReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.StartReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), dbTransaction, token));
                     TResult result;
                     using (var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false))
                     {
                         result = await handler(this, new ReadingDataArgs(script, reader, QueryTranslateResult.Create(script, args), token));
                     }
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.EndReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.EndReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), dbTransaction, token));
                     return result;
                 }
                 catch (Exception ex)
                 {
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Exception(Connection, command, null, args, ex, null, GetElapsedTime(fullStartTime), stackTrace, token));
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Exception(Connection, command, null, args, ex, null, GetElapsedTime(fullStartTime), stackTrace, dbTransaction, token));
                     throw;
                 }
             }

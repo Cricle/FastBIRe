@@ -1,5 +1,10 @@
-﻿using DatabaseSchemaReader;
-using DuckDB.NET.Data;
+﻿using FastBIRe.AP.DuckDB;
+using FastBIRe.Cdc;
+using FastBIRe.Cdc.Checkpoints;
+using FastBIRe.Cdc.Events;
+using FastBIRe.Cdc.MySql;
+using FastBIRe.Cdc.MySql.Checkpoints;
+using MySqlCdc;
 using MySqlConnector;
 using System.Diagnostics;
 
@@ -7,195 +12,77 @@ namespace FastBIRe.Farm
 {
     internal class Program
     {
-        static FarmManager CreateFarm(bool listen)
+        const string databaseName = "test-2";
+        const string tableName = "juhe2";
+
+        static async Task MigrationDatasAsync(FarmManager farm)
         {
-            var duck = new DuckDBConnection("Data source=a.db");
-            var mysql = new MySqlConnection("Server=192.168.1.101;Port=3306;Uid=root;Pwd=Syc123456.;Connection Timeout=2000;Character Set=utf8;Database=test2");
-
-            duck.Open();
-            mysql.Open();
-
-            var reader = new DatabaseReader(mysql) { Owner = mysql.Database };
-            var table = reader.Table("juhe_effect");
-            var mysqlExecuter = new DefaultScriptExecuter(mysql);
-            var duckExecuter = new DefaultScriptExecuter(duck);
-            if (listen)
-            {
-                mysqlExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
-                duckExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
-            }
-            var selector = DefaultCursorRowHandlerSelector.Single(mysqlExecuter, duckExecuter, "juhe_effect");
-            var sourceHouse = new FarmWarehouse(mysqlExecuter, selector,false);
-            var destHouse = new DuckFarmWarehouse(duckExecuter, selector, false);
-            return new FarmManager(table, sourceHouse, destHouse);
+            Console.WriteLine("Now delete all datas");
+            await Elapsed(() => farm.DestFarmWarehouse.DeleteAsync(tableName));
+            Console.WriteLine("Now syncing full datas");
+            await Elapsed(() => farm.SyncDataAsync(tableName));
         }
 
         static async Task Main(string[] args)
         {
-            var farm = CreateFarm(false);
-            await farm.SyncAsync();
-            //duckExecuter.ScriptStated -= DebugHelper.OnExecuterScriptStated!;
-            //await Elp(() => farm.InsertAsync(DataSet()));
-            //duckExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated!;
-            await farm.DestFarmWarehouse.CreateCheckPointIfNotExistsAsync("*");
-            //await Elp(async () =>
-            // {
-            //     await farm.CheckPointAsync();
-            // });
-
-            _ = Task.Factory.StartNew(async () =>
+            var farm = FarmHelper.CreateFarm(tableName, false);
+            await farm.DestFarmWarehouse.ScriptExecuter.ExecuteAsync("SET memory_limit='64MB';");
+            farm.DestFarmWarehouse.ScriptExecuter.RegistScriptStated((o, e) =>
             {
-                while (true)
+                if (e.State == ScriptExecutState.Executed)
                 {
-                    await Task.Delay(Random.Shared.Next(500, 1000));
-                    await farm.InsertAsync(DataSet());
+                    Console.WriteLine($"Execute \n{e.Script}");
                 }
             });
-            _ = Task.Factory.StartNew(async () =>
+            var storage = new FolderCheckpointStorage(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "checkpoints"));
+            Console.WriteLine("Now syncing structing");
+            var syncResult = await farm.SyncAsync();
+            var syncOk = false;
+            if (syncResult == SyncResult.Modify)
             {
-                var checkPointfarm = CreateFarm(false);
-                while (true)
-                {
-                    var bgCp = Stopwatch.GetTimestamp();
-                    var results = await checkPointfarm.CheckPointAsync();
-                    Console.WriteLine($"Complated check point take {Stopwatch.GetElapsedTime(bgCp).TotalMilliseconds:F4}ms, AffectedCount:{results.Sum(x => x.AffectedCount)}");
-                    await Task.Delay(Random.Shared.Next(1000, 5000));
-                }
-            });
-            Console.ReadLine();
-        }
-        static IEnumerable<IEnumerable<object>> DataSet()
-        {
-            for (int i = 0; i < Random.Shared.Next(500, 2000); i++)
-            {
-                yield return DataSetRow(i);
+                await MigrationDatasAsync(farm);
+                syncOk = true;
             }
+            var handler = DuckDbCdcHandler.Create(farm.DestFarmWarehouse.ScriptExecuter, tableName, new CheckpointIdentity(databaseName, tableName), storage);
+            var eh = new ChannelEventDispatcher<CdcEventArgs>(handler);
+            await eh.StartAsync();
+            var mysqlCfg = new MySqlConnectionStringBuilder(farm.SourceFarmWarehouse.Connection.ConnectionString);
+            var pkg = await storage.GetAsync(databaseName, tableName);
+            var state = ((MySqlCheckpoint?)pkg?.CastCheckpoint(MysqlCheckpointManager.Instance))?.ToGtidState();
+            if (!syncOk && state == null)
+            {
+                await MigrationDatasAsync(farm);
+            }
+            var mysqlCdcMgr = new MySqlCdcManager(farm.SourceFarmWarehouse.ScriptExecuter, opt =>
+            {
+                opt.Port = (int)mysqlCfg.Port;
+                opt.Hostname = mysqlCfg.Server;
+                opt.Password = "Syc123456.";
+                opt.Username = mysqlCfg.UserID;
+                opt.Database = mysqlCfg.Database;
+                opt.ServerId = 1;
+                if (state != null)
+                {
+                    opt.Binlog = BinlogOptions.FromGtid(state);
+                    Console.WriteLine("Loaded gtid {0}", state);
+                }
+            }, MySqlCdcModes.Gtid);
+            var listner = await mysqlCdcMgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(null));
+            listner.AttachToDispatcher(eh);
+            await listner.StartAsync();
+            Console.WriteLine("Now listing data changes, q key is quit");
+            while (Console.ReadKey().Key != ConsoleKey.Q) ;
+            Console.ReadLine();
+            farm.Dispose();
         }
-        static IEnumerable<object> DataSetRow(int i)
-        {
-            yield return i * 123.0;
-            yield return i;
-        }
-        static void Elp(Action action)
+        static async Task Elapsed(Func<Task> action)
         {
             var gc = GC.GetTotalMemory(false);
-            var sw = Stopwatch.GetTimestamp();
-
-            action();
-            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw).TotalMilliseconds.ToString("F3") + "ms");
-            Console.WriteLine($"{(GC.GetTotalMemory(false) - gc) / 1024 / 1024.0:F5}MB");
-        }
-        static async Task Elp(Func<Task> action)
-        {
-            var gc = GC.GetTotalMemory(false);
-            var sw = Stopwatch.GetTimestamp();
+            var sw = Stopwatch.StartNew();
 
             await action();
-            Console.WriteLine(new TimeSpan(Stopwatch.GetTimestamp() - sw).TotalMilliseconds.ToString("F3") + "ms");
+            Console.WriteLine(sw.ElapsedMilliseconds.ToString("F3") + "ms");
             Console.WriteLine($"{(GC.GetTotalMemory(false) - gc) / 1024 / 1024.0:F5}MB");
         }
-    }
-    public class DuckFarmWarehouse : FarmWarehouse
-    {
-        private readonly DuckDBConnection duckDBConnection;
-        public DuckFarmWarehouse(IDbScriptExecuter scriptExecuter, ICursorRowHandlerSelector cursorRowHandlerSelector, bool attackId)
-            : base(scriptExecuter, cursorRowHandlerSelector, attackId)
-        {
-            duckDBConnection = (DuckDBConnection)scriptExecuter.Connection;
-        }
-
-        public DuckFarmWarehouse(IDbScriptExecuter scriptExecuter, DatabaseReader databaseReader, ICursorRowHandlerSelector cursorRowHandlerSelector, bool attackId)
-            : base(scriptExecuter, databaseReader, cursorRowHandlerSelector, attackId)
-        {
-            duckDBConnection = (DuckDBConnection)scriptExecuter.Connection;
-        }
-        public override async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<IEnumerable<object>> values, CancellationToken token = default)
-        {
-            using (var trans = duckDBConnection.BeginTransaction())
-            {
-                ulong id = 0;
-                if (AttackId)
-                {
-                    id = await GetCurrentSeqAsync(token);
-                }
-                using (var appender = duckDBConnection.CreateAppender(tableName))
-                {
-                    foreach (var row in values)
-                    {
-                        id++;
-                        var rowAppender = appender.CreateRow();
-                        foreach (var item in row)
-                        {
-                            Add(rowAppender, item);
-                        }
-                        if (AttackId)
-                        {
-                            rowAppender.AppendValue(id);
-                        }
-                        rowAppender.EndRow();
-                    }
-                }
-                if (AttackId)
-                {
-                    await UpdateCurrentSeqAsync(id, token);
-                }
-                await trans.CommitAsync(token);
-            }
-        }
-        public override async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<object> values, CancellationToken token = default)
-        {
-            using (var trans = duckDBConnection.BeginTransaction())
-            {
-                ulong id = 0;
-                if (AttackId)
-                {
-                    id = await GetCurrentSeqAsync(token);
-                }
-                using (var appender = duckDBConnection.CreateAppender(tableName))
-                {
-                    id++;
-                    var row = appender.CreateRow();
-                    foreach (var item in values)
-                    {
-                        Add(row, item);
-                    }
-                    if (AttackId)
-                    {
-                        row.AppendValue(id);
-                    }
-                    row.EndRow();
-                }
-                if (AttackId)
-                {
-                    await UpdateCurrentSeqAsync(id, token);
-                }
-                await trans.CommitAsync(token);
-            }
-        }
-        private static void Add(DuckDBAppenderRow row, object item)
-        {
-            switch (item)
-            {
-                case null: row.AppendNullValue(); break;
-                case bool: row.AppendValue((bool)item); break;
-                case string: row.AppendValue((string)item); break;
-                case sbyte: row.AppendValue((sbyte)item); break;
-                case short: row.AppendValue((short)item); break;
-                case int: row.AppendValue((int)item); break;
-                case long: row.AppendValue((long)item); break;
-                case byte: row.AppendValue((byte)item); break;
-                case ushort: row.AppendValue((ushort)item); break;
-                case uint: row.AppendValue((uint)item); break;
-                case ulong: row.AppendValue((ulong)item); break;
-                case float: row.AppendValue((float)item); break;
-                case double: row.AppendValue((double)item); break;
-                case DateTime: row.AppendValue(((DateTime)item)); break;
-                case DateOnly: row.AppendValue((DateOnly)item); break;
-                case TimeOnly: row.AppendValue((TimeOnly)item); break;
-                default:
-                    break;
-            }
-        }
-
     }
 }

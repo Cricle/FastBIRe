@@ -1,4 +1,6 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿using DatabaseSchemaReader;
+using DatabaseSchemaReader.DataSchema;
+using System.Data.Common;
 
 namespace FastBIRe
 {
@@ -19,12 +21,22 @@ namespace FastBIRe
                 WrapName = wrapName;
             }
         }
-        public static TableWrapper FromMarsk(DatabaseTable table, SqlType sqlType, Predicate<DatabaseColumn> predicate)
+        public static TableWrapper Create(DbConnection connection,string tableName, Predicate<DatabaseColumn> columnMarsk)
+        {
+            var reader = new DatabaseReader(connection) { Owner = connection.Database };
+            var table = reader.Table(tableName);
+            if (table ==null)
+            {
+                throw new ArgumentException($"Table {tableName} not exists");
+            }
+            return FromMarsk(table, reader.SqlType!.Value, columnMarsk);
+        }
+        public static TableWrapper FromMarsk(DatabaseTable table, SqlType sqlType, Predicate<DatabaseColumn> columnMarsk)
         {
             var selectmask = new List<int>();
             for (int i = 0; i < table.Columns.Count; i++)
             {
-                if (predicate(table.Columns[i]))
+                if (columnMarsk(table.Columns[i]))
                 {
                     selectmask.Add(i);
                 }
@@ -72,6 +84,7 @@ namespace FastBIRe
             KeysMask = keys;
             WrapTableName = SqlType.Wrap(Table.Name);
             keyIndexSet = new HashSet<int>(KeysMask.Select(x => x.Index));
+            SelectsExceptKeyMask = SelectsMask.Where(x => !keyIndexSet.Contains(x.Index)).ToArray();
         }
         private readonly HashSet<int> keyIndexSet;
         private readonly ITableColumnSnapshot[] columnSnapshots;
@@ -88,9 +101,55 @@ namespace FastBIRe
 
         public IReadOnlyList<ITableColumnSnapshot> SelectsMask { get; }
 
+        public IReadOnlyList<ITableColumnSnapshot> SelectsExceptKeyMask { get; }
+
         public IReadOnlyList<string> ColumnNames { get; }
 
         public string ColumnNameJoined { get; }
+
+        public string? InsertOrUpdate(IEnumerable<object> values)
+        {
+            var valueJoined = string.Join(", ", values.Select(x => SqlType.WrapValue(x))) ;
+            switch (SqlType)
+            {
+                case SqlType.SqlServer:
+                case SqlType.SqlServerCe:
+                    {
+                        var idMatchs = string.Join(" AND ", KeysMask.Select(x => $"target.[{x.Name}] = source.[{x.Name}]"));
+                        return $@"MERGE {WrapTableName} AS target
+USING (VALUES ({valueJoined})) AS source ({ColumnNameJoined})
+ON {idMatchs}
+WHEN MATCHED THEN
+    UPDATE SET {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"target.{x.Name} = source.{x.Name}"))}
+WHEN NOT MATCHED THEN
+    INSERT ({ColumnNameJoined})
+    VALUES ({string.Join(", ", SelectsExceptKeyMask.Select((x) => $"source.{x.Name}"))});";
+                    }
+                case SqlType.MySql:
+                    {
+                        return $@"INSERT INTO {WrapTableName} ({ColumnNameJoined})
+VALUES ({valueJoined})
+ON DUPLICATE KEY UPDATE {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{x.Name} = VALUES({x.Name})"))};";
+                    }
+                case SqlType.SQLite:
+                    return $@"INSERT OR REPLACE INTO {WrapTableName} ({ColumnNameJoined}) VALUES ({valueJoined});";
+                case SqlType.PostgreSql:
+                case SqlType.DuckDB:
+                    return $@"INSERT INTO {WrapTableName} ({ColumnNameJoined})
+VALUES ({valueJoined})
+ON CONFLICT ({string.Join(", ",KeysMask.Select(x=>x.Name))})
+DO UPDATE SET {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{x.Name}=EXCLUDED.{x.Name}"))};";
+                case SqlType.Oracle:
+                case SqlType.Db2:
+                default:
+                    return null;
+            }
+        }
+
+        public IEnumerable<object> GetKeyValues(IEnumerable<object> values)
+        {
+            return KeysMask.Select(x => values.ElementAt(x.Index));
+        }
 
         public string CreateInsertSql(IEnumerable<object> values)
         {
@@ -99,7 +158,7 @@ namespace FastBIRe
         public string CreateUpdateByKeySql(IEnumerable<object> values)
         {
             var keyWhere = string.Join(" AND ", KeysMask.Select(x => $"{x.WrapName} = {SqlType.WrapValue(values.ElementAt(x.Index))}"));
-            var sets = string.Join(", ", SelectsMask.Where(x => !keyIndexSet.Contains(x.Index)).Select(x => $"{x.WrapName} = {SqlType.WrapValue(values.ElementAt(x.Index))}"));
+            var sets = string.Join(", ", SelectsExceptKeyMask.Select(x => $"{x.WrapName} = {SqlType.WrapValue(values.ElementAt(x.Index))}"));
             return $"UPDATE {WrapTableName} SET {sets} WHERE {keyWhere}";
         }
         public string CreateDeleteByKeySql(IEnumerable<object> values)

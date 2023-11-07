@@ -1,21 +1,7 @@
-﻿using DatabaseSchemaReader;
-using System.Data.Common;
-
-namespace FastBIRe
+﻿namespace FastBIRe
 {
-    public static class DbScriptExecuterGetExtensions
-    {
-        public static DatabaseReader CreateReader(this IDbScriptExecuter dbScriptExecuter)
-        {
-            return new DatabaseReader(dbScriptExecuter.Connection) { Owner = dbScriptExecuter.Connection.Database };
-        }
-    }
     public delegate Task ReadDataHandler(IScriptExecuter executer, ReadingDataArgs args);
     public delegate Task<TResult> ReadDataResultHandler<TResult>(IScriptExecuter executer, ReadingDataArgs args);
-    public interface IDbScriptExecuter : IScriptExecuter
-    {
-        DbConnection Connection { get; }
-    }
     public interface IScriptExecuter : IDisposable
     {
         Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
@@ -25,5 +11,26 @@ namespace FastBIRe
         Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
 
         Task<TResult> ReadResultAsync<TResult>(string script, ReadDataResultHandler<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
+    }
+    public static class ScriptExecuterEventExtensions
+    {
+        public static void RegistScriptStated(this IScriptExecuter executer, EventHandler<ScriptExecuteEventArgs> handler)
+        {
+            if (executer is DefaultScriptExecuter scriptExecuter)
+            {
+                scriptExecuter.ScriptStated += handler;
+                return;
+            }
+            throw new InvalidCastException($"Can't cast {executer.GetType()} to {typeof(DefaultScriptExecuter)}");
+        }
+        public static void UnRegistScriptStated(this IScriptExecuter executer, EventHandler<ScriptExecuteEventArgs> handler)
+        {
+            if (executer is DefaultScriptExecuter scriptExecuter)
+            {
+                scriptExecuter.ScriptStated -= handler;
+                return;
+            }
+            throw new InvalidCastException($"Can't cast {executer.GetType()} to {typeof(DefaultScriptExecuter)}");
+        }
     }
 }

@@ -16,6 +16,8 @@ namespace FastBIRe.Cdc.Mssql.Checkpoints
 
         public string Hex => LsnInteger.ToString("X");
 
+        public bool IsEmpty => Lsn == null || LsnInteger == 0;
+
         public byte[] ToBytes()
         {
             return Lsn;

@@ -14,9 +14,10 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
             FileName = fileName;
         }
 
-        public MySqlCheckpoint(IGtid? gtid)
+        public MySqlCheckpoint(IGtid? gtid, long serviceId)
         {
             Gtid = gtid;
+            ServiceId = serviceId;
         }
 
         public long Position { get; }
@@ -25,11 +26,28 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
 
         public IGtid? Gtid { get; }
 
+        public long ServiceId { get; }
+
+        public bool IsEmpty => Gtid == null && Position == 0;
+
+        public IGtidState? ToGtidState()
+        {
+            if (Gtid is MySqlCdc.Providers.MySql.Gtid mgtid)
+            {
+                return MySqlCdc.Providers.MySql.GtidSet.Parse($"{mgtid.SourceId}:{ServiceId}-{mgtid.TransactionId}");
+            }
+            else if (Gtid is MySqlCdc.Providers.MariaDb.Gtid magtid)
+            {
+                return new MySqlCdc.Providers.MariaDb.GtidList { Gtids = { magtid } };
+            }
+            return null;
+        }
+
         public override string? ToString()
         {
             if (Gtid!=null)
             {
-                return Gtid.ToString();
+                return ToGtidState()?.ToString();
             }
             return $"{{FileName: {FileName}, Pos: {Position}}}";
         }
@@ -53,6 +71,7 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
             else if(Gtid is MySqlCdc.Providers.MySql.Gtid mysqlGtid)
             {
                 buffer.AddRange(mysqlGtid.SourceId.ToByteArray());
+                buffer.AddRange(BitConverter.GetBytes(ServiceId));
                 buffer.AddRange(BitConverter.GetBytes(mysqlGtid.TransactionId));
             }
             else if (Gtid is MySqlCdc.Providers.MariaDb.Gtid mariaGtid)

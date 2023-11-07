@@ -15,6 +15,8 @@ namespace FastBIRe.Cdc.NpgSql.Checkpoints
 
         public string? FileName { get; }
 
+        public bool IsEmpty => CurrentLsn != null && FileName != null;
+
         public override string ToString()
         {
             return $"{{FileName: {FileName}, Lsn: {CurrentLsn}}}";

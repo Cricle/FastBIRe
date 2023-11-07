@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,13 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DuckDB.NET.Data.Full" Version="0.9.0.3" />
     <PackageReference Include="MySqlConnector" Version="2.2.7" />
   </ItemGroup>
 	<ItemGroup>
-		<Compile Include="../FastBIRe.Mig/DebugHelper.cs"/>
+		<Compile Include="../FastBIRe.Mig/DebugHelper.cs" />
 	</ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\FastBIRe.AP.DuckDB\FastBIRe.AP.DuckDB.csproj" />
+    <ProjectReference Include="..\..\src\FastBIRe.Cdc.MySql\FastBIRe.Cdc.MySql.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe\FastBIRe.csproj" />
   </ItemGroup>
 

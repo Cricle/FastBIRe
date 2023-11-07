@@ -10,6 +10,8 @@ namespace FastBIRe.Cdc.Checkpoints
         {
         }
 
+        public bool IsEmpty =>true;
+
         public byte[] ToBytes()
         {
             return Array.Empty<byte>();

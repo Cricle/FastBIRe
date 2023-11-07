@@ -13,6 +13,9 @@
         BatchException,
         Skip,
         StartReading,
-        EndReading
+        EndReading,
+        BeginTransaction,
+        CommitedTransaction,
+        RollbackedTransaction
     }
 }
