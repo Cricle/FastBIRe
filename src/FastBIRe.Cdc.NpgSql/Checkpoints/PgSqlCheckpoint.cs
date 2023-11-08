@@ -16,7 +16,7 @@ namespace FastBIRe.Cdc.NpgSql.Checkpoints
 
         public NpgsqlLogSequenceNumber? SequenceNumber { get; }
 
-        public bool IsEmpty => SequenceNumber != null;
+        public bool IsEmpty => SequenceNumber == null;
 
         public override string? ToString()
         {

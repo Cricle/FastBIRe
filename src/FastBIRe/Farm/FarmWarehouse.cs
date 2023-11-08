@@ -54,9 +54,11 @@ namespace FastBIRe.Farm
             copyTable.SchemaOwner = DatabaseReader.Owner;
             copyTable.DatabaseSchema = DatabaseReader.DatabaseSchema;
             copyTable.Indexes = new List<DatabaseIndex>();
+            copyTable.CheckConstraints.RemoveAll(x => x.ConstraintType == ConstraintType.Check);
             foreach (var item in copyTable.Columns)
             {
                 item.IsAutoNumber = false;
+                item.DefaultValue = null;
             }
             if (DatabaseReader.TableExists(copyTable.Name))
             {

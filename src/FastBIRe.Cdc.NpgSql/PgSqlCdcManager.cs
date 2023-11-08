@@ -56,7 +56,7 @@ namespace FastBIRe.Cdc.NpgSql
 
         public Task<bool> IsTableCdcEnableAsync(string databaseName, string tableName, CancellationToken token = default)
         {
-            return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_catalog.pg_publication_tables WHERE tablename='{tableName}';", token: token);
+            return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='{GetPubName(databaseName,tableName)}';", token: token);
         }
 
         public Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default)
@@ -81,14 +81,14 @@ namespace FastBIRe.Cdc.NpgSql
             var exists = await IsTableCdcEnableAsync(databaseName, tableName, token);
             if (!exists)
             {
-                exists = await IsReplicationSlotsExistsAsync(databaseName, $"{tableName}{SlotTail}", token);
+                exists = await IsReplicationSlotsExistsAsync(databaseName, $"{databaseName}_{tableName}{SlotTail}", token);
             }
             if (exists)
             {
                 await TryDisableTableCdcAsync(databaseName, tableName, token);
             }
-            var result = await ScriptExecuter.ExistsAsync($"CREATE PUBLICATION \"{tableName}{PubTail}\" FOR TABLE \"{tableName}\";", token: token);
-            result &= await ScriptExecuter.ExistsAsync($"SELECT * FROM pg_create_logical_replication_slot({GetSlotName(tableName)}, 'pgoutput');", token: token);
+            var result = await ScriptExecuter.ExistsAsync($"CREATE PUBLICATION \"{GetPubName(databaseName,tableName)}\" FOR TABLE \"{tableName}\";", token: token);
+            result &= await ScriptExecuter.ExistsAsync($"SELECT * FROM pg_create_logical_replication_slot('{GetSlotName(databaseName,tableName)}', 'pgoutput');", token: token);
             result &= await ScriptExecuter.ExistsAsync($"ALTER TABLE \"{tableName}\" REPLICA IDENTITY FULL;", token: token);
             return result;
         }
@@ -100,15 +100,17 @@ namespace FastBIRe.Cdc.NpgSql
 
         public async Task<bool?> TryDisableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
         {
+            var pubName = GetPubName(databaseName, tableName);
+            var slotName = GetSlotName(databaseName, tableName);
             var exists = await IsTableCdcEnableAsync(databaseName, tableName, token);
             if (exists)
             {
-                await ScriptExecuter.ExistsAsync($"DROP PUBLICATION \"{tableName}{PubTail}\";", token: token);
+                await ScriptExecuter.ExistsAsync($"DROP PUBLICATION \"{pubName}\";", token: token);
             }
-            exists = await IsReplicationSlotsExistsAsync(databaseName, $"{tableName}{SlotTail}", token);
+            exists = await IsReplicationSlotsExistsAsync(databaseName, $"{slotName}", token);
             if (exists)
             {
-                await ScriptExecuter.ExistsAsync($"SELECT pg_drop_replication_slot({GetSlotName(tableName)});", token: token);
+                await ScriptExecuter.ExistsAsync($"SELECT pg_drop_replication_slot('{slotName}');", token: token);
             }
             return true;
         }
@@ -124,13 +126,13 @@ namespace FastBIRe.Cdc.NpgSql
                 return Task.FromResult<NpgsqlLogSequenceNumber?>(null);
             },token:token);
         }
-        public static string? GetPubName(string tableName)
+        public static string? GetPubName(string databaseName,string tableName)
         {
-            return SqlType.PostgreSql.WrapValue(tableName + PubTail);
+            return $"{databaseName}_{tableName}{PubTail}".Replace('-','_');
         }
-        public static string? GetSlotName(string tableName)
+        public static string? GetSlotName(string databaseName, string tableName)
         {
-            return SqlType.PostgreSql.WrapValue(tableName + SlotTail);
+            return $"{databaseName}_{tableName}{SlotTail}".Replace('-', '_');
         }
         public Task<bool> IsReplicationSlotsExistsAsync(string database,string name, CancellationToken token = default)
         {
