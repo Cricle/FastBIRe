@@ -1,24 +1,25 @@
-﻿using Npgsql.Replication;
+﻿using FastBIRe.Cdc.Checkpoints;
+using Npgsql.Replication;
 using Npgsql.Replication.PgOutput;
 using NpgsqlTypes;
 
 namespace FastBIRe.Cdc.NpgSql
 {
-    public class PgSqlGetCdcListenerOptions : IGetCdcListenerOptions
+    public class PgSqlGetCdcListenerOptions : GetCdcListenerOptions
     {
         public PgSqlGetCdcListenerOptions(LogicalReplicationConnection logicalReplicationConnection,
             PgOutputReplicationSlot outputReplicationSlot,
             PgOutputReplicationOptions outputReplicationOptions,
-            NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber, IReadOnlyList<string>? tableNames)
+            NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber, 
+            IReadOnlyList<string>? tableNames,
+            ICheckpoint? checkpoint)
+            :base(tableNames, checkpoint) 
         {
-            TableNames = tableNames;
             LogicalReplicationConnection = logicalReplicationConnection;
             OutputReplicationSlot = outputReplicationSlot;
             OutputReplicationOptions = outputReplicationOptions;
             NpgsqlLogSequenceNumber = npgsqlLogSequenceNumber;
         }
-
-        public IReadOnlyList<string>? TableNames { get; }
 
         public LogicalReplicationConnection LogicalReplicationConnection { get; }
 

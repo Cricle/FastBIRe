@@ -11,7 +11,7 @@ namespace FastBIRe.CdcSample
             var comm = new MssqlCdcManager(() => new DefaultScriptExecuter(mssql));
             await comm.TryEnableDatabaseCdcAsync("test11");
             await comm.TryEnableTableCdcAsync("test11","juhe");
-            var listen = await comm.GetCdcListenerAsync(new MssqlGetCdcListenerOptions(null, TimeSpan.FromSeconds(1), comm.ScriptExecuterFactory()));
+            var listen = await comm.GetCdcListenerAsync(new MssqlGetCdcListenerOptions(TimeSpan.FromSeconds(1), comm.ScriptExecuterFactory(), null, null));
             listen.EventRaised += Program.Vars_EventRaised;
             await listen.StartAsync();
             Console.ReadLine();

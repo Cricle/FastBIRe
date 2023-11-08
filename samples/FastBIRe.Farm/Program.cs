@@ -4,7 +4,6 @@ using FastBIRe.Cdc.Checkpoints;
 using FastBIRe.Cdc.Events;
 using FastBIRe.Cdc.MySql;
 using FastBIRe.Cdc.MySql.Checkpoints;
-using MySqlCdc;
 using MySqlConnector;
 using System.Diagnostics;
 
@@ -26,12 +25,12 @@ namespace FastBIRe.Farm
         static async Task Main(string[] args)
         {
             var farm = FarmHelper.CreateFarm(tableName, false);
-            await farm.DestFarmWarehouse.ScriptExecuter.ExecuteAsync("SET memory_limit='64MB';");
+            await farm.DestFarmWarehouse.ScriptExecuter.ExecuteAsync("SET memory_limit='128MB';");
             farm.DestFarmWarehouse.ScriptExecuter.RegistScriptStated((o, e) =>
             {
-                if (e.State == ScriptExecutState.Executed)
+                if (e.State == ScriptExecutState.Executed||e.State== ScriptExecutState.EndReading)
                 {
-                    Console.WriteLine($"Execute \n{e.Script}");
+                    Console.WriteLine($"Executed({e.ExecutionTime?.TotalMilliseconds:F3}ms) {e.Script}");
                 }
             });
             var storage = new FolderCheckpointStorage(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "checkpoints"));
@@ -48,30 +47,63 @@ namespace FastBIRe.Farm
             await eh.StartAsync();
             var mysqlCfg = new MySqlConnectionStringBuilder(farm.SourceFarmWarehouse.Connection.ConnectionString);
             var pkg = await storage.GetAsync(databaseName, tableName);
-            var state = ((MySqlCheckpoint?)pkg?.CastCheckpoint(MysqlCheckpointManager.Instance))?.ToGtidState();
-            if (!syncOk && state == null)
+            var checkpoint = pkg?.CastCheckpoint<MySqlCheckpoint>(MysqlCheckpointManager.Instance);
+            if (!syncOk && checkpoint == null)
             {
                 await MigrationDatasAsync(farm);
             }
-            var mysqlCdcMgr = new MySqlCdcManager(farm.SourceFarmWarehouse.ScriptExecuter, opt =>
+            var mysqlCdcMgr = new MySqlCdcManager(farm.SourceFarmWarehouse.ScriptExecuter, MySqlCdcModes.Gtid);
+            var listner = await mysqlCdcMgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(null,checkpoint, opt =>
             {
                 opt.Port = (int)mysqlCfg.Port;
                 opt.Hostname = mysqlCfg.Server;
                 opt.Password = "Syc123456.";
                 opt.Username = mysqlCfg.UserID;
                 opt.Database = mysqlCfg.Database;
-                opt.ServerId = 1;
-                if (state != null)
-                {
-                    opt.Binlog = BinlogOptions.FromGtid(state);
-                    Console.WriteLine("Loaded gtid {0}", state);
-                }
-            }, MySqlCdcModes.Gtid);
-            var listner = await mysqlCdcMgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(null));
+            }));
             listner.AttachToDispatcher(eh);
             await listner.StartAsync();
-            Console.WriteLine("Now listing data changes, q key is quit");
-            while (Console.ReadKey().Key != ConsoleKey.Q) ;
+            Console.WriteLine("Now listing data changes, q key is quit, a key to aggra, o to count");
+            var dSqlType = farm.DestFarmWarehouse.SqlType;
+            var fn = FunctionMapper.Get(dSqlType)!;
+            while (true)
+            {
+                var k = Console.ReadKey();
+                switch (k.Key)
+                {
+                    case ConsoleKey.Q:
+                        goto Exit;
+                    case ConsoleKey.A:
+                        await farm.DestFarmWarehouse.ScriptExecuter.ReadAsync($"SELECT {fn.AverageC(dSqlType.Wrap("ja2"))},{fn.CountC(dSqlType.Wrap("sa3"))},{fn.AverageC(fn.Len(dSqlType.Wrap("ca4"))!)} from {dSqlType.Wrap("juhe2")} group by {fn.YearFull(dSqlType.Wrap("datetime"))};",
+                            (o, e) =>
+                            {
+                                while (e.Reader.Read())
+                                {
+                                    Console.WriteLine(string.Join(", ", Enumerable.Range(0, e.Reader.FieldCount).Select(x => e.Reader[x])));
+                                }
+                                return Task.CompletedTask;
+                            });
+                        break;
+                    case ConsoleKey.I:
+                        await farm.DestFarmWarehouse.ScriptExecuter.ReadAsync($"SELECT * from {dSqlType.Wrap("juhe2")} WHERE _id = {dSqlType.WrapValue(Random.Shared.Next(0,int.MaxValue))};",
+                            (o, e) =>
+                            {
+                                while (e.Reader.Read())
+                                {
+                                    Console.WriteLine(string.Join(", ", Enumerable.Range(0, e.Reader.FieldCount).Select(x => e.Reader[x])));
+                                }
+                                return Task.CompletedTask;
+                            });
+                        break;
+                    case ConsoleKey.O:
+                        var count = await farm.DestFarmWarehouse.ScriptExecuter.ReadOneAsync<int>($"SELECT COUNT(*) FROM {dSqlType.Wrap("juhe2")};");
+                        Console.WriteLine("TotalSize:" + count);
+                        break;
+                    default:
+                        break;
+                }
+            }
+Exit:
             Console.ReadLine();
             farm.Dispose();
         }

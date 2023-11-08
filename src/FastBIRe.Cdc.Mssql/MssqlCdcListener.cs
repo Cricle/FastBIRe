@@ -18,6 +18,10 @@ namespace FastBIRe.Cdc.Mssql
             DelayScan = options.DelayScan;
             SqlConnection = (SqlConnection)options.ScriptExecuter.Connection;
             DatabaseReader = new DatabaseReader(SqlConnection) { Owner = SqlConnection.Database };
+            if (options.Checkpoint is MssqlCheckpoint cp&&cp.Lsn!=null)
+            {
+                maxLsn = new MssqlLsn(cp.Lsn);
+            }
         }
         private IList<string>? cdcTables;
         private MssqlLsn? maxLsn;
@@ -54,7 +58,10 @@ namespace FastBIRe.Cdc.Mssql
 
         protected override async Task OnStartAsync(CancellationToken token = default)
         {
-            maxLsn = await CdcManager.GetMaxLSNAsync(token);
+            if (maxLsn == null)
+            {
+                maxLsn = await CdcManager.GetMaxLSNAsync(token);
+            }
             cdcTables = await CdcManager.GetEnableCdcTableNamesAsync(token);
             task = Task.Factory.StartNew(Handler, this, token, TaskCreationOptions.LongRunning | TaskCreationOptions.AttachedToParent, TaskScheduler.Current)
                 .Unwrap();

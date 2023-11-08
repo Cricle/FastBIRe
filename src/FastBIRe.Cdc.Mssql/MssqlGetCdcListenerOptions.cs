@@ -1,16 +1,16 @@
-﻿namespace FastBIRe.Cdc.Mssql
+﻿using FastBIRe.Cdc.Checkpoints;
+
+namespace FastBIRe.Cdc.Mssql
 {
-    public class MssqlGetCdcListenerOptions : IGetCdcListenerOptions
+    public class MssqlGetCdcListenerOptions : GetCdcListenerOptions
     {
-        public MssqlGetCdcListenerOptions(IReadOnlyList<string>? tableNames, TimeSpan delayScan, IDbScriptExecuter scriptExecuter)
+        public MssqlGetCdcListenerOptions(TimeSpan delayScan, IDbScriptExecuter scriptExecuter, IReadOnlyList<string>? tableNames,ICheckpoint? checkpoint)
+            :base(tableNames,checkpoint)
         {
-            TableNames = tableNames;
             DelayScan = delayScan;
             ScriptExecuter = scriptExecuter;
         }
         public IDbScriptExecuter ScriptExecuter { get; }
-
-        public IReadOnlyList<string>? TableNames { get; }
 
         public TimeSpan DelayScan { get; }
     }

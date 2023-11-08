@@ -1,10 +1,12 @@
 ﻿using DatabaseSchemaReader.DataSchema;
+using DuckDB.NET.Data;
+using FastBIRe.Cdc;
 using FastBIRe.Cdc.Checkpoints;
 using FastBIRe.Cdc.Events;
 
 namespace FastBIRe.AP.DuckDB
 {
-    public class DuckDbCdcHandler : IEventDispatcheHandler<CdcEventArgs>
+    public class DuckDbCdcHandler : IEventDispatcheHandler<CdcEventArgs>, IDisposable
     {
         public static DuckDbCdcHandler Create(IDbScriptExecuter connection,string tableName, CheckpointIdentity identity, ICheckpointStorage checkpointStorage)
         {
@@ -25,7 +27,14 @@ namespace FastBIRe.AP.DuckDB
             TableWrapper = new TableWrapper(Table, SqlType, null);
             CheckpointStorage = checkpointStorage;
             Identity = identity;
+            Connection = (DuckDBConnection)connection.Connection;
+            Warehouse = new DuckFarmWarehouse(connection);
         }
+
+        public DuckFarmWarehouse Warehouse { get; }
+
+        public DuckDBConnection Connection { get; }
+
         public CheckpointIdentity Identity { get; }
 
         public IDbScriptExecuter ScriptExecuter { get; }
@@ -38,7 +47,21 @@ namespace FastBIRe.AP.DuckDB
 
         public TableWrapper TableWrapper { get; }
 
+        public DuckCdcDbMode Mode { get; set; }
+
         public event EventHandler<ICheckpoint>? CheckpointUpdate;
+
+        private async Task InsertOrUpdateAsync(IEnumerable<ICdcDataRow> rows,CancellationToken token)
+        {
+            foreach (var item in rows)
+            {
+                var script = TableWrapper.InsertOrUpdate(item);
+                if (!string.IsNullOrEmpty(script))
+                {
+                    await ScriptExecuter.ExecuteAsync(script, token: token);
+                }
+            }
+        }
 
         public async Task HandleAsync(CdcEventArgs input, CancellationToken token = default)
         {
@@ -46,13 +69,20 @@ namespace FastBIRe.AP.DuckDB
             {
                 if (input is InsertEventArgs iea)
                 {
-                    foreach (var item in iea.Rows)
+                    if (Mode == DuckCdcDbMode.Fast)
                     {
-                        var script = TableWrapper.InsertOrUpdate(item);
-                        if (!string.IsNullOrEmpty(script))
+                        try
                         {
-                            await ScriptExecuter.ExecuteAsync(script, token: token);
+                            await Warehouse.InsertAsync(Table.Name, TableWrapper.ColumnNames, iea.Rows, token);
                         }
+                        catch (Exception)
+                        {
+                            await InsertOrUpdateAsync(iea.Rows, token);
+                        }
+                    }
+                    else
+                    {
+                        await InsertOrUpdateAsync(iea.Rows,token);
                     }
                 }
                 else if (input is UpdateEventArgs uea)
@@ -83,6 +113,10 @@ namespace FastBIRe.AP.DuckDB
                 CheckpointUpdate?.Invoke(this, input.Checkpoint);
                 await CheckpointStorage.SetAsync(new CheckpointPackage(Identity, input.Checkpoint.ToBytes()), token);
             }
+        }
+
+        public void Dispose()
+        {
         }
     }
 }

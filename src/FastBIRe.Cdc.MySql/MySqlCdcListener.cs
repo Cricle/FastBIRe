@@ -55,7 +55,10 @@ namespace FastBIRe.Cdc.MySql
             }
             return null;
         }
-
+        protected override void OnDisposed(bool disposing)
+        {
+            TokenSource?.Cancel();
+        }
         private async Task Handler(object? state)
         {
             var listener = (MySqlCdcListener)state!;

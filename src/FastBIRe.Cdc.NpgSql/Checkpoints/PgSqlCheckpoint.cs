@@ -1,66 +1,49 @@
 ﻿using FastBIRe.Cdc.Checkpoints;
-using System.Text;
+using NpgsqlTypes;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace FastBIRe.Cdc.NpgSql.Checkpoints
 {
     public class PgSqlCheckpoint : ICheckpoint
     {
-        public PgSqlCheckpoint(string? currentLsn, string? fileName)
+        private static readonly int NpgsqlLogSequenceNumberSize= Marshal.SizeOf<NpgsqlLogSequenceNumber>();
+
+        public PgSqlCheckpoint(NpgsqlLogSequenceNumber? sequenceNumber)
         {
-            CurrentLsn = currentLsn;
-            FileName = fileName;
+            SequenceNumber = sequenceNumber;
         }
 
-        public string? CurrentLsn { get; }
+        public NpgsqlLogSequenceNumber? SequenceNumber { get; }
 
-        public string? FileName { get; }
+        public bool IsEmpty => SequenceNumber != null;
 
-        public bool IsEmpty => CurrentLsn != null && FileName != null;
-
-        public override string ToString()
+        public override string? ToString()
         {
-            return $"{{FileName: {FileName}, Lsn: {CurrentLsn}}}";
+            return SequenceNumber?.ToString();
         }
-        public byte[] ToBytes()
+        public unsafe byte[] ToBytes()
         {
             var buffer = new List<byte>();
-            if (string.IsNullOrEmpty(CurrentLsn))
+            if (SequenceNumber!=null)
             {
-                buffer.AddRange(BitConverter.GetBytes(0));
-            }
-            else
-            {
-                buffer.AddRange(BitConverter.GetBytes(CurrentLsn!.Length));
-                buffer.AddRange(Encoding.UTF8.GetBytes(CurrentLsn));
-            }
-            if (string.IsNullOrEmpty(FileName))
-            {
-                buffer.AddRange(BitConverter.GetBytes(0));
-            }
-            else
-            {
-                buffer.AddRange(BitConverter.GetBytes(FileName!.Length));
-                buffer.AddRange(Encoding.UTF8.GetBytes(FileName));
+                byte* data = stackalloc byte[NpgsqlLogSequenceNumberSize];
+                Unsafe.Write(data, SequenceNumber.Value);
+                for (int i = 0; i < NpgsqlLogSequenceNumberSize; i++)
+                {
+                    buffer.Add(*(data + i));
+                }
             }
             return buffer.ToArray();
         }
-        public static PgSqlCheckpoint FromBytes(byte[] bytes)
+        public static unsafe PgSqlCheckpoint FromBytes(byte[] bytes)
         {
-            string? lsn = null;
-            string? fileName=null;
-
-            var lsnLength = BitConverter.ToInt32(bytes, 0);
-            if (lsnLength != 0)
+            if (bytes == null || bytes.Length == 0)
             {
-                lsn = Encoding.UTF8.GetString(bytes, sizeof(int), lsnLength);
+                return new PgSqlCheckpoint(null);
             }
-            lsnLength = BitConverter.ToInt32(bytes, sizeof(int) + lsnLength);
-            if (lsnLength != 0)
-            {
-                var offset = lsnLength + sizeof(int) * 2;
-                fileName = Encoding.UTF8.GetString(bytes, offset, bytes.Length - offset);
-            }
-            return new PgSqlCheckpoint(lsn, fileName);
+            var number = Unsafe.Read<NpgsqlLogSequenceNumber>(Unsafe.AsPointer(ref bytes[0]));
+            return new PgSqlCheckpoint(number);
         }
     }
 }

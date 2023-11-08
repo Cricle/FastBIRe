@@ -11,6 +11,8 @@ namespace FastBIRe.Cdc.Triggers.Checkpoints
 
         public byte[] Bytes { get; }
 
+        public bool IsEmpty => Bytes != null;
+
         public byte[] ToBytes()
         {
             return Bytes;

@@ -19,6 +19,10 @@ namespace FastBIRe.Cdc.NpgSql
             OutputReplicationSlot = options.OutputReplicationSlot;
             OutputReplicationOptions = options.OutputReplicationOptions;
             NpgsqlLogSequenceNumber = options.NpgsqlLogSequenceNumber;
+            if (options.Checkpoint is PgSqlCheckpoint cp && cp.SequenceNumber != null)
+            {
+                ReplicationConnectionConnection.SetReplicationStatus(cp.SequenceNumber.Value);
+            }
         }
 
         public LogicalReplicationConnection ReplicationConnectionConnection { get; }
@@ -80,7 +84,7 @@ namespace FastBIRe.Cdc.NpgSql
             await foreach (var message in listener.ReplicationConnectionConnection.StartReplication(
                 listener.OutputReplicationSlot, OutputReplicationOptions, source!.Token, NpgsqlLogSequenceNumber))
             {
-                var checkpoint = new PgSqlCheckpoint(message.WalEnd.ToString(), null);
+                var checkpoint = new PgSqlCheckpoint(message.WalEnd);
                 if (message is FullUpdateMessage fum)
                 {
                     var old = await ReadRowAsync(fum.OldRow);

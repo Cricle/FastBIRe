@@ -1,6 +1,7 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using FastBIRe.Cdc.Checkpoints;
 using FastBIRe.Cdc.NpgSql.Checkpoints;
+using NpgsqlTypes;
 
 namespace FastBIRe.Cdc.NpgSql
 {
@@ -110,6 +111,18 @@ namespace FastBIRe.Cdc.NpgSql
                 await ScriptExecuter.ExistsAsync($"SELECT pg_drop_replication_slot({GetSlotName(tableName)});", token: token);
             }
             return true;
+        }
+        public Task<NpgsqlLogSequenceNumber?> ReadSlotAsync(string slotName, CancellationToken token = default)
+        {
+            return ScriptExecuter.ReadResultAsync($"SELECT confirmed_flush_lsn from pg_replication_slots WHERE slot_name = '{slotName}' LIMIT 1;", (_, r) =>
+            {
+                if (r.Reader.Read())
+                {
+                    var res = r.Reader.GetInt64(0);
+                    return Task.FromResult<NpgsqlLogSequenceNumber?>(new NpgsqlLogSequenceNumber((ulong)res));
+                }
+                return Task.FromResult<NpgsqlLogSequenceNumber?>(null);
+            },token:token);
         }
         public static string? GetPubName(string tableName)
         {

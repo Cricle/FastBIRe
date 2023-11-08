@@ -2,7 +2,7 @@
 
 namespace FastBIRe.Cdc.Checkpoints
 {
-    public class EmptyCheckpoint : ICheckpoint
+    public sealed class EmptyCheckpoint : ICheckpoint
     {
         public static readonly EmptyCheckpoint Instance = new EmptyCheckpoint();
 

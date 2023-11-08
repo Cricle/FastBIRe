@@ -14,17 +14,22 @@ namespace FastBIRe.Cdc.Checkpoints
 
         public byte[]? CheckpointData { get; }
 
-        public ICheckpoint? CastCheckpoint(ICheckPointManager mgr)
+        public TCheckpoint? CastCheckpoint<TCheckpoint>(ICheckPointManager mgr)
+            where TCheckpoint:ICheckpoint
         {
             if (TryCastCheckpoint(mgr,out var cp,out var ex))
             {
-                return cp;
+                if (cp is TCheckpoint tcp)
+                {
+                    return tcp;
+                }
+                throw new InvalidCastException($"Can't case {cp?.GetType()} to {typeof(TCheckpoint)}");
             }
             if (ex != null)
             {
                 throw ex;
             }
-            return null;
+            return default;
         }
         public bool TryCastCheckpoint(ICheckPointManager mgr, out ICheckpoint? checkpoint, out Exception? exception)
         {

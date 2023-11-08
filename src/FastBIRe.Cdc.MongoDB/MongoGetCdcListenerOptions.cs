@@ -1,27 +1,26 @@
-﻿using MongoDB.Bson;
+﻿using FastBIRe.Cdc.Checkpoints;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace FastBIRe.Cdc.MongoDB
 {
-    public class MongoGetCdcListenerOptions : IGetCdcListenerOptions
+    public class MongoGetCdcListenerOptions : GetCdcListenerOptions
     {
-        public MongoGetCdcListenerOptions(IReadOnlyList<string>? tableNames, IChangeStreamCursor<ChangeStreamDocument<BsonDocument>> changeStreamCursor)
+        public MongoGetCdcListenerOptions(IChangeStreamCursor<ChangeStreamDocument<BsonDocument>> changeStreamCursor, IReadOnlyList<string>? tableNames,ICheckpoint? checkpoint)
+            :base(tableNames,checkpoint)    
         {
-            TableNames = tableNames;
             ChangeStreamCursor = changeStreamCursor;
         }
 
-        public IReadOnlyList<string>? TableNames { get; }
-
         public IChangeStreamCursor<ChangeStreamDocument<BsonDocument>> ChangeStreamCursor { get; }
 
-        public static MongoGetCdcListenerOptions FromUpdateLookup(IReadOnlyList<string>? tableNames,IMongoDatabase database)
+        public static MongoGetCdcListenerOptions FromUpdateLookup(IReadOnlyList<string>? tableNames,IMongoDatabase database,ICheckpoint? checkpoint)
         {
             var cursor= database.Watch(new ChangeStreamOptions
             {
                 FullDocument= ChangeStreamFullDocumentOption.UpdateLookup
             });
-            return new MongoGetCdcListenerOptions(tableNames,cursor);   
+            return new MongoGetCdcListenerOptions(cursor, tableNames, checkpoint);   
         }
     }
 }

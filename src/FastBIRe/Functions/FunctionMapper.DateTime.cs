@@ -230,6 +230,10 @@ END
         }
         public string? DayFull(string time)
         {
+            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            {
+                return $"DATE_TRUNC('day',{time})";
+            }
             return Concatenate(DayTo(time), "' 00:00:00'");
         }
         public string HourTo(string time)
@@ -250,6 +254,10 @@ END
         }
         public string? HourFull(string time)
         {
+            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            {
+                return $"DATE_TRUNC('hour',{time})";
+            }
             return Concatenate(HourTo(time), "':00:00'");
         }
         public string SecondTo(string time)
@@ -286,6 +294,10 @@ END
         }
         public string? MinuteFull(string time)
         {
+            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            {
+                return $"DATE_TRUNC('minute',{time})";
+            }
             return Concatenate(MinuteTo(time), "':00'");
         }
         public string WeekTo(string time)
@@ -313,6 +325,10 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
         }
         public string? WeekFull(string time)
         {
+            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            {
+                return $"DATE_TRUNC('week',{time})";
+            }
             return WeekTo(time);
         }
         public string QuarterFull(string time)
@@ -361,6 +377,10 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string? YearFull(string time)
         {
+            if (SqlType== SqlType.DuckDB||SqlType== SqlType.PostgreSql)
+            {
+                return $"DATE_TRUNC('year',{time})";
+            }
             return Concatenate(YearTo(time), "'-01-01 00:00:00'");
         }
         public string MonthTo(string time)
@@ -381,6 +401,10 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string? MonthFull(string time)
         {
+            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            {
+                return $"DATE_TRUNC('month',{time})";
+            }
             return Concatenate(MonthTo(time), "'-01 00:00:00'");
         }
         public string YearTo(string time)

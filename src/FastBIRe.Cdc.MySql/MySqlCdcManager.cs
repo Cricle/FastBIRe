@@ -13,19 +13,13 @@ namespace FastBIRe.Cdc.MySql
 #endif
     public class MySqlCdcManager : ICdcManager
     {
-        public MySqlCdcManager(IScriptExecuter scriptExecuter, Action<ReplicaOptions> replicaAction, MySqlCdcModes mode)
+        public MySqlCdcManager(IScriptExecuter scriptExecuter, MySqlCdcModes mode)
         {
             ScriptExecuter = scriptExecuter;
-            ReplicaAction = replicaAction;
-            BinlogClient = new BinlogClient(ReplicaAction);
             Mode = mode;
         }
 
         public IScriptExecuter ScriptExecuter { get; }
-
-        public Action<ReplicaOptions> ReplicaAction { get; }
-
-        public BinlogClient BinlogClient { get; }
 
         public MySqlCdcModes Mode { get; }
 
@@ -65,7 +59,8 @@ namespace FastBIRe.Cdc.MySql
         }
         public Task<ICdcListener> GetCdcListenerAsync(MySqlGetCdcListenerOptions options, CancellationToken token = default)
         {
-            return Task.FromResult<ICdcListener>(new MySqlCdcListener(BinlogClient, options,Mode));
+            var client = new BinlogClient(options.ReplicaOptionsAction);
+            return Task.FromResult<ICdcListener>(new MySqlCdcListener(client, options,Mode));
         }
 
         Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options, CancellationToken token)

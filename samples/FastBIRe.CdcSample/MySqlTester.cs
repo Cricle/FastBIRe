@@ -17,7 +17,11 @@ namespace FastBIRe.CdcSample
 
             var mysqlCfg = new MySqlConnectionStringBuilder(mysql.ConnectionString);
 
-            var mgr = new MySqlCdcManager(new DefaultScriptExecuter(mysql), opt =>
+            var mgr = new MySqlCdcManager(new DefaultScriptExecuter(mysql), MySqlCdcModes.Gtid);
+            //var ser =await mgr.GetCdcLogServiceAsync();
+            //var all=await ser.GetAllAsync();
+            //var last=await ser.GetLastAsync();
+            var vars = await mgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(null,null, opt =>
             {
                 opt.Port = (int)mysqlCfg.Port;
                 opt.Hostname = mysqlCfg.Server;
@@ -25,11 +29,7 @@ namespace FastBIRe.CdcSample
                 opt.Username = mysqlCfg.UserID;
                 opt.Database = mysqlCfg.Database;
                 opt.ServerId = 1;
-            }, MySqlCdcModes.Gtid);
-            //var ser =await mgr.GetCdcLogServiceAsync();
-            //var all=await ser.GetAllAsync();
-            //var last=await ser.GetLastAsync();
-            var vars = await mgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(null));
+            }));
             vars.EventRaised += Program.Vars_EventRaised;
             await vars.StartAsync();
             Console.ReadLine();
