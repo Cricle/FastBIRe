@@ -5,7 +5,6 @@ using FastBIRe.Cdc.Events;
 using FastBIRe.Cdc.Mssql;
 using FastBIRe.Cdc.Mssql.Checkpoints;
 using FastBIRe.Cdc.MySql;
-using FastBIRe.Cdc.MySql.Checkpoints;
 using FastBIRe.Cdc.NpgSql;
 using MySqlConnector;
 using Npgsql.Replication;

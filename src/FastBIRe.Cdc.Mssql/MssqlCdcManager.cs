@@ -30,7 +30,7 @@ namespace FastBIRe.Cdc.Mssql
             disposables.Add(executer);
             return Task.FromResult<ICdcListener>(new MssqlCdcListener(this, options));
         }
-        Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options, CancellationToken token = default)
+        Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options, CancellationToken token)
         {
             return GetCdcListenerAsync((MssqlGetCdcListenerOptions)options, token);
         }

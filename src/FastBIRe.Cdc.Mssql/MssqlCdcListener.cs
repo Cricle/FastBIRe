@@ -77,9 +77,10 @@ namespace FastBIRe.Cdc.Mssql
         {
             var listener = options.Listener;
             var table = options.Table;
-            var sql = $"SELECT [__$seqval] AS [seqval],[__$operation] AS [op],{table.ColumnNameJoined} FROM [cdc].[dbo_{table.TableName}_CT] WITH (NOLOCK) WHERE [__$seqval]>{lsnStr}";
+            var sql = $"SELECT [__$seqval] AS [seqval],[__$operation] AS [op],{table.ColumnNameJoined} FROM [cdc].[dbo_{table.TableName}_CT] WITH (NOLOCK) WHERE [__$seqval]>{lsnStr} ORDER BY [__$seqval]";
             await listener.ScriptExecuter.ReadAsync(sql, (s, r) =>
             {
+                CdcDataRow? beforeUpdateRow = null;
                 while (r.Reader.Read())
                 {
                     var seq = new MssqlLsn((byte[])r.Reader[0]);
@@ -88,10 +89,6 @@ namespace FastBIRe.Cdc.Mssql
                         options.Lsn = seq;
                     }
                     var op = (SqlServerOperator)r.Reader.GetInt32(1);
-                    if (op == SqlServerOperator.BeforeUpdate)
-                    {
-                        continue;
-                    }
                     var row = new CdcDataRow();
                     for (int i = 2; i < r.Reader.FieldCount; i++)
                     {
@@ -101,6 +98,11 @@ namespace FastBIRe.Cdc.Mssql
                             val = null;
                         }
                         row.Add(val);
+                    }
+                    if (op == SqlServerOperator.BeforeUpdate)
+                    {
+                        beforeUpdateRow = row;
+                        continue;
                     }
                     var checkpoint = new MssqlCheckpoint(seq);
                     switch (op)
@@ -112,7 +114,7 @@ namespace FastBIRe.Cdc.Mssql
                             raiseList.Add(new InsertEventArgs(null, table.TableName, table, new ICdcDataRow[] { row }, checkpoint));
                             break;
                         case SqlServerOperator.AfterUpdate:
-                            raiseList.Add(new UpdateEventArgs(null, table.TableName, table, new ICdcUpdateRow[] { new CdcUpdateRow(null, row) }, checkpoint));
+                            raiseList.Add(new UpdateEventArgs(null, table.TableName, table, new ICdcUpdateRow[] { new CdcUpdateRow(beforeUpdateRow, row) }, checkpoint));
                             break;
                         case SqlServerOperator.BeforeUpdate:
                         case SqlServerOperator.Unknow:
@@ -120,6 +122,7 @@ namespace FastBIRe.Cdc.Mssql
                             raiseList.Add(new CdcEventArgs(row, checkpoint));
                             break;
                     }
+                    beforeUpdateRow = null;
                 }
                 return Task.CompletedTask;
             }, token: token);

@@ -19,8 +19,6 @@ namespace FastBIRe.Farm
             duck.Open();
             mysql.Open();
 
-            var reader = new DatabaseReader(mysql) { Owner = mysql.Database };
-            var table = reader.Table(tableName);
             var mysqlExecuter = new DefaultScriptExecuter(mysql);
             var duckExecuter = new DefaultScriptExecuter(duck);
             if (listen)
@@ -30,7 +28,7 @@ namespace FastBIRe.Farm
             }
             var sourceHouse = new FarmWarehouse(mysqlExecuter);
             var destHouse = new DuckFarmWarehouse(duckExecuter);
-            return new FarmManager(table, sourceHouse, destHouse);
+            return FarmManager.Create(sourceHouse, destHouse,tableName);
         }
 
     }

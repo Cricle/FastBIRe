@@ -16,6 +16,16 @@ namespace FastBIRe.Farm
     {
         public const int DefaultBatchSize = 1000;
 
+        public static FarmManager Create(FarmWarehouse sourceFarmWarehouse, FarmWarehouse destFarmWarehouse,string sourceTable)
+        {
+            var table = sourceFarmWarehouse.DatabaseReader.Table(sourceTable);
+            if (table == null)
+            {
+                throw new ArgumentException($"Table {sourceTable} not found!");
+            }
+            return new FarmManager(table, sourceFarmWarehouse, destFarmWarehouse);
+        }
+
         public FarmManager(DatabaseTable sourceTable, FarmWarehouse sourceFarmWarehouse, FarmWarehouse destFarmWarehouse)
         {
             SourceTable = sourceTable;
