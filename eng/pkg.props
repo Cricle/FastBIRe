@@ -5,6 +5,7 @@
 		<Authors>HCricle</Authors>
 		<Description>A fast agger</Description>
 		<RepositoryUrl>https://github.com/Cricle/FastBIRe.git</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/Cricle/FastBIRe.git</PackageProjectUrl>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
