@@ -2,12 +2,13 @@
 using FastBIRe.Cdc;
 using FastBIRe.Cdc.Checkpoints;
 using FastBIRe.Cdc.Events;
+using FastBIRe.Cdc.Mssql;
+using FastBIRe.Cdc.Mssql.Checkpoints;
 using FastBIRe.Cdc.MySql;
 using FastBIRe.Cdc.MySql.Checkpoints;
 using FastBIRe.Cdc.NpgSql;
 using MySqlConnector;
 using Npgsql.Replication;
-using Npgsql.Replication.PgOutput;
 using System.Diagnostics;
 
 namespace FastBIRe.Farm
@@ -24,6 +25,24 @@ namespace FastBIRe.Farm
             Console.WriteLine("Now syncing full datas");
             await Elapsed(() => farm.SyncDataAsync(tableName));
         }
+        private static async Task<ICdcListener> CreateMssqlListener(FarmManager farm, ICheckpoint? checkpoint)
+        {
+            var mgr = new MssqlCdcManager(() => farm.SourceFarmWarehouse.ScriptExecuter);
+            Console.WriteLine(await mgr.IsDatabaseSupportAsync());
+            Console.WriteLine(await mgr.IsDatabaseCdcEnableAsync(databaseName));
+            Console.WriteLine(await mgr.IsTableCdcEnableAsync(databaseName, tableName));
+            if (checkpoint == null)
+            {
+                await mgr.TryEnableDatabaseCdcAsync(databaseName);
+                await mgr.TryDisableTableCdcAsync(databaseName, tableName);
+                await mgr.TryEnableTableCdcAsync(databaseName, tableName);
+            }
+            return await mgr.GetCdcListenerAsync(new MssqlGetCdcListenerOptions(
+                TimeSpan.FromSeconds(5), 
+                farm.SourceFarmWarehouse.ScriptExecuter,
+                null,
+                checkpoint:checkpoint));
+        }
         private static async Task<ICdcListener> CreatePostgresqlListner(FarmManager farm, ICheckpoint? checkpoint)
         {
             var rconn = new LogicalReplicationConnection(farm.SourceFarmWarehouse.Connection.ConnectionString+";password=Syc123456.");
@@ -37,14 +56,8 @@ namespace FastBIRe.Farm
                 await mgr.TryDisableTableCdcAsync(databaseName, tableName);
                 await mgr.TryEnableTableCdcAsync(databaseName, tableName);
             }
-            var slotName = PgSqlCdcManager.GetSlotName(databaseName, tableName);
-            var pubName = PgSqlCdcManager.GetPubName(databaseName, tableName);
-            return await mgr.GetCdcListenerAsync(new PgSqlGetCdcListenerOptions(rconn,
-                new PgOutputReplicationSlot(slotName!),
-                new PgOutputReplicationOptions(pubName!, 1),
-                null,
-                null, 
-                checkpoint));
+            return await mgr.GetCdcListenerAsync(PgSqlGetCdcListenerOptions.CreateDefault(rconn,
+                databaseName,tableName,checkpoint:checkpoint));
 
         }
         private static async Task<ICdcListener> CreateMySqlListner(FarmManager farm,ICheckpoint? checkpoint)
@@ -84,12 +97,12 @@ namespace FastBIRe.Farm
             var eh = new ChannelEventDispatcher<CdcEventArgs>(handler);
             await eh.StartAsync();
             var pkg = await storage.GetAsync(databaseName, tableName);
-            var checkpoint = pkg?.CastCheckpoint<ICheckpoint>(MysqlCheckpointManager.Instance);
+            var checkpoint = pkg?.CastCheckpoint<ICheckpoint>(MssqlCheckpointManager.Instance);
             if (!syncOk && checkpoint == null)
             {
                 await MigrationDatasAsync(farm);
             }
-            var listner = await CreatePostgresqlListner(farm, checkpoint);
+            var listner = await CreateMssqlListener(farm, checkpoint);
             listner.AttachToDispatcher(eh);
             await listner.StartAsync();
             Console.WriteLine("Now listing data changes, q key is quit, a key to aggra, o to count");

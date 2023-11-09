@@ -145,16 +145,16 @@ namespace FastBIRe.Cdc.Mssql
                             Lsn = lsn
                         };
                         await ReadEventAsync(lsn.LsnString, raiseList, opt, source.Token);
+                        foreach (var raiseItem in raiseList)
+                        {
+                            RaiseEvent(raiseItem);
+                        }
                         lsn = opt.Lsn;
                     }
                     catch (Exception ex)
                         when (ex is not ObjectDisposedException)
                     {
                         RaiseError(new CdcErrorEventArgs(ex));
-                    }
-                    foreach (var raiseItem in raiseList)
-                    {
-                        RaiseEvent(raiseItem);
                     }
                 }
                 await Task.Delay(DelayScan);

@@ -15,6 +15,7 @@
 	</ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\FastBIRe.AP.DuckDB\FastBIRe.AP.DuckDB.csproj" />
+    <ProjectReference Include="..\..\src\FastBIRe.Cdc.Mssql\FastBIRe.Cdc.Mssql.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe.Cdc.MySql\FastBIRe.Cdc.MySql.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe.Cdc.NpgSql\FastBIRe.Cdc.NpgSql.csproj" />
     <ProjectReference Include="..\..\src\FastBIRe\FastBIRe.csproj" />

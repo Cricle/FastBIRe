@@ -28,5 +28,20 @@ namespace FastBIRe.Cdc.NpgSql
         public PgOutputReplicationOptions OutputReplicationOptions { get; }
 
         public NpgsqlLogSequenceNumber? NpgsqlLogSequenceNumber { get; }
+
+        public static PgSqlGetCdcListenerOptions CreateDefault(LogicalReplicationConnection connection,
+            string databaseName,
+            string tableName,
+            NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber=null,
+            IReadOnlyList<string>? tableNames=null,
+            ICheckpoint? checkpoint=null)
+        {
+            var slotName = PgSqlCdcManager.GetSlotName(databaseName, tableName);
+            var pubName = PgSqlCdcManager.GetPubName(databaseName, tableName);
+            return new PgSqlGetCdcListenerOptions(connection, 
+                new PgOutputReplicationSlot(slotName!),
+                new PgOutputReplicationOptions(pubName!, 1), 
+                npgsqlLogSequenceNumber, tableNames, checkpoint);
+        }
     }
 }

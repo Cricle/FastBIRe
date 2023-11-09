@@ -57,7 +57,7 @@ SELECT @from_lsn", token);
             byte[]? lsn = null;
             await ScriptExecuter.ReadAsync(script, (s, r) =>
             {
-                if (r.Reader.Read())
+                if (r.Reader.Read()&&!r.Reader.IsDBNull(0))
                 {
                     lsn = (byte[])r.Reader[0];
                 }
@@ -68,6 +68,10 @@ SELECT @from_lsn", token);
 
         public async Task<DbVariables> GetCdcVariablesAsync(CancellationToken token = default)
         {
+            //https://learn.microsoft.com/zh-cn/sql/linux/sql-server-linux-configure-mssql-conf?view=sql-server-ver16
+            // docker exec -it -uroot sqlserver sh
+            // /opt/mssql/bin/mssql-conf set sqlagent.enabled true
+            //docker restart sqlserver
             var var = new MssqlVariables();
             await ScriptExecuter.ReadAsync("EXEC master.dbo.xp_servicecontrol N'QUERYSTATE',N'SQLSERVERAGENT'", (s, r) =>
             {
