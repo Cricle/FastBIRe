@@ -20,7 +20,7 @@ namespace FastBIRe.Cdc.MySql
 
         public Action<ReplicaOptions>? OptionAction { get; set; }
 
-        public Task<ICdcListener> CreateCdcListnerAsync(in CdcListenerOptionCreateInfo info, CancellationToken token = default)
+        public Task<ICdcListener> CreateCdcListnerAsync(CdcListenerOptionCreateInfo info, CancellationToken token = default)
         {
             return info.Runner.CdcManager.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(info.TableNames, info.CheckPoint, opt =>
             {

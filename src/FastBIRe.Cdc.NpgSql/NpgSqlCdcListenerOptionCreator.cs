@@ -24,7 +24,7 @@ namespace FastBIRe.Cdc.NpgSql
 
         public NpgsqlLogSequenceNumber? NpgsqlLogSequenceNumber { get; }
 
-        public Task<ICdcListener> CreateCdcListnerAsync(in CdcListenerOptionCreateInfo info, CancellationToken token = default)
+        public async Task<ICdcListener> CreateCdcListnerAsync(CdcListenerOptionCreateInfo info, CancellationToken token = default)
         {
             var sourceDbName = info.Runner.SourceConnection.Database;
             var sourceTableName = info.Runner.SourceTableName;
@@ -40,8 +40,16 @@ namespace FastBIRe.Cdc.NpgSql
                 var name = PgSqlCdcManager.GetPubName(sourceDbName, sourceTableName);
                 options = new PgOutputReplicationOptions(name!, 1);
             }
-
-            return info.Runner.CdcManager.GetCdcListenerAsync(new PgSqlGetCdcListenerOptions(
+            try
+            {
+                //Check the connection is open?
+                _ = LogicalReplicationConnection.ProcessID;
+            }
+            catch (Exception)
+            {
+                await LogicalReplicationConnection.Open(token);
+            }
+            return await info.Runner.CdcManager.GetCdcListenerAsync(new PgSqlGetCdcListenerOptions(
                 LogicalReplicationConnection,
                 slot,
                 options,

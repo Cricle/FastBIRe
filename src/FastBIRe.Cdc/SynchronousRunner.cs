@@ -125,10 +125,6 @@ namespace FastBIRe.Cdc
             await eventDispatcher.StartAsync(token);
             var listener = await optionCreator.CreateCdcListnerAsync(new CdcListenerOptionCreateInfo(this, checkpoint, tableNames), token: token);
             listener.AttachToDispatcher(eventDispatcher);
-            if (startNow)
-            {
-                await listener.StartAsync(token);
-            }
             if (checkpoint == null)
             {
                 var lastCheckpoint = await CdcManager.GetLastCheckpointAsync(SourceConnection.Database, SourceTableName, token);
@@ -136,6 +132,10 @@ namespace FastBIRe.Cdc
                 {
                     await CheckpointStorage.SetAsync(new CheckpointPackage(new CheckpointIdentity(SourceConnection.Database, SourceTableName), lastCheckpoint.ToBytes()), token);
                 }
+            }
+            if (startNow)
+            {
+                await listener.StartAsync(token);
             }
             return new SynchronousRunDefaultResult(checkpoint, eventDispatcher, listener);
         }

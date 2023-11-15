@@ -199,7 +199,8 @@ namespace FastBIRe
         public bool IsDBNull(int i)
         {
             ThrowIfValuesNull();
-            return values![i] == null;
+            var val = values![i];
+            return val == null ||DBNull.Value.Equals(val);
         }
 
         public bool NextResult()

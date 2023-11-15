@@ -75,6 +75,7 @@ namespace FastBIRe.Cdc.Mssql
             var builder = new CdcDataExpandBuilder();
             await listener.ScriptExecuter.ReadAsync(sql, (s, r) =>
             {
+                CdcDataRow? beforeRow = null;
                 while (r.Reader.Read())
                 {
                     var id = r.Reader[0];
@@ -99,6 +100,11 @@ namespace FastBIRe.Cdc.Mssql
                         }
                         row.Add(val);
                     }
+                    if (op == TriggerTypes.BeforeUpdate)
+                    {
+                        beforeRow = row;
+                        continue;
+                    }
                     var checkpoint = new TriggerCheckpoint(idBytes);
                     switch (op)
                     {
@@ -109,7 +115,8 @@ namespace FastBIRe.Cdc.Mssql
                             builder.Inserts.AddAndSet(row, checkpoint);
                             break;
                         case TriggerTypes.AfterUpdate:
-                            builder.Updates.AddAndSet(new CdcUpdateRow(null, row), checkpoint);
+                            builder.Updates.AddAndSet(new CdcUpdateRow(beforeRow, row), checkpoint);
+                            beforeRow = null;
                             break;
                         default:
                             raiseList.Add(new CdcEventArgs(row, checkpoint));

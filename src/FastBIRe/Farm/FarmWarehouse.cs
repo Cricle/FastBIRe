@@ -40,7 +40,7 @@ namespace FastBIRe.Farm
         public IList<string> GetSyncScripts(DatabaseTable table, IEnumerable<int>? maskColumns = null)
         {
             var scripts = new List<string>();
-            var copyTable = table.Clone();
+            var copyTable = table;
             if (maskColumns != null)
             {
                 var removes = copyTable.Columns.Where((x, i) => maskColumns.Contains(i)).ToList();
@@ -59,6 +59,7 @@ namespace FastBIRe.Farm
             {
                 //Check struct
                 var tb = DatabaseReader.Table(copyTable.Name);
+                
                 var structIsEquals = tb.Columns.Count == copyTable.Columns.Count &&
                     tb.Columns.All(x =>
                     {

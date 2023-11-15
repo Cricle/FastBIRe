@@ -120,8 +120,8 @@ namespace FastBIRe.Cdc.NpgSql
             {
                 if (r.Reader.Read())
                 {
-                    var res = r.Reader.GetInt64(0);
-                    return Task.FromResult<NpgsqlLogSequenceNumber?>(new NpgsqlLogSequenceNumber((ulong)res));
+                    var res = (NpgsqlLogSequenceNumber)r.Reader[0];
+                    return Task.FromResult<NpgsqlLogSequenceNumber?>(res);
                 }
                 return Task.FromResult<NpgsqlLogSequenceNumber?>(null);
             }, token: token);

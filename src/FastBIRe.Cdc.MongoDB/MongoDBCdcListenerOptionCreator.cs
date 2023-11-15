@@ -11,7 +11,7 @@ namespace FastBIRe.Cdc.MongoDB
 
         public IMongoDatabase MongoDatabase { get; }
 
-        public Task<ICdcListener> CreateCdcListnerAsync(in CdcListenerOptionCreateInfo info, CancellationToken token = default)
+        public Task<ICdcListener> CreateCdcListnerAsync(CdcListenerOptionCreateInfo info, CancellationToken token = default)
         {
             return info.Runner.CdcManager.GetCdcListenerAsync(MongoGetCdcListenerOptions.FromUpdateLookup(info.TableNames,
                 MongoDatabase,

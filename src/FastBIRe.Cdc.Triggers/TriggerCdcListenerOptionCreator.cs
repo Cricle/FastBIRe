@@ -14,7 +14,7 @@ namespace FastBIRe.Cdc.Triggers
 
         public uint ReadBatch { get; }
 
-        public Task<ICdcListener> CreateCdcListnerAsync(in CdcListenerOptionCreateInfo info, CancellationToken token = default)
+        public Task<ICdcListener> CreateCdcListnerAsync(CdcListenerOptionCreateInfo info, CancellationToken token = default)
         {
             return info.Runner.CdcManager.GetCdcListenerAsync(new TriggerGetCdcListenerOptions(info.Runner.SourceScriptExecuter,
                 DelayTime,

@@ -84,7 +84,7 @@ namespace FastBIRe.Cdc.NpgSql
             var listener = (PgSqlCdcListener)state!;
             var source = listener.TokenSource;
             var connection = listener.ReplicationConnectionConnection;
-            await foreach (var message in listener.ReplicationConnectionConnection.StartReplication(
+            await foreach (var message in connection.StartReplication(
                 listener.OutputReplicationSlot, OutputReplicationOptions, source!.Token, NpgsqlLogSequenceNumber))
             {
                 var checkpoint = new PgSqlCheckpoint(message.WalEnd);
