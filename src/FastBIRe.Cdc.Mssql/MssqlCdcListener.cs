@@ -66,11 +66,14 @@ namespace FastBIRe.Cdc.Mssql
                 .Unwrap();
         }
 
-        protected override Task OnStopAsync(CancellationToken token = default)
+        protected override async Task OnStopAsync(CancellationToken token = default)
         {
             tableMapInfos.Clear();
+            if (task != null)
+            {
+                await task;
+            }
             task = null;
-            return Task.CompletedTask;
         }
         protected virtual async Task ReadEventAsync(string lsnStr, IList<CdcEventArgs> raiseList, MssqlReadEventOptions options, CancellationToken token = default)
         {

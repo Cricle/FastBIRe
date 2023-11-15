@@ -10,11 +10,6 @@ using System.Text;
 
 namespace FastBIRe.Farm
 {
-    public enum SyncResult
-    {
-        NoModify = 0,
-        Modify = 1
-    }
     public class FarmWarehouse : IDisposable
     {
         public FarmWarehouse(IDbScriptExecuter scriptExecuter)
@@ -153,7 +148,11 @@ namespace FastBIRe.Farm
                     var sb = new StringBuilder(header);
                     while (cur.MoveNext())
                     {
+#if NETSTANDARD2_0
                         sb.Append($"({string.Join(",", cur.Current.Select(x => SqlType.WrapValue(x)))})");
+#else
+                        sb.AppendJoin(',', cur.Current.Select(x => SqlType.WrapValue(x)));
+#endif
                         count++;
                         if (count >= batchSize && count > 0)
                         {
@@ -178,7 +177,18 @@ namespace FastBIRe.Farm
         }
         public virtual async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<object?> values, CancellationToken token = default)
         {
+#if NETSTANDARD2_0
             var sql = $"INSERT INTO {SqlType.Wrap(tableName)}({string.Join(",", columnNames.Select(x => SqlType.Wrap(x)))}) VALUES({string.Join(",", values.Select(x => SqlType.WrapValue(x)))})";
+#else
+            var sb = new StringBuilder("INSERT INTO ");
+            sb.Append(SqlType.Wrap(tableName));
+            sb.Append('(');
+            sb.AppendJoin(',', columnNames.Select(x => SqlType.Wrap(x)));
+            sb.Append(") VALUES(");
+            sb.AppendJoin(',', values.Select(x => SqlType.WrapValue(x)));
+            sb.Append(");");
+            var sql = sb.ToString();
+#endif
             await ScriptExecuter.ExecuteAsync(sql, token: token);
         }
 

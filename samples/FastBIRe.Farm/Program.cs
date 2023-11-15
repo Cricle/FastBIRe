@@ -26,7 +26,7 @@ namespace FastBIRe.Farm
         }
         private static async Task<ICdcListener> CreateMssqlListener(FarmManager farm, ICheckpoint? checkpoint)
         {
-            var mgr = new MssqlCdcManager(() => farm.SourceFarmWarehouse.ScriptExecuter);
+            var mgr = new MssqlCdcManager(farm.SourceFarmWarehouse.ScriptExecuter);
             Console.WriteLine(await mgr.IsDatabaseSupportAsync());
             Console.WriteLine(await mgr.IsDatabaseCdcEnableAsync(databaseName));
             Console.WriteLine(await mgr.IsTableCdcEnableAsync(databaseName, tableName));

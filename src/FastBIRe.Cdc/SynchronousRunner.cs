@@ -72,35 +72,41 @@ namespace FastBIRe.Cdc
             var cpMgr = await CdcManager.GetCdcCheckPointManagerAsync(token);
             return pkg?.CastCheckpoint<ICheckpoint>(cpMgr);
         }
-        public async Task<ICheckpoint?> SyncAndGetCheckpointAsync(CancellationToken token = default)
+        public async Task<ICheckpoint?> SyncAndGetCheckpointAsync(IProgress<SyncReport>? progress=null,bool forceSyncData=false, CancellationToken token = default)
         {
+            var sw = Stopwatch.StartNew();
+            progress?.Report(new SyncReport(SyncStages.SyncingStruct, null));
             var syncOk = await SyncAsync(token);
+            progress?.Report(new SyncReport(SyncStages.SyncedStruct, sw.Elapsed));
+            sw.Reset();
+            progress?.Report(new SyncReport(SyncStages.FetchingCheckpoint, null));
             var checkpoint = await GetCheckpointAsync(token);
-            if (!syncOk && checkpoint == null)
+            progress?.Report(new SyncReport(SyncStages.FetchedCheckpoint, sw.Elapsed));
+            sw.Reset();
+            if (forceSyncData ||( syncOk == SyncResult.NoModify && checkpoint == null))
             {
+                progress?.Report(new SyncReport(SyncStages.DeletingTargetDatas, null));
                 await DeleteTargetDatasAsync(token);
+                progress?.Report(new SyncReport(SyncStages.DeletedTargetDatas, sw.Elapsed));
+                sw.Reset();
+                progress?.Report(new SyncReport(SyncStages.SyncingData, null));
                 await SyncDataAsync(token);
+                progress?.Report(new SyncReport(SyncStages.SyncedData, null));
             }
             return checkpoint;
         }
 
-        public async Task<bool> SyncAsync(CancellationToken token = default)
+        public async Task<SyncResult> SyncAsync(CancellationToken token = default)
         {
             var result = await FarmManager.SyncAsync(token: token);
             if (result == SyncResult.Modify)
             {
                 await DeleteTargetDatasAsync(token);
                 await SyncDataAsync(token);
-                return true;
             }
-            return false;
+            return result;
         }
-        public abstract IEventDispatcheHandler<CdcEventArgs> CreateHandler();
-
-        public virtual IEventDispatcher<CdcEventArgs> CreateCdcDispatcher()
-        {
-            return new ChannelEventDispatcher<CdcEventArgs>(CreateHandler());
-        }
+        public abstract IEventDispatcher<CdcEventArgs> CreateCdcDispatcher();
 
         public async Task EnsureDatabaseSupportAsync(CancellationToken token = default)
         {
@@ -110,10 +116,11 @@ namespace FastBIRe.Cdc
                 throw new InvalidOperationException($"The cdc manager {CdcManager.GetType()} report current database {SourceConnection.Database} is not support cdc!");
             }
         }
-        public async Task<SynchronousRunDefaultResult> RunDefaultAsync(ICdcListenerOptionCreator optionCreator, IReadOnlyList<string>? tableNames = null, IProgress<TimeSpan?>? processReport = null, int reportFreqMS = 100, string memory = "1G",bool startNow=true, CancellationToken token = default)
+
+        public async Task<SynchronousRunDefaultResult> RunDefaultAsync(ICdcListenerOptionCreator optionCreator,IProgress<SyncReport>? progress=null, IReadOnlyList<string>? tableNames = null, string memory = "1G",bool startNow=true,bool forceSyncData=false, CancellationToken token = default)
         {
             await SetMemoryLimitAsync(memory, token);
-            var checkpoint = await SyncDDLAndDataAsync(processReport, reportFreqMS: reportFreqMS);
+            var checkpoint = await SyncAndGetCheckpointAsync(progress,forceSyncData, token);
             var eventDispatcher = CreateCdcDispatcher();
             await eventDispatcher.StartAsync(token);
             var listener = await optionCreator.CreateCdcListnerAsync(new CdcListenerOptionCreateInfo(this, checkpoint, tableNames), token: token);
@@ -131,27 +138,6 @@ namespace FastBIRe.Cdc
                 }
             }
             return new SynchronousRunDefaultResult(checkpoint, eventDispatcher, listener);
-        }
-        private async Task<ICheckpoint?> SyncDDLAndDataAsync(IProgress<TimeSpan?>? processReport, int reportFreqMS = 100)
-        {
-            using (var tokenSource = new CancellationTokenSource())
-            {
-                var sw = Stopwatch.StartNew();
-                var tsk = Task.Factory.StartNew(async () =>
-                {
-                    while (!tokenSource.IsCancellationRequested)
-                    {
-                        processReport?.Report(sw.Elapsed);
-                        await Task.Delay(reportFreqMS);
-                    }
-                    tokenSource.Dispose();
-                });
-                var checkpoint = await SyncAndGetCheckpointAsync();
-                tokenSource.Cancel();
-                await tsk;
-                processReport?.Report(null);
-                return checkpoint;
-            }
         }
     }
 }

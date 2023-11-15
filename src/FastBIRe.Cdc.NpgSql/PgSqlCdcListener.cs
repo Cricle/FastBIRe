@@ -53,11 +53,14 @@ namespace FastBIRe.Cdc.NpgSql
             return Task.CompletedTask;
         }
 
-        protected override Task OnStopAsync(CancellationToken token = default)
+        protected override async Task OnStopAsync(CancellationToken token = default)
         {
             tableMapInfos.Clear();
+            if (task != null)
+            {
+                await task;
+            }
             task = null;
-            return Task.CompletedTask;
         }
         private static async Task<IList<object?>> ReadRowAsync(ReplicationTuple tuple, CancellationToken token = default)
         {

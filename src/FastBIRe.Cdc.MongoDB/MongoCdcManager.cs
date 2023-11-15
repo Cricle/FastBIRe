@@ -83,5 +83,11 @@ namespace FastBIRe.Cdc.MongoDB
         {
             return Task.FromResult<bool?>(null);
         }
+
+        public Task<ICheckpoint?> GetLastCheckpointAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            //TODO: read from oplogs
+            return Task.FromResult<ICheckpoint?>(null);
+        }
     }
 }

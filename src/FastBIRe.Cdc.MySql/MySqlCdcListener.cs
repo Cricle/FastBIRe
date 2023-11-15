@@ -37,11 +37,14 @@ namespace FastBIRe.Cdc.MySql
             return Task.CompletedTask;
         }
 
-        protected override Task OnStopAsync(CancellationToken token = default)
+        protected override async Task OnStopAsync(CancellationToken token = default)
         {
             tableMapInfos.Clear();
+            if (task != null)
+            {
+                await task;
+            }
             task = null;
-            return Task.CompletedTask;
         }
         public ITableMapInfo? GetTableMapInfo(long id)
         {

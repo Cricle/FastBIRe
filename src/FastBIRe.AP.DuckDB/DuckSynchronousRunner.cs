@@ -11,9 +11,10 @@ namespace FastBIRe.AP.DuckDB
         {
         }
 
-        public override IEventDispatcheHandler<CdcEventArgs> CreateHandler()
+        public override IEventDispatcher<CdcEventArgs> CreateCdcDispatcher()
         {
-            return DuckDbCdcHandler.Create(TargetScriptExecuter, SourceTableName, new CheckpointIdentity(SourceConnection.Database, SourceTableName), CheckpointStorage);
+            var handler = DuckDbCdcHandler.Create(TargetScriptExecuter, SourceTableName, new CheckpointIdentity(SourceConnection.Database, SourceTableName), CheckpointStorage); ;
+            return new ChannelEventDispatcher<CdcEventArgs>(handler);
         }
     }
 }
