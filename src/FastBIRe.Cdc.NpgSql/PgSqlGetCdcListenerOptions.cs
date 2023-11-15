@@ -10,10 +10,10 @@ namespace FastBIRe.Cdc.NpgSql
         public PgSqlGetCdcListenerOptions(LogicalReplicationConnection logicalReplicationConnection,
             PgOutputReplicationSlot outputReplicationSlot,
             PgOutputReplicationOptions outputReplicationOptions,
-            NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber, 
+            NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber,
             IReadOnlyList<string>? tableNames,
             ICheckpoint? checkpoint)
-            :base(tableNames, checkpoint) 
+            : base(tableNames, checkpoint)
         {
             LogicalReplicationConnection = logicalReplicationConnection;
             OutputReplicationSlot = outputReplicationSlot;
@@ -32,15 +32,15 @@ namespace FastBIRe.Cdc.NpgSql
         public static PgSqlGetCdcListenerOptions CreateDefault(LogicalReplicationConnection connection,
             string databaseName,
             string tableName,
-            NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber=null,
-            IReadOnlyList<string>? tableNames=null,
-            ICheckpoint? checkpoint=null)
+            NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber = null,
+            IReadOnlyList<string>? tableNames = null,
+            ICheckpoint? checkpoint = null)
         {
             var slotName = PgSqlCdcManager.GetSlotName(databaseName, tableName);
             var pubName = PgSqlCdcManager.GetPubName(databaseName, tableName);
-            return new PgSqlGetCdcListenerOptions(connection, 
+            return new PgSqlGetCdcListenerOptions(connection,
                 new PgOutputReplicationSlot(slotName!),
-                new PgOutputReplicationOptions(pubName!, 1), 
+                new PgOutputReplicationOptions(pubName!, 1),
                 npgsqlLogSequenceNumber, tableNames, checkpoint);
         }
     }

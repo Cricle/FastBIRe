@@ -2,12 +2,12 @@
 {
     public abstract class DbTestBase
     {
-        public string Quto(SqlType type,string name)
+        public string Quto(SqlType type, string name)
         {
             return type.Wrap(name);
         }
 
-        protected readonly DatabaseIniter databaseIniter= DatabaseIniter.Instance;
+        protected readonly DatabaseIniter databaseIniter = DatabaseIniter.Instance;
 
     }
 }

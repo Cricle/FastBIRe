@@ -50,7 +50,7 @@ namespace FastBIRe.Cdc.Triggers
             SqlEqualityComparer = sqlComparer;
         }
 
-        public CdcOperators SupportCdcOperators => CdcOperators.All;
+        public CdcOperators SupportCdcOperators => CdcOperators.All & ~CdcOperators.GetLastCheckPoint;
 
         public IDbScriptExecuter ScriptExecuter { get; }
 
@@ -103,7 +103,7 @@ namespace FastBIRe.Cdc.Triggers
             return Task.FromResult(SqlType != SqlType.DuckDB);
         }
 
-        public Task<int> RemoveOkedAsync(string tableName, int? batchSize,CancellationToken token = default)
+        public Task<int> RemoveOkedAsync(string tableName, int? batchSize, CancellationToken token = default)
         {
             var tableHelper = SqlType.GetTableHelper()!;
             var limit = tableHelper.Pagging(null, batchSize);
@@ -113,7 +113,7 @@ namespace FastBIRe.Cdc.Triggers
 
         public Task<bool> IsTableCdcEnableAsync(string databaseName, string tableName, CancellationToken token = default)
         {
-            var targetTable = Reader.Table(tableName, ReadTypes.Columns | ReadTypes.Pks| ReadTypes.Triggers, token);
+            var targetTable = Reader.Table(tableName, ReadTypes.Columns | ReadTypes.Pks | ReadTypes.Triggers, token);
             if (targetTable == null)
             {
                 throw new ArgumentException($"The table {tableName} not found!");
@@ -126,7 +126,7 @@ namespace FastBIRe.Cdc.Triggers
                 for (int i = 0; i < forDbActions.Length; i++)
                 {
                     var affectTriggerName = AffectTriggerNameGenerator.Create(new object[] { tableName, forDbActions[i].ToString() });
-                    var triggerBody = string.Join("\n", CreateTriggerScripts(tableName,affectTableName, affectTriggerName, targetTable, forDbActions[i],true));
+                    var triggerBody = string.Join("\n", CreateTriggerScripts(tableName, affectTableName, affectTriggerName, targetTable, forDbActions[i], true));
                     ok &= targetTable.Triggers.Any(x => x.Name == affectTriggerName && (SqlType == SqlType.PostgreSql || SqlEqualityComparer.Equals(x.TriggerBody, triggerBody)));
                     if (!ok)
                     {
@@ -137,17 +137,17 @@ namespace FastBIRe.Cdc.Triggers
 
             return Task.FromResult(ok);
         }
-        private IEnumerable<string> CreateTriggerScripts(string targetTable,string affectTableName, string triggerName, DatabaseTable table, TriggerTypes action,bool onlyBody)
+        private IEnumerable<string> CreateTriggerScripts(string targetTable, string affectTableName, string triggerName, DatabaseTable table, TriggerTypes action, bool onlyBody)
         {
             var columnsOnly = table.Columns.OrderBy(x => x.Name).Select(x => SqlType.Wrap(x.Name));
-            var columns = columnsOnly.Concat(systemColumns.Select(x=> SqlType.Wrap(x)));
+            var columns = columnsOnly.Concat(systemColumns.Select(x => SqlType.Wrap(x)));
 
             var columnOnlyJoined = string.Join(", ", columnsOnly);
             var columnJoined = string.Join(", ", columns);
             var key = "NEW";
-            if (action== TriggerTypes.AfterDelete||action== TriggerTypes.BeforeDelete)
+            if (action == TriggerTypes.AfterDelete || action == TriggerTypes.BeforeDelete)
             {
-                if (SqlType== SqlType.SqlServer||SqlType== SqlType.SqlServerCe)
+                if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
                 {
                     key = "DELETED";
                 }
@@ -156,7 +156,7 @@ namespace FastBIRe.Cdc.Triggers
                     key = "OLD";
                 }
             }
-            var values = table.Columns.OrderBy(x => x.Name).Select(x => $"{key}.{SqlType.Wrap(x.Name)}").Concat(new string[] { FunctionMapper.NowWithMill(), SqlType.WrapValue((int)action), SqlType.WrapValue(false),FunctionMapper.GuidBinary() });
+            var values = table.Columns.OrderBy(x => x.Name).Select(x => $"{key}.{SqlType.Wrap(x.Name)}").Concat(new string[] { FunctionMapper.NowWithMill(), SqlType.WrapValue((int)action), SqlType.WrapValue(false), FunctionMapper.GuidBinary() });
             var valueJoined = string.Join(", ", values);
             string body = string.Empty;
             switch (SqlType)
@@ -178,7 +178,7 @@ namespace FastBIRe.Cdc.Triggers
             }
             if (onlyBody)
             {
-                if (SqlType== SqlType.MySql)
+                if (SqlType == SqlType.MySql)
                 {
                     body = $"BEGIN {body} END;";
                 }
@@ -259,7 +259,7 @@ namespace FastBIRe.Cdc.Triggers
             }
         }
 
-        public DatabaseTable CreateAffectTable(DatabaseTable targetTable,string affectTableName)
+        public DatabaseTable CreateAffectTable(DatabaseTable targetTable, string affectTableName)
         {
             var table = new DatabaseTable { Name = affectTableName };
             foreach (var item in targetTable.Columns)
@@ -297,12 +297,17 @@ namespace FastBIRe.Cdc.Triggers
                 for (int i = 0; i < forDbActions.Length; i++)
                 {
                     var affectTriggerName = AffectTriggerNameGenerator.Create(new object[] { tableName, forDbActions[i] });
-                    scripts.AddRange(CreateTriggerScripts(tableName,affectTableName, affectTriggerName, targetTable, forDbActions[i], false));
+                    scripts.AddRange(CreateTriggerScripts(tableName, affectTableName, affectTriggerName, targetTable, forDbActions[i], false));
                 }
                 await ScriptExecuter.ExecuteBatchAsync(scripts, token: token);
                 return true;
             }
             return false;
+        }
+
+        public Task<ICheckpoint?> GetLastCheckpointAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            return Task.FromResult<ICheckpoint?>(null);
         }
     }
 }

@@ -12,8 +12,8 @@ namespace FastBIRe.Farm
 {
     public enum SyncResult
     {
-        NoModify=0,
-        Modify=1
+        NoModify = 0,
+        Modify = 1
     }
     public class FarmWarehouse : IDisposable
     {
@@ -85,7 +85,7 @@ namespace FastBIRe.Farm
             scripts.Add(ddlTable);
             return scripts;
         }
-        public virtual Task<int> DeleteAsync(string tableName,CancellationToken token = default)
+        public virtual Task<int> DeleteAsync(string tableName, CancellationToken token = default)
         {
             return ScriptExecuter.ExecuteAsync($"DELETE FROM {SqlType.Wrap(tableName)}", token: token);
         }
@@ -131,13 +131,13 @@ namespace FastBIRe.Farm
                 }
                 if (pos >= batchSize)
                 {
-                    eff+=await InsertAsync(tableName, columnNames, batchs, token);
+                    eff += await InsertAsync(tableName, columnNames, batchs, token);
                     pos = 0;
                 }
             }
             if (pos != 0)
             {
-                eff+= await InsertAsync(tableName, columnNames, batchs.Take(pos), token);
+                eff += await InsertAsync(tableName, columnNames, batchs.Take(pos), token);
             }
             return eff;
         }

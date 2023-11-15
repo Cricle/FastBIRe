@@ -37,14 +37,14 @@ namespace FastBIRe.Farm
                 await mgr.TryEnableTableCdcAsync(databaseName, tableName);
             }
             return await mgr.GetCdcListenerAsync(new MssqlGetCdcListenerOptions(
-                TimeSpan.FromSeconds(5), 
+                TimeSpan.FromSeconds(5),
                 farm.SourceFarmWarehouse.ScriptExecuter,
                 null,
-                checkpoint:checkpoint));
+                checkpoint: checkpoint));
         }
         private static async Task<ICdcListener> CreatePostgresqlListner(FarmManager farm, ICheckpoint? checkpoint)
         {
-            var rconn = new LogicalReplicationConnection(farm.SourceFarmWarehouse.Connection.ConnectionString+";password=Syc123456.");
+            var rconn = new LogicalReplicationConnection(farm.SourceFarmWarehouse.Connection.ConnectionString + ";password=Syc123456.");
             await rconn.Open();
             var mgr = new PgSqlCdcManager(farm.SourceFarmWarehouse.ScriptExecuter);
             Console.WriteLine(await mgr.IsDatabaseSupportAsync());
@@ -56,10 +56,10 @@ namespace FastBIRe.Farm
                 await mgr.TryEnableTableCdcAsync(databaseName, tableName);
             }
             return await mgr.GetCdcListenerAsync(PgSqlGetCdcListenerOptions.CreateDefault(rconn,
-                databaseName,tableName,checkpoint:checkpoint));
+                databaseName, tableName, checkpoint: checkpoint));
 
         }
-        private static async Task<ICdcListener> CreateMySqlListner(FarmManager farm,ICheckpoint? checkpoint)
+        private static async Task<ICdcListener> CreateMySqlListner(FarmManager farm, ICheckpoint? checkpoint)
         {
             var mysqlCfg = new MySqlConnectionStringBuilder(farm.SourceFarmWarehouse.Connection.ConnectionString);
             var mysqlCdcMgr = new MySqlCdcManager(farm.SourceFarmWarehouse.ScriptExecuter, MySqlCdcModes.Gtid);
@@ -78,12 +78,12 @@ namespace FastBIRe.Farm
             await farm.DestFarmWarehouse.ScriptExecuter.ExecuteAsync("SET memory_limit='128MB';");
             farm.DestFarmWarehouse.ScriptExecuter.RegistScriptStated((o, e) =>
             {
-                if (e.State == ScriptExecutState.Executed||e.State== ScriptExecutState.EndReading)
+                if (e.State == ScriptExecutState.Executed || e.State == ScriptExecutState.EndReading)
                 {
                     Console.WriteLine($"Executed({e.ExecutionTime?.TotalMilliseconds:F3}ms) {e.Script}");
                 }
             });
-            var storage = new FolderCheckpointStorage(Path.Combine(AppDomain.CurrentDomain.BaseDirectory,farm.SourceFarmWarehouse.SqlType.ToString(), "checkpoints"));
+            var storage = new FolderCheckpointStorage(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, farm.SourceFarmWarehouse.SqlType.ToString(), "checkpoints"));
             Console.WriteLine("Now syncing structing");
             var syncResult = await farm.SyncAsync();
             var syncOk = false;
@@ -126,7 +126,7 @@ namespace FastBIRe.Farm
                             });
                         break;
                     case ConsoleKey.I:
-                        await farm.DestFarmWarehouse.ScriptExecuter.ReadAsync($"SELECT * from {dSqlType.Wrap("juhe2")} WHERE _id = {dSqlType.WrapValue(Random.Shared.Next(0,int.MaxValue))};",
+                        await farm.DestFarmWarehouse.ScriptExecuter.ReadAsync($"SELECT * from {dSqlType.Wrap("juhe2")} WHERE _id = {dSqlType.WrapValue(Random.Shared.Next(0, int.MaxValue))};",
                             (o, e) =>
                             {
                                 while (e.Reader.Read())
@@ -144,7 +144,7 @@ namespace FastBIRe.Farm
                         break;
                 }
             }
-Exit:
+        Exit:
             Console.ReadLine();
             farm.Dispose();
         }

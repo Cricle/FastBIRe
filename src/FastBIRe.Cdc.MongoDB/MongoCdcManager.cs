@@ -6,7 +6,7 @@ namespace FastBIRe.Cdc.MongoDB
 {
     public class MongoCdcManager : ICdcManager
     {
-        private static readonly Task<bool> taskTrue= Task.FromResult(true);
+        private static readonly Task<bool> taskTrue = Task.FromResult(true);
 
         public MongoCdcManager(IMongoClient client)
         {
@@ -38,7 +38,7 @@ namespace FastBIRe.Cdc.MongoDB
         public async Task<DbVariables> GetCdcVariablesAsync(CancellationToken token = default)
         {
             var command = new BsonDocument { { "replSetGetStatus", 1 } };
-            var status =await Client.GetDatabase("admin").RunCommandAsync<BsonDocument>(command);
+            var status = await Client.GetDatabase("admin").RunCommandAsync<BsonDocument>(command);
             var var = new MongoVariables();
             var[MongoVariables.ConfigsvrKey] = status[MongoVariables.ConfigsvrKey].ToString();
             var[MongoVariables.MemberStateKey] = status["members"][0]["stateStr"].AsString;
@@ -60,7 +60,7 @@ namespace FastBIRe.Cdc.MongoDB
         public async Task<bool> IsDatabaseSupportAsync(CancellationToken token = default)
         {
             var command = new BsonDocument { { "replSetGetStatus", 1 } };
-            var status =await Client.GetDatabase("admin").RunCommandAsync<BsonDocument>(command);
+            var status = await Client.GetDatabase("admin").RunCommandAsync<BsonDocument>(command);
             return status[MongoVariables.ConfigsvrKey].AsBoolean;
         }
 

@@ -8,11 +8,11 @@ namespace FastBIRe.AP.DuckDB
 {
     public class DuckDbCdcHandler : IEventDispatcheHandler<CdcEventArgs>, IDisposable
     {
-        public static DuckDbCdcHandler Create(IDbScriptExecuter connection,string tableName, CheckpointIdentity identity, ICheckpointStorage checkpointStorage)
+        public static DuckDbCdcHandler Create(IDbScriptExecuter connection, string tableName, CheckpointIdentity identity, ICheckpointStorage checkpointStorage)
         {
             var reader = connection.CreateReader();
             var table = reader.Table(tableName);
-            if (table==null)
+            if (table == null)
             {
                 throw new ArgumentException($"Table {tableName} not found!");
             }
@@ -43,7 +43,7 @@ namespace FastBIRe.AP.DuckDB
 
         public SqlType SqlType { get; }
 
-        public DatabaseTable Table { get;}
+        public DatabaseTable Table { get; }
 
         public TableWrapper TableWrapper { get; }
 
@@ -51,7 +51,7 @@ namespace FastBIRe.AP.DuckDB
 
         public event EventHandler<ICheckpoint>? CheckpointUpdate;
 
-        private async Task InsertOrUpdateAsync(IEnumerable<ICdcDataRow> rows,CancellationToken token)
+        private async Task InsertOrUpdateAsync(IEnumerable<ICdcDataRow> rows, CancellationToken token)
         {
             foreach (var item in rows)
             {
@@ -82,7 +82,7 @@ namespace FastBIRe.AP.DuckDB
                     }
                     else
                     {
-                        await InsertOrUpdateAsync(iea.Rows,token);
+                        await InsertOrUpdateAsync(iea.Rows, token);
                     }
                 }
                 else if (input is UpdateEventArgs uea)
@@ -101,7 +101,7 @@ namespace FastBIRe.AP.DuckDB
                     foreach (var item in dea.Rows)
                     {
                         var script = TableWrapper.CreateDeleteByKeySql(item);
-                        if (!string.IsNullOrEmpty(script)) 
+                        if (!string.IsNullOrEmpty(script))
                         {
                             await ScriptExecuter.ExecuteAsync(script, token: token);
                         }

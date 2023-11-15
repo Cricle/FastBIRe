@@ -24,10 +24,10 @@ namespace FastBIRe.Benchmarks.Actions
         [Benchmark(Baseline = true)]
         public async Task RawAsyncExecute()
         {
-            using (var comm=Connection.CreateCommand())
+            using (var comm = Connection.CreateCommand())
             {
                 comm.CommandText = "SELECT 1";
-                using (var reader=await comm.ExecuteReaderAsync())
+                using (var reader = await comm.ExecuteReaderAsync())
                 {
                     while (reader.Read())
                     {

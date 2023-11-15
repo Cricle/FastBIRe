@@ -8,7 +8,7 @@ namespace FastBIRe.Building
 {
     public static class SqlMetadataVisitorToExtensions
     {
-        public static string ToSql(this IQueryMetadata metadata,SqlType sqlType)
+        public static string ToSql(this IQueryMetadata metadata, SqlType sqlType)
         {
             var visitor = new SqlMetadataVisitor(sqlType);
             visitor.Visit(metadata, visitor.CreateContext(metadata));
@@ -17,10 +17,10 @@ namespace FastBIRe.Building
     }
     public class SqlMetadataVisitor : DefaultMetadataVisitor<SqlQueryContext>
     {
-        private readonly List<string> selects=new List<string>();
+        private readonly List<string> selects = new List<string>();
         private readonly List<string> wheres = new List<string>();
         private readonly List<string> froms = new List<string>();
-        private readonly List<string> groups= new List<string>();
+        private readonly List<string> groups = new List<string>();
         private readonly List<string> orders = new List<string>();
         private int? offset;
         private int? limit;
@@ -43,8 +43,8 @@ namespace FastBIRe.Building
 
         public string ToSql()
         {
-            var s = new StringBuilder($"SELECT {string.Join(",",selects)} ");
-            if (froms.Count!=0)
+            var s = new StringBuilder($"SELECT {string.Join(",", selects)} ");
+            if (froms.Count != 0)
             {
                 s.Append($"FROM {string.Join(",", froms)} ");
             }
@@ -60,7 +60,7 @@ namespace FastBIRe.Building
             {
                 s.Append($"ORDER BY {string.Join(",", orders)} ");
             }
-            s.Append(TableHelper.Pagging(offset,limit));
+            s.Append(TableHelper.Pagging(offset, limit));
             return s.ToString();
         }
 
@@ -80,7 +80,7 @@ namespace FastBIRe.Building
 
         protected override void OnVisitGroup(GroupMetadata value, SqlQueryContext context, List<string> groups)
         {
-           this.groups.AddRange(groups);
+            this.groups.AddRange(groups);
         }
         protected override void OnVisitBinary(BinaryMetadata value, SqlQueryContext context, SqlQueryContext leftContext, SqlQueryContext rightContext)
         {

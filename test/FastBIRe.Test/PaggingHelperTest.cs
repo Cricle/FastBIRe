@@ -6,12 +6,12 @@
         [TestMethod]
         public void Unknow()
         {
-            Assert.ThrowsException<NotSupportedException>(() => new TableHelper( SqlType.Db2).Pagging(1, 1));
+            Assert.ThrowsException<NotSupportedException>(() => new TableHelper(SqlType.Db2).Pagging(1, 1));
         }
         [TestMethod]
         public void MySql()
         {
-            var act = new TableHelper( SqlType.MySql).Pagging(null, null);
+            var act = new TableHelper(SqlType.MySql).Pagging(null, null);
             Assert.AreEqual(string.Empty, act);
             act = new TableHelper(SqlType.MySql).Pagging(11, null);
             Assert.AreEqual("LIMIT 11", act);

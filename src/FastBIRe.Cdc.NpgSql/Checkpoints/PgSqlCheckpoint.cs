@@ -7,7 +7,7 @@ namespace FastBIRe.Cdc.NpgSql.Checkpoints
 {
     public class PgSqlCheckpoint : ICheckpoint
     {
-        private static readonly int NpgsqlLogSequenceNumberSize= Marshal.SizeOf<NpgsqlLogSequenceNumber>();
+        private static readonly int NpgsqlLogSequenceNumberSize = Marshal.SizeOf<NpgsqlLogSequenceNumber>();
 
         public PgSqlCheckpoint(NpgsqlLogSequenceNumber? sequenceNumber)
         {
@@ -25,7 +25,7 @@ namespace FastBIRe.Cdc.NpgSql.Checkpoints
         public unsafe byte[] ToBytes()
         {
             var buffer = new List<byte>();
-            if (SequenceNumber!=null)
+            if (SequenceNumber != null)
             {
                 byte* data = stackalloc byte[NpgsqlLogSequenceNumberSize];
                 Unsafe.Write(data, SequenceNumber.Value);

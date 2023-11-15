@@ -10,7 +10,7 @@
         [DataRow(SqlType.PostgreSql, "TRUNCATE TABLE \"test\";")]
         [DataRow(SqlType.Oracle, "TRUNCATE TABLE \"test\";")]
         [DataRow(SqlType.Db2, "TRUNCATE TABLE \"test\";")]
-        public void Sql(SqlType sqlType,string exp)
+        public void Sql(SqlType sqlType, string exp)
         {
             var act = new TableHelper(sqlType).Truncate("test");
             Assert.AreEqual(exp, act);

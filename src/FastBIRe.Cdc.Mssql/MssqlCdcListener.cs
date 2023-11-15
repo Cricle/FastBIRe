@@ -2,7 +2,6 @@
 using FastBIRe.Cdc.Events;
 using FastBIRe.Cdc.Mssql.Checkpoints;
 using Microsoft.Data.SqlClient;
-using System.Numerics;
 
 namespace FastBIRe.Cdc.Mssql
 {
@@ -18,7 +17,7 @@ namespace FastBIRe.Cdc.Mssql
             DelayScan = options.DelayScan;
             SqlConnection = (SqlConnection)options.ScriptExecuter.Connection;
             DatabaseReader = new DatabaseReader(SqlConnection) { Owner = SqlConnection.Database };
-            if (options.Checkpoint is MssqlCheckpoint cp&&cp.Lsn!=null)
+            if (options.Checkpoint is MssqlCheckpoint cp && cp.Lsn != null)
             {
                 maxLsn = new MssqlLsn(cp.Lsn);
             }
@@ -108,7 +107,7 @@ namespace FastBIRe.Cdc.Mssql
                     switch (op)
                     {
                         case SqlServerOperator.Delete:
-                            raiseList.Add(new DeleteEventArgs(null, table.TableName, table, new ICdcDataRow[] { row },checkpoint));
+                            raiseList.Add(new DeleteEventArgs(null, table.TableName, table, new ICdcDataRow[] { row }, checkpoint));
                             break;
                         case SqlServerOperator.Insert:
                             raiseList.Add(new InsertEventArgs(null, table.TableName, table, new ICdcDataRow[] { row }, checkpoint));
@@ -126,7 +125,6 @@ namespace FastBIRe.Cdc.Mssql
                 }
                 return Task.CompletedTask;
             }, token: token);
-
         }
 
         private async Task Handler(object? state)

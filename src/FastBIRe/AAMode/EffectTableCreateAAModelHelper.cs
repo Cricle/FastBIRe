@@ -65,7 +65,7 @@ namespace FastBIRe.AAMode
                 //All column was index
                 var idx = new DatabaseIndex
                 {
-                    Name = "IX_" +item.EffectColumn.TableName+"_"+ item.EffectColumn.Name,
+                    Name = "IX_" + item.EffectColumn.TableName + "_" + item.EffectColumn.Name,
                     Columns =
                     {
                         item.EffectColumn

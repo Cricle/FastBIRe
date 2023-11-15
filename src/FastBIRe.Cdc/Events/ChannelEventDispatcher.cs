@@ -15,7 +15,7 @@ namespace FastBIRe.Cdc.Events
         }
 
         public ChannelEventDispatcher(IEventDispatcheHandler<TInput> handler)
-            :this(true,null,false,handler)
+            : this(true, null, false, handler)
         {
         }
 

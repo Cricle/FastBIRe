@@ -25,7 +25,7 @@ namespace FastBIRe.Cdc.Checkpoints
                 new DirectoryInfo(Folder).Create();
             }
         }
-        private void EnumerableFiles(Action<string> action,Action<string>? folderComplated=null)
+        private void EnumerableFiles(Action<string> action, Action<string>? folderComplated = null)
         {
             foreach (var item in Directory.EnumerateDirectories(Folder))
             {
@@ -44,7 +44,7 @@ namespace FastBIRe.Cdc.Checkpoints
             {
                 File.Delete(fi);
                 c++;
-            }, s => Directory.Delete(s, true));
+            }, static s => Directory.Delete(s, true));
             return Task.FromResult<int?>(c);
         }
 
@@ -54,9 +54,13 @@ namespace FastBIRe.Cdc.Checkpoints
             var count = Directory.EnumerateFiles(Folder, "*", SearchOption.AllDirectories).Count();
             return Task.FromResult(count);
         }
-        private CheckpointIdentity CreateIdentity(string path)
+        private static CheckpointIdentity CreateIdentity(string path)
         {
             var databaseName = Path.GetFileName(Path.GetDirectoryName(path));
+            if (string.IsNullOrEmpty(databaseName))
+            {
+                throw new ArgumentException($"The path {path} has no directory name");
+            }
             var tableName = Path.GetFileName(path);
             return new CheckpointIdentity(databaseName, tableName);
         }
@@ -85,7 +89,7 @@ namespace FastBIRe.Cdc.Checkpoints
 
         public Task<IList<CheckpointPackage>> GetAsync(string databaseName, CancellationToken token = default)
         {
-            var res= new List<CheckpointPackage>(0);
+            var res = new List<CheckpointPackage>(0);
             var path = Path.Combine(Folder, databaseName);
             if (!Directory.Exists(path))
             {
@@ -146,6 +150,16 @@ namespace FastBIRe.Cdc.Checkpoints
                 c++;
             }
             return Task.FromResult(c);
+        }
+        public static FolderCheckpointStorage Create(params string[] paths)
+        {
+            var folder = Path.Combine(paths);
+            return new FolderCheckpointStorage(folder);
+        }
+        public static FolderCheckpointStorage CreateRelative(params string[] paths)
+        {
+            var folder = Path.Combine(AppContext.BaseDirectory, Path.Combine(paths));
+            return new FolderCheckpointStorage(folder);
         }
     }
 }

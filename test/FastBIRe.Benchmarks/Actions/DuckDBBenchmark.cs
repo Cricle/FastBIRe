@@ -8,7 +8,7 @@ namespace FastBIRe.Benchmarks.Actions
 
         public DuckDBBenchmark()
         {
-            Connection= new DuckDBConnection(DuckDBConnectionStringBuilder.InMemoryConnectionString);
+            Connection = new DuckDBConnection(DuckDBConnectionStringBuilder.InMemoryConnectionString);
             Connection.Open();
         }
 

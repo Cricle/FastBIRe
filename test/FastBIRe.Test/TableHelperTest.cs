@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FastBIRe.Test
+﻿namespace FastBIRe.Test
 {
     [TestClass]
-    public class TableHelperTest: DbTestBase
+    public class TableHelperTest : DbTestBase
     {
         [TestMethod]
         [DataRow(SqlType.MySql)]
@@ -16,9 +10,9 @@ namespace FastBIRe.Test
         [DataRow(SqlType.PostgreSql)]
         public void CreateIndexFieldsWithoutDesc(SqlType sqlType)
         {
-            var helper=new TableHelper(sqlType);
+            var helper = new TableHelper(sqlType);
             var act = helper.CreateIndex("indexA", "table1", new string[] { "a1", "a2", "a3" });
-            var exp = $"CREATE INDEX {Quto(sqlType,"indexA")} ON {Quto(sqlType,"table1")} ({Quto(sqlType, "a1")},{Quto(sqlType, "a2")},{Quto(sqlType, "a3")});";
+            var exp = $"CREATE INDEX {Quto(sqlType, "indexA")} ON {Quto(sqlType, "table1")} ({Quto(sqlType, "a1")},{Quto(sqlType, "a2")},{Quto(sqlType, "a3")});";
             Assert.AreEqual(exp, act);
         }
         [TestMethod]
@@ -29,7 +23,7 @@ namespace FastBIRe.Test
         public void CreateIndexFieldsWithFullDesc(SqlType sqlType)
         {
             var helper = new TableHelper(sqlType);
-            var act = helper.CreateIndex("indexA", "table1", new string[] { "a1", "a2", "a3" },new bool[] {true,false,false});
+            var act = helper.CreateIndex("indexA", "table1", new string[] { "a1", "a2", "a3" }, new bool[] { true, false, false });
             var exp = $"CREATE INDEX {Quto(sqlType, "indexA")} ON {Quto(sqlType, "table1")} ({Quto(sqlType, "a1")} DESC,{Quto(sqlType, "a2")} ASC,{Quto(sqlType, "a3")} ASC);";
             Assert.AreEqual(exp, act);
         }

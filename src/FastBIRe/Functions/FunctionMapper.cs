@@ -39,7 +39,7 @@ namespace FastBIRe
         /// <param name="input">The input expression</param>
         /// <param name="replaced">Replace to value</param>
         /// <returns>Transform result</returns>
-        public static string ReplaceBracket(string input,string replaced)
+        public static string ReplaceBracket(string input, string replaced)
         {
             var inQuto = false;
             var sb = new StringBuilder();

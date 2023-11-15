@@ -21,11 +21,11 @@ namespace FastBIRe
                 WrapName = wrapName;
             }
         }
-        public static TableWrapper Create(DbConnection connection,string tableName, Predicate<DatabaseColumn> columnMarsk)
+        public static TableWrapper Create(DbConnection connection, string tableName, Predicate<DatabaseColumn> columnMarsk)
         {
             var reader = new DatabaseReader(connection) { Owner = connection.Database };
             var table = reader.Table(tableName);
-            if (table ==null)
+            if (table == null)
             {
                 throw new ArgumentException($"Table {tableName} not exists");
             }
@@ -109,7 +109,7 @@ namespace FastBIRe
 
         public string? InsertOrUpdate(IEnumerable<object> values)
         {
-            var valueJoined = string.Join(", ", values.Select(x => SqlType.WrapValue(x))) ;
+            var valueJoined = string.Join(", ", values.Select(x => SqlType.WrapValue(x)));
             switch (SqlType)
             {
                 case SqlType.SqlServer:
@@ -137,7 +137,7 @@ ON DUPLICATE KEY UPDATE {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"
                 case SqlType.DuckDB:
                     return $@"INSERT INTO {WrapTableName} ({ColumnNameJoined})
 VALUES ({valueJoined})
-ON CONFLICT ({string.Join(", ",KeysMask.Select(x=>x.Name))})
+ON CONFLICT ({string.Join(", ", KeysMask.Select(x => x.Name))})
 DO UPDATE SET {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{x.Name}=EXCLUDED.{x.Name}"))};";
                 case SqlType.Oracle:
                 case SqlType.Db2:

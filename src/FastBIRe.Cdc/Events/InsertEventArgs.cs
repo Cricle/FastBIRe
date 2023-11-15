@@ -6,7 +6,7 @@ namespace FastBIRe.Cdc.Events
     public class InsertEventArgs : OperatorCdcEventArgs
     {
         public InsertEventArgs(object? rawData, object tableId, ITableMapInfo? tableInfo, IList<ICdcDataRow> rows, ICheckpoint? checkpoint)
-            : base(rawData, tableId, tableInfo,checkpoint)
+            : base(rawData, tableId, tableInfo, checkpoint)
         {
             Rows = rows;
         }

@@ -12,7 +12,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\FastBIRe.Cdc\FastBIRe.Cdc.csproj" />
-		<ProjectReference Include="..\FastBIRe\FastBIRe.csproj" />
 	</ItemGroup>
 
 </Project>

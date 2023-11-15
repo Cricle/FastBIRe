@@ -31,7 +31,7 @@ namespace FastBIRe.CdcSample
                     {
                         foreach (var item in uea.Rows)
                         {
-                            Console.WriteLine($"UpdateData:{(item.BeforeRow==null?null:string.Join(",", item.BeforeRow))} -> {string.Join(",", item.AfterRow)}");
+                            Console.WriteLine($"UpdateData:{(item.BeforeRow == null ? null : string.Join(",", item.BeforeRow))} -> {string.Join(",", item.AfterRow)}");
                         }
                     }
                     break;

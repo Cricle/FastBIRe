@@ -2,7 +2,7 @@
 {
     public interface IFarmManager : IDisposable
     {
-        Task<SyncResult> SyncAsync(IEnumerable<int>? maskColumns=null, CancellationToken token = default);
+        Task<SyncResult> SyncAsync(IEnumerable<int>? maskColumns = null, CancellationToken token = default);
 
         Task InsertAsync(IEnumerable<IEnumerable<object>> values, CancellationToken token = default);
 

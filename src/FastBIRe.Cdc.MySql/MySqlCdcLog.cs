@@ -1,6 +1,4 @@
-﻿using MySqlCdc.Events;
-
-namespace FastBIRe.Cdc.MySql
+﻿namespace FastBIRe.Cdc.MySql
 {
     public class MySqlCdcLog : CdcLog
     {

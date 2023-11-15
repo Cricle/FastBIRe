@@ -33,7 +33,7 @@ namespace FastBIRe.Test.Timing
         [TestMethod]
         public void Expression_New()
         {
-            var result = DefaultExpandResult.Expression("a",null);
+            var result = DefaultExpandResult.Expression("a", null);
             Assert.AreEqual("a", result.OriginName);
             Assert.AreEqual("a", result.Name);
         }

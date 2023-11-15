@@ -35,11 +35,11 @@ namespace FastBIRe.Cdc.Checkpoints
 
         public bool Equals(CheckpointIdentity other)
         {
-            return other.DatabaseName == DatabaseName&&
-                other.TableName==TableName;
+            return other.DatabaseName == DatabaseName &&
+                other.TableName == TableName;
         }
 
-        public static bool operator == (CheckpointIdentity left, CheckpointIdentity right)
+        public static bool operator ==(CheckpointIdentity left, CheckpointIdentity right)
         {
             return left.Equals(right);
         }

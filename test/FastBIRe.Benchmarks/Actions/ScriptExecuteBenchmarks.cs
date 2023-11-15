@@ -3,11 +3,11 @@
 namespace FastBIRe.Benchmarks.Actions
 {
     [MemoryDiagnoser]
-    public class ScriptExecuteBenchmarks: DuckDBBenchmark
+    public class ScriptExecuteBenchmarks : DuckDBBenchmark
     {
         DefaultScriptExecuter scriptExecuter;
 
-        [Params(true,false)]
+        [Params(true, false)]
         public bool CaptureStackTrace { get; set; }
 
         [GlobalSetup]
@@ -30,7 +30,7 @@ namespace FastBIRe.Benchmarks.Actions
         [Benchmark]
         public async Task RawAsyncExecute()
         {
-           await ScriptAsync("SELECT 1");
+            await ScriptAsync("SELECT 1");
         }
         [Benchmark]
         public async Task AsyncExecute()

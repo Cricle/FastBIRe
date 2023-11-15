@@ -8,9 +8,11 @@ namespace FastBIRe.Cdc
     {
         CdcOperators SupportCdcOperators { get; }
 
+        Task<ICheckpoint?> GetLastCheckpointAsync(string databaseName, string tableName, CancellationToken token = default);
+
         Task<bool?> TryEnableDatabaseCdcAsync(string databaseName, CancellationToken token = default);
 
-        Task<bool?> TryEnableTableCdcAsync(string databaseName,string tableName, CancellationToken token = default);
+        Task<bool?> TryEnableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default);
 
         Task<bool?> TryDisableDatabaseCdcAsync(string databaseName, CancellationToken token = default);
 

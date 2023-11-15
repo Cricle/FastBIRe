@@ -8,12 +8,21 @@ using System.Threading.Tasks;
 namespace FastBIRe.Cdc.MySql
 {
 #if false
+    //Mysql
     enforce-gtid-consistency = ON
     gtid-mode = ON
+
+    //Mariadb
+    server-id = 1
+    binlog_format = ROW
+    binlog_row_image = FULL
+    binlog_annotate_row_events = on
+    log_bin=ON
+    binlog_row_metadata = full
 #endif
     public class MySqlCdcManager : ICdcManager
     {
-        public MySqlCdcManager(IScriptExecuter scriptExecuter, MySqlCdcModes mode)
+        public MySqlCdcManager(IDbScriptExecuter scriptExecuter, MySqlCdcModes mode)
         {
             ScriptExecuter = scriptExecuter;
             Mode = mode;
@@ -22,6 +31,8 @@ namespace FastBIRe.Cdc.MySql
         public IScriptExecuter ScriptExecuter { get; }
 
         public MySqlCdcModes Mode { get; }
+
+        public bool IsMariaDB { get; set; }
 
         public CdcOperators SupportCdcOperators => CdcOperators.WithoutEnableDisable;
 
@@ -36,7 +47,7 @@ namespace FastBIRe.Cdc.MySql
 
         protected Task<bool> IsLogBinOnAsync(CancellationToken token = default)
         {
-            if (Mode== MySqlCdcModes.Gtid)
+            if (Mode == MySqlCdcModes.Gtid)
             {
                 return ScriptExecuter.ReadResultAsync("SELECT @@GTID_MODE", (s, r) =>
                 {
@@ -60,7 +71,7 @@ namespace FastBIRe.Cdc.MySql
         public Task<ICdcListener> GetCdcListenerAsync(MySqlGetCdcListenerOptions options, CancellationToken token = default)
         {
             var client = new BinlogClient(options.ReplicaOptionsAction);
-            return Task.FromResult<ICdcListener>(new MySqlCdcListener(client, options,Mode));
+            return Task.FromResult<ICdcListener>(new MySqlCdcListener(client, options, Mode));
         }
 
         Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options, CancellationToken token)
@@ -126,6 +137,33 @@ namespace FastBIRe.Cdc.MySql
         public Task<bool?> TryDisableTableCdcAsync(string databaseName, string tableName, CancellationToken token = default)
         {
             return Task.FromResult<bool?>(null);
+        }
+
+        public Task<ICheckpoint?> GetLastCheckpointAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            if (IsMariaDB)
+            {
+                return ScriptExecuter.ReadResultAsync("SELECT @@GLOBAL.gtid_binlog_pos;", static (o, e) =>
+                {
+                    ICheckpoint? checkpoint = null;
+                    if (e.Reader.Read())
+                    {
+                        var str = e.Reader.GetString(0);
+                        checkpoint = MySqlCheckpoint.Parse(str, true);
+                    }
+                    return Task.FromResult(checkpoint);
+                }, token: token);
+            }
+            return ScriptExecuter.ReadResultAsync("SHOW MASTER STATUS", static (e, o) =>
+            {
+                ICheckpoint? checkpoint = null;
+                if (o.Reader.Read())
+                {
+                    var set = o.Reader.GetString(4);
+                    checkpoint = MySqlCheckpoint.Parse(set, false);
+                }
+                return Task.FromResult(checkpoint);
+            }, token: token);
         }
     }
 }

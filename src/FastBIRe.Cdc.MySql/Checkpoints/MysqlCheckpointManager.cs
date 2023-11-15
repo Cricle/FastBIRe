@@ -30,17 +30,16 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
             }
             else if (isMysqlGtid)
             {
-                var uuid = new Uuid(data.AsSpan(2,16).ToArray());
-                var serviceId = BitConverter.ToInt64(data, 2 + 16);
-                var transId = BitConverter.ToInt64(data, 2 + 16+sizeof(long));
-                return new MySqlCheckpoint(new MySqlCdc.Providers.MySql.Gtid(uuid, transId), serviceId);
+                var uuid = new Uuid(data.AsSpan(2, 16).ToArray());
+                var transId = BitConverter.ToInt64(data, 2 + 16);
+                return new MySqlCheckpoint(new MySqlCdc.Providers.MySql.Gtid(uuid, transId));
             }
             else
             {
-                var domainId = BitConverter.ToInt64(data, 2 + 16);
-                var serviceId = BitConverter.ToInt64(data, 2 + 16*2);
-                var sequence = BitConverter.ToInt64(data, 2 + 16*3);
-                return new MySqlCheckpoint(new MySqlCdc.Providers.MariaDb.Gtid(domainId, serviceId, sequence), 0);
+                var domainId = BitConverter.ToInt64(data, 2);
+                var serviceId = BitConverter.ToInt64(data, 2 + sizeof(long) * 1);
+                var sequence = BitConverter.ToInt64(data, 2 + sizeof(long) * 2);
+                return new MySqlCheckpoint(new MySqlCdc.Providers.MariaDb.Gtid(domainId, serviceId, sequence));
             }
         }
     }

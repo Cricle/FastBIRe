@@ -149,7 +149,7 @@ namespace FastBIRe
         {
             if (IsEmptyScript(script))
             {
-                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { script }, args, stackTrace,dbTransaction, token));
+                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { script }, args, stackTrace, dbTransaction, token));
                 return 0;
             }
             var fullStartTime = Stopwatch.GetTimestamp();

@@ -9,7 +9,7 @@ namespace FastBIRe.Cdc.Events
     public abstract class EventDispatcherBase<TInput> : IEventDispatcher<TInput>
     {
         public EventDispatcherBase()
-            :this(true,null,false)
+            : this(true, null, false)
         {
 
         }

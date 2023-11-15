@@ -377,7 +377,7 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string? YearFull(string time)
         {
-            if (SqlType== SqlType.DuckDB||SqlType== SqlType.PostgreSql)
+            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
             {
                 return $"DATE_TRUNC('year',{time})";
             }

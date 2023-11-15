@@ -40,7 +40,7 @@ namespace FastBIRe.Duck
             tb.Columns[1].Id = 1;
 
             cptb.Columns[1].Name = "qweqewdawda";
-            var script= CompareSchemas.FromTable(builder.DataSource, SqlType.DuckDB, tb, cptb).Execute();
+            var script = CompareSchemas.FromTable(builder.DataSource, SqlType.DuckDB, tb, cptb).Execute();
             Console.WriteLine(script);
             await executer.ExecuteAsync(script);
         }

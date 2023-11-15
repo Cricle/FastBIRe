@@ -1,9 +1,4 @@
 ﻿using FastBIRe.Triggering;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FastBIRe.Test.Triggering
 {
@@ -91,7 +86,7 @@ END $$;", "DROP FUNCTION IF EXISTS \"fun_test\";" })]
         [DataRow(SqlType.Oracle, "test", new string[] { })]
         public void Drop(SqlType sqlType, string name, string[] results)
         {
-            var res = TriggerWriter.Default.Drop(sqlType, name,"test").ToList();
+            var res = TriggerWriter.Default.Drop(sqlType, name, "test").ToList();
             Assert.AreEqual(results.Length, res.Count);
             for (int i = 0; i < res.Count; i++)
             {
@@ -99,7 +94,7 @@ END $$;", "DROP FUNCTION IF EXISTS \"fun_test\";" })]
             }
         }
         [TestMethod]
-        [DataRow(SqlType.MySql, "trigger",TriggerTypes.BeforeInsert,"table","SELECT 1;",null, new[] { $@"
+        [DataRow(SqlType.MySql, "trigger", TriggerTypes.BeforeInsert, "table", "SELECT 1;", null, new[] { $@"
 CREATE TRIGGER `trigger` BEFORE INSERT ON `table`
 FOR EACH ROW
 BEGIN
@@ -186,7 +181,7 @@ EXECUTE FUNCTION fun_trigger();
         [DataRow(SqlType.Oracle)]
         public void CreateEmpty(SqlType sqlType)
         {
-            Assert.AreEqual(0, TriggerWriter.Default.Create(sqlType, "name",  TriggerTypes.AfterDelete, "tb", string.Empty, null).Count());
+            Assert.AreEqual(0, TriggerWriter.Default.Create(sqlType, "name", TriggerTypes.AfterDelete, "tb", string.Empty, null).Count());
         }
     }
 }

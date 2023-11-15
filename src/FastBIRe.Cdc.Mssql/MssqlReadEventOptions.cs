@@ -1,6 +1,4 @@
-﻿using System.Numerics;
-
-namespace FastBIRe.Cdc.Mssql
+﻿namespace FastBIRe.Cdc.Mssql
 {
     public class MssqlReadEventOptions
     {

@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FastBIRe.Test
+﻿namespace FastBIRe.Test
 {
     [TestClass]
     public class IndexByteLenHelperTest : DbTestBase
@@ -22,7 +15,7 @@ namespace FastBIRe.Test
             {
                 case SqlType.SqlServerCe:
                 case SqlType.SqlServer:
-                    Assert.AreEqual(1,len);
+                    Assert.AreEqual(1, len);
                     break;
                 case SqlType.MySql:
                     Assert.AreEqual(768, len);

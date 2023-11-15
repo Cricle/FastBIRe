@@ -2,7 +2,7 @@
 {
     public enum DuckCdcDbMode
     {
-        Fast=0,
-        Safe=1
+        Fast = 0,
+        Safe = 1
     }
 }

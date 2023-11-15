@@ -28,7 +28,7 @@ namespace FastBIRe.Comparing
             }
             if (x.DataType.IsString)
             {
-                if (x.Length==null||y.Length==null)
+                if (x.Length == null || y.Length == null)
                 {
                     return true;
                 }

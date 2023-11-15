@@ -1,15 +1,12 @@
-﻿using DatabaseSchemaReader;
-using DuckDB.NET.Data;
+﻿using DuckDB.NET.Data;
 using FastBIRe.AP.DuckDB;
 using Microsoft.Data.SqlClient;
-using MySqlConnector;
-using Npgsql;
 
 namespace FastBIRe.Farm
 {
     internal static class FarmHelper
     {
-        public static FarmManager CreateFarm(string tableName,bool listen)
+        public static FarmManager CreateFarm(string tableName, bool listen)
         {
             var duck = new DuckDBConnection("Data source=a.db");
             //var mysql = new MySqlConnection("Server=192.168.1.101;Port=3306;Uid=root;Pwd=Syc123456.;Connection Timeout=2000;Character Set=utf8;Database=test-2");
@@ -28,7 +25,7 @@ namespace FastBIRe.Farm
             }
             var sourceHouse = new FarmWarehouse(mysqlExecuter);
             var destHouse = new DuckFarmWarehouse(duckExecuter);
-            return FarmManager.Create(sourceHouse, destHouse,tableName);
+            return FarmManager.Create(sourceHouse, destHouse, tableName);
         }
 
     }

@@ -60,7 +60,7 @@ namespace FastBIRe.Building
                 return false;
             }
             return other.Method == Method &&
-                other.Function==Function&&
+                other.Function == Function &&
                 Args.Count == other.Args.Count &&
                 Args.SequenceEqual(other.Args);
         }

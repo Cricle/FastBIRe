@@ -11,16 +11,16 @@ namespace FastBIRe.Building
 
         public MultipleQueryMetadata Metadatas { get; }
 
-        public SqlBuilder OrderBy(string value, SortMode mode,bool quto = true)
+        public SqlBuilder OrderBy(string value, SortMode mode, bool quto = true)
         {
             return OrderBy(new ValueMetadata(value, quto), mode);
         }
-        public SqlBuilder OrderBy(IQueryMetadata metadata,SortMode mode)
+        public SqlBuilder OrderBy(IQueryMetadata metadata, SortMode mode)
         {
             Metadatas.Add(new SortMetadata(metadata, mode));
             return this;
         }
-        public SqlBuilder Group(string value,bool quto = true)
+        public SqlBuilder Group(string value, bool quto = true)
         {
             return Group(new ValueMetadata(value, quto));
         }
@@ -34,7 +34,7 @@ namespace FastBIRe.Building
             Metadatas.Add(new FilterMetadata(metadatas));
             return this;
         }
-        public SqlBuilder Select(string value,string? alias=null, bool quto=true)
+        public SqlBuilder Select(string value, string? alias = null, bool quto = true)
         {
             IQueryMetadata m = new ValueMetadata(value, quto);
             if (!string.IsNullOrEmpty(alias))
@@ -50,7 +50,7 @@ namespace FastBIRe.Building
         }
         public SqlBuilder From(string value, bool quto = true)
         {
-            return From(new ValueMetadata(value,quto));
+            return From(new ValueMetadata(value, quto));
         }
         public SqlBuilder From(IQueryMetadata metadata)
         {

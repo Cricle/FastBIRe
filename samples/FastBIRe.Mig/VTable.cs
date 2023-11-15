@@ -1,6 +1,6 @@
 ﻿namespace FastBIRe.Mig
 {
-    public class VTable: VObject
+    public class VTable : VObject
     {
         public string Name { get; set; }
 

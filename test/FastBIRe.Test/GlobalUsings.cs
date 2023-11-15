@@ -1,10 +1,6 @@
-global using Microsoft.VisualStudio.TestTools.UnitTesting;
-global using FastBIRe;
-global using FastBIRe.Timescale;
 global using DatabaseSchemaReader.DataSchema;
-global using DatabaseSchemaReader;
+global using Microsoft.VisualStudio.TestTools.UnitTesting;
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;
-global using System.Text;
 global using System.Threading.Tasks;

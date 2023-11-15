@@ -6,6 +6,8 @@ namespace FastBIRe.Benchmarks
     {
         static void Main(string[] args)
         {
+            //var cr = new CsvBenchmark();
+            //cr.SimpleParse();
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run();
         }
     }

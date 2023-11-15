@@ -1,10 +1,4 @@
-﻿using DatabaseSchemaReader.DataSchema;
-using FastBIRe.Functions;
-using FastBIRe.Wrapping;
-using System.Linq.Expressions;
-using System.Text;
-
-namespace FastBIRe.Building
+﻿namespace FastBIRe.Building
 {
     public abstract class DefaultMetadataVisitor<T> : MetadataVisitor<T>
         where T : DefaultQueryContext
@@ -28,7 +22,7 @@ namespace FastBIRe.Building
 
         public abstract T CreateContext(IQueryMetadata metadata);
 
-        private void AddIfNotNull(List<string> lst,string? exp)
+        private void AddIfNotNull(List<string> lst, string? exp)
         {
             if (!string.IsNullOrEmpty(exp))
             {

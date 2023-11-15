@@ -34,7 +34,7 @@ namespace FastBIRe.Test
         [TestMethod]
         public void MethodWrapperOther()
         {
-            Assert.ThrowsException<NotSupportedException>(()=>SqlTypGetExtensions.GetEscaper(SqlType.Db2));
+            Assert.ThrowsException<NotSupportedException>(() => SqlTypGetExtensions.GetEscaper(SqlType.Db2));
         }
     }
 }

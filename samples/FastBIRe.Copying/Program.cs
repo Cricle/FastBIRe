@@ -1,12 +1,5 @@
-﻿using Dapper;
-using DatabaseSchemaReader;
-using DatabaseSchemaReader.DataSchema;
-using DatabaseSchemaReader.SqlGen;
-using FastBIRe.Data;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using MySqlConnector;
-using rsa;
-using System.Diagnostics;
 
 namespace FastBIRe.Copying
 {
@@ -17,7 +10,7 @@ namespace FastBIRe.Copying
             var sps = TableHelper.SplitSqlServerByGo(TableHelper.GetSqlServerDDLFunctionScripts());
             var mssql = new SqlConnection("Server=192.168.1.101;Uid=sa;Pwd=Syc123456.;Connection Timeout=2000;TrustServerCertificate=true;Database=test21");
             mssql.Open();
-            var exec=new DefaultScriptExecuter(mssql);
+            var exec = new DefaultScriptExecuter(mssql);
             foreach (var item in sps)
             {
                 await exec.ExecuteAsync(item);

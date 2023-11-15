@@ -8,6 +8,6 @@
 
         public string? MemberState => GetOrDefault(MemberStateKey);
 
-        public string? MemberId=> GetOrDefault(MemberIdKey);
+        public string? MemberId => GetOrDefault(MemberIdKey);
     }
 }

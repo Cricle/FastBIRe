@@ -1,6 +1,6 @@
 ﻿using FastBIRe.Cdc.NpgSql;
-using Npgsql.Replication.PgOutput;
 using Npgsql.Replication;
+using Npgsql.Replication.PgOutput;
 using rsa;
 
 namespace FastBIRe.CdcSample
@@ -33,7 +33,7 @@ namespace FastBIRe.CdcSample
             Console.WriteLine(await mgr.IsTableCdcEnableAsync("test1", "juhe"));
             await mgr.TryDisableTableCdcAsync("test1", "juhe_effect");
             await mgr.TryEnableTableCdcAsync("test1", "juhe_effect");
-            var slotName = "juhe"+PgSqlCdcManager.SlotTail;
+            var slotName = "juhe" + PgSqlCdcManager.SlotTail;
             var pubName = "juhe" + PgSqlCdcManager.PubTail;
             var listener = await mgr.GetCdcListenerAsync(new PgSqlGetCdcListenerOptions(
                 rconn,

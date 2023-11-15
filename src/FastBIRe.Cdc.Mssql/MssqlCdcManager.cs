@@ -5,20 +5,14 @@ using Microsoft.Data.SqlClient;
 
 namespace FastBIRe.Cdc.Mssql
 {
-    public class MssqlCdcManager : ICdcManager, IDisposable
+    public class MssqlCdcManager : ICdcManager
     {
-        public MssqlCdcManager(Func<IDbScriptExecuter> scriptExecuterFactory)
+        public MssqlCdcManager(IDbScriptExecuter scriptExecuter)
         {
-            ScriptExecuterFactory = scriptExecuterFactory;
-            ScriptExecuter = scriptExecuterFactory();
-            disposables.Add(ScriptExecuter);
+            ScriptExecuter = scriptExecuter;
         }
 
-        private readonly IList<IDisposable> disposables = new List<IDisposable>();
-
         public IDbScriptExecuter ScriptExecuter { get; }
-
-        public Func<IDbScriptExecuter> ScriptExecuterFactory { get; }
 
         public SqlConnection Connection => (SqlConnection)ScriptExecuter.Connection;
 
@@ -26,8 +20,6 @@ namespace FastBIRe.Cdc.Mssql
 
         public Task<ICdcListener> GetCdcListenerAsync(MssqlGetCdcListenerOptions options, CancellationToken token = default)
         {
-            var executer = ScriptExecuterFactory();
-            disposables.Add(executer);
             return Task.FromResult<ICdcListener>(new MssqlCdcListener(this, options));
         }
         Task<ICdcListener> ICdcManager.GetCdcListenerAsync(IGetCdcListenerOptions options, CancellationToken token)
@@ -48,7 +40,7 @@ SELECT @from_lsn", token);
         }
         public async Task<MssqlLsn> GetMaxLSNAsync(CancellationToken token = default)
         {
-            var buff =await GetLsnAsync("SELECT sys.fn_cdc_get_max_lsn()", token);
+            var buff = await GetLsnAsync("SELECT sys.fn_cdc_get_max_lsn()", token);
             return MssqlLsn.Create(buff);
         }
 
@@ -57,7 +49,7 @@ SELECT @from_lsn", token);
             byte[]? lsn = null;
             await ScriptExecuter.ReadAsync(script, (s, r) =>
             {
-                if (r.Reader.Read()&&!r.Reader.IsDBNull(0))
+                if (r.Reader.Read() && !r.Reader.IsDBNull(0))
                 {
                     lsn = (byte[])r.Reader[0];
                 }
@@ -106,15 +98,6 @@ SELECT @from_lsn", token);
             return ScriptExecuter.ExistsAsync($"SELECT 1 from sys.tables where name ='{tableName}' AND is_tracked_by_cdc = 1", token: token);
         }
 
-        public void Dispose()
-        {
-            foreach (var item in disposables)
-            {
-                item.Dispose();
-            }
-            disposables.Clear();
-        }
-
         public Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default)
         {
             return Task.FromResult<ICheckPointManager>(MssqlCheckpointManager.Instance);
@@ -124,7 +107,7 @@ SELECT @from_lsn", token);
         {
             var var = await GetCdcVariablesAsync(token);
             var state = var.GetOrDefault(MssqlVariables.AgentStateKey);
-            if (state!=null&&state.StartsWith("running", StringComparison.OrdinalIgnoreCase))
+            if (state != null && state.StartsWith("running", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -139,7 +122,7 @@ USE [{databaseName}];
 EXEC sys.sp_cdc_enable_db;
 USE [{dbName}];
 ";
-            await ScriptExecuter.ExecuteAsync(scripts,token:token);
+            await ScriptExecuter.ExecuteAsync(scripts, token: token);
             return true;
         }
 
@@ -149,7 +132,7 @@ USE [{dbName}];
             {
                 return false;
             }
-            if (await IsTableCdcEnableAsync(databaseName,tableName))
+            if (await IsTableCdcEnableAsync(databaseName, tableName))
             {
                 return true;
             }
@@ -195,6 +178,16 @@ USE [{dbName}];
 ";
             await ScriptExecuter.ExecuteAsync(scripts, token: token);
             return true;
+        }
+
+        public async Task<ICheckpoint?> GetLastCheckpointAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            var lsn = await GetMaxLSNAsync(token);
+            if (lsn.Lsn == null)
+            {
+                return null;
+            }
+            return new MssqlCheckpoint(lsn.Lsn);
         }
     }
 }

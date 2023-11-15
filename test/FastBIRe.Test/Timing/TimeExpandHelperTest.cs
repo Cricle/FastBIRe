@@ -1,9 +1,4 @@
 ﻿using FastBIRe.Timing;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FastBIRe.Test.Timing
 {
@@ -16,7 +11,7 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.SqlServerCe, "__$field_second", "__$field_second")]
         [DataRow(SqlType.SQLite, "__$field_second", "__$field_second")]
         [DataRow(SqlType.PostgreSql, "__$field_second", "__$field_second")]
-        public void Create_Second(SqlType sqlType,string name,string formatExp)
+        public void Create_Second(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
             var res = helper.Create("field", TimeTypes.Second).ToList();
@@ -31,7 +26,7 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.SqlServer, "__$field_minute", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(16),{0} ,120),120) , CONVERT(VARCHAR,':00',120))")]
         [DataRow(SqlType.SqlServerCe, "__$field_minute", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(16),{0} ,120),120) , CONVERT(VARCHAR,':00',120))")]
         [DataRow(SqlType.SQLite, "__$field_minute", "CAST(strftime('%Y-%m-%d %H:%M', {0}) AS TEXT) || CAST(':00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_minute", "LEFT(date_trunc('minute',{0})::VARCHAR,16)::VARCHAR || ':00'::VARCHAR")]
+        [DataRow(SqlType.PostgreSql, "__$field_minute", "DATE_TRUNC('minute',{0})")]
         public void Create_Minute(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
@@ -47,7 +42,7 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.SqlServer, "__$field_hour", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(13),{0} ,120),120) , CONVERT(VARCHAR,':00:00',120))")]
         [DataRow(SqlType.SqlServerCe, "__$field_hour", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(13),{0} ,120),120) , CONVERT(VARCHAR,':00:00',120))")]
         [DataRow(SqlType.SQLite, "__$field_hour", "CAST(strftime('%Y-%m-%d %H', {0}) AS TEXT) || CAST(':00:00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_hour", "LEFT(date_trunc('hour',{0})::VARCHAR,13)::VARCHAR || ':00:00'::VARCHAR")]
+        [DataRow(SqlType.PostgreSql, "__$field_hour", "DATE_TRUNC('hour',{0})")]
         public void Create_Hour(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
@@ -63,7 +58,7 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.SqlServer, "__$field_day", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(10),{0} ,120),120) , CONVERT(VARCHAR,' 00:00:00',120))")]
         [DataRow(SqlType.SqlServerCe, "__$field_day", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(10),{0} ,120),120) , CONVERT(VARCHAR,' 00:00:00',120))")]
         [DataRow(SqlType.SQLite, "__$field_day", "CAST(strftime('%Y-%m-%d', {0}) AS TEXT) || CAST(' 00:00:00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_day", "LEFT(date_trunc('day',{0})::VARCHAR,10)::VARCHAR || ' 00:00:00'::VARCHAR")]
+        [DataRow(SqlType.PostgreSql, "__$field_day", "DATE_TRUNC('day',{0})")]
         public void Create_Day(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
@@ -79,7 +74,7 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.SqlServer, "__$field_week", "DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {0}, 120) - 1), 0)")]
         [DataRow(SqlType.SqlServerCe, "__$field_week", "DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {0}, 120) - 1), 0)")]
         [DataRow(SqlType.SQLite, "__$field_week", "date({0}, 'weekday 0', '-6 day')||' 00:00:00'")]
-        [DataRow(SqlType.PostgreSql, "__$field_week", "(date_trunc('day',{0}) - ((EXTRACT(DOW FROM {0})::INTEGER+6)%7 || ' days')::INTERVAL)::timestamp with time zone")]
+        [DataRow(SqlType.PostgreSql, "__$field_week", "DATE_TRUNC('week',{0})")]
         public void Create_Week(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
@@ -95,7 +90,7 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.SqlServer, "__$field_month", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(7),{0} ,120),120) , CONVERT(VARCHAR,'-01 00:00:00',120))")]
         [DataRow(SqlType.SqlServerCe, "__$field_month", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(7),{0} ,120),120) , CONVERT(VARCHAR,'-01 00:00:00',120))")]
         [DataRow(SqlType.SQLite, "__$field_month", "CAST(strftime('%Y-%m', {0}) AS TEXT) || CAST('-01 00:00:00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_month", "LEFT(date_trunc('month',{0})::VARCHAR,7)::VARCHAR || '-01 00:00:00'::VARCHAR")]
+        [DataRow(SqlType.PostgreSql, "__$field_month", "DATE_TRUNC('month',{0})")]
         public void Create_Month(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);
@@ -127,7 +122,7 @@ namespace FastBIRe.Test.Timing
         [DataRow(SqlType.SqlServer, "__$field_year", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(4),{0} ,120),120) , CONVERT(VARCHAR,'-01-01 00:00:00',120))")]
         [DataRow(SqlType.SqlServerCe, "__$field_year", "CONCAT(CONVERT(VARCHAR,CONVERT(VARCHAR(4),{0} ,120),120) , CONVERT(VARCHAR,'-01-01 00:00:00',120))")]
         [DataRow(SqlType.SQLite, "__$field_year", "CAST(strftime('%Y', {0}) AS TEXT) || CAST('-01-01 00:00:00' AS TEXT)")]
-        [DataRow(SqlType.PostgreSql, "__$field_year", "LEFT(date_trunc('year',{0})::VARCHAR,4)::VARCHAR || '-01-01 00:00:00'::VARCHAR")]
+        [DataRow(SqlType.PostgreSql, "__$field_year", "DATE_TRUNC('year',{0})")]
         public void Create_Year(SqlType sqlType, string name, string formatExp)
         {
             var helper = new TimeExpandHelper(sqlType);

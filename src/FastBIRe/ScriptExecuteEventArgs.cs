@@ -91,7 +91,7 @@ namespace FastBIRe
             }
         }
 
-        public static ScriptExecuteEventArgs Begin(DbConnection connection, IEnumerable<string>? scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, StackTrace? stackTrace,DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs Begin(DbConnection connection, IEnumerable<string>? scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.Begin,
                 connection,
@@ -210,7 +210,7 @@ namespace FastBIRe
                 dbTransaction,
                 token);
         }
-        public static ScriptExecuteEventArgs LoadBatchItem(DbConnection connection, IEnumerable<string>? scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, DbBatch batch, DbBatchCommand command, StackTrace? stackTrace,DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs LoadBatchItem(DbConnection connection, IEnumerable<string>? scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, DbBatch batch, DbBatchCommand command, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.LoadBatchItem,
                 connection,
@@ -325,7 +325,7 @@ namespace FastBIRe
                 dbTransaction,
                 token);
         }
-        public static ScriptExecuteEventArgs BeginTranscation(DbConnection connection,StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs BeginTranscation(DbConnection connection, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.BeginTransaction,
                 connection,

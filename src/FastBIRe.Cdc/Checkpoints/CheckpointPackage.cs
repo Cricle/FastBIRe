@@ -15,9 +15,9 @@ namespace FastBIRe.Cdc.Checkpoints
         public byte[]? CheckpointData { get; }
 
         public TCheckpoint? CastCheckpoint<TCheckpoint>(ICheckPointManager mgr)
-            where TCheckpoint:ICheckpoint
+            where TCheckpoint : ICheckpoint
         {
-            if (TryCastCheckpoint(mgr,out var cp,out var ex))
+            if (TryCastCheckpoint(mgr, out var cp, out var ex))
             {
                 if (cp is TCheckpoint tcp)
                 {

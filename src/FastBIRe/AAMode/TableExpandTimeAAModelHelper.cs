@@ -21,7 +21,7 @@ namespace FastBIRe.AAMode
             var rawTable = reader.Table(request.TableName);
             var changedTable = reader.Table(request.TableName);
             var results = request.Columns.SelectMany(x => TimeExpandHelper.Create(x, request.TimeTypes)).ToList();
-            var affectColumns=new List<TimeExpandResult>();
+            var affectColumns = new List<TimeExpandResult>();
             foreach (var item in results)
             {
                 var dbType = reader.FindDataTypesByDbType(DbType.DateTime);
@@ -45,7 +45,7 @@ namespace FastBIRe.AAMode
             }
             var cmp = CompareSchemas.FromTable(reader.DatabaseSchema.ConnectionString, reader.SqlType!.Value, rawTable, changedTable).ExecuteResult();
             request.AddScripts(cmp.Select(x => x.Script));
-            if (request.WithDataMigration&&cmp.Count != 0)
+            if (request.WithDataMigration && cmp.Count != 0)
             {
                 //Some column migrate
                 var sqlType = reader.SqlType!.Value;

@@ -13,7 +13,8 @@ namespace FastBIRe.Cdc
         CheckDatabaseSupportCdc = EnableDatabaseCdc << 4,
         CheckDatabaseEnableCdc = EnableDatabaseCdc << 5,
         CheckTableEnableCdc = EnableDatabaseCdc << 6,
-        All = EnableDatabaseCdc | EnableTableCdc | DisableDatabaseCdc | DisableTableCdc | CheckDatabaseSupportCdc | CheckDatabaseEnableCdc | CheckTableEnableCdc,
-        WithoutEnableDisable=All & ~EnableDatabaseCdc & ~EnableTableCdc & ~DisableDatabaseCdc & ~DisableTableCdc
+        GetLastCheckPoint= EnableDatabaseCdc<<7,
+        All = EnableDatabaseCdc | EnableTableCdc | DisableDatabaseCdc | DisableTableCdc | CheckDatabaseSupportCdc | CheckDatabaseEnableCdc | CheckTableEnableCdc| GetLastCheckPoint,
+        WithoutEnableDisable = All & ~EnableDatabaseCdc & ~EnableTableCdc & ~DisableDatabaseCdc & ~DisableTableCdc
     }
 }

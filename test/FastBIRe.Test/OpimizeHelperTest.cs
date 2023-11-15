@@ -6,7 +6,7 @@
         [TestMethod]
         public void MySql()
         {
-            var act= new TableHelper(SqlType.MySql).Opimize("table");
+            var act = new TableHelper(SqlType.MySql).Opimize("table");
             Assert.AreEqual("OPTIMIZE TABLE `table`;", act);
         }
         [TestMethod]

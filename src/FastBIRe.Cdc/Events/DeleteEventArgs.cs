@@ -5,8 +5,8 @@ namespace FastBIRe.Cdc.Events
 {
     public class DeleteEventArgs : OperatorCdcEventArgs
     {
-        public DeleteEventArgs(object? rawData, object tableId, ITableMapInfo? tableInfo, IList<ICdcDataRow> rows,ICheckpoint? checkpoint)
-            : base(rawData, tableId, tableInfo,checkpoint)
+        public DeleteEventArgs(object? rawData, object tableId, ITableMapInfo? tableInfo, IList<ICdcDataRow> rows, ICheckpoint? checkpoint)
+            : base(rawData, tableId, tableInfo, checkpoint)
         {
             Rows = rows;
         }
@@ -20,7 +20,7 @@ namespace FastBIRe.Cdc.Events
                 yield return EnumerableRowKeys(item, keyMasks);
             }
         }
-        private IEnumerable<object> EnumerableRowKeys(ICdcDataRow row,IEnumerable<int> keyMasks)
+        private IEnumerable<object> EnumerableRowKeys(ICdcDataRow row, IEnumerable<int> keyMasks)
         {
             foreach (var item in keyMasks)
             {

@@ -22,7 +22,7 @@ namespace FastBIRe.Cdc.MongoDB
         }
         public override ITableMapInfo? GetTableMapInfo(object id)
         {
-            if (id!=null)
+            if (id != null)
             {
                 return GetTableMapInfo(id.ToString()!);
             }

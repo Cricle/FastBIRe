@@ -56,7 +56,7 @@ namespace FastBIRe.Cdc.NpgSql
 
         public Task<bool> IsTableCdcEnableAsync(string databaseName, string tableName, CancellationToken token = default)
         {
-            return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='{GetPubName(databaseName,tableName)}';", token: token);
+            return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_catalog.pg_publication_tables WHERE pubname='{GetPubName(databaseName, tableName)}';", token: token);
         }
 
         public Task<ICheckPointManager> GetCdcCheckPointManagerAsync(CancellationToken token = default)
@@ -87,8 +87,8 @@ namespace FastBIRe.Cdc.NpgSql
             {
                 await TryDisableTableCdcAsync(databaseName, tableName, token);
             }
-            var result = await ScriptExecuter.ExistsAsync($"CREATE PUBLICATION \"{GetPubName(databaseName,tableName)}\" FOR TABLE \"{tableName}\";", token: token);
-            result &= await ScriptExecuter.ExistsAsync($"SELECT * FROM pg_create_logical_replication_slot('{GetSlotName(databaseName,tableName)}', 'pgoutput');", token: token);
+            var result = await ScriptExecuter.ExistsAsync($"CREATE PUBLICATION \"{GetPubName(databaseName, tableName)}\" FOR TABLE \"{tableName}\";", token: token);
+            result &= await ScriptExecuter.ExistsAsync($"SELECT * FROM pg_create_logical_replication_slot('{GetSlotName(databaseName, tableName)}', 'pgoutput');", token: token);
             result &= await ScriptExecuter.ExistsAsync($"ALTER TABLE \"{tableName}\" REPLICA IDENTITY FULL;", token: token);
             return result;
         }
@@ -124,19 +124,29 @@ namespace FastBIRe.Cdc.NpgSql
                     return Task.FromResult<NpgsqlLogSequenceNumber?>(new NpgsqlLogSequenceNumber((ulong)res));
                 }
                 return Task.FromResult<NpgsqlLogSequenceNumber?>(null);
-            },token:token);
+            }, token: token);
         }
-        public static string? GetPubName(string databaseName,string tableName)
+        public static string? GetPubName(string databaseName, string tableName)
         {
-            return $"{databaseName}_{tableName}{PubTail}".Replace('-','_');
+            return $"{databaseName}_{tableName}{PubTail}".Replace('-', '_');
         }
         public static string? GetSlotName(string databaseName, string tableName)
         {
             return $"{databaseName}_{tableName}{SlotTail}".Replace('-', '_');
         }
-        public Task<bool> IsReplicationSlotsExistsAsync(string database,string name, CancellationToken token = default)
+        public Task<bool> IsReplicationSlotsExistsAsync(string database, string name, CancellationToken token = default)
         {
             return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_replication_slots WHERE database={SqlType.PostgreSql.WrapValue(database)} AND slot_name={SqlType.PostgreSql.WrapValue(name)};", token: token);
+        }
+
+        public async Task<ICheckpoint?> GetLastCheckpointAsync(string databaseName, string tableName, CancellationToken token = default)
+        {
+            var number = await ReadSlotAsync(GetSlotName(databaseName, tableName)!, token: token);
+            if (number == null)
+            {
+                return null;
+            }
+            return new PgSqlCheckpoint(number);
         }
     }
 }

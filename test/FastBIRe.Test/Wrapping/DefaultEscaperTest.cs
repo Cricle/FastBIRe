@@ -37,9 +37,9 @@ namespace FastBIRe.Test.Wrapping
         [DataRow(SqlType.SQLite, "field", "`field`")]
         [DataRow(SqlType.PostgreSql, "field", "\"field\"")]
         [DataRow(SqlType.DuckDB, "field", "\"field\"")]
-        public void Quto(SqlType sqlType,string input ,string exp)
+        public void Quto(SqlType sqlType, string input, string exp)
         {
-           var escaper = GetEscaper(sqlType);
+            var escaper = GetEscaper(sqlType);
             Assert.AreEqual(exp, escaper!.Quto(input));
         }
         [TestMethod]
@@ -82,7 +82,7 @@ namespace FastBIRe.Test.Wrapping
         [TestMethod]
         public void MySqlWrapValueStringWithQuto()
         {
-            var escaper = GetEscaper( SqlType.MySql);
+            var escaper = GetEscaper(SqlType.MySql);
             Assert.AreEqual("'\\\\a'", escaper!.WrapValue("\\a"));
         }
         [TestMethod]
@@ -139,7 +139,7 @@ namespace FastBIRe.Test.Wrapping
         [DataRow(SqlType.PostgreSql, false, "false")]
         [DataRow(SqlType.DuckDB, true, "true")]
         [DataRow(SqlType.DuckDB, false, "false")]
-        public void WrapValueBoolean(SqlType sqlType,bool val,string act)
+        public void WrapValueBoolean(SqlType sqlType, bool val, string act)
         {
             var escaper = GetEscaper(sqlType);
             Assert.AreEqual(act, escaper!.WrapValue(val));

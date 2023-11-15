@@ -1,6 +1,6 @@
-﻿using rsa;
+﻿using FastBIRe.Cdc.Mssql;
 using FastBIRe.Cdc.Triggers;
-using FastBIRe.Cdc.Mssql;
+using rsa;
 
 namespace FastBIRe.CdcSample
 {
@@ -10,12 +10,12 @@ namespace FastBIRe.CdcSample
         {
             var mysql = ConnectionProvider.GetDbMigration(DatabaseSchemaReader.DataSchema.SqlType.MySql, "ttt");
             var executer = new DefaultScriptExecuter(mysql);
-            var tcdc=new TriggerCdcManager(executer);
+            var tcdc = new TriggerCdcManager(executer);
             await tcdc.TryEnableTableCdcAsync("ttt", "guidang");
-            var listener = await tcdc.GetCdcListenerAsync(new TriggerGetCdcListenerOptions(executer,TimeSpan.FromSeconds(1),10, new string[]
+            var listener = await tcdc.GetCdcListenerAsync(new TriggerGetCdcListenerOptions(executer, TimeSpan.FromSeconds(1), 10, new string[]
             {
                 "guidang_affect"
-            },null));
+            }, null));
             listener.EventRaised += Program.Vars_EventRaised;
             await listener.StartAsync();
             Console.ReadLine();

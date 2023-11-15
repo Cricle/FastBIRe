@@ -6,10 +6,13 @@
         {
             Names = names;
             Types = types;
+            TypeCodes = types.Select(x => Convert.GetTypeCode(x)).ToArray();
         }
 
         public IReadOnlyList<string> Names { get; }
 
         public IReadOnlyList<Type> Types { get; }
+
+        public IReadOnlyList<TypeCode> TypeCodes { get; }
     }
 }

@@ -20,7 +20,7 @@ namespace FastBIRe.Test
         public DatabaseIniter()
         {
             var json = File.ReadAllText("connects.json");
-            var jobj=JObject.Parse(json);
+            var jobj = JObject.Parse(json);
             mysql = jobj["MySql"]!.ToString();
             sqlserver = jobj["SqlServer"]!.ToString();
             sqlite = jobj["Sqlite"]!.ToString();
@@ -47,7 +47,7 @@ namespace FastBIRe.Test
 
         public DbConnection Sqlite()
         {
-            var conn= new SqliteConnection(sqlite);
+            var conn = new SqliteConnection(sqlite);
             conn.Open();
             connections.Add(conn);
             return conn;
@@ -74,7 +74,7 @@ namespace FastBIRe.Test
             return conn;
         }
 
-        public async Task ReturnAsync(DbConnection connection,bool drop)
+        public async Task ReturnAsync(DbConnection connection, bool drop)
         {
             if (drop)
             {

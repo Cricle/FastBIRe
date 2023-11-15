@@ -4,8 +4,8 @@ namespace FastBIRe.Cdc.Mssql
 {
     public class TriggerGetCdcListenerOptions : GetCdcListenerOptions
     {
-        public TriggerGetCdcListenerOptions(IDbScriptExecuter scriptExecuter, TimeSpan delayScan, uint readBatch, IReadOnlyList<string> tableNames,ICheckpoint? checkpoint)
-            :base(tableNames,checkpoint)
+        public TriggerGetCdcListenerOptions(IDbScriptExecuter scriptExecuter, TimeSpan delayScan, uint readBatch, IReadOnlyList<string>? tableNames, ICheckpoint? checkpoint)
+            : base(tableNames, checkpoint)
         {
             DelayScan = delayScan;
             ScriptExecuter = scriptExecuter;

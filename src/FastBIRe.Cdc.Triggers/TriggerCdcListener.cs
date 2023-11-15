@@ -1,6 +1,5 @@
 ﻿using DatabaseSchemaReader;
 using DatabaseSchemaReader.DataSchema;
-using FastBIRe.Cdc.Checkpoints;
 using FastBIRe.Cdc.Events;
 using FastBIRe.Cdc.Triggers;
 using FastBIRe.Cdc.Triggers.Checkpoints;
@@ -122,7 +121,7 @@ namespace FastBIRe.Cdc.Mssql
             }
             if (builder.Updates.HasRows)
             {
-                raiseList.Add(new UpdateEventArgs(null, table.TableName, table, builder.Updates.Rows,builder.Updates.Checkpoint));
+                raiseList.Add(new UpdateEventArgs(null, table.TableName, table, builder.Updates.Rows, builder.Updates.Checkpoint));
             }
             if (builder.Inserts.HasRows)
             {

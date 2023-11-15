@@ -1,10 +1,5 @@
 ﻿using FastBIRe.Cdc.MySql;
 using MySqlConnector;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FastBIRe.CdcSample
 {
@@ -21,7 +16,7 @@ namespace FastBIRe.CdcSample
             //var ser =await mgr.GetCdcLogServiceAsync();
             //var all=await ser.GetAllAsync();
             //var last=await ser.GetLastAsync();
-            var vars = await mgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(null,null, opt =>
+            var vars = await mgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(null, null, opt =>
             {
                 opt.Port = (int)mysqlCfg.Port;
                 opt.Hostname = mysqlCfg.Server;

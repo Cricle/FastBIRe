@@ -1,5 +1,4 @@
-﻿using DatabaseSchemaReader;
-using DatabaseSchemaReader.DataSchema;
+﻿using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.ProviderSchemaReaders.Builders;
 using DatabaseSchemaReader.SqlGen;
 using DuckDB.NET.Data;
@@ -8,7 +7,6 @@ using FastBIRe.Cdc.Events;
 using FastBIRe.Cdc.Mssql;
 using FastBIRe.Cdc.Triggers;
 using FastBIRe.Creating;
-using FastBIRe.Farm;
 using FastBIRe.Store;
 using rsa;
 using System.Data.Common;
@@ -60,7 +58,7 @@ namespace FastBIRe.Mig
         {
             var res = await executer.ReadAsync<Data>("SELECT 1 AS a");
         }
-        private static async Task MigTableAsync(string file,string tableName,DbConnection dbConnection,IScriptExecuter executer,IDataStore triggerDataStore)
+        private static async Task MigTableAsync(string file, string tableName, DbConnection dbConnection, IScriptExecuter executer, IDataStore triggerDataStore)
         {
             var content = File.ReadAllText(file);
             var vtb = JsonSerializer.Deserialize<VTable>(content, new JsonSerializerOptions
@@ -74,7 +72,7 @@ namespace FastBIRe.Mig
             tableHelper.TriggerDataStore = triggerDataStore;
             var scripts = tableHelper.CreateTableOrMigrationScript(() =>
             {
-                var table = new DatabaseTable { Name = tableHelper.TableName,PrimaryKey=new DatabaseConstraint { Name = tableHelper.PrimaryKeyName,TableName= tableHelper.TableName } };
+                var table = new DatabaseTable { Name = tableHelper.TableName, PrimaryKey = new DatabaseConstraint { Name = tableHelper.PrimaryKeyName, TableName = tableHelper.TableName } };
                 foreach (var item in vtb.Columns)
                 {
                     var column = new DatabaseColumn();
@@ -113,9 +111,9 @@ namespace FastBIRe.Mig
                     scripts = tableHelper.CreateIndexScript(item.Name, true);
                     await executer.ExecuteBatchAsync(scripts);
                 }
-                else if(!item.PK)
+                else if (!item.PK)
                 {
-                    var idxName = tableHelper.IndexNameGenerator.Create(new[] { tableHelper.TableName,item.Name });
+                    var idxName = tableHelper.IndexNameGenerator.Create(new[] { tableHelper.TableName, item.Name });
                     var idx = table.Indexes.FirstOrDefault(x => x.Name == idxName);
                     if (idx != null)
                     {
@@ -147,13 +145,13 @@ namespace FastBIRe.Mig
             duckExecuter.ScriptStated += DebugHelper.OnExecuterScriptStated;
             var scripts = new DdlGeneratorFactory(SqlType.DuckDB).TableGenerator(table).Write();
             await duckExecuter.ExecuteAsync(scripts);
-            
+
             var cdc = new TriggerCdcManager(cdcExecuter);
             await cdc.TryEnableTableCdcAsync(executer.Connection.Database, "guidang");
             var listner = await cdc.GetCdcListenerAsync(new TriggerGetCdcListenerOptions(cdcExecuter, TimeSpan.FromMilliseconds(500), 200, new string[]
             {
                 "guidang_affect"
-            },null));
+            }, null));
             listner.EventRaised += Listner_EventRaised;
             wrapper = new TableWrapper(table, SqlType.DuckDB, null);
             await listner.StartAsync();
@@ -178,7 +176,7 @@ namespace FastBIRe.Mig
                             }
                         }
                         Console.WriteLine($"Alread add {iea.Rows.Count}");
-                    }                    
+                    }
                     break;
                 case UpdateEventArgs uea:
                     {

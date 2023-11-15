@@ -33,7 +33,7 @@
         [TestMethod]
         public void DropIfNoSupport_ReturnEmpty()
         {
-            Assert.AreEqual(string.Empty, new TableHelper( SqlType.Oracle).DropView("view1"));
+            Assert.AreEqual(string.Empty, new TableHelper(SqlType.Oracle).DropView("view1"));
         }
     }
 }
