@@ -27,6 +27,11 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
 
         public bool IsEmpty => GtidState == null && Position == 0;
 
+        public static MySqlCheckpoint Parse(IGtid gtid)
+        {
+            var isMariaDB = gtid is MySqlCdc.Providers.MariaDb.Gtid;
+            return Parse(gtid.ToString()!, isMariaDB);
+        }
         public static MySqlCheckpoint Parse(string gtid,bool isMariaDB)
         {
             if (isMariaDB)
@@ -38,24 +43,11 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
             return new MySqlCheckpoint(mysqlDBId);
         }
 
-        public IGtidState? ToGtidState()
-        {
-            if (GtidState is MySqlCdc.Providers.MySql.Gtid mgtid)
-            {
-                return MySqlCdc.Providers.MySql.GtidSet.Parse($"{mgtid.SourceId}:1-{mgtid.TransactionId}");
-            }
-            else if (GtidState is MySqlCdc.Providers.MariaDb.Gtid magtid)
-            {
-                return new MySqlCdc.Providers.MariaDb.GtidList { Gtids = { magtid } };
-            }
-            return null;
-        }
-
         public override string? ToString()
         {
             if (GtidState != null)
             {
-                return ToGtidState()?.ToString();
+                return GtidState.ToString();
             }
             return $"{{FileName: {FileName}, Pos: {Position}}}";
         }

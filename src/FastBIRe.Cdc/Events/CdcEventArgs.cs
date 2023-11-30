@@ -14,5 +14,7 @@ namespace FastBIRe.Cdc.Events
         public object? RawData { get; }
 
         public ICheckpoint? Checkpoint { get; }
+
+        public bool HasCheckpoint => Checkpoint != null && !Checkpoint.IsEmpty;
     }
 }

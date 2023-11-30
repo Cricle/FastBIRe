@@ -15,10 +15,9 @@ namespace FastBIRe.Cdc.MySql
             {
                 if (checkpoint is MySqlCheckpoint cp)
                 {
-                    var state = cp.ToGtidState();
-                    if (state != null)
+                    if (cp.GtidState != null)
                     {
-                        opt.Binlog = BinlogOptions.FromGtid(state);
+                        opt.Binlog = BinlogOptions.FromGtid(cp.GtidState);
                     }
                 }
                 replicaOptionsAction(opt);

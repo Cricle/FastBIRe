@@ -70,6 +70,7 @@ namespace FastBIRe.Cdc.MySql
         }
         public Task<ICdcListener> GetCdcListenerAsync(MySqlGetCdcListenerOptions options, CancellationToken token = default)
         {
+            token.ThrowIfCancellationRequested();
             var client = new BinlogClient(options.ReplicaOptionsAction);
             return Task.FromResult<ICdcListener>(new MySqlCdcListener(client, options, Mode));
         }

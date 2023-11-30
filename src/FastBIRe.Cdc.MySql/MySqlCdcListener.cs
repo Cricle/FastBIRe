@@ -66,12 +66,15 @@ namespace FastBIRe.Cdc.MySql
         {
             var listener = (MySqlCdcListener)state!;
             var source = listener.TokenSource;
+            ICheckpoint? checkpoint = null;
             await foreach (var item in BinlogClient.Replicate(source!.Token))
             {
-                ICheckpoint checkpoint;
                 if (Mode == MySqlCdcModes.Gtid)
                 {
-                    checkpoint = new MySqlCheckpoint(BinlogClient.State.GtidState);
+                    if (BinlogClient.State.GtidState != null)
+                    {
+                        checkpoint = new MySqlCheckpoint(BinlogClient.State.GtidState);
+                    }
                 }
                 else
                 {
