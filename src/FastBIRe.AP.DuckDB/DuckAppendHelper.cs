@@ -1,4 +1,5 @@
-﻿using DuckDB.NET.Data;
+﻿using DuckDB.NET;
+using DuckDB.NET.Data;
 using System.Data;
 using System.Runtime.CompilerServices;
 

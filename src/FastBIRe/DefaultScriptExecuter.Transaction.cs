@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
@@ -10,6 +11,7 @@ namespace FastBIRe
 
         public DbTransaction? Transaction => dbTransaction;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfTransactionNotNull()
         {
             if (dbTransaction != null)
@@ -17,6 +19,7 @@ namespace FastBIRe
                 throw new InvalidOperationException("The transaction is running");
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfTransactionNoStart()
         {
             if (dbTransaction != null)
@@ -31,7 +34,11 @@ namespace FastBIRe
             dbTransaction = Connection.BeginTransaction(level);
         }
 
-        public async Task BeginTransactionAsync(IsolationLevel level = IsolationLevel.Unspecified, CancellationToken token = default)
+        public
+#if NET6_0_OR_GREATER
+            async
+#endif
+            Task BeginTransactionAsync(IsolationLevel level = IsolationLevel.Unspecified, CancellationToken token = default)
         {
             var fullStartTime = Stopwatch.GetTimestamp();
             ThrowIfTransactionNotNull();
@@ -41,6 +48,9 @@ namespace FastBIRe
             dbTransaction = Connection.BeginTransaction(level);
 #endif
             ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BeginTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, token));
+#if !NET6_0_OR_GREATER
+            return Task.CompletedTask;
+#endif
         }
 
         public void Commit()
@@ -52,7 +62,11 @@ namespace FastBIRe
             ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CommitedTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, default));
         }
 
-        public async Task CommitAsync(CancellationToken token = default)
+        public 
+#if NET6_0_OR_GREATER
+            async
+#endif
+            Task CommitAsync(CancellationToken token = default)
         {
             var fullStartTime = Stopwatch.GetTimestamp();
             ThrowIfTransactionNoStart();
@@ -63,6 +77,9 @@ namespace FastBIRe
 #endif
             dbTransaction = null;
             ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CommitedTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, token));
+#if !NET6_0_OR_GREATER
+            return Task.CompletedTask;
+#endif
         }
 
         public void Rollback()
@@ -74,7 +91,11 @@ namespace FastBIRe
             ScriptStated?.Invoke(this, ScriptExecuteEventArgs.RollbackedTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, default));
         }
 
-        public async Task RollbackAsync(CancellationToken token = default)
+        public 
+#if NET6_0_OR_GREATER
+            async
+#endif
+            Task RollbackAsync(CancellationToken token = default)
         {
             var fullStartTime = Stopwatch.GetTimestamp();
             ThrowIfTransactionNoStart();
@@ -85,6 +106,9 @@ namespace FastBIRe
 #endif
             dbTransaction = null;
             ScriptStated?.Invoke(this, ScriptExecuteEventArgs.RollbackedTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, token));
+#if !NET6_0_OR_GREATER
+            return Task.CompletedTask;
+#endif
         }
     }
 }

@@ -28,18 +28,17 @@ namespace FastBIRe.Cdc.MySql.Checkpoints
                 }
                 return new MySqlCheckpoint(pos, fn);
             }
-            else if (isMysqlGtid)
-            {
-                var uuid = new Uuid(data.AsSpan(2, 16).ToArray());
-                var transId = BitConverter.ToInt64(data, 2 + 16);
-                return new MySqlCheckpoint(new MySqlCdc.Providers.MySql.Gtid(uuid, transId));
-            }
             else
             {
-                var domainId = BitConverter.ToInt64(data, 2);
-                var serviceId = BitConverter.ToInt64(data, 2 + sizeof(long) * 1);
-                var sequence = BitConverter.ToInt64(data, 2 + sizeof(long) * 2);
-                return new MySqlCheckpoint(new MySqlCdc.Providers.MariaDb.Gtid(domainId, serviceId, sequence));
+                var str = Encoding.UTF8.GetString(data, 2, data.Length - 2);
+                if (isMysqlGtid)
+                {
+                    return new MySqlCheckpoint(MySqlCdc.Providers.MySql.GtidSet.Parse(str));
+                }
+                else
+                {
+                    return new MySqlCheckpoint(MySqlCdc.Providers.MariaDb.GtidList.Parse(str));
+                }
             }
         }
     }

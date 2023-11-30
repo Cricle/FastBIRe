@@ -55,6 +55,7 @@ namespace FastBIRe.Farm
                 item.IsAutoNumber = false;
                 item.DefaultValue = null;
             }
+
             if (DatabaseReader.TableExists(copyTable.Name))
             {
                 //Check struct
@@ -152,7 +153,9 @@ namespace FastBIRe.Farm
 #if NETSTANDARD2_0
                         sb.Append($"({string.Join(",", cur.Current.Select(x => SqlType.WrapValue(x)))})");
 #else
+                        sb.Append('(');
                         sb.AppendJoin(',', cur.Current.Select(x => SqlType.WrapValue(x)));
+                        sb.Append(')');
 #endif
                         count++;
                         if (count >= batchSize && count > 0)

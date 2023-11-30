@@ -6,7 +6,7 @@ using FastBIRe.Cdc.Events;
 
 namespace FastBIRe.AP.DuckDB
 {
-    public class DuckDbCdcHandler : IEventDispatcheHandler<CdcEventArgs>, IDisposable
+    public class DuckDbCdcHandler : IEventDispatcheHandler<CdcEventArgs>
     {
         public static DuckDbCdcHandler Create(IDbScriptExecuter connection, string tableName, CheckpointIdentity identity, ICheckpointStorage checkpointStorage)
         {
@@ -67,7 +67,7 @@ namespace FastBIRe.AP.DuckDB
         {
             if (input is OperatorCdcEventArgs ea && ea.TableInfo != null && ea.TableInfo.TableName == Table.Name)
             {
-                if (input is InsertEventArgs iea)
+                if (input is InsertEventArgs iea) 
                 {
                     if (Mode == DuckCdcDbMode.Fast)
                     {
@@ -113,10 +113,6 @@ namespace FastBIRe.AP.DuckDB
                 CheckpointUpdate?.Invoke(this, input.Checkpoint);
                 await CheckpointStorage.SetAsync(new CheckpointPackage(Identity, input.Checkpoint.ToBytes()), token);
             }
-        }
-
-        public void Dispose()
-        {
         }
     }
 }

@@ -1,13 +1,5 @@
 ﻿namespace FastBIRe.Cdc
 {
-    public interface ITableMapInfo
-    {
-        object Id { get; }
-
-        string DatabaseName { get; }
-
-        string TableName { get; }
-    }
     public class TableMapInfo : ITableMapInfo
     {
         public TableMapInfo(object id, string databaseName, string tableName)

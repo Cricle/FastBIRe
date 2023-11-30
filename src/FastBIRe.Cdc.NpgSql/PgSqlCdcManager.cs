@@ -126,11 +126,11 @@ namespace FastBIRe.Cdc.NpgSql
                 return Task.FromResult<NpgsqlLogSequenceNumber?>(null);
             }, token: token);
         }
-        public static string? GetPubName(string databaseName, string tableName)
+        public static string GetPubName(string databaseName, string tableName)
         {
             return $"{databaseName}_{tableName}{PubTail}".Replace('-', '_');
         }
-        public static string? GetSlotName(string databaseName, string tableName)
+        public static string GetSlotName(string databaseName, string tableName)
         {
             return $"{databaseName}_{tableName}{SlotTail}".Replace('-', '_');
         }
@@ -141,7 +141,7 @@ namespace FastBIRe.Cdc.NpgSql
 
         public async Task<ICheckpoint?> GetLastCheckpointAsync(string databaseName, string tableName, CancellationToken token = default)
         {
-            var number = await ReadSlotAsync(GetSlotName(databaseName, tableName)!, token: token);
+            var number = await ReadSlotAsync(GetSlotName(databaseName, tableName), token: token);
             if (number == null)
             {
                 return null;

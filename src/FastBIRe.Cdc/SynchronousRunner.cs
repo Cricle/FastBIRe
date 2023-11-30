@@ -70,7 +70,7 @@ namespace FastBIRe.Cdc
         {
             var pkg = await CheckpointStorage.GetAsync(SourceConnection.Database, SourceTableName, token: token);
             var cpMgr = await CdcManager.GetCdcCheckPointManagerAsync(token);
-            return pkg?.CastCheckpoint<ICheckpoint>(cpMgr);
+            return pkg?.CastCheckpoint<ICheckpoint>(cpMgr,throwException:false);
         }
         public async Task<ICheckpoint?> SyncAndGetCheckpointAsync(IProgress<SyncReport>? progress=null,bool forceSyncData=false, CancellationToken token = default)
         {
@@ -127,10 +127,10 @@ namespace FastBIRe.Cdc
             listener.AttachToDispatcher(eventDispatcher);
             if (checkpoint == null)
             {
-                var lastCheckpoint = await CdcManager.GetLastCheckpointAsync(SourceConnection.Database, SourceTableName, token);
-                if (lastCheckpoint != null && !lastCheckpoint.IsEmpty)
+                checkpoint = await CdcManager.GetLastCheckpointAsync(SourceConnection.Database, SourceTableName, token);
+                if (checkpoint != null && !checkpoint.IsEmpty)
                 {
-                    await CheckpointStorage.SetAsync(new CheckpointPackage(new CheckpointIdentity(SourceConnection.Database, SourceTableName), lastCheckpoint.ToBytes()), token);
+                    await CheckpointStorage.SetAsync(new CheckpointPackage(new CheckpointIdentity(SourceConnection.Database, SourceTableName), checkpoint.ToBytes()), token);
                 }
             }
             if (startNow)

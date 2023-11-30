@@ -302,7 +302,7 @@ namespace FastBIRe
                     var startTime = Stopwatch.GetTimestamp();
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.StartReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), dbTransaction, token));
                     TResult result;
-                    using (var reader = await command.ExecuteReaderAsync(token).ConfigureAwait(false))
+                    using (var reader = await command.ExecuteReaderAsync(token))
                     {
                         result = await handler(this, new ReadingDataArgs(script, reader, QueryTranslateResult.Create(script, args), token));
                     }
@@ -338,13 +338,13 @@ namespace FastBIRe
             }
             stackTrace ??= GetStackTrace();
 #if !NETSTANDARD2_0
-            var res = await BatchExecuteAdoAsync(scripts, stackTrace, argss, token).ConfigureAwait(false);
+            var res = await BatchExecuteAdoAsync(scripts, stackTrace, argss, token);
             if (res != null)
             {
                 return res.Value;
             }
 #endif
-            return await ExecuteBatchSlowAsync(scripts, stackTrace, argss, token).ConfigureAwait(false);
+            return await ExecuteBatchSlowAsync(scripts, stackTrace, argss, token);
         }
 
         public void Dispose()

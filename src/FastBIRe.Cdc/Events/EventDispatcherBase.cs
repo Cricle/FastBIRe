@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FastBIRe.Cdc.Events
 {
-    public abstract class EventDispatcherBase<TInput> : IEventDispatcher<TInput>
+    public abstract class EventDispatcherBase<TInput> : IEventDispatcher<TInput>, IEventDispatcheHandler<TInput>
     {
         public EventDispatcherBase()
             : this(true, null, false)

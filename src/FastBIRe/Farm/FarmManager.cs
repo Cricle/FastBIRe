@@ -56,9 +56,17 @@ namespace FastBIRe.Farm
         {
             return DestFarmWarehouse.InsertAsync(TableName, Columns, values, token);
         }
-        public virtual Task<int> SyncDataAsync(string sql, string tableName, int batchSize = DefaultBatchSize, CancellationToken token = default)
+        public virtual async Task<int> SyncDataAsync(string sql, string tableName, int batchSize = DefaultBatchSize, CancellationToken token = default)
         {
-            return SourceFarmWarehouse.ScriptExecuter.ReadResultAsync(sql, (e, r) => DestFarmWarehouse.SyncDataAsync(tableName, r.Reader, batchSize, token), token: token);
+            using (var comm= SourceFarmWarehouse.Connection.CreateCommand())
+            {
+                comm.CommandText = sql;
+                using (var reader=await comm.ExecuteReaderAsync(token))
+                {
+                   return await DestFarmWarehouse.SyncDataAsync(tableName,reader, batchSize, token);
+                }
+            }
+            //return SourceFarmWarehouse.ScriptExecuter.ReadResultAsync(sql, (e, r) => DestFarmWarehouse.SyncDataAsync(tableName, r.Reader, batchSize, token), token: token);
         }
         public void Dispose()
         {

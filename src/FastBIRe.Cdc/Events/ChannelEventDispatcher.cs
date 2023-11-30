@@ -37,8 +37,7 @@ namespace FastBIRe.Cdc.Events
 
         protected override async Task<TInput?> TryReadAsync(CancellationToken token = default)
         {
-            await channel.Reader.WaitToReadAsync(token);
-            channel.Reader.TryRead(out var item);
+            var item = await channel.Reader.ReadAsync(token);
             return item;
         }
     }

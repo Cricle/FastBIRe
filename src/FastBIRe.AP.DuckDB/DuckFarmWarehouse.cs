@@ -55,7 +55,7 @@ namespace FastBIRe.AP.DuckDB
             var res = 0;
             var fetcher = DuckAppendHelper.BuildFetcher(reader);
             using (var appender = duckDBConnection.CreateAppender(tableName))
-            {
+            { 
                 var fieldCount = reader.FieldCount;
                 while (reader.Read())
                 {
