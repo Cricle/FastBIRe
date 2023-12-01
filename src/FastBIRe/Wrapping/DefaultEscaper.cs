@@ -60,6 +60,10 @@
                 }
                 return ValueStart + dt.ToString("yyyy-MM-dd HH:mm:ss") + ValueEnd;
             }
+            else if (input is DateTimeOffset timeOffset)
+            {
+                return ValueStart + timeOffset.ToLocalTime().DateTime.ToString("yyyy-MM-dd HH:mm:ss") + ValueEnd;
+            }
             else if (input is byte[] buffer)
             {
                 return "0x" + BitConverter.ToString(buffer).Replace("-", string.Empty);

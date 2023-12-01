@@ -40,7 +40,6 @@ namespace FastBIRe.CdcSample
                 new PgOutputReplicationSlot(slotName!),
                 new PgOutputReplicationOptions(pubName!, 1),
                 null,
-                null,
                 null));
             listener.EventRaised += Program.Vars_EventRaised;
             await listener.StartAsync();

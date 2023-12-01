@@ -31,7 +31,7 @@
 
         public Task<ICdcListener> CreateCdcListnerAsync(CdcListenerOptionCreateInfo info, CancellationToken token = default)
         {
-            return info.Runner.CdcManager.GetCdcListenerAsync(new MssqlGetCdcListenerOptions(DelayTime, info.Runner.SourceScriptExecuter, info.TableNames, info.CheckPoint), token);
+            return info.Runner.CdcManager.GetCdcListenerAsync(new MssqlGetCdcListenerOptions(DelayTime, info.Runner.SourceScriptExecuter, info.CheckPoint), token);
         }
     }
 }

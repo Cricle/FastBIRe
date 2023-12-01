@@ -12,10 +12,10 @@ namespace FastBIRe.CdcSample
             var executer = new DefaultScriptExecuter(mysql);
             var tcdc = new TriggerCdcManager(executer);
             await tcdc.TryEnableTableCdcAsync("ttt", "guidang");
-            var listener = await tcdc.GetCdcListenerAsync(new TriggerGetCdcListenerOptions(executer, TimeSpan.FromSeconds(1), 10, new string[]
+            var listener = await tcdc.GetCdcListenerAsync(new TriggerGetCdcListenerOptions(executer, TimeSpan.FromSeconds(1), 10, null, new string[]
             {
                 "guidang_affect"
-            }, null));
+            }));
             listener.EventRaised += Program.Vars_EventRaised;
             await listener.StartAsync();
             Console.ReadLine();

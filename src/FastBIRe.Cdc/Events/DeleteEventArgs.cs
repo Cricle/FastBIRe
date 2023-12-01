@@ -1,9 +1,10 @@
 ﻿using FastBIRe.Cdc.Checkpoints;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace FastBIRe.Cdc.Events
 {
-    public class DeleteEventArgs : OperatorCdcEventArgs
+    public class DeleteEventArgs : OperatorCdcEventArgs, IEnumerable<IEnumerable<object?>>
     {
         public DeleteEventArgs(object? rawData, object tableId, ITableMapInfo? tableInfo, IList<ICdcDataRow> rows, ICheckpoint? checkpoint)
             : base(rawData, tableId, tableInfo, checkpoint)
@@ -20,12 +21,23 @@ namespace FastBIRe.Cdc.Events
                 yield return EnumerableRowKeys(item, keyMasks);
             }
         }
+
+        public IEnumerator<IEnumerable<object?>> GetEnumerator()
+        {
+            return Rows.GetEnumerator();
+        }
+
         private IEnumerable<object> EnumerableRowKeys(ICdcDataRow row, IEnumerable<int> keyMasks)
         {
             foreach (var item in keyMasks)
             {
                 yield return row[item];
             }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

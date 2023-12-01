@@ -107,9 +107,9 @@ namespace FastBIRe
 
         public string ColumnNameJoined { get; }
 
-        public string? InsertOrUpdate(IEnumerable<object> values)
+        public string? CreateInsertOrUpdate(IEnumerable<object?> values)
         {
-            var valueJoined = string.Join(", ", values.Select(x => SqlType.WrapValue(x)));
+            var valueJoined = GetSelectValueJoined(values);
             switch (SqlType)
             {
                 case SqlType.SqlServer:
@@ -145,28 +145,36 @@ DO UPDATE SET {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{x.Name}=E
                     return null;
             }
         }
+        public string GetSelectValueJoined(IEnumerable<object?> values)
+        {
+            return string.Join(", ", GetSelectValues(values).Select(x => SqlType.WrapValue(x)));
+        }
 
-        public IEnumerable<object> GetKeyValues(IEnumerable<object> values)
+        public IEnumerable<object?> GetSelectValues(IEnumerable<object?> values)
+        {
+            return SelectsMask.Select(x => values.ElementAt(x.Index));
+        }
+        public IEnumerable<object?> GetKeyValues(IEnumerable<object?> values)
         {
             return KeysMask.Select(x => values.ElementAt(x.Index));
         }
 
-        public string CreateInsertSql(IEnumerable<object> values)
+        public string CreateInsertSql(IEnumerable<object?> values)
         {
-            return $"INSERT INTO {WrapTableName}({ColumnNameJoined}) VALUES ({string.Join(", ", values.Select(x => SqlType.WrapValue(x)))})";
+            return $"INSERT INTO {WrapTableName}({ColumnNameJoined}) VALUES ({GetSelectValueJoined(values)})";
         }
-        public string CreateUpdateByKeySql(IEnumerable<object> values)
+        public string CreateUpdateByKeySql(IEnumerable<object?> values)
         {
             var keyWhere = string.Join(" AND ", KeysMask.Select(x => $"{x.WrapName} = {SqlType.WrapValue(values.ElementAt(x.Index))}"));
             var sets = string.Join(", ", SelectsExceptKeyMask.Select(x => $"{x.WrapName} = {SqlType.WrapValue(values.ElementAt(x.Index))}"));
             return $"UPDATE {WrapTableName} SET {sets} WHERE {keyWhere}";
         }
-        public string CreateDeleteByKeySql(IEnumerable<object> values)
+        public string CreateDeleteByKeySql(IEnumerable<object?> values)
         {
             var keyWhere = string.Join(" AND ", KeysMask.Select(x => $"{x.WrapName} = {SqlType.WrapValue(values.ElementAt(x.Index))}"));
             return $"DELETE FROM {WrapTableName} WHERE {keyWhere}";
         }
-        public string CreateDeleteByKeySql(IEnumerable<IEnumerable<object>> valuess)
+        public string CreateDeleteByKeySql(IEnumerable<IEnumerable<object?>> valuess)
         {
             var ors = string.Join(" OR ", valuess.Select(x => $"({string.Join(" AND ", KeysMask.Select(k => $"{k.WrapName} = {SqlType.WrapValue(x.ElementAt(k.Index))}"))})"));
             return $"DELETE FROM {WrapTableName} WHERE {ors}";

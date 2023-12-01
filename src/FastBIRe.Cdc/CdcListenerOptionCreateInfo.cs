@@ -1,5 +1,4 @@
 ﻿using FastBIRe.Cdc.Checkpoints;
-using System.Collections.Generic;
 
 namespace FastBIRe.Cdc
 {
@@ -9,12 +8,9 @@ namespace FastBIRe.Cdc
 
         public readonly ICheckpoint? CheckPoint;
 
-        public readonly IReadOnlyList<string>? TableNames;
-
-        public CdcListenerOptionCreateInfo(SynchronousRunner runner, ICheckpoint? checkPoint, IReadOnlyList<string>? tableNames)
+        public CdcListenerOptionCreateInfo(SynchronousRunner runner, ICheckpoint? checkPoint)
         {
             CheckPoint = checkPoint;
-            TableNames = tableNames;
             Runner = runner;
         }
     }

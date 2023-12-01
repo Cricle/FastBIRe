@@ -11,9 +11,8 @@ namespace FastBIRe.Cdc.NpgSql
             PgOutputReplicationSlot outputReplicationSlot,
             PgOutputReplicationOptions outputReplicationOptions,
             NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber,
-            IReadOnlyList<string>? tableNames,
             ICheckpoint? checkpoint)
-            : base(tableNames, checkpoint)
+            : base( checkpoint)
         {
             LogicalReplicationConnection = logicalReplicationConnection;
             OutputReplicationSlot = outputReplicationSlot;
@@ -33,7 +32,6 @@ namespace FastBIRe.Cdc.NpgSql
             string databaseName,
             string tableName,
             NpgsqlLogSequenceNumber? npgsqlLogSequenceNumber = null,
-            IReadOnlyList<string>? tableNames = null,
             ICheckpoint? checkpoint = null)
         {
             var slotName = PgSqlCdcManager.GetSlotName(databaseName, tableName);
@@ -41,7 +39,7 @@ namespace FastBIRe.Cdc.NpgSql
             return new PgSqlGetCdcListenerOptions(connection,
                 new PgOutputReplicationSlot(slotName!),
                 new PgOutputReplicationOptions(pubName!, 1),
-                npgsqlLogSequenceNumber, tableNames, checkpoint);
+                npgsqlLogSequenceNumber, checkpoint);
         }
     }
 }

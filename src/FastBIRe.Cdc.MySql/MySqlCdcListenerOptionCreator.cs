@@ -22,7 +22,7 @@ namespace FastBIRe.Cdc.MySql
 
         public Task<ICdcListener> CreateCdcListnerAsync(CdcListenerOptionCreateInfo info, CancellationToken token = default)
         {
-            return info.Runner.CdcManager.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(info.TableNames, info.CheckPoint, opt =>
+            return info.Runner.CdcManager.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(info.CheckPoint, opt =>
             {
                 opt.Port = Port;
                 opt.Hostname = Server ?? string.Empty;

@@ -39,7 +39,6 @@ namespace FastBIRe.Farm
             return await mgr.GetCdcListenerAsync(new MssqlGetCdcListenerOptions(
                 TimeSpan.FromSeconds(5),
                 farm.SourceFarmWarehouse.ScriptExecuter,
-                null,
                 checkpoint: checkpoint));
         }
         private static async Task<ICdcListener> CreatePostgresqlListner(FarmManager farm, ICheckpoint? checkpoint)
@@ -63,7 +62,7 @@ namespace FastBIRe.Farm
         {
             var mysqlCfg = new MySqlConnectionStringBuilder(farm.SourceFarmWarehouse.Connection.ConnectionString);
             var mysqlCdcMgr = new MySqlCdcManager(farm.SourceFarmWarehouse.ScriptExecuter, MySqlCdcModes.Gtid);
-            return await mysqlCdcMgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(null, checkpoint, opt =>
+            return await mysqlCdcMgr.GetCdcListenerAsync(new MySqlGetCdcListenerOptions(checkpoint, opt =>
             {
                 opt.Port = (int)mysqlCfg.Port;
                 opt.Hostname = mysqlCfg.Server;

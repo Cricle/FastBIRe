@@ -54,7 +54,6 @@ namespace FastBIRe.Cdc.NpgSql
                 slot,
                 options,
                 NpgsqlLogSequenceNumber,
-                info.TableNames,
                 info.CheckPoint),
                 token);
         }

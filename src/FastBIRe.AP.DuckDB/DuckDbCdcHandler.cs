@@ -55,7 +55,7 @@ namespace FastBIRe.AP.DuckDB
         {
             foreach (var item in rows)
             {
-                var script = TableWrapper.InsertOrUpdate(item);
+                var script = TableWrapper.CreateInsertOrUpdate(item);
                 if (!string.IsNullOrEmpty(script))
                 {
                     await ScriptExecuter.ExecuteAsync(script, token: token);
@@ -89,7 +89,7 @@ namespace FastBIRe.AP.DuckDB
                 {
                     foreach (var item in uea.Rows)
                     {
-                        var script = TableWrapper.InsertOrUpdate(item.AfterRow);
+                        var script = TableWrapper.CreateInsertOrUpdate(item.AfterRow);
                         if (!string.IsNullOrEmpty(script))
                         {
                             await ScriptExecuter.ExecuteAsync(script, token: token);

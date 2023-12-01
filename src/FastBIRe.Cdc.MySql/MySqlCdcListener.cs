@@ -67,18 +67,19 @@ namespace FastBIRe.Cdc.MySql
             var listener = (MySqlCdcListener)state!;
             var source = listener.TokenSource;
             ICheckpoint? checkpoint = null;
+            var options = BinlogClient.State;
             await foreach (var item in BinlogClient.Replicate(source!.Token))
             {
                 if (Mode == MySqlCdcModes.Gtid)
                 {
-                    if (BinlogClient.State.GtidState != null)
+                    if (options.GtidState != null)
                     {
-                        checkpoint = new MySqlCheckpoint(BinlogClient.State.GtidState);
+                        checkpoint = new MySqlCheckpoint(options.GtidState);
                     }
                 }
                 else
                 {
-                    checkpoint = new MySqlCheckpoint(item.Header.NextEventPosition, null);
+                    checkpoint = new MySqlCheckpoint(options.Position, options.Filename);
                 }
                 if (item is WriteRowsEvent wre)
                 {

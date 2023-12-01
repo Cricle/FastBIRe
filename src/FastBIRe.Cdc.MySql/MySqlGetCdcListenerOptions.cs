@@ -8,8 +8,8 @@ namespace FastBIRe.Cdc.MySql
 {
     public class MySqlGetCdcListenerOptions : GetCdcListenerOptions
     {
-        public MySqlGetCdcListenerOptions(IReadOnlyList<string>? tableNames, ICheckpoint? checkpoint, Action<ReplicaOptions> replicaOptionsAction)
-            : base(tableNames, checkpoint)
+        public MySqlGetCdcListenerOptions(ICheckpoint? checkpoint, Action<ReplicaOptions> replicaOptionsAction)
+            : base(checkpoint)
         {
             ReplicaOptionsAction = opt =>
             {

@@ -1,9 +1,10 @@
 ﻿using FastBIRe.Cdc.Checkpoints;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace FastBIRe.Cdc.Events
 {
-    public class InsertEventArgs : OperatorCdcEventArgs
+    public class InsertEventArgs : OperatorCdcEventArgs, IEnumerable<IEnumerable<object?>>
     {
         public InsertEventArgs(object? rawData, object tableId, ITableMapInfo? tableInfo, IList<ICdcDataRow> rows, ICheckpoint? checkpoint)
             : base(rawData, tableId, tableInfo, checkpoint)
@@ -27,6 +28,17 @@ namespace FastBIRe.Cdc.Events
                 }
             }
         }
+
+        public IEnumerator<IEnumerable<object?>> GetEnumerator()
+        {
+            return Rows.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
         private IEnumerable<object> MaskRow(ICdcDataRow row, int[] mask)
         {
             for (int i = 0; i < mask.Length; i++)

@@ -117,13 +117,13 @@ namespace FastBIRe.Cdc
             }
         }
 
-        public async Task<SynchronousRunDefaultResult> RunDefaultAsync(ICdcListenerOptionCreator optionCreator,IProgress<SyncReport>? progress=null, IReadOnlyList<string>? tableNames = null, string memory = "1G",bool startNow=true,bool forceSyncData=false, CancellationToken token = default)
+        public async Task<SynchronousRunDefaultResult> RunDefaultAsync(ICdcListenerOptionCreator optionCreator,IProgress<SyncReport>? progress=null, string memory = "1G",bool startNow=true,bool forceSyncData=false, CancellationToken token = default)
         {
             await SetMemoryLimitAsync(memory, token);
             var checkpoint = await SyncAndGetCheckpointAsync(progress,forceSyncData, token);
             var eventDispatcher = CreateCdcDispatcher();
             await eventDispatcher.StartAsync(token);
-            var listener = await optionCreator.CreateCdcListnerAsync(new CdcListenerOptionCreateInfo(this, checkpoint, tableNames), token: token);
+            var listener = await optionCreator.CreateCdcListnerAsync(new CdcListenerOptionCreateInfo(this, checkpoint), token: token);
             listener.AttachToDispatcher(eventDispatcher);
             if (checkpoint == null)
             {

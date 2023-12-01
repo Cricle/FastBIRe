@@ -16,6 +16,10 @@ namespace FastBIRe.Farm
     {
         public const int DefaultBatchSize = 1000;
 
+        public static FarmManager Create(IDbScriptExecuter sourceExecuter, IDbScriptExecuter destExecuter, string sourceTable)
+        {
+            return Create(new FarmWarehouse(sourceExecuter), new FarmWarehouse(destExecuter), sourceTable);
+        }
         public static FarmManager Create(FarmWarehouse sourceFarmWarehouse, FarmWarehouse destFarmWarehouse, string sourceTable)
         {
             var table = sourceFarmWarehouse.DatabaseReader.Table(sourceTable);
