@@ -9,6 +9,10 @@ namespace FastBIRe
 {
     public partial class DefaultScriptExecuter : IDbScriptExecuter, IDbStackTraceScriptExecuter
     {
+        static DefaultScriptExecuter()
+        {
+            _ = ScriptExecuterEventSource.Instance;//Active etw
+        }
         private static readonly IReadOnlyList<MethodBase> Methods = typeof(DefaultScriptExecuter).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Where(x => !x.IsSpecialName && x.DeclaringType == typeof(DefaultScriptExecuter))
             .ToArray();
