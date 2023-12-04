@@ -24,7 +24,7 @@ namespace FastBIRe.Etw
             var sw = Stopwatch.StartNew();
             for (int i = 0; i < 10_000; i++)
             {
-                var d = await executer.ReadOneAsync<int>("SELECT @a;", args: new { a = 123 });
+                var d = await executer.ReadOneAsync<int>("SELECT @a+@b;", args: new { a = 123,b=23 });
             }
             Console.WriteLine(sw.Elapsed);
         }
