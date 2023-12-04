@@ -11,7 +11,7 @@ namespace FastBIRe
     {
         static DefaultScriptExecuter()
         {
-            _ = ScriptExecuterEventSource.Instance;//Active etw
+            _ = ScriptExecuterEventSource.Instance;//Active event source
         }
         private static readonly IReadOnlyList<MethodBase> Methods = typeof(DefaultScriptExecuter).GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
             .Where(x => !x.IsSpecialName && x.DeclaringType == typeof(DefaultScriptExecuter))
@@ -161,11 +161,11 @@ namespace FastBIRe
         }
         protected virtual async Task<int> ExecuteAsync(string script, IEnumerable<string>? scripts, IEnumerable<KeyValuePair<string, object?>>? args, StackTrace? stackTrace, CancellationToken token = default)
         {
-            if (scripts==null)
+            if (scripts == null)
             {
                 scripts = new[] { script };
             }
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Begin(Connection, scripts, args!=null?Enumerable.Repeat(args,1):null, stackTrace, dbTransaction, token));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Begin(Connection, scripts, args != null ? Enumerable.Repeat(args, 1) : null, stackTrace, dbTransaction, token));
             if (IsEmptyScript(script))
             {
                 ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, scripts, args, stackTrace, dbTransaction, token));
@@ -308,7 +308,7 @@ namespace FastBIRe
         public async Task<TResult> ReadResultAsync<TResult>(string script, ReadDataResultHandler<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             var stackTrace = GetStackTrace();
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Begin(Connection, new string[] {script},args!=null ? Enumerable.Repeat(args, 1):null, stackTrace, dbTransaction, token));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Begin(Connection, new string[] { script }, args != null ? Enumerable.Repeat(args, 1) : null, stackTrace, dbTransaction, token));
             var fullStartTime = Stopwatch.GetTimestamp();
             using (var command = Connection.CreateCommand())
             {
@@ -371,6 +371,10 @@ namespace FastBIRe
         public void Dispose()
         {
             Connection?.Dispose();
+            DetchEventSource();
+        }
+        public void DetchEventSource()
+        {
             ScriptStated -= OnScriptStated;
         }
         public static implicit operator DbConnection(DefaultScriptExecuter scriptExecuter)

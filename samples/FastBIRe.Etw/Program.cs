@@ -22,11 +22,9 @@ namespace FastBIRe.Etw
                 }
             }
             var sw = Stopwatch.StartNew();
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 10_000; i++)
             {
-                executer.BeginTransaction();
-                await executer.ExecuteAsync("SELECT 1;");
-                executer.Commit();
+                var d = await executer.ReadOneAsync<int>("SELECT @a;", args: new { a = 123 });
             }
             Console.WriteLine(sw.Elapsed);
         }
@@ -35,7 +33,7 @@ namespace FastBIRe.Etw
     {
         protected override void OnEventWritten(EventWrittenEventArgs eventData)
         {
-            Console.WriteLine(eventData.EventName);
+            //Console.WriteLine(eventData.EventName);
             base.OnEventWritten(eventData);
         }
     }

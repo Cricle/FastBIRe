@@ -130,7 +130,7 @@ namespace FastBIRe
                 null,
                 null,
                 stackTrace,
-                null,
+                args == null ? null : Enumerable.Repeat(args, 1),
                 args,
                 dbTransaction,
                 token);
@@ -150,7 +150,7 @@ namespace FastBIRe
                 null,
                 null,
                 stackTrace,
-                null,
+                args == null ? null : Enumerable.Repeat(args, 1),
                 args,
                 dbTransaction,
                 token);
@@ -170,7 +170,7 @@ namespace FastBIRe
                 executionTime,
                 fullTime,
                 stackTrace,
-                null,
+                args == null ? null : Enumerable.Repeat(args, 1),
                 args,
                 dbTransaction,
                 token);
@@ -190,7 +190,7 @@ namespace FastBIRe
                 executionTime,
                 fullTime,
                 stackTrace,
-                null,
+                args == null ? null : Enumerable.Repeat(args, 1),
                 args,
                 dbTransaction,
                 token);
@@ -284,7 +284,7 @@ namespace FastBIRe
                 null,
                 null,
                 stackTrace,
-                null,
+                args == null ? null : Enumerable.Repeat(args, 1),
                 args,
                 dbTransaction,
                 token);
@@ -294,7 +294,7 @@ namespace FastBIRe
             return new ScriptExecuteEventArgs(ScriptExecutState.StartReading,
                 connection,
                 command,
-                null,
+                new[] { command.CommandText },
                 null,
                 null,
 #if !NETSTANDARD2_0
@@ -304,7 +304,7 @@ namespace FastBIRe
                 executingTime,
                 fullTime,
                 stackTrace,
-                null,
+                args == null ? null : Enumerable.Repeat(args, 1),
                 args,
                 dbTransaction,
                 token);
@@ -314,7 +314,7 @@ namespace FastBIRe
             return new ScriptExecuteEventArgs(ScriptExecutState.EndReading,
                 connection,
                 command,
-                null,
+                new[] { command.CommandText },
                 null,
                 null,
 #if !NETSTANDARD2_0
@@ -324,7 +324,7 @@ namespace FastBIRe
                 executingTime,
                 fullTime,
                 stackTrace,
-                null,
+                args == null ? null : Enumerable.Repeat(args, 1),
                 args,
                 dbTransaction,
                 token);
