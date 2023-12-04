@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using FastBIRe.Internals.Etw;
+using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Reflection;
@@ -50,6 +51,15 @@ namespace FastBIRe
         public DefaultScriptExecuter(DbConnection connection)
         {
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            ScriptStated += OnScriptStated;
+        }
+
+        private void OnScriptStated(object? sender, ScriptExecuteEventArgs e)
+        {
+            if (ScriptExecuterEventSource.Instance.IsEnabled())
+            {
+                ScriptExecuterEventSource.Instance.WriteScriptExecuteEventArgs(e);
+            }
         }
 
         public DbConnection Connection { get; }
@@ -147,9 +157,14 @@ namespace FastBIRe
         }
         protected virtual async Task<int> ExecuteAsync(string script, IEnumerable<string>? scripts, IEnumerable<KeyValuePair<string, object?>>? args, StackTrace? stackTrace, CancellationToken token = default)
         {
+            if (scripts==null)
+            {
+                scripts = new[] { script };
+            }
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Begin(Connection, scripts, args!=null?Enumerable.Repeat(args,1):null, stackTrace, dbTransaction, token));
             if (IsEmptyScript(script))
             {
-                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, new[] { script }, args, stackTrace, dbTransaction, token));
+                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Skip(Connection, scripts, args, stackTrace, dbTransaction, token));
                 return 0;
             }
             var fullStartTime = Stopwatch.GetTimestamp();
@@ -227,6 +242,7 @@ namespace FastBIRe
 #if !NETSTANDARD2_0
         protected async Task<int?> BatchExecuteAdoAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, CancellationToken token = default)
         {
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Begin(Connection, scripts, argss, stackTrace, dbTransaction, token));
             if (UseBatch && Connection.CanCreateBatch)
             {
                 var fullStartTime = Stopwatch.GetTimestamp();
@@ -288,6 +304,7 @@ namespace FastBIRe
         public async Task<TResult> ReadResultAsync<TResult>(string script, ReadDataResultHandler<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             var stackTrace = GetStackTrace();
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Begin(Connection, new string[] {script},args!=null ? Enumerable.Repeat(args, 1):null, stackTrace, dbTransaction, token));
             var fullStartTime = Stopwatch.GetTimestamp();
             using (var command = Connection.CreateCommand())
             {
@@ -350,6 +367,7 @@ namespace FastBIRe
         public void Dispose()
         {
             Connection?.Dispose();
+            ScriptStated -= OnScriptStated;
         }
         public static implicit operator DbConnection(DefaultScriptExecuter scriptExecuter)
         {

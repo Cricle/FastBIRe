@@ -22,7 +22,7 @@ namespace FastBIRe
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfTransactionNoStart()
         {
-            if (dbTransaction != null)
+            if (dbTransaction == null)
             {
                 throw new InvalidOperationException("The transaction is not running");
             }
@@ -31,7 +31,9 @@ namespace FastBIRe
         public void BeginTransaction(IsolationLevel level = IsolationLevel.Unspecified)
         {
             ThrowIfTransactionNotNull();
+            var fullStartTime = Stopwatch.GetTimestamp();
             dbTransaction = Connection.BeginTransaction(level);
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BeginTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, default));
         }
 
         public
@@ -40,8 +42,8 @@ namespace FastBIRe
 #endif
             Task BeginTransactionAsync(IsolationLevel level = IsolationLevel.Unspecified, CancellationToken token = default)
         {
-            var fullStartTime = Stopwatch.GetTimestamp();
             ThrowIfTransactionNotNull();
+            var fullStartTime = Stopwatch.GetTimestamp();
 #if NET6_0_OR_GREATER
             dbTransaction = await Connection.BeginTransactionAsync(level, token);
 #else
@@ -59,7 +61,7 @@ namespace FastBIRe
             ThrowIfTransactionNoStart();
             dbTransaction!.Commit();
             dbTransaction = null;
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CommitedTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, default));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CommitedTransaction(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, default));
         }
 
         public 
@@ -76,7 +78,7 @@ namespace FastBIRe
             dbTransaction!.Commit();
 #endif
             dbTransaction = null;
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CommitedTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, token));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CommitedTransaction(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, token));
 #if !NET6_0_OR_GREATER
             return Task.CompletedTask;
 #endif
@@ -88,7 +90,7 @@ namespace FastBIRe
             ThrowIfTransactionNoStart();
             dbTransaction!.Rollback();
             dbTransaction = null;
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.RollbackedTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, default));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.RollbackedTransaction(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, default));
         }
 
         public 
@@ -105,7 +107,7 @@ namespace FastBIRe
             dbTransaction!.Rollback();
 #endif
             dbTransaction = null;
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.RollbackedTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, token));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.RollbackedTransaction(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, token));
 #if !NET6_0_OR_GREATER
             return Task.CompletedTask;
 #endif

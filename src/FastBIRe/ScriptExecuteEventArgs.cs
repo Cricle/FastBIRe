@@ -1,9 +1,12 @@
 ﻿using System.Data.Common;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
+using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
-    public readonly struct ScriptExecuteEventArgs
+    [EventData]
+    public readonly unsafe partial struct ScriptExecuteEventArgs
     {
         public ScriptExecuteEventArgs(ScriptExecutState state,
             DbConnection connection,
@@ -23,7 +26,7 @@ namespace FastBIRe
             DbTransaction? transaction,
             CancellationToken cancellationToken)
         {
-            State = state;
+            this.state = state;
             Connection = connection;
             Command = command;
             Scripts = scripts;
@@ -41,8 +44,9 @@ namespace FastBIRe
             Args = args;
             Transaction = transaction;
         }
+        internal readonly ScriptExecutState state;
 
-        public ScriptExecutState State { get; }
+        public ScriptExecutState State => state;
 
         public DbConnection Connection { get; }
 
@@ -345,7 +349,7 @@ namespace FastBIRe
                 dbTransaction,
                 token);
         }
-        public static ScriptExecuteEventArgs CommitedTranscation(DbConnection connection, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs CommitedTransaction(DbConnection connection, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.CommitedTransaction,
                 connection,
@@ -365,7 +369,7 @@ namespace FastBIRe
                 dbTransaction,
                 token);
         }
-        public static ScriptExecuteEventArgs RollbackedTranscation(DbConnection connection, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs RollbackedTransaction(DbConnection connection, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.RollbackedTransaction,
                 connection,
