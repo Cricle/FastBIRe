@@ -1,16 +1,18 @@
-﻿namespace FastBIRe.Wrapping
+﻿using System.Text;
+
+namespace FastBIRe.Wrapping
 {
     public class DefaultEscaper : IEscaper
     {
-        public static readonly DefaultEscaper MySql = new DefaultEscaper("`", "`", "'", "'", true, true);
-        public static readonly DefaultEscaper SqlServer = new DefaultEscaper("[", "]", "'", "'", true);
+        public static readonly DefaultEscaper MySql = new DefaultEscaper('`', '`', '\'', '\'', '@', true, true);
+        public static readonly DefaultEscaper SqlServer = new DefaultEscaper('[', ']', '\'', '\'','@', true);
         public static readonly DefaultEscaper MariaDB = MySql;
-        public static readonly DefaultEscaper Sqlite = new DefaultEscaper("`", "`", "'", "'", true);
-        public static readonly DefaultEscaper Oracle = new DefaultEscaper("\"", "\"", "'", "'", false);
-        public static readonly DefaultEscaper PostgreSql = new DefaultEscaper("\"", "\"", "'", "'", false);
-        public static readonly DefaultEscaper DuckDB = new DefaultEscaper("\"", "\"", "'", "'", false);
+        public static readonly DefaultEscaper Sqlite = new DefaultEscaper('`', '`', '\'', '\'','@', true);
+        public static readonly DefaultEscaper Oracle = new DefaultEscaper('\"', '\"', '\'', '\'',':', false);
+        public static readonly DefaultEscaper PostgreSql = new DefaultEscaper('\"', '\"', '\'', '\'',':', false);
+        public static readonly DefaultEscaper DuckDB = new DefaultEscaper('\"', '\"', '\'', '\'',':', false);
 
-        public DefaultEscaper(string qutoStart, string qutoEnd, string valueStart, string valueEnd, bool boolAsInteger, bool escapeBackslash = false)
+        public DefaultEscaper(char qutoStart, char qutoEnd, char valueStart, char valueEnd, char paramterPrefix, bool boolAsInteger, bool escapeBackslash = false)
         {
             QutoStart = qutoStart;
             QutoEnd = qutoEnd;
@@ -18,19 +20,22 @@
             ValueEnd = valueEnd;
             BoolAsInteger = boolAsInteger;
             EscapeBackslash = escapeBackslash;
+            ParamterPrefix = paramterPrefix;
         }
 
-        public string QutoStart { get; }
+        public char QutoStart { get; }
 
-        public string QutoEnd { get; }
+        public char QutoEnd { get; }
 
-        public string ValueStart { get; }
+        public char ValueStart { get; }
 
-        public string ValueEnd { get; }
+        public char ValueEnd { get; }
 
         public bool BoolAsInteger { get; }
 
         public bool EscapeBackslash { get; }
+
+        public char ParamterPrefix { get; }
 
         public string Quto<T>(T? input)
         {
@@ -78,6 +83,43 @@
             }
             return input.ToString();
         }
+
+        public string? ReplaceParamterPrefixSql(string? sql, char originPrefix)
+        {
+            if (string.IsNullOrWhiteSpace(sql) || originPrefix == ParamterPrefix)
+            {
+                return sql;
+            }
+            var inString = false;
+            var inQuto = false;
+            var s = new StringBuilder(sql.Length);
+            for (int i = 0; i < sql.Length; i++)
+            {
+                var c = sql[i];
+                if (c == originPrefix && !inString && !inQuto)
+                {
+                    s.Append(ParamterPrefix);
+                }
+                else
+                {
+                    s.Append(c);
+                }
+                if (c == '\'')
+                {
+                    inString = !inString;
+                }
+                else if (c == QutoStart)
+                {
+                    inQuto = true;
+                }
+                else if (c == QutoEnd)
+                {
+                    inQuto = false;
+                }
+            }
+            return s.ToString();
+        }
+
         private static readonly string boolTrue = bool.TrueString.ToLower();
         private static readonly string boolFalse = bool.FalseString.ToLower();
     }

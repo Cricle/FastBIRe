@@ -1,4 +1,6 @@
-﻿using FastBIRe.Internals.Etw;
+﻿using DatabaseSchemaReader.DataSchema;
+using FastBIRe.Internals.Etw;
+using FastBIRe.Wrapping;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
@@ -55,6 +57,8 @@ namespace FastBIRe
         public DefaultScriptExecuter(DbConnection connection)
         {
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            SqlType = Connection.CreateReader().SqlType!.Value;
+            Escaper = SqlType.GetEscaper();
             ScriptStated += OnScriptStated;
         }
 
@@ -68,6 +72,10 @@ namespace FastBIRe
 
         public DbConnection Connection { get; }
 
+        public SqlType SqlType { get; }
+
+        public IEscaper Escaper { get; }
+
         public int CommandTimeout { get; set; }
 
         public bool UseBatch { get; set; }
@@ -76,13 +84,25 @@ namespace FastBIRe
 
         public bool StackTraceNeedFileInfo { get; set; } = true;
 
+        public bool EnableSqlParameterConversion { get; set; }
+
+        public char SqlParameterPrefix { get; set; } = '@';
+
         public event EventHandler<ScriptExecuteEventArgs>? ScriptStated;
 
         public Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             return ExecuteAsync(script, null, args, GetStackTrace(), token);
         }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private string SqlParameterConversion(string sql)
+        {
+            if (EnableSqlParameterConversion)
+            {
+                return Escaper.ReplaceParamterPrefixSql(sql, SqlParameterPrefix) ?? sql;
+            }
+            return sql; 
+        }
         private StackTrace? GetStackTrace()
         {
             if (CaptureStackTrace)
@@ -178,7 +198,7 @@ namespace FastBIRe
                 {
                     LoadParamters(command, args);
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, scripts, args, stackTrace, dbTransaction, token));
-                    command.CommandText = script;
+                    command.CommandText = SqlParameterConversion(script);
                     command.CommandTimeout = CommandTimeout;
                     command.Transaction = dbTransaction;
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadCommand(Connection, command, scripts, args, stackTrace, dbTransaction, token));
@@ -270,7 +290,7 @@ namespace FastBIRe
                                 continue;
                             }
                             var comm = batch.CreateBatchCommand();
-                            comm.CommandText = item;
+                            comm.CommandText = SqlParameterConversion(item);
                             if (args != null)
                             {
                                 foreach (var arg in args)
@@ -315,7 +335,7 @@ namespace FastBIRe
                 try
                 {
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, null, args, stackTrace, dbTransaction, token));
-                    command.CommandText = script;
+                    command.CommandText = SqlParameterConversion(script);
                     command.CommandTimeout = CommandTimeout;
                     command.Transaction = dbTransaction;
                     LoadParamters(command, args);
