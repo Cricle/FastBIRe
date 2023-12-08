@@ -7,23 +7,43 @@ namespace FastBIRe
 {
     public interface IFastBIReContext : IDisposable
     {
+        SqlType SqlType { get; }
+
         IDbScriptExecuter Executer { get; }
 
         DatabaseReader DatabaseReader { get; }
-
-        SqlType SqlType { get; }
 
         ITableProvider TableProvider { get; }
     }
     public static class FastBIReContextGenExtensions
     {
-        public static MigrationScriptsResult GetMigrationScripts(this IFastBIReContext context)
+        public static Task<int> ExecuteMigrationScriptsAsync(this IFastBIReContext context,string tableName, IScriptExecuter executer, Action<DatabaseTable>? configRemoteTable = null, CancellationToken token = default)
+        {
+            var res = GetMigrationScripts(context, tableName, configRemoteTable);
+            if (res.Scripts.Count==0)
+            {
+                return Task.FromResult(0);
+            }
+            return executer.ExecuteBatchAsync(res.Scripts, token: token);
+        }
+
+        public static Task<int> ExecuteMigrationScriptsAsync(this IFastBIReContext context,IScriptExecuter executer, Action<DatabaseTable>? configRemoteTable = null, CancellationToken token = default)
+        {
+            var res = GetMigrationScripts(context, configRemoteTable);
+            if (res.Scripts.Count == 0)
+            {
+                return Task.FromResult(0);
+            }
+            return executer.ExecuteBatchAsync(res.Scripts, token: token);
+        }
+
+        public static MigrationScriptsResult GetMigrationScripts(this IFastBIReContext context, Action<DatabaseTable>? configRemoteTable = null)
         {
             var tables = new List<string>();
             var results = new List<string>();
             foreach (var item in context.TableProvider)
             {
-                var res = GetMigrationScripts(context, item.Name);
+                var res = GetMigrationScripts(context, item.Name, configRemoteTable);
                 tables.Add(res.TableName);
                 results.AddRange(res.Scripts);
             }

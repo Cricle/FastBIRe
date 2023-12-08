@@ -7,5 +7,6 @@
         string? WrapValue<T>(T? input);
 
         string? ReplaceParamterPrefixSql(string? sql, char originPrefix);
+
     }
 }

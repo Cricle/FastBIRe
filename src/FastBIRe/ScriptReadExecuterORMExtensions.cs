@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using DatabaseSchemaReader.DataSchema;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Linq.Expressions;
@@ -125,6 +126,37 @@ namespace FastBIRe
         public static Task<IList<T?>> ReadAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
         {
             return scriptExecuter.ReadResultAsync(script, static (o, e) => Task.FromResult(RecordToObjectManager<T>.ToList(e.Reader)), args: PrepareArgs(args), token: token);
+        }
+
+        public static Task<int> ExecuteInterpolatedAsync(this IDbScriptExecuter executer, FormattableString f, string argPrefx = "p", CancellationToken token = default)
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            return executer.ExecuteAsync(result.Sql, result.Arguments, token);
+        }
+        public static Task ReadInterpolatedAsync(this IDbScriptExecuter executer, ReadDataHandler handler, FormattableString f, string argPrefx = "p", CancellationToken token = default)
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            return executer.ReadAsync(result.Sql, handler, result.Arguments, token);
+        }
+        public static Task ReadOneInterpolatedAsync<TResult>(this IDbScriptExecuter executer, FormattableString f, string argPrefx = "p", CancellationToken token = default)
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            return executer.ReadOneAsync<TResult>(result.Sql, result.Arguments, token);
+        }
+        public static Task ReadOneInterpolatedAsync<TResult>(this IDbScriptExecuter executer, ReadDataResultHandler<TResult> handler, FormattableString f, string argPrefx = "p", CancellationToken token = default)
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            return executer.ReadResultAsync(result.Sql, handler, result.Arguments, token);
+        }
+        public static Task ExistsInterpolatedAsync(this IDbScriptExecuter executer, FormattableString f, string argPrefx = "p", CancellationToken token = default)
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            return executer.ExistsAsync(result.Sql, result.Arguments, token);
+        }
+        public static Task ExistsInterpolatedAsync<TResult>(this IDbScriptExecuter executer, Func<IDataReader, TResult?> reader, FormattableString f, string argPrefx = "p", CancellationToken token = default)
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            return executer.ReadRowsAsync(result.Sql, reader, result.Arguments, token);
         }
     }
 }

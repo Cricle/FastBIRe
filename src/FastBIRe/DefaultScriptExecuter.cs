@@ -76,7 +76,7 @@ namespace FastBIRe
 
         public IEscaper Escaper { get; }
 
-        public int CommandTimeout { get; set; }
+        public int CommandTimeout { get; set; } = DefaultCommandTimeout;
 
         public bool UseBatch { get; set; }
 

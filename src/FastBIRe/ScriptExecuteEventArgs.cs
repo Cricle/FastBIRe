@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace FastBIRe
 {
@@ -94,7 +95,124 @@ namespace FastBIRe
                 return null;
             }
         }
+        private static string? GetTypeName(object? value)
+        {
+            switch (value)
+            {
+                case bool:
+                    return "System.Boolean";
+                case byte:
+                    return "System.Byte";
+                case sbyte:
+                    return "System.SByte";
+                case char:
+                    return "System.Char";
+                case short:
+                    return "System.Int16";
+                case ushort:
+                    return "System.UInt16";
+                case int:
+                    return "System.Int32";
+                case uint:
+                    return "System.UInt32";
+                case long:
+                    return "System.Int64";
+                case ulong:
+                    return "System.UInt64";
+                case float:
+                    return "System.Single";
+                case double:
+                    return "System.Double";
+                case decimal:
+                    return "System.Decimal";
+                case DateTime:
+                    return "System.DateTime";
+                case DateTimeOffset:
+                    return "System.DateTimeOffset";
+                case Guid:
+                    return "System.Guid";
+                case byte[]:
+                    return "System.Byte[]";
+#if NET6_0_OR_GREATER
+                case DateOnly:
+                    return "System.DateOnly";
+                case TimeOnly:
+                    return "System.TimeOnly";
+#endif
+                case string:
+                    return "System.String";
+                case null:
+                default:
+                    return "NULL";
+            }
+        }
 
+        public void ToExecuteString(StringBuilder s)
+        {
+            if (state== ScriptExecutState.EndReading)
+            {
+                s.Append("Read ");
+            }
+            else
+            {
+                s.Append("Executed ");
+            }
+            s.Append('(');
+            if (ExecutionTime == null)
+            {
+                s.Append('0');
+            }
+            else
+            {
+                s.Append(ExecutionTime.Value.TotalMilliseconds.ToString("F2"));
+            }
+            s.Append("ms)T(");
+            if (FullTime == null)
+            {
+                s.Append('0');
+            }
+            else
+            {
+                s.Append(FullTime.Value.TotalMilliseconds.ToString("F2"));
+            }
+            s.Append("ms) [Pars=");
+            if (Args != null)
+            {
+                s.Append(string.Join(",", Args.Select(x => $"[{x.Key}='{x.Value}'({GetTypeName(x.Value)})]")));
+            }
+            if (Command != null)
+            {
+                s.Append(", Timeout=");
+                s.Append(Command.CommandTimeout);
+            }
+            s.AppendLine("]");
+            s.AppendLine(Script);
+        }
+        public string ToExecuteString()
+        {
+            var s = new StringBuilder();
+            ToExecuteString(s);
+            return s.ToString();
+        }
+        public string ToExceptionString()
+        {
+            var s = new StringBuilder();
+            ToExecuteString(s);
+            s.AppendLine(ExecuteException?.ToString());
+            return s.ToString();
+        }
+        public string? ToKnowString()
+        {
+            if (state == ScriptExecutState.Executed||state== ScriptExecutState.EndReading)
+            {
+                return ToExecuteString();
+            }
+            else if (state== ScriptExecutState.Exception)
+            {
+                return ToExceptionString();
+            }
+            return null;
+        }
         public static ScriptExecuteEventArgs Begin(DbConnection connection, IEnumerable<string>? scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.Begin,

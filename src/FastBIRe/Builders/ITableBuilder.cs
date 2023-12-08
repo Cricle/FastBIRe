@@ -4,7 +4,7 @@ using System.Data;
 
 namespace FastBIRe.Builders
 {
-    public interface ITableBuilder: ISqlTableBuilder
+    public interface ITableBuilder : ISqlTableBuilder
     {
         DatabaseTable Table { get; }
 
@@ -43,7 +43,7 @@ namespace FastBIRe.Builders
                     return false;
             }
         }
-        public static ITableBuilder ConfigColumn(this ITableBuilder builder, string name,
+        public static ITableBuilder Column(this ITableBuilder builder, string name,
             DbType type,
             string? computedDefinition = null,
             bool nullable = true,
@@ -70,7 +70,7 @@ namespace FastBIRe.Builders
                 {
                     typePars = [length ?? 0];
                 }
-                else if (type== DbType.Decimal)
+                else if (type == DbType.Decimal)
                 {
                     typePars = [precision ?? 18, scale ?? 2];
                 }
@@ -93,9 +93,9 @@ namespace FastBIRe.Builders
             });
             return builder;
         }
-        public static ITableBuilder ConfigColumn(this ITableBuilder builder,string name,Action<ITableColumnBuilder> config)
+        public static ITableBuilder ConfigColumn(this ITableBuilder builder, string name, Action<ITableColumnBuilder> config)
         {
-            var columnBuilder=builder.GetColumnBuilder(name);
+            var columnBuilder = builder.GetColumnBuilder(name);
             config(columnBuilder);
             return builder;
         }
@@ -115,27 +115,64 @@ namespace FastBIRe.Builders
             builder.Column.DefaultValue = defaultValue;
             return builder;
         }
-        public static ITableColumnBuilder SetVarChar(this ITableColumnBuilder builder,int length)
+        public static ITableColumnBuilder SetVarChar(this ITableColumnBuilder builder, int length)
         {
             builder.Column.SetType(builder.SqlType, DbType.String, length);
             return builder;
         }
-        public static ITableColumnBuilder SetDataType<T>(this ITableColumnBuilder builder,  DbType dbType, params string[] args)
+        public static ITableColumnBuilder SetDataType<T>(this ITableColumnBuilder builder, DbType dbType, params string[] args)
         {
             builder.Column.SetType(builder.SqlType, dbType, args);
             return builder;
         }
-        public static ITableColumnBuilder SetDataType(this ITableColumnBuilder builder,DbType dbType,params string[] args)
+        public static ITableColumnBuilder SetDataType(this ITableColumnBuilder builder, DbType dbType, params string[] args)
         {
             builder.Column.SetType(builder.SqlType, dbType, args);
             return builder;
         }
-        public static ITableColumnBuilder SetDataType(this ITableColumnBuilder builder,string dataType)
+        public static ITableColumnBuilder SetDataType(this ITableColumnBuilder builder, string dataType)
         {
             builder.Column.SetType(dataType);
             return builder;
         }
-        public static ITableBuilder AddIndex(this ITableBuilder builder,IEnumerable<string> columns,IEnumerable<bool>? columnOrderDescs=null,bool isUnique=false, string? name = null, Action<DatabaseIndex>? configurate = null)
+        public static ITableBuilder AddIndex(this ITableBuilder builder, string column, bool orderDesc = false, bool isUnique = false, string? name = null, Action<DatabaseIndex>? configurate = null)
+        {
+            return AddIndex(builder, new[] { column }, new[] { orderDesc }, isUnique, name, configurate);
+        }
+        public static ITableBuilder UnsetIndexByName(this ITableBuilder builder, string name)
+        {
+            var idx = builder.Table.Indexes.Find(x => x.Name == name);
+            if (idx != null)
+            {
+                idx.Columns.ForEach(x => x.IsIndexed = false);
+                builder.Table.Indexes.Remove(idx);
+            }
+            return builder;
+        }
+        public static ITableBuilder UnsetIndexByColumn(this ITableBuilder builder, string column, bool singleField = true)
+        {
+            var col = builder.Table.FindColumn(column);
+            if (col == null)
+            {
+                Throws.ThrowFieldNotFound(column, builder.Table.Name);
+            }
+            col!.IsIndexed = false;
+            var indexs = builder.Table.Indexes.Where(x =>
+            {
+                if (singleField && x.Columns.Count != 1)
+                {
+                    return false;
+                }
+                return x.Columns.Contains(col);
+            }).ToList();
+            foreach (var item in indexs)
+            {
+                item.Columns.ForEach(x => x.IsIndexed = false);
+                builder.Table.Indexes.Remove(item);
+            }
+            return builder;
+        }
+        public static ITableBuilder AddIndex(this ITableBuilder builder, IEnumerable<string> columns, IEnumerable<bool>? orderDescs = null, bool isUnique = false, string? name = null, Action<DatabaseIndex>? configurate = null)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -146,14 +183,14 @@ namespace FastBIRe.Builders
                 Name = name!,
                 IsUnique = isUnique
             };
-            if (columnOrderDescs != null)
+            if (orderDescs != null)
             {
-                constraint.ColumnOrderDescs.AddRange(columnOrderDescs);
+                constraint.ColumnOrderDescs.AddRange(orderDescs);
             }
             foreach (var item in columns)
             {
                 var col = builder.Table.FindColumn(item);
-                if (col == null) 
+                if (col == null)
                 {
                     Throws.ThrowFieldNotFound(item, builder.Table.Name);
                 }
@@ -163,9 +200,19 @@ namespace FastBIRe.Builders
             builder.Table.AddIndex(constraint);
             return builder;
         }
-        public static ITableBuilder SetPrimaryKey(this ITableBuilder builder,IEnumerable<string> columns, string? name = null)
+        public static ITableBuilder UnSetPrimaryKey(this ITableBuilder builder)
         {
-            return SetPrimaryKey(builder, name, c =>
+            builder.Table.PrimaryKey = null;
+            builder.Table.Columns.ForEach(c => c.IsPrimaryKey = false);
+            return builder;
+        }
+        public static ITableBuilder SetPrimaryKey(this ITableBuilder builder, string column, string? name = null)
+        {
+            return SetPrimaryKey(builder, new[] { column }, name);
+        }
+        public static ITableBuilder SetPrimaryKey(this ITableBuilder builder, IEnumerable<string> columns, string? name = null)
+        {
+            return SetPrimaryKey(builder, c =>
             {
                 foreach (var item in columns)
                 {
@@ -174,11 +221,12 @@ namespace FastBIRe.Builders
                     {
                         Throws.ThrowFieldNotFound(item, builder.Table.Name);
                     }
+                    col.Nullable = false;
                     c.AddColumn(col);
                 }
-            });
+            }, name);
         }
-        public static ITableBuilder SetPrimaryKey(this ITableBuilder builder, string? name = null,Action<DatabaseConstraint>? configurate=null)
+        public static ITableBuilder SetPrimaryKey(this ITableBuilder builder, Action<DatabaseConstraint>? configurate = null, string? name = null)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -188,7 +236,7 @@ namespace FastBIRe.Builders
             {
                 Name = name!,
                 ConstraintType = ConstraintType.PrimaryKey,
-                TableName=builder.Table.Name,
+                TableName = builder.Table.Name,
             };
             configurate?.Invoke(constraint);
             builder.Table.AddConstraint(constraint);
