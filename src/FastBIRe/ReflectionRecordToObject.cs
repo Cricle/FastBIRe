@@ -1,8 +1,12 @@
-﻿using System.Data;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
-    public sealed class ReflectionRecordToObject<T> : IRecordToObject<T>
+    internal sealed class ReflectionRecordToObject<T> : IRecordToObject<T>
     {
         public static readonly ReflectionRecordToObject<T> Instance = new ReflectionRecordToObject<T>();
 

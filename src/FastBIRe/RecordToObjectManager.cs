@@ -10,6 +10,10 @@ namespace FastBIRe
     {
         private static readonly bool IsPrimitiveOrNullable = typeof(T).IsPrimitive || (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(Nullable<>)) || typeof(T) == typeof(string) || typeof(T) == typeof(decimal);
 
+        private static readonly bool IsArray = typeof(T).IsArray||
+            (typeof(T).IsGenericType&& typeof(T).GetGenericTypeDefinition()==typeof(IList<>)) || 
+            (typeof(T).IsGenericType&& typeof(T).GetInterfaces().Any(x=>x.IsGenericType&&x.GetGenericTypeDefinition()==typeof(IList<>)));
+
         internal static IRecordToObject<T> recordToObject = null!;
 
         public static IRecordToObject<T> RecordToObject => recordToObject;

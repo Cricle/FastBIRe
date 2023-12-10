@@ -13,24 +13,28 @@
 
         public override string ToString()
         {
+            if (Scripts.Count == 0)
+            {
+                return string.Empty;
+            }
             return string.Join(Environment.NewLine, Scripts);
         }
 
     }
-    public class MigrationScriptResult: MigrationScriptsResultBase
+    public class MigrationScriptResult : MigrationScriptsResultBase
     {
         public MigrationScriptResult(string tableName, IList<string> scripts)
-            :base(scripts)
+            : base(scripts)
         {
             TableName = tableName;
         }
 
         public string TableName { get; }
     }
-    public class MigrationScriptsResult: MigrationScriptsResultBase
+    public class MigrationScriptsResult : MigrationScriptsResultBase
     {
         public MigrationScriptsResult(IList<string> tableNames, IList<string> scripts)
-            :base(scripts)
+            : base(scripts)
         {
             TableNames = tableNames;
         }

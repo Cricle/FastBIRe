@@ -175,9 +175,10 @@ namespace FastBIRe
             {
                 s.Append(FullTime.Value.TotalMilliseconds.ToString("F2"));
             }
-            s.Append("ms) [Pars=");
+            s.Append("ms) [");
             if (Args != null)
             {
+                s.Append("Pars=");
                 s.Append(string.Join(",", Args.Select(x => $"[{x.Key}='{x.Value}'({GetTypeName(x.Value)})]")));
             }
             if (Command != null)

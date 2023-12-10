@@ -15,26 +15,25 @@ namespace FastBIRe.Etw
             var builder = new TablesProviderBuilder(SqlType.MySql)
                 .ConfigTable("a1", builder =>
                 {
-                    builder.Column("id", DbType.Int32, isAutoNumber: true, identityIncrement: 2)
-                        .Column("name", DbType.DateTime)
-                        .Column("dt", DbType.DateTime, length: 14, nullable: false)
+                    builder.Column("id", DbType.Int32, isAutoNumber: true)
+                        .StringColumn("name",1)
+                        .DateTimeColumn("dt", nullable: false)
                         .Column("sc", DbType.Decimal, precision: 21, scale: 4);
 
                     builder.SetPrimaryKey("id");
-                    builder.AddIndex("dt", orderDesc: true, isUnique: false);
+                    builder.AddIndex("dt", orderDesc: true);
                 });
-            var provider = builder.Build();
-            var ctx = new FastBIReContext(conn, provider);
             conn.Open();
-            var executer = new DefaultScriptExecuter(conn);
-            executer.ScriptStated += OnScriptStated;
+            var ctx = builder.BuildContext(conn);
+            //executer.ScriptStated += OnScriptStated;
+            await ctx.ExecuteMigrationScriptsAsync();
             var listner = new MyEventListener();
             listner.Listen();
-            executer.CaptureStackTrace = false;
             var sw = Stopwatch.StartNew();
-            for (int i = 0; i < 10; i++)
+            //await executer.ReadOneAsync<IList<int>>("SELECT 1,2,3,4;", args: new { bs = new byte[] { 1, 2, 3, 4 } });
+            for (int i = 0; i < 1; i++)
             {
-                var d = await executer.ReadOneAsync<int>("SELECT @a+@b;", args: new { a = 123, b = 23 });
+                var d = await ctx.Executer.ReadRowsAsync<int>("SELECT 1,2,3,4;", args: new { bs = new byte[] { 1, 2, 3, 4 } });
             }
             Console.WriteLine(sw.Elapsed);
         }

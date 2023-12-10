@@ -1,10 +1,15 @@
 ﻿using DatabaseSchemaReader;
+using DatabaseSchemaReader.DataSchema;
 using System.Data.Common;
 
 namespace FastBIRe
 {
     public static class DbScriptExecuterGetExtensions
     {
+        public static SqlType? GetSqlType(this DbConnection connection)
+        {
+            return ProviderToSqlType.Convert(connection.GetType().FullName);
+        }
         public static DatabaseReader CreateReader(this IDbScriptExecuter dbScriptExecuter)
         {
             return new DatabaseReader(dbScriptExecuter.Connection) { Owner = dbScriptExecuter.Connection.Database };

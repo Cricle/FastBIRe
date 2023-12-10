@@ -17,24 +17,24 @@ namespace FastBIRe
     }
     public static class FastBIReContextGenExtensions
     {
-        public static Task<int> ExecuteMigrationScriptsAsync(this IFastBIReContext context,string tableName, IScriptExecuter executer, Action<DatabaseTable>? configRemoteTable = null, CancellationToken token = default)
+        public static Task<int> ExecuteMigrationScriptsAsync(this IFastBIReContext context,string tableName, Action<DatabaseTable>? configRemoteTable = null, CancellationToken token = default)
         {
             var res = GetMigrationScripts(context, tableName, configRemoteTable);
             if (res.Scripts.Count==0)
             {
                 return Task.FromResult(0);
             }
-            return executer.ExecuteBatchAsync(res.Scripts, token: token);
+            return context.Executer.ExecuteBatchAsync(res.Scripts, token: token);
         }
 
-        public static Task<int> ExecuteMigrationScriptsAsync(this IFastBIReContext context,IScriptExecuter executer, Action<DatabaseTable>? configRemoteTable = null, CancellationToken token = default)
+        public static Task<int> ExecuteMigrationScriptsAsync(this IFastBIReContext context, Action<DatabaseTable>? configRemoteTable = null, CancellationToken token = default)
         {
             var res = GetMigrationScripts(context, configRemoteTable);
             if (res.Scripts.Count == 0)
             {
                 return Task.FromResult(0);
             }
-            return executer.ExecuteBatchAsync(res.Scripts, token: token);
+            return context.Executer.ExecuteBatchAsync(res.Scripts, token: token);
         }
 
         public static MigrationScriptsResult GetMigrationScripts(this IFastBIReContext context, Action<DatabaseTable>? configRemoteTable = null)

@@ -7,13 +7,15 @@ namespace FastBIRe
 {
     public class FastBIReContext : IFastBIReContext
     {
+        public static FastBIReContext FromDbConnection(DbConnection dbConnection,ITableProvider tableProvider)
+        {
+            return new FastBIReContext(
+                new DefaultScriptExecuter(dbConnection),
+                tableProvider);
+        }
+
         private bool isDisposed;
 
-        public FastBIReContext(DbConnection connection, ITableProvider tableProvider)
-            : this((IDbScriptExecuter)new DefaultScriptExecuter(connection), tableProvider)
-        {
-
-        }
         public FastBIReContext(IDbScriptExecuter executer, ITableProvider tableProvider)
         {
             this.executer = executer ?? throw new ArgumentNullException(nameof(executer));

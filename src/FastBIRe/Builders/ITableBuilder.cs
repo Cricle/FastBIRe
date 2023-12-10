@@ -43,8 +43,40 @@ namespace FastBIRe.Builders
                     return false;
             }
         }
+        public static ITableBuilder StringColumn(this ITableBuilder builder,
+            string name,
+            int length,
+            string? computedDefinition = null,
+            bool nullable = true,
+            int? scale = null,
+            int? precision = null,
+            object? id = null,
+            bool isAutoNumber = false,
+            bool identityByDefault = false,
+            int? identitySeed = null,
+            int? identityIncrement = null,
+            string? defaultValue = null)
+        {
+            return Column(builder, name, DbType.String, computedDefinition, nullable, length, scale, precision, id, isAutoNumber, identityByDefault, identitySeed, identityIncrement, defaultValue);
+        }
+        public static ITableBuilder DateTimeColumn(this ITableBuilder builder,
+            string name,
+            int? length=null,
+            string? computedDefinition = null,
+            bool nullable = true,
+            int? scale = null,
+            int? precision = null,
+            object? id = null,
+            bool isAutoNumber = false,
+            bool identityByDefault = false,
+            int? identitySeed = null,
+            int? identityIncrement = null,
+            string? defaultValue = null)
+        {
+            return Column(builder, name, DbType.DateTime, computedDefinition, nullable, length, scale, precision, id, isAutoNumber, identityByDefault, identitySeed, identityIncrement, defaultValue);
+        }
         public static ITableBuilder Column(this ITableBuilder builder, string name,
-            DbType type,
+            Action<DatabaseColumn> typeHandle,
             string? computedDefinition = null,
             bool nullable = true,
             int? length = null,
@@ -65,16 +97,8 @@ namespace FastBIRe.Builders
                 col.Length = length;
                 col.Scale = scale;
                 col.Precision = precision;
-                var typePars = Array.Empty<object>();
-                if (IsString(type))
-                {
-                    typePars = [length ?? 0];
-                }
-                else if (type == DbType.Decimal)
-                {
-                    typePars = [precision ?? 18, scale ?? 2];
-                }
-                col.SetType(builder.SqlType, type, typePars);
+                col.Id = id;
+                typeHandle(col);
                 col.Id = null;
                 if (isAutoNumber)
                 {
@@ -92,6 +116,51 @@ namespace FastBIRe.Builders
                 col.DefaultValue = defaultValue;
             });
             return builder;
+        }
+
+        public static ITableBuilder Column(this ITableBuilder builder, string name,
+            string type,
+            string? computedDefinition = null,
+            bool nullable = true,
+            int? length = null,
+            int? scale = null,
+            int? precision = null,
+            object? id = null,
+            bool isAutoNumber = false,
+            bool identityByDefault = false,
+            int? identitySeed = null,
+            int? identityIncrement = null,
+            string? defaultValue = null)
+        {
+            return Column(builder, name, col => col.SetType(type), computedDefinition, nullable, length, scale, precision, id, isAutoNumber, identityByDefault, identitySeed, identityIncrement, defaultValue);
+        }
+        public static ITableBuilder Column(this ITableBuilder builder, string name,
+            DbType type,
+            string? computedDefinition = null,
+            bool nullable = true,
+            int? length = null,
+            int? scale = null,
+            int? precision = null,
+            object? id = null,
+            bool isAutoNumber = false,
+            bool identityByDefault = false,
+            int? identitySeed = null,
+            int? identityIncrement = null,
+            string? defaultValue = null)
+        {
+            return Column(builder, name, col =>
+            {
+                var typePars = Array.Empty<object>();
+                if (IsString(type))
+                {
+                    typePars = [length ?? 0];
+                }
+                else if (type == DbType.Decimal)
+                {
+                    typePars = [precision ?? 18, scale ?? 2];
+                }
+                col.SetType(builder.SqlType, type, typePars);
+            }, computedDefinition, nullable, length, scale, precision, id, isAutoNumber, identityByDefault, identitySeed, identityIncrement, defaultValue);
         }
         public static ITableBuilder ConfigColumn(this ITableBuilder builder, string name, Action<ITableColumnBuilder> config)
         {
@@ -135,9 +204,9 @@ namespace FastBIRe.Builders
             builder.Column.SetType(dataType);
             return builder;
         }
-        public static ITableBuilder AddIndex(this ITableBuilder builder, string column, bool orderDesc = false, bool isUnique = false, string? name = null, Action<DatabaseIndex>? configurate = null)
+        public static ITableBuilder AddIndex(this ITableBuilder builder, string column, bool orderDesc = false, bool isUnique = false, string? indexType = null, string? name = null, Action<DatabaseIndex>? configurate = null)
         {
-            return AddIndex(builder, new[] { column }, new[] { orderDesc }, isUnique, name, configurate);
+            return AddIndex(builder, new[] { column }, new[] { orderDesc }, isUnique, indexType, name, configurate);
         }
         public static ITableBuilder UnsetIndexByName(this ITableBuilder builder, string name)
         {
@@ -172,7 +241,7 @@ namespace FastBIRe.Builders
             }
             return builder;
         }
-        public static ITableBuilder AddIndex(this ITableBuilder builder, IEnumerable<string> columns, IEnumerable<bool>? orderDescs = null, bool isUnique = false, string? name = null, Action<DatabaseIndex>? configurate = null)
+        public static ITableBuilder AddIndex(this ITableBuilder builder, IEnumerable<string> columns, IEnumerable<bool>? orderDescs = null, bool isUnique = false,string? indexType=null, string? name = null, Action<DatabaseIndex>? configurate = null)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -181,8 +250,13 @@ namespace FastBIRe.Builders
             var constraint = new DatabaseIndex
             {
                 Name = name!,
-                IsUnique = isUnique
+                IsUnique = isUnique,
+                IndexType = indexType
             };
+            if (builder.SqlType== SqlType.MySql)
+            {
+                constraint.IndexType = "BTREE";
+            }
             if (orderDescs != null)
             {
                 constraint.ColumnOrderDescs.AddRange(orderDescs);

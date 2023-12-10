@@ -110,6 +110,14 @@ namespace FastBIRe
                 return EmptyTaskResult<T>.EmptyResult;
             }, args: PrepareArgs(args), token: token);
         }
+        public static Task<IList<T?>> ReadRowsAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
+        {
+            return scriptExecuter.ReadResultAsync(script, (o, e) =>
+            {
+                var res = RecordToObjectManager<T>.RecordToObject.ToList(e.Reader);
+                return Task.FromResult(res);
+            }, args: PrepareArgs(args), token: token);
+        }
         public static Task<IList<T?>> ReadRowsAsync<T>(this IScriptExecuter scriptExecuter, string script, Func<IDataReader, T?> reader, object? args = null, CancellationToken token = default)
         {
             return scriptExecuter.ReadResultAsync(script, (o, e) =>

@@ -57,7 +57,7 @@ namespace FastBIRe
         public DefaultScriptExecuter(DbConnection connection)
         {
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-            SqlType = Connection.CreateReader().SqlType!.Value;
+            SqlType = Connection.GetSqlType()!.Value;
             Escaper = SqlType.GetEscaper();
             ScriptStated += OnScriptStated;
         }

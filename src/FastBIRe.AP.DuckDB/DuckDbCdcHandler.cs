@@ -23,7 +23,7 @@ namespace FastBIRe.AP.DuckDB
         {
             ScriptExecuter = connection;
             Table = table;
-            SqlType = connection.CreateReader().SqlType!.Value;
+            SqlType = connection.SqlType;
             TableWrapper = new TableWrapper(Table, SqlType, null);
             CheckpointStorage = checkpointStorage;
             Identity = identity;
