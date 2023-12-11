@@ -204,15 +204,23 @@ namespace FastBIRe
         }
         public string? ToKnowString()
         {
+            TryToKnowString(out var s);
+            return s;
+        }
+        public bool TryToKnowString(out string? msg)
+        {
             if (state == ScriptExecutState.Executed||state== ScriptExecutState.EndReading)
             {
-                return ToExecuteString();
+                msg= ToExecuteString();
+                return true;
             }
             else if (state== ScriptExecutState.Exception)
             {
-                return ToExceptionString();
+                msg = ToExceptionString();
+                return true;
             }
-            return null;
+            msg = null;
+            return false;
         }
         public static ScriptExecuteEventArgs Begin(DbConnection connection, IEnumerable<string>? scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
         {

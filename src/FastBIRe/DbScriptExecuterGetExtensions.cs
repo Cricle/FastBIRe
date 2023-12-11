@@ -6,6 +6,11 @@ namespace FastBIRe
 {
     public static class DbScriptExecuterGetExtensions
     {
+        public static SqlType GetRequiredSqlType(this DbConnection connection)
+        {
+            var sqlType = GetSqlType(connection) ?? throw new NotSupportedException(connection.GetType().FullName);
+            return sqlType;
+        }
         public static SqlType? GetSqlType(this DbConnection connection)
         {
             return ProviderToSqlType.Convert(connection.GetType().FullName);

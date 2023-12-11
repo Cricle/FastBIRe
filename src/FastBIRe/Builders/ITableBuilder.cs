@@ -251,7 +251,8 @@ namespace FastBIRe.Builders
             {
                 Name = name!,
                 IsUnique = isUnique,
-                IndexType = indexType
+                IndexType = indexType,
+                TableName=builder.Table.Name,
             };
             if (builder.SqlType== SqlType.MySql)
             {

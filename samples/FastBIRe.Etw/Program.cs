@@ -12,7 +12,7 @@ namespace FastBIRe.Etw
         static async Task Main(string[] args)
         {
             using var conn = new MySqlConnection("host=192.168.1.101;user id=root;password=Syc123456.;database=ttt");
-            var builder = new TablesProviderBuilder(SqlType.MySql)
+            var builder = new TablesProviderBuilder(conn.GetRequiredSqlType())
                 .ConfigTable("a1", builder =>
                 {
                     builder.Column("id", DbType.Int32, isAutoNumber: true)
@@ -25,7 +25,7 @@ namespace FastBIRe.Etw
                 });
             conn.Open();
             var ctx = builder.BuildContext(conn);
-            //executer.ScriptStated += OnScriptStated;
+            ctx.Executer.RegistScriptStated(OnScriptStated);
             await ctx.ExecuteMigrationScriptsAsync();
             var listner = new MyEventListener();
             listner.Listen();
@@ -40,8 +40,7 @@ namespace FastBIRe.Etw
 
         private static void OnScriptStated(object? sender, ScriptExecuteEventArgs e)
         {
-            var str = e.ToKnowString();
-            if (!string.IsNullOrEmpty(str))
+            if (e.TryToKnowString(out var str))
             {
                 Console.WriteLine(str);
             }
