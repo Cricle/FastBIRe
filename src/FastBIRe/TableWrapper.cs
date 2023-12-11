@@ -21,7 +21,7 @@ namespace FastBIRe
                 WrapName = wrapName;
             }
         }
-        public static TableWrapper Create(DbConnection connection, string tableName, Predicate<DatabaseColumn> columnMarsk)
+        public static TableWrapper Create(DbConnection connection, string tableName, Predicate<DatabaseColumn>? columnMarsk=null)
         {
             var reader = new DatabaseReader(connection) { Owner = connection.Database };
             var table = reader.Table(tableName);
@@ -31,8 +31,12 @@ namespace FastBIRe
             }
             return FromMarsk(table, reader.SqlType!.Value, columnMarsk);
         }
-        public static TableWrapper FromMarsk(DatabaseTable table, SqlType sqlType, Predicate<DatabaseColumn> columnMarsk)
+        public static TableWrapper FromMarsk(DatabaseTable table, SqlType sqlType, Predicate<DatabaseColumn>? columnMarsk = null)
         {
+            if (columnMarsk == null)
+            {
+                return new TableWrapper(table, sqlType, null);
+            }
             var selectmask = new List<int>();
             for (int i = 0; i < table.Columns.Count; i++)
             {

@@ -98,6 +98,32 @@ namespace FastBIRe
                 return Task.FromResult(e.Reader.Read());
             }, args: PrepareArgs(args), token: token);
         }
+        public static Task ClearTableAsync(this IDbScriptExecuter scriptExecuter,string tableName,CancellationToken token = default)
+        {
+            return scriptExecuter.ExecuteAsync($"DELETE FROM {scriptExecuter.SqlType.Wrap(tableName)}",token:token);
+        }
+        public static Task ReadTableAllColumnsAsync(this IDbScriptExecuter scriptExecuter, string tableName, ReadDataHandler handler, int? skip = null, int? take = null, CancellationToken token = default)
+        {
+            var paggingPart = scriptExecuter.SqlType.GetTableHelper()!.Pagging(skip, take);
+            var sql = $"SELECT * FROM {scriptExecuter.SqlType.Wrap(tableName)} {paggingPart}";
+            return scriptExecuter.ReadAsync(sql, handler, token: token);
+        }
+        public static Task ReadTableAllColumnsAsync(this IDbScriptExecuter scriptExecuter, string tableName, ReadDataHandlerSync handler, int? skip = null, int? take = null, CancellationToken token = default)
+        {
+            return scriptExecuter.ReadTableAllColumnsAsync(tableName, (o,e) =>
+            {
+                handler(o, e);
+                return Task.CompletedTask;
+            }, token: token);
+        }
+        public static Task ReadAsync(this IScriptExecuter scriptExecuter,string script, ReadDataHandlerSync handler,  object? args = null, CancellationToken token = default)
+        {
+            return scriptExecuter.ReadAsync(script, (o, e) =>
+            {
+                handler(o, e);
+                return Task.CompletedTask;
+            }, args: PrepareArgs(args), token: token);
+        }
         public static Task<T?> ReadOneAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
         {
             return scriptExecuter.ReadResultAsync(script, static (o, e) =>

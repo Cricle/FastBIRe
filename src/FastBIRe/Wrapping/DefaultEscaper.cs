@@ -120,6 +120,46 @@ namespace FastBIRe.Wrapping
             return s.ToString();
         }
 
+        public string? ReplaceQutoSql(string? sql, char startQuto, char endQuto)
+        {
+            if (string.IsNullOrWhiteSpace(sql) || (startQuto == QutoStart && endQuto == QutoEnd))
+            {
+                return sql;
+            }
+            var inString = false;
+            var inQuto = false;
+            var s = new StringBuilder(sql.Length);
+            for (int i = 0; i < sql.Length; i++)
+            {
+                var c = sql[i];
+                if (c == startQuto && !inString && !inQuto)
+                {
+                    s.Append(QutoStart);
+                }
+                else if (c == endQuto && !inString && inQuto)
+                {
+                    s.Append(QutoEnd);
+                }
+                else
+                {
+                    s.Append(c);
+                }
+                if (c == '\'')
+                {
+                    inString = !inString;
+                }
+                else if (c == startQuto)
+                {
+                    inQuto = true;
+                }
+                else if (c == endQuto)
+                {
+                    inQuto = false;
+                }
+            }
+            return s.ToString();
+        }
+
         private static readonly string boolTrue = bool.TrueString.ToLower();
         private static readonly string boolFalse = bool.FalseString.ToLower();
     }

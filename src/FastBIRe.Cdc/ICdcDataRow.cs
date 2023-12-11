@@ -2,7 +2,7 @@
 
 namespace FastBIRe.Cdc
 {
-    public interface ICdcDataRow : IList<object>
+    public interface ICdcDataRow : IList<object?>
     {
     }
 }

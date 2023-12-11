@@ -27,7 +27,7 @@ namespace FastBIRe.Building
             return HashCode.Combine(ExpressionType, Token, Placement);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return Equals(obj as OperatorTokenInfo);
         }

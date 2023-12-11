@@ -1,6 +1,7 @@
 ﻿namespace FastBIRe
 {
     public delegate Task ReadDataHandler(IScriptExecuter executer, ReadingDataArgs args);
+    public delegate void ReadDataHandlerSync(IScriptExecuter executer, ReadingDataArgs args);
     public delegate Task<TResult> ReadDataResultHandler<TResult>(IScriptExecuter executer, ReadingDataArgs args);
     public interface IScriptExecuter : IDisposable
     {

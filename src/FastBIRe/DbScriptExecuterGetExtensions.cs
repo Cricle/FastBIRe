@@ -13,7 +13,7 @@ namespace FastBIRe
         }
         public static SqlType? GetSqlType(this DbConnection connection)
         {
-            return ProviderToSqlType.Convert(connection.GetType().FullName);
+            return ProviderToSqlType.Convert(connection.GetType().Namespace);
         }
         public static DatabaseReader CreateReader(this IDbScriptExecuter dbScriptExecuter)
         {

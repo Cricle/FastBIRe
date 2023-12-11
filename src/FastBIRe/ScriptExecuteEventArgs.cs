@@ -180,10 +180,11 @@ namespace FastBIRe
             {
                 s.Append("Pars=");
                 s.Append(string.Join(",", Args.Select(x => $"[{x.Key}='{x.Value}'({GetTypeName(x.Value)})]")));
+                s.Append(", ");
             }
             if (Command != null)
             {
-                s.Append(", Timeout=");
+                s.Append("Timeout=");
                 s.Append(Command.CommandTimeout);
             }
             s.AppendLine("]");

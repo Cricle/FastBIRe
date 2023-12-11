@@ -24,7 +24,7 @@ namespace FastBIRe.Cdc.Checkpoints
         {
             return $"{{{DatabaseName}.{TableName}}}";
         }
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is CheckpointIdentity identity)
             {
