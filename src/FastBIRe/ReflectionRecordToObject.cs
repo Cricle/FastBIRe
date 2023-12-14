@@ -1,8 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
+﻿using System.Data;
 
 namespace FastBIRe
 {
@@ -11,6 +7,14 @@ namespace FastBIRe
         public static readonly ReflectionRecordToObject<T> Instance = new ReflectionRecordToObject<T>();
 
         private ReflectionRecordToObject() { }
+
+        public IEnumerable<T?> Enumerable(IDataReader reader)
+        {
+            while (reader.Read())
+            {
+                yield return To(reader);
+            }
+        }
 
         public T? To(IDataRecord record)
         {

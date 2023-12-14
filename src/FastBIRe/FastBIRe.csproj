@@ -9,17 +9,19 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<ItemGroup>
-	  <None Remove="Resources\*.sql" />
+		<None Remove="Resources\*.sql" />
 	</ItemGroup>
 	<ItemGroup>
-	  <EmbeddedResource Include="Resources\*.sql" />
+		<EmbeddedResource Include="Resources\*.sql" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
+		<ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-	  <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
-	  <PackageReference Include="System.Memory" Version="4.5.5" />
+		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+		<PackageReference Include="System.Memory" Version="4.5.5" />
 	</ItemGroup>
-
+	<ItemGroup>
+		<None Include="../FastBIRe.ModelGen/bin/$(Configuration)/netstandard2.0/FastBIRe.ModelGen.dll" Pack="true" PackagePath="analyzers/dotnet" Visible="true" />
+	</ItemGroup>
 </Project>

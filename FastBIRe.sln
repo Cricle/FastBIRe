@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe", "src\FastBIRe\FastBIRe.csproj", "{88D37194-E745-44A8-9C3F-9E6D5815FDE1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6B6281A7-E141-4FF4-A8B2-00F460B6289C} = {6B6281A7-E141-4FF4-A8B2-00F460B6289C}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseSchemaReader", "dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj", "{4AE55B6F-4A1B-4E22-BD21-B2B4F313E9E5}"
 EndProject
@@ -46,7 +49,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Cdc.Triggers", "sr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.AP.DuckDB", "src\FastBIRe.AP.DuckDB\FastBIRe.AP.DuckDB.csproj", "{60E96022-BCE3-4F54-873D-63B4A7C1A172}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.Etw", "samples\FastBIRe.Etw\FastBIRe.Etw.csproj", "{85B9D6A9-D0EB-4B90-AC3C-504FCE05625B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.Etw", "samples\FastBIRe.Etw\FastBIRe.Etw.csproj", "{85B9D6A9-D0EB-4B90-AC3C-504FCE05625B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.ModelGen", "src\FastBIRe.ModelGen\FastBIRe.ModelGen.csproj", "{6B6281A7-E141-4FF4-A8B2-00F460B6289C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.CodeGenTest", "samples\FastBIRe.CodeGenTest\FastBIRe.CodeGenTest.csproj", "{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -200,6 +207,22 @@ Global
 		{85B9D6A9-D0EB-4B90-AC3C-504FCE05625B}.net45|Any CPU.Build.0 = Debug|Any CPU
 		{85B9D6A9-D0EB-4B90-AC3C-504FCE05625B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{85B9D6A9-D0EB-4B90-AC3C-504FCE05625B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B6281A7-E141-4FF4-A8B2-00F460B6289C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B6281A7-E141-4FF4-A8B2-00F460B6289C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B6281A7-E141-4FF4-A8B2-00F460B6289C}.Net4|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B6281A7-E141-4FF4-A8B2-00F460B6289C}.Net4|Any CPU.Build.0 = Debug|Any CPU
+		{6B6281A7-E141-4FF4-A8B2-00F460B6289C}.net45|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B6281A7-E141-4FF4-A8B2-00F460B6289C}.net45|Any CPU.Build.0 = Debug|Any CPU
+		{6B6281A7-E141-4FF4-A8B2-00F460B6289C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B6281A7-E141-4FF4-A8B2-00F460B6289C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.Net4|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.Net4|Any CPU.Build.0 = Debug|Any CPU
+		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.net45|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.net45|Any CPU.Build.0 = Debug|Any CPU
+		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -214,6 +237,7 @@ Global
 		{FA9724F8-5B70-417D-B6FE-71DA19E599A2} = {051A998F-8D2F-4865-A4D6-7474F818CA0D}
 		{6264EE49-E702-40AF-B327-1BE43E84F716} = {2D35BDB8-3710-4FD9-B301-2DCE4C0DA736}
 		{85B9D6A9-D0EB-4B90-AC3C-504FCE05625B} = {2D35BDB8-3710-4FD9-B301-2DCE4C0DA736}
+		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8} = {2D35BDB8-3710-4FD9-B301-2DCE4C0DA736}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {25AE896E-4AF6-4033-AF9A-A8812BA0F9EA}

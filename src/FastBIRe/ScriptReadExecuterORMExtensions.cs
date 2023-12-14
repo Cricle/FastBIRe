@@ -162,6 +162,18 @@ namespace FastBIRe
             return scriptExecuter.ReadResultAsync(script, static (o, e) => Task.FromResult(RecordToObjectManager<T>.ToList(e.Reader)), args: PrepareArgs(args), token: token);
         }
 
+        public static Task EnumerableAsync<T>(this IScriptExecuter scriptExecuter, string script, Action<T?> receiver, object? args = null, CancellationToken token = default)
+        {
+            return scriptExecuter.ReadResultAsync(script, (o, e) =>
+            {
+                foreach (var item in RecordToObjectManager<T>.Enumerable(e.Reader))
+                {
+                    receiver(item);
+                }
+                return Task.FromResult(false);
+            }, args: PrepareArgs(args), token: token);
+        }
+
         public static Task<int> ExecuteInterpolatedAsync(this IDbScriptExecuter executer, FormattableString f, string argPrefx = "p", CancellationToken token = default)
         {
             var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);

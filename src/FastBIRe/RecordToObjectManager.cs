@@ -33,6 +33,12 @@ namespace FastBIRe
         {
             return recordToObject.ToList(reader);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static IEnumerable<T?> Enumerable(IDataReader reader)
+        {
+            return recordToObject.Enumerable(reader);
+        }
+
 
         public static void Reset()
         {

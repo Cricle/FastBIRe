@@ -115,5 +115,13 @@ namespace FastBIRe
             }
             return res;
         }
+
+        public IEnumerable<T?> Enumerable(IDataReader reader)
+        {
+            while (reader.Read())
+            {
+                yield return To(reader);
+            }
+        }
     }
 }

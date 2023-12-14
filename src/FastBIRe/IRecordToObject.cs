@@ -6,6 +6,8 @@ namespace FastBIRe
     {
         T? To(IDataRecord record);
 
+        IEnumerable<T?> Enumerable(IDataReader reader);
+
         IList<T?> ToList(IDataReader reader);
     }
 }
