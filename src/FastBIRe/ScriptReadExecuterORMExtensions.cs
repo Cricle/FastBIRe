@@ -1,6 +1,7 @@
 ﻿using DatabaseSchemaReader.DataSchema;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
@@ -162,6 +163,18 @@ namespace FastBIRe
             return scriptExecuter.ReadResultAsync(script, static (o, e) => Task.FromResult(RecordToObjectManager<T>.ToList(e.Reader)), args: PrepareArgs(args), token: token);
         }
 
+        public static async IAsyncEnumerable<T?> EnumerableAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, [EnumeratorCancellation] CancellationToken token = default)
+        {
+            using (var result = await scriptExecuter.ReadAsync(script, PrepareArgs(args), token))
+            {
+                var reader = result.Args.Reader;
+                while (reader.Read())
+                {
+                    yield return result.Read<T?>();
+                }
+            }
+        }
+
         public static Task EnumerableAsync<T>(this IScriptExecuter scriptExecuter, string script, Action<T?> receiver, object? args = null, CancellationToken token = default)
         {
             return scriptExecuter.ReadResultAsync(script, (o, e) =>
@@ -203,6 +216,22 @@ namespace FastBIRe
         {
             var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
             return executer.ReadRowsAsync(result.Sql, reader, result.Arguments, token);
+        }
+        public static IEnumerable<T> AsEnumerable<T>(this IDataReader reader)
+        {
+            return new DataReaderEnumerable<T>(reader);
+        }
+        public static IAsyncEnumerable<T> AsAsyncEnumerable<T>(this IDataReader reader)
+        {
+            return new DataReaderAsyncEnumerable<T>(reader);
+        }
+        public static IEnumerable<T> AsEnumerable<T>(this IScriptReadResult result)
+        {
+            return new DataReaderEnumerable<T>(result.Args.Reader);
+        }
+        public static IAsyncEnumerable<T> AsAsyncEnumerable<T>(this IScriptReadResult result)
+        {
+            return new DataReaderAsyncEnumerable<T>(result.Args.Reader);
         }
     }
 }

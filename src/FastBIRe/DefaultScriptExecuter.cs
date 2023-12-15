@@ -345,20 +345,30 @@ namespace FastBIRe
         {
             return ExecuteBatchAsync(scripts, GetStackTrace(), argss, token);
         }
+        private void PrepareCommand(DbCommand command, string script, IEnumerable<KeyValuePair<string, object?>>? args = null, StackTrace? stackTrace=null, CancellationToken token=default)
+        {
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, null, args, stackTrace, dbTransaction, token));
+            command.CommandText = SqlQutoConversion(SqlParameterConversion(script));
+            command.CommandTimeout = CommandTimeout;
+            command.Transaction = dbTransaction;
+            LoadParamters(command, args);
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadCommand(Connection, command, null, args, stackTrace, dbTransaction, token));
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void RaiseBegin(string script, IEnumerable<KeyValuePair<string, object?>>? args = null,StackTrace? stackTrace=null,CancellationToken token=default)
+        {
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Begin(Connection, new string[] { script }, args != null ? Enumerable.Repeat(args, 1) : null, stackTrace, dbTransaction, token));
+        }
         public async Task<TResult> ReadResultAsync<TResult>(string script, ReadDataResultHandler<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             var stackTrace = GetStackTrace();
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Begin(Connection, new string[] { script }, args != null ? Enumerable.Repeat(args, 1) : null, stackTrace, dbTransaction, token));
+            RaiseBegin(script, args, stackTrace, token);
             var fullStartTime = Stopwatch.GetTimestamp();
             using (var command = Connection.CreateCommand())
             {
                 try
                 {
-                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CreatedCommand(Connection, command, null, args, stackTrace, dbTransaction, token));
-                    command.CommandText = SqlQutoConversion(SqlParameterConversion(script));
-                    command.CommandTimeout = CommandTimeout;
-                    command.Transaction = dbTransaction;
-                    LoadParamters(command, args);
+                    PrepareCommand(command, script, args, stackTrace, token);
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.LoadCommand(Connection, command, null, args, stackTrace, dbTransaction, token));
                     var startTime = Stopwatch.GetTimestamp();
                     ScriptStated?.Invoke(this, ScriptExecuteEventArgs.StartReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), dbTransaction, token));
@@ -385,7 +395,30 @@ namespace FastBIRe
                 return true;
             }, args, token);
         }
-
+        public async Task<IScriptReadResult> ReadAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        {
+            var stackTrace = GetStackTrace();
+            RaiseBegin(script, args, stackTrace, token);
+            var fullStartTime = Stopwatch.GetTimestamp();
+            var command = Connection.CreateCommand();
+            try
+            {
+                PrepareCommand(command, script, args, stackTrace, token);
+                var startTime = Stopwatch.GetTimestamp();
+                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.StartReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), dbTransaction, token));
+                var reader = await command.ExecuteReaderAsync(token);
+                var readArg = new ReadingDataArgs(script, reader, QueryTranslateResult.Create(script, args), token);
+                return new DefaultScriptReadResult(this, readArg,command, () =>
+                {
+                    ScriptStated?.Invoke(this, ScriptExecuteEventArgs.EndReading(Connection, command, args, stackTrace, GetElapsedTime(startTime), GetElapsedTime(fullStartTime), dbTransaction, token));
+                });
+            }
+            catch (Exception ex)
+            {
+                ScriptStated?.Invoke(this, ScriptExecuteEventArgs.Exception(Connection, command, null, args, ex, null, GetElapsedTime(fullStartTime), stackTrace, dbTransaction, token));
+                throw;
+            }
+        }
         public Task<int> ExecuteAsync(string script, StackTrace? stackTrace, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
         {
             return ExecuteAsync(script, null, args, stackTrace, token);
@@ -421,5 +454,6 @@ namespace FastBIRe
         {
             return $"{{Connection: {Connection}}}";
         }
+
     }
 }

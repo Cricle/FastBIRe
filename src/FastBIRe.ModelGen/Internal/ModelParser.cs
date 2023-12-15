@@ -56,6 +56,11 @@ namespace FastBIRe.ModelGen.Internal
 
             var fullName = node.GetTypeFullName();
             var className = $"{symbol.Name}Model";
+            var @namespace = node.GetNameSpace();
+            if (!string.IsNullOrEmpty(@namespace))
+            {
+                @namespace = "global::" + @namespace;
+            }
             var nullableEnd = (symbol.IsReferenceType&&(nullableEnable & NullableContext.Enabled) != 0) ? "?" : string.Empty;
 
             var props = symbol.GetMembers()
@@ -75,7 +80,6 @@ namespace FastBIRe.ModelGen.Internal
                 {
                     hasFail = true;
                     context.ReportDiagnostic(Diagnostic.Create(Messages.DataTypeMustBeKnowTypesOrCustomer, prop.Symbol.Locations[0], prop.Symbol.Name));
-                    Debugger.Launch();
                 }
             }
             if (hasFail)
@@ -144,11 +148,6 @@ namespace FastBIRe.ModelGen.Internal
                 {Consts.RecordToAttribute.WriteAttribute(fullName, className)}
                 {visibility} class {className} : global::FastBIRe.IRecordToObject<{fullName}>,global::FastBIRe.Builders.ITableConfiger
                 {{
-                    [global::System.Runtime.CompilerServices.ModuleInitializer]
-                    internal static void Init{className}()
-                    {{
-                        _ = Instance;
-                    }}
                     public static readonly {className} Instance = new {className}();
 
                     private {className}()
@@ -189,6 +188,23 @@ namespace FastBIRe.ModelGen.Internal
                     }}
                 }}
             {nameSpaceEnd}
+            namespace FastBIRe.Builders
+            {{
+                {visibility} static class {className}Extensions
+                {{
+                    public static global::FastBIRe.Builders.ITablesProviderBuilder Config{symbol.Name}(this global::FastBIRe.Builders.ITablesProviderBuilder builder,global::System.String name)
+                    {{
+                        return Config{symbol.Name}(builder,name,null);
+                    }}
+                    public static global::FastBIRe.Builders.ITablesProviderBuilder Config{symbol.Name}(this global::FastBIRe.Builders.ITablesProviderBuilder builder,global::System.String name,Action<global::FastBIRe.Builders.ITableBuilder>{nullableEnd} config = null)
+                    {{
+                        var tableBuilder = builder.GetTableBuilder(name);
+                        {(string.IsNullOrEmpty(@namespace)?string.Empty:(@namespace+ "."))}{className}.Instance.Config(tableBuilder);
+                        config?.Invoke(tableBuilder);
+                        return builder;
+                    }}
+                }}
+            }}
             #nullable restore
                 ";
             

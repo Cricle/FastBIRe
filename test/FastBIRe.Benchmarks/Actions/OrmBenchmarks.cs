@@ -2,7 +2,9 @@
 using Dapper;
 using DatabaseSchemaReader.DataSchema;
 using FastBIRe.Annotations;
+using Microsoft.Diagnostics.Runtime.Utilities;
 using rsa;
+using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
@@ -41,18 +43,23 @@ namespace FastBIRe.Benchmarks.Actions
             });
         }
         [Benchmark]
-        public async Task FastBIReNativeRun()
+        public async Task FastBIReOutterRun()
         {
-            using (var comm=connection.CreateCommand())
+            using (var result = await scriptExecuter.ReadAsync("SELECT * FROM `address` limit 100;"))
             {
-                comm.CommandText = "SELECT * FROM `address` limit 100;";
-                using (var reader=await comm.ExecuteReaderAsync())
+                var reader = result.Args.Reader;
+                while (reader.Read())
                 {
-                    while (reader.Read())
-                    {
-                        _ = AddressObjectModel.Instance.To(reader);
-                    }
+                    result.Read<AddressObject>();
                 }
+            }
+        }
+        [Benchmark]
+        public async Task FastBIReAsynIre()
+        {
+            await foreach (var item in scriptExecuter.EnumerableAsync<AddressObject>("SELECT * FROM `address` limit 100;"))
+            {
+
             }
         }
     }
@@ -75,5 +82,4 @@ namespace FastBIRe.Benchmarks.Actions
 
         public DateTime? last_update { get; set; }
     }
-
 }

@@ -1,4 +1,7 @@
-﻿namespace FastBIRe
+﻿using System.Data.Common;
+using System.Diagnostics;
+
+namespace FastBIRe
 {
     public delegate Task ReadDataHandler(IScriptExecuter executer, ReadingDataArgs args);
     public delegate void ReadDataHandlerSync(IScriptExecuter executer, ReadingDataArgs args);
@@ -11,27 +14,44 @@
 
         Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
 
+        Task<IScriptReadResult> ReadAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
+
         Task<TResult> ReadResultAsync<TResult>(string script, ReadDataResultHandler<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
     }
-    public static class ScriptExecuterEventExtensions
+    public interface IScriptReadResult : IDisposable
     {
-        public static void RegistScriptStated(this IScriptExecuter executer, EventHandler<ScriptExecuteEventArgs> handler)
+        IScriptExecuter Executer { get; }
+
+        ReadingDataArgs Args { get; }
+
+        T? Read<T>();
+    }
+    public readonly struct DefaultScriptReadResult : IScriptReadResult
+    {
+        public DefaultScriptReadResult(IScriptExecuter executer, ReadingDataArgs args, DbCommand command, Action endRead)
         {
-            if (executer is DefaultScriptExecuter scriptExecuter)
-            {
-                scriptExecuter.ScriptStated += handler;
-                return;
-            }
-            throw new InvalidCastException($"Can't cast {executer.GetType()} to {typeof(DefaultScriptExecuter)}");
+            Executer = executer;
+            Args = args;
+            EndRead = endRead;
+            this.command = command;
         }
-        public static void UnRegistScriptStated(this IScriptExecuter executer, EventHandler<ScriptExecuteEventArgs> handler)
+        private readonly DbCommand command;
+        private readonly Action EndRead;
+
+        public IScriptExecuter Executer { get; }
+
+        public ReadingDataArgs Args { get; }
+
+        public void Dispose()
         {
-            if (executer is DefaultScriptExecuter scriptExecuter)
-            {
-                scriptExecuter.ScriptStated -= handler;
-                return;
-            }
-            throw new InvalidCastException($"Can't cast {executer.GetType()} to {typeof(DefaultScriptExecuter)}");
+            command.Dispose();
+            Args.Reader.Dispose();
+            EndRead();
+        }
+
+        public T? Read<T>()
+        {
+            return RecordToObjectManager<T>.To(Args.Reader);
         }
     }
 }

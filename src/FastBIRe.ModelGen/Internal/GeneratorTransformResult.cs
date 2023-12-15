@@ -46,7 +46,7 @@ namespace FastBIRe.ModelGen.Internal
                     .Any(x => x.AttributeClass?.ToString() == typeof(GeneratorAttribute).FullName);
         }
         public const string GlobalNs = "<global namespace>";
-        public const string GlobalNsKeyword = "GlobalNs";
+        public const string GlobalNsKeyword = "<global";
 
         public static string GetTypeFullName(ISymbol symbol)
         {
@@ -62,7 +62,7 @@ namespace FastBIRe.ModelGen.Internal
             var rawNameSpace = GetNameSpace(symbol);
             nameSpaceStart = $"namespace {rawNameSpace}\n{{";
             nameSpaceEnd = "}";
-            if (rawNameSpace.Contains(GlobalNsKeyword))
+            if (string.IsNullOrEmpty(rawNameSpace))
             {
                 nameSpaceStart = string.Empty;
                 nameSpaceEnd = string.Empty;
@@ -70,7 +70,12 @@ namespace FastBIRe.ModelGen.Internal
         }
         public static string GetNameSpace(ISymbol symbol)
         {
-            return symbol.ContainingNamespace.ToString();
+            var ns = symbol.ContainingNamespace.ToString();
+            if (ns.Contains(GlobalNsKeyword))
+            {
+                return string.Empty;
+            }
+            return ns;
         }
         public static string GetAccessibilityString(Accessibility accessibility)
         {

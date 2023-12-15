@@ -16,10 +16,12 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
+		<ProjectReference Include="../FastBIRe.ModelGen/FastBIRe.ModelGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="None" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
 		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
 		<PackageReference Include="System.Memory" Version="4.5.5" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Include="../FastBIRe.ModelGen/bin/$(Configuration)/netstandard2.0/FastBIRe.ModelGen.dll" Pack="true" PackagePath="analyzers/dotnet" Visible="true" />

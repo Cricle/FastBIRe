@@ -1,64 +1,63 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿using FastBIRe;
 using FastBIRe.Annotations;
 using FastBIRe.Builders;
 using Microsoft.Data.Sqlite;
 using System.ComponentModel.DataAnnotations;
 
-namespace FastBIRe.CodeGenTest
+internal class Program
 {
-    internal class Program
+    static async Task Main(string[] args)
     {
-        static async Task Main(string[] args)
+        var conn = new SqliteConnection("Data Source=:memory:");
+        conn.Open();
+        var executer = new DefaultScriptExecuter(conn);
+        executer.ScriptStated += OnScriptStated;
+        var ctx = new TablesProviderBuilder(conn.GetRequiredSqlType())
+            .ConfigStudent("student")
+            .BuildContext(executer);
+        await ctx.ExecuteMigrationScriptsAsync();
+        for (int i = 0; i < 100; i++)
         {
-            var conn = new SqliteConnection("Data Source=:memory:");
-            conn.Open();
-            var executer = new DefaultScriptExecuter(conn);
-            executer.ScriptStated += OnScriptStated;
-            var tableBuilder = new TablesProviderBuilder(conn.GetRequiredSqlType());
-            StudentModel.Instance.Config(tableBuilder.GetTableBuilder("student"));
-            var ctx = tableBuilder.BuildContext(executer);
-            await ctx.ExecuteMigrationScriptsAsync();
-            for (int i = 0; i < 100; i++)
-            {
-                await executer.ExecuteAsync(CreateInsertSql());
-            }
-
-            await executer.EnumerableAsync<Student>("SELECT * FROM student", stu =>
-            {
-
-            });
+            await executer.ExecuteAsync(CreateInsertSql());
         }
-
-        private static void OnScriptStated(object? sender, ScriptExecuteEventArgs e)
+        for (int i = 0; i < 2; i++)
         {
-            if (e.TryToKnowString(out var str))
+            await foreach (var item in executer.EnumerableAsync<Student>("SELECT * FROM student WHERE id%10=0"))
             {
-                Console.WriteLine(str);
+                Console.WriteLine(item);
             }
         }
+    }
 
-        public static string CreateInsertSql()
+    private static void OnScriptStated(object? sender, ScriptExecuteEventArgs e)
+    {
+        if (e.TryToKnowString(out var str))
         {
-            return $"INSERT INTO [student](name,Age,Flag) VALUES(\'awdaw{Random.Shared.Next()}\',{Random.Shared.Next()},{Random.Shared.Next()})";
+            Console.WriteLine(str);
         }
     }
-    [GenerateModel]
-    public class Student
+
+    public static string CreateInsertSql()
     {
-        [Key]
-        [AutoNumber]
-        [ColumnName("id")]
-        public int Id { get; set; }
-
-        [Index]
-        [Required]
-        [ColumnName("name")]
-        [MaxLength(256)]
-        public string? Name { get; set; }
-
-        [Required]
-        public long Age { get; set; }
-
-        public long? Flag { get; set; }
+        return $"INSERT INTO [student](name,Age,Flag) VALUES(\'awdaw{Random.Shared.Next()}\',{Random.Shared.Next()},{Random.Shared.Next()})";
     }
+}
+[GenerateModel]
+public record class Student
+{
+    [Key]
+    [AutoNumber]
+    [ColumnName("id")]
+    public int Id { get; set; }
+
+    [Index]
+    [Required]
+    [ColumnName("name")]
+    [MaxLength(256)]
+    public string? Name { get; set; }
+
+    [Required]
+    public long Age { get; set; }
+
+    public long? Flag { get; set; }
 }
