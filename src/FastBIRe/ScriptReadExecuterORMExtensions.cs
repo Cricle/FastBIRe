@@ -82,7 +82,7 @@ namespace FastBIRe
             {
                 return objectVisitor.GetOrAdd(type, static t => new ObjectVisitor(t)).EnumerableProperties(obj);
             }
-            return Enumerable.Repeat(new KeyValuePair<string, object?>(string.Empty, obj), 1);
+            return new OneEnumerable<KeyValuePair<string, object?>>(new KeyValuePair<string, object?>(string.Empty, obj));
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static IEnumerable<KeyValuePair<string, object?>>? EnumerableList(IList list)
@@ -99,9 +99,17 @@ namespace FastBIRe
                 return Task.FromResult(e.Reader.Read());
             }, args: PrepareArgs(args), token: token);
         }
+        public static bool Exists(this IScriptExecuter scriptExecuter, string script, object? args = null)
+        {
+            return scriptExecuter.ReadResult(script, static (o, e) => e.Reader.Read(), args: PrepareArgs(args));
+        }
         public static Task ClearTableAsync(this IDbScriptExecuter scriptExecuter,string tableName,CancellationToken token = default)
         {
             return scriptExecuter.ExecuteAsync($"DELETE FROM {scriptExecuter.SqlType.Wrap(tableName)}",token:token);
+        }
+        public static void ClearTable(this IDbScriptExecuter scriptExecuter, string tableName)
+        {
+            scriptExecuter.ExecuteAsync($"DELETE FROM {scriptExecuter.SqlType.Wrap(tableName)}");
         }
         public static Task ReadTableAllColumnsAsync(this IDbScriptExecuter scriptExecuter, string tableName, ReadDataHandler handler, int? skip = null, int? take = null, CancellationToken token = default)
         {
@@ -109,7 +117,13 @@ namespace FastBIRe
             var sql = $"SELECT * FROM {scriptExecuter.SqlType.Wrap(tableName)} {paggingPart}";
             return scriptExecuter.ReadAsync(sql, handler, token: token);
         }
-        public static Task ReadTableAllColumnsAsync(this IDbScriptExecuter scriptExecuter, string tableName, ReadDataHandlerSync handler, int? skip = null, int? take = null, CancellationToken token = default)
+        public static void ReadTableAllColumns(this IDbScriptExecuter scriptExecuter, string tableName, ReadDataHandlerSync handler, int? skip = null, int? take = null)
+        {
+            var paggingPart = scriptExecuter.SqlType.GetTableHelper()!.Pagging(skip, take);
+            var sql = $"SELECT * FROM {scriptExecuter.SqlType.Wrap(tableName)} {paggingPart}";
+            scriptExecuter.Read(sql, handler);
+        }
+        public static Task ReadTableAllColumnsAsync(this IDbScriptExecuter scriptExecuter, string tableName, ReadDataHandlerSync handler,  CancellationToken token = default)
         {
             return scriptExecuter.ReadTableAllColumnsAsync(tableName, (o,e) =>
             {
@@ -125,6 +139,13 @@ namespace FastBIRe
                 return Task.CompletedTask;
             }, args: PrepareArgs(args), token: token);
         }
+        public static void Read(this IScriptExecuter scriptExecuter, string script, ReadDataHandlerSync handler, object? args = null)
+        {
+            scriptExecuter.Read(script, (o, e) =>
+            {
+                handler(o, e);
+            }, args: PrepareArgs(args));
+        }
         public static Task<T?> ReadOneAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
         {
             return scriptExecuter.ReadResultAsync(script, static (o, e) =>
@@ -137,6 +158,18 @@ namespace FastBIRe
                 return EmptyTaskResult<T>.EmptyResult;
             }, args: PrepareArgs(args), token: token);
         }
+        public static T? ReadOneAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null)
+        {
+            return scriptExecuter.ReadResult(script, static (o, e) =>
+            {
+                if (e.Reader.Read())
+                {
+                    var result = RecordToObjectManager<T>.RecordToObject.To(e.Reader);
+                    return result;
+                }
+                return default;
+            }, args: PrepareArgs(args));
+        }
         public static Task<IList<T?>> ReadRowsAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
         {
             return scriptExecuter.ReadResultAsync(script, (o, e) =>
@@ -144,6 +177,10 @@ namespace FastBIRe
                 var res = RecordToObjectManager<T>.RecordToObject.ToList(e.Reader);
                 return Task.FromResult(res);
             }, args: PrepareArgs(args), token: token);
+        }
+        public static IList<T?> ReadRows<T>(this IScriptExecuter scriptExecuter, string script, object? args = null)
+        {
+            return scriptExecuter.ReadResult(script,static (o, e) => RecordToObjectManager<T>.RecordToObject.ToList(e.Reader), args: PrepareArgs(args));
         }
         public static Task<IList<T?>> ReadRowsAsync<T>(this IScriptExecuter scriptExecuter, string script, Func<IDataReader, T?> reader, object? args = null, CancellationToken token = default)
         {
@@ -157,15 +194,42 @@ namespace FastBIRe
                 return Task.FromResult<IList<T?>>(res);
             }, args: PrepareArgs(args), token: token);
         }
+        public static IList<T?> ReadRows<T>(this IScriptExecuter scriptExecuter, string script, Func<IDataReader, T?> reader, object? args = null)
+        {
+            return scriptExecuter.ReadResult(script, (o, e) =>
+            {
+                var res = new List<T?>();
+                while (e.Reader.Read())
+                {
+                    res.Add(reader(e.Reader));
+                }
+                return res;
+            }, args: PrepareArgs(args));
+        }
 
         public static Task<IList<T?>> ReadAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
         {
             return scriptExecuter.ReadResultAsync(script, static (o, e) => Task.FromResult(RecordToObjectManager<T>.ToList(e.Reader)), args: PrepareArgs(args), token: token);
         }
+        public static IList<T?> Read<T>(this IScriptExecuter scriptExecuter, string script, object? args = null)
+        {
+            return scriptExecuter.ReadResult(script, static (o, e) => RecordToObjectManager<T>.ToList(e.Reader), args: PrepareArgs(args));
+        }
 
         public static async IAsyncEnumerable<T?> EnumerableAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, [EnumeratorCancellation] CancellationToken token = default)
         {
             using (var result = await scriptExecuter.ReadAsync(script, PrepareArgs(args), token))
+            {
+                var reader = result.Args.Reader;
+                while (reader.Read())
+                {
+                    yield return result.Read<T?>();
+                }
+            }
+        }
+        public static IEnumerable<T?> Enumerable<T>(this IScriptExecuter scriptExecuter, string script, object? args = null)
+        {
+            using (var result = scriptExecuter.Read(script, PrepareArgs(args)))
             {
                 var reader = result.Args.Reader;
                 while (reader.Read())
@@ -186,37 +250,79 @@ namespace FastBIRe
                 return Task.FromResult(false);
             }, args: PrepareArgs(args), token: token);
         }
+        public static void Enumerable<T>(this IScriptExecuter scriptExecuter, string script, Action<T?> receiver, object? args = null)
+        {
+            scriptExecuter.ReadResult(script, (o, e) =>
+            {
+                foreach (var item in RecordToObjectManager<T>.Enumerable(e.Reader))
+                {
+                    receiver(item);
+                }
+                return false;
+            }, args: PrepareArgs(args));
+        }
 
         public static Task<int> ExecuteInterpolatedAsync(this IDbScriptExecuter executer, FormattableString f, string argPrefx = "p", CancellationToken token = default)
         {
             var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
             return executer.ExecuteAsync(result.Sql, result.Arguments, token);
         }
+        public static int ExecuteInterpolated(this IDbScriptExecuter executer, FormattableString f, string argPrefx = "p")
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            return executer.Execute(result.Sql, result.Arguments);
+        }
         public static Task ReadInterpolatedAsync(this IDbScriptExecuter executer, ReadDataHandler handler, FormattableString f, string argPrefx = "p", CancellationToken token = default)
         {
             var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
             return executer.ReadAsync(result.Sql, handler, result.Arguments, token);
+        }
+        public static void ReadInterpolated(this IDbScriptExecuter executer, ReadDataHandler handler, FormattableString f, string argPrefx = "p")
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            executer.ReadAsync(result.Sql, handler, result.Arguments);
         }
         public static Task ReadOneInterpolatedAsync<TResult>(this IDbScriptExecuter executer, FormattableString f, string argPrefx = "p", CancellationToken token = default)
         {
             var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
             return executer.ReadOneAsync<TResult>(result.Sql, result.Arguments, token);
         }
+        public static void ReadOneInterpolated<TResult>(this IDbScriptExecuter executer, FormattableString f, string argPrefx = "p")
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            executer.ReadOneAsync<TResult>(result.Sql, result.Arguments);
+        }
         public static Task ReadOneInterpolatedAsync<TResult>(this IDbScriptExecuter executer, ReadDataResultHandler<TResult> handler, FormattableString f, string argPrefx = "p", CancellationToken token = default)
         {
             var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
             return executer.ReadResultAsync(result.Sql, handler, result.Arguments, token);
+        }
+        public static void ReadOneInterpolated<TResult>(this IDbScriptExecuter executer, ReadDataResultHandler<TResult> handler, FormattableString f, string argPrefx = "p")
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            executer.ReadResultAsync(result.Sql, handler, result.Arguments);
         }
         public static Task ExistsInterpolatedAsync(this IDbScriptExecuter executer, FormattableString f, string argPrefx = "p", CancellationToken token = default)
         {
             var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
             return executer.ExistsAsync(result.Sql, result.Arguments, token);
         }
+        public static void ExistsInterpolated(this IDbScriptExecuter executer, FormattableString f, string argPrefx = "p")
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            executer.ExistsAsync(result.Sql, result.Arguments);
+        }
         public static Task ExistsInterpolatedAsync<TResult>(this IDbScriptExecuter executer, Func<IDataReader, TResult?> reader, FormattableString f, string argPrefx = "p", CancellationToken token = default)
         {
             var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
             return executer.ReadRowsAsync(result.Sql, reader, result.Arguments, token);
         }
+        public static void ExistsInterpolated<TResult>(this IDbScriptExecuter executer, Func<IDataReader, TResult?> reader, FormattableString f, string argPrefx = "p")
+        {
+            var result = InterpolatedHelper.Parse(executer.SqlType, f, argPrefx);
+            executer.ReadRowsAsync(result.Sql, reader, result.Arguments);
+        }
+
         public static IEnumerable<T> AsEnumerable<T>(this IDataReader reader)
         {
             return new DataReaderEnumerable<T>(reader);

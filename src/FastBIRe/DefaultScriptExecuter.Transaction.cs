@@ -33,7 +33,8 @@ namespace FastBIRe
             ThrowIfTransactionNotNull();
             var fullStartTime = Stopwatch.GetTimestamp();
             dbTransaction = Connection.BeginTransaction(level);
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BeginTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, default));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BeginTranscation(Connection, new TraceUnit(
+                GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), GetStackTrace()), dbTransaction));
         }
 
         public
@@ -49,7 +50,8 @@ namespace FastBIRe
 #else
             dbTransaction = Connection.BeginTransaction(level);
 #endif
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BeginTranscation(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, token));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.BeginTranscation(Connection, new TraceUnit(
+                GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), GetStackTrace()), dbTransaction));
 #if !NET6_0_OR_GREATER
             return Task.CompletedTask;
 #endif
@@ -61,7 +63,8 @@ namespace FastBIRe
             ThrowIfTransactionNoStart();
             dbTransaction!.Commit();
             dbTransaction = null;
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CommitedTransaction(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, default));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CommitedTransaction(Connection, new TraceUnit(
+                GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), GetStackTrace()), dbTransaction));
         }
 
         public 
@@ -78,7 +81,8 @@ namespace FastBIRe
             dbTransaction!.Commit();
 #endif
             dbTransaction = null;
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CommitedTransaction(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, token));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.CommitedTransaction(Connection, new TraceUnit(
+                GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), GetStackTrace()), dbTransaction));
 #if !NET6_0_OR_GREATER
             return Task.CompletedTask;
 #endif
@@ -90,7 +94,8 @@ namespace FastBIRe
             ThrowIfTransactionNoStart();
             dbTransaction!.Rollback();
             dbTransaction = null;
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.RollbackedTransaction(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, default));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.RollbackedTransaction(Connection, new TraceUnit(
+                GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), GetStackTrace()), dbTransaction));
         }
 
         public 
@@ -107,7 +112,8 @@ namespace FastBIRe
             dbTransaction!.Rollback();
 #endif
             dbTransaction = null;
-            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.RollbackedTransaction(Connection, GetStackTrace(), GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), dbTransaction, token));
+            ScriptStated?.Invoke(this, ScriptExecuteEventArgs.RollbackedTransaction(Connection, new TraceUnit(
+                GetElapsedTime(fullStartTime), GetElapsedTime(fullStartTime), GetStackTrace()), dbTransaction));
 #if !NET6_0_OR_GREATER
             return Task.CompletedTask;
 #endif

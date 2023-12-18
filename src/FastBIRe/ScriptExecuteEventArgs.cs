@@ -1,69 +1,104 @@
 ﻿using System.Data.Common;
 using System.Diagnostics;
-using System.Diagnostics.Tracing;
-using System.Runtime.CompilerServices;
+using System.Net.NetworkInformation;
 using System.Text;
 
 namespace FastBIRe
 {
-    [EventData]
-    public readonly unsafe partial struct ScriptExecuteEventArgs
+    public readonly struct TraceUnit
     {
-        public ScriptExecuteEventArgs(ScriptExecutState state,
+        public TraceUnit(StackTrace? stackTrace)
+        {
+            ExecutionTime = FullTime = null;
+            StackTrace = stackTrace;
+        }
+
+        public TraceUnit(TimeSpan? executionTime, TimeSpan? fullTime, StackTrace? stackTrace)
+        {
+            ExecutionTime = executionTime;
+            FullTime = fullTime;
+            StackTrace = stackTrace;
+        }
+
+        public TimeSpan? ExecutionTime { get; }
+
+        public TimeSpan? FullTime { get; }
+
+        public StackTrace? StackTrace { get; }
+
+        public override string ToString()
+        {
+            return $"ExecutionTime: {ExecutionTime}, FullTime: {FullTime}{Environment.NewLine}{StackTrace}";
+        }
+    }
+    public readonly struct ScriptUnit
+    {
+        public readonly string Script;
+
+        public readonly IEnumerable<KeyValuePair<string, object?>>? Parameters;
+
+        public bool IsEmptyScript => DefaultScriptExecuter.IsEmptyScript(Script);
+
+        public IQueryTranslateResult Result => QueryTranslateResult.Create(Script, Parameters);
+
+        public ScriptUnit(string script, IEnumerable<KeyValuePair<string, object?>>? parameters=null)
+        {
+            Script = script;
+            Parameters = parameters;
+        }
+
+        public override string? ToString()
+        {
+            if (Parameters == null || !Parameters.Any())
+            {
+                return Script;
+            }
+            return $"{Script}{Environment.NewLine}{string.Join(",", Parameters.Select(x => $"[{x.Key}={x.Value}]"))}";
+        }
+    }
+
+    public readonly struct ScriptExecuteEventArgs
+    {
+        internal ScriptExecuteEventArgs(ScriptExecutState state,
             DbConnection connection,
             DbCommand? command,
-            IEnumerable<string>? scripts,
             Exception? executeException,
             int? recordsAffected,
 #if !NETSTANDARD2_0
             DbBatch? batch,
             DbBatchCommand? batchCommand,
 #endif
-            TimeSpan? executionTime,
-            TimeSpan? fullTime,
-            StackTrace? stackTrace,
-            IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss,
-            IEnumerable<KeyValuePair<string, object?>>? args,
-            DbTransaction? transaction,
-            CancellationToken cancellationToken)
+            ScriptUnit? scriptUnit,
+            IEnumerable<ScriptUnit>? scriptUnits,
+            TraceUnit traceUnit,
+            DbTransaction? transaction)
         {
-            this.state = state;
+            State = state;
             Connection = connection;
             Command = command;
-            Scripts = scripts;
+            ScriptUnit = scriptUnit;
+            if (scriptUnit != null)
+            {
+                ScriptUnits = scriptUnits ?? new OneEnumerable<ScriptUnit>(scriptUnit.Value);
+            }
             ExecuteException = executeException;
             RecordsAffected = recordsAffected;
 #if !NETSTANDARD2_0
             Batch = batch;
             BatchCommand = batchCommand;
 #endif
-            ExecutionTime = executionTime;
-            CancellationToken = cancellationToken;
-            StackTrace = stackTrace;
-            FullTime = fullTime;
-            Argss = argss;
-            Args = args;
+            TraceUnit = traceUnit;
             Transaction = transaction;
         }
-        internal readonly ScriptExecutState state;
-
-        public ScriptExecutState State => state;
+        public ScriptExecutState State { get; }
 
         public DbConnection Connection { get; }
 
         public DbCommand? Command { get; }
 
-        public string? Script => Command?.CommandText
-#if !NETSTANDARD2_0
-            ?? BatchCommand?.CommandText
-#endif
-            ;
+        public ScriptUnit? ScriptUnit { get; }
 
-        public IEnumerable<string>? Scripts { get; }
-
-        public IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? Argss { get; }
-
-        public IEnumerable<KeyValuePair<string, object?>>? Args { get; }
+        public IEnumerable<ScriptUnit>? ScriptUnits { get; }
 
         public Exception? ExecuteException { get; }
 
@@ -74,27 +109,11 @@ namespace FastBIRe
 
         public DbBatchCommand? BatchCommand { get; }
 #endif
-        public TimeSpan? ExecutionTime { get; }
 
-        public TimeSpan? FullTime { get; }
-
-        public StackTrace? StackTrace { get; }
+        public TraceUnit? TraceUnit { get; }
 
         public DbTransaction? Transaction { get; }
 
-        public CancellationToken CancellationToken { get; }
-
-        public IQueryTranslateResult? TranslateResult
-        {
-            get
-            {
-                if (Command != null)
-                {
-                    return QueryTranslateResult.Create(Command.CommandText, Args);
-                }
-                return null;
-            }
-        }
         private static string? GetTypeName(object? value)
         {
             switch (value)
@@ -149,7 +168,7 @@ namespace FastBIRe
 
         public void ToExecuteString(StringBuilder s)
         {
-            if (state== ScriptExecutState.EndReading)
+            if (State == ScriptExecutState.EndReading)
             {
                 s.Append("Read ");
             }
@@ -158,37 +177,41 @@ namespace FastBIRe
                 s.Append("Executed ");
             }
             s.Append('(');
-            if (ExecutionTime == null)
+            if (TraceUnit!.Value.ExecutionTime == null)
             {
                 s.Append('0');
             }
             else
             {
-                s.Append(ExecutionTime.Value.TotalMilliseconds.ToString("F2"));
+                s.Append(TraceUnit!.Value.ExecutionTime.Value.TotalMilliseconds.ToString("F2"));
             }
             s.Append("ms)T(");
-            if (FullTime == null)
+            if (TraceUnit!.Value.FullTime == null)
             {
                 s.Append('0');
             }
             else
             {
-                s.Append(FullTime.Value.TotalMilliseconds.ToString("F2"));
+                s.Append(TraceUnit!.Value.FullTime.Value.TotalMilliseconds.ToString("F2"));
             }
-            s.Append("ms) [");
-            if (Args != null)
+            s.Append("ms) ");
+            if (ScriptUnit != null)
             {
-                s.Append("Pars=");
-                s.Append(string.Join(",", Args.Select(x => $"[{x.Key}='{x.Value}'({GetTypeName(x.Value)})]")));
-                s.Append(", ");
+                s.Append('[');
+                if (ScriptUnit!.Value.Parameters != null)
+                {
+                    s.Append("Pars=");
+                    s.Append(string.Join(",", ScriptUnit!.Value.Parameters.Select(x => $"[{x.Key}='{x.Value}'({GetTypeName(x.Value)})]")));
+                    s.Append(", ");
+                }
+                if (Command != null)
+                {
+                    s.Append("Timeout=");
+                    s.Append(Command.CommandTimeout);
+                }
+                s.AppendLine("]");
+                s.AppendLine(ScriptUnit!.Value.Script);
             }
-            if (Command != null)
-            {
-                s.Append("Timeout=");
-                s.Append(Command.CommandTimeout);
-            }
-            s.AppendLine("]");
-            s.AppendLine(Script);
         }
         public string ToExecuteString()
         {
@@ -208,14 +231,49 @@ namespace FastBIRe
             TryToKnowString(out var s);
             return s;
         }
+
+        public string GetScriptDebugString()
+        {
+            if (ScriptUnit == null && ScriptUnits == null)
+            {
+                return string.Empty;
+            }
+            var s = new StringBuilder();
+            if (ScriptUnit!=null)
+            {
+                s.AppendLine(ScriptUnit!.Value.Script);
+                s.AppendLine(ArgsAsString(ScriptUnit!.Value.Parameters));
+            }
+            else
+            {
+                foreach (var item in ScriptUnits!)
+                {
+                    s.AppendLine(item.Script);
+                    s.AppendLine(ArgsAsString(item.Parameters));
+                    s.AppendLine();
+                }
+            }
+
+            return s.ToString();
+        }
+
+        private string ArgsAsString(IEnumerable<KeyValuePair<string, object?>>? args)
+        {
+            if (args == null)
+            {
+                return string.Empty;
+            }
+            return string.Join(",", args.Select(x => $"[{x.Key}={x.Key}]"));
+        }
+
         public bool TryToKnowString(out string? msg)
         {
-            if (state == ScriptExecutState.Executed||state== ScriptExecutState.EndReading)
+            if (State == ScriptExecutState.Executed || State == ScriptExecutState.EndReading)
             {
-                msg= ToExecuteString();
+                msg = ToExecuteString();
                 return true;
             }
-            else if (state== ScriptExecutState.Exception)
+            else if (State == ScriptExecutState.Exception)
             {
                 msg = ToExceptionString();
                 return true;
@@ -223,12 +281,11 @@ namespace FastBIRe
             msg = null;
             return false;
         }
-        public static ScriptExecuteEventArgs Begin(DbConnection connection, IEnumerable<string>? scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs Begin(DbConnection connection, IEnumerable<ScriptUnit> scriptUnits, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.Begin,
                 connection,
                 null,
-                scripts,
                 null,
                 null,
 #if !NETSTANDARD2_0
@@ -236,39 +293,63 @@ namespace FastBIRe
                 null,
 #endif                
                 null,
-                null,
-                stackTrace,
-                args,
-                null,
-                dbTransaction,
-                token);
+                scriptUnits,
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs CreatedCommand(DbConnection connection, DbCommand command, IEnumerable<string>? scripts, IEnumerable<KeyValuePair<string, object?>>? args, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs Begin(DbConnection connection, ScriptUnit scriptUnit, TraceUnit traceUnit, DbTransaction? dbTransaction)
+        {
+            return new ScriptExecuteEventArgs(ScriptExecutState.Begin,
+                connection,
+                null,
+                null,
+                null,
+#if !NETSTANDARD2_0
+                null,
+                null,
+#endif                
+                scriptUnit,
+                null,
+                traceUnit,
+                dbTransaction);
+        }
+        public static ScriptExecuteEventArgs CreatedCommand(DbConnection connection, DbCommand command, ScriptUnit scriptUnit, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.CreatedCommand,
                 connection,
                 command,
-                scripts,
                 null,
                 null,
 #if !NETSTANDARD2_0
                 null,
                 null,
 #endif
+                scriptUnit,
                 null,
-                null,
-                stackTrace,
-                args == null ? null : Enumerable.Repeat(args, 1),
-                args,
-                dbTransaction,
-                token);
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs LoadCommand(DbConnection connection, DbCommand command, IEnumerable<string>? scripts, IEnumerable<KeyValuePair<string, object?>>? args, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs LoadCommand(DbConnection connection, DbCommand command, ScriptUnit scriptUnit, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.LoaedCommand,
                 connection,
                 command,
-                scripts,
+                null,
+                null,
+#if !NETSTANDARD2_0
+                null,
+                null,
+#endif
+                scriptUnit,
+                null,
+                traceUnit,
+                dbTransaction);
+        }
+        public static ScriptExecuteEventArgs LoadCommand(DbConnection connection, DbCommand command, IEnumerable<ScriptUnit> scriptUnits, TraceUnit traceUnit, DbTransaction? dbTransaction)
+        {
+            return new ScriptExecuteEventArgs(ScriptExecutState.LoaedCommand,
+                connection,
+                command,
                 null,
                 null,
 #if !NETSTANDARD2_0
@@ -276,133 +357,158 @@ namespace FastBIRe
                 null,
 #endif
                 null,
-                null,
-                stackTrace,
-                args == null ? null : Enumerable.Repeat(args, 1),
-                args,
-                dbTransaction,
-                token);
+                scriptUnits,
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs Executed(DbConnection connection, DbCommand command, IEnumerable<string>? scripts, IEnumerable<KeyValuePair<string, object?>>? args, int recordsAffected, TimeSpan executionTime, TimeSpan fullTime, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs Executed(DbConnection connection, DbCommand command, IEnumerable<ScriptUnit> scriptUnits, int recordsAffected, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.Executed,
                 connection,
                 command,
-                scripts,
                 null,
                 recordsAffected,
 #if !NETSTANDARD2_0
                 null,
                 null,
 #endif
-                executionTime,
-                fullTime,
-                stackTrace,
-                args == null ? null : Enumerable.Repeat(args, 1),
-                args,
-                dbTransaction,
-                token);
+                null,
+                scriptUnits,
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs Exception(DbConnection connection, DbCommand command, IEnumerable<string>? scripts, IEnumerable<KeyValuePair<string, object?>>? args, Exception exception, TimeSpan? executionTime, TimeSpan fullTime, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs Executed(DbConnection connection, DbCommand command, ScriptUnit scriptUnit, int recordsAffected, TraceUnit traceUnit, DbTransaction? dbTransaction)
+        {
+            return new ScriptExecuteEventArgs(ScriptExecutState.Executed,
+                connection,
+                command,
+                null,
+                recordsAffected,
+#if !NETSTANDARD2_0
+                null,
+                null,
+#endif
+                scriptUnit,
+                null,
+                traceUnit,
+                dbTransaction);
+        }
+        public static ScriptExecuteEventArgs Exception(DbConnection connection, DbCommand? command, ScriptUnit scriptUnit, Exception exception, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.Exception,
                 connection,
                 command,
-                scripts,
                 exception,
                 null,
 #if !NETSTANDARD2_0
                 null,
                 null,
 #endif
-                executionTime,
-                fullTime,
-                stackTrace,
-                args == null ? null : Enumerable.Repeat(args, 1),
-                args,
-                dbTransaction,
-                token);
+                scriptUnit,
+                null,
+                traceUnit,
+                dbTransaction);
         }
 #if !NETSTANDARD2_0
-        public static ScriptExecuteEventArgs CreatedBatch(DbConnection connection, IEnumerable<string>? scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, DbBatch batch, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
+
+        public static ScriptExecuteEventArgs Exception(DbConnection connection,
+            DbBatch dbBatch, IEnumerable<ScriptUnit> scriptUnits, Exception exception, TraceUnit traceUnit, DbTransaction? dbTransaction)
+        {
+            return new ScriptExecuteEventArgs(ScriptExecutState.Exception,
+                connection,
+                null,
+                exception,
+                null,
+                dbBatch,
+                null,
+                null,
+                scriptUnits,
+                traceUnit,
+                dbTransaction);
+        }
+#endif
+        public static ScriptExecuteEventArgs Exception(DbConnection connection, DbCommand command
+            , IEnumerable<ScriptUnit> scriptUnits, Exception exception, TraceUnit traceUnit, DbTransaction? dbTransaction)
+        {
+            return new ScriptExecuteEventArgs(ScriptExecutState.Exception,
+                connection,
+                command,
+                exception,
+                null,
+#if !NETSTANDARD2_0
+                null,
+                null,
+#endif
+                null,
+                scriptUnits,
+                traceUnit,
+                dbTransaction);
+        }
+#if !NETSTANDARD2_0
+        public static ScriptExecuteEventArgs CreatedBatch(DbConnection connection, IEnumerable<ScriptUnit> scriptUnits, DbBatch batch, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.CreatedBatch,
                 connection,
                 null,
-                scripts,
                 null,
                 null,
                 batch,
                 null,
                 null,
-                null,
-                stackTrace,
-                args,
-                null,
-                dbTransaction,
-                token);
+                scriptUnits,
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs LoadBatchItem(DbConnection connection, IEnumerable<string>? scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, DbBatch batch, DbBatchCommand command, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs LoadBatchItem(DbConnection connection, IEnumerable<ScriptUnit> scriptUnits, DbBatch batch, DbBatchCommand command, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.LoadBatchItem,
                 connection,
                 null,
-                scripts,
                 null,
                 null,
                 batch,
                 command,
                 null,
-                null,
-                stackTrace,
-                args,
-                null,
-                dbTransaction,
-                token);
+                scriptUnits,
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs ExecutedBatch(DbConnection connection, IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, DbBatch batch, TimeSpan? executionTime, TimeSpan fullTime, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs ExecutedBatch(DbConnection connection, IEnumerable<ScriptUnit> scriptUnits, DbBatch batch, TraceUnit traceUnit, int? recordsAffected, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.ExecutedBatch,
                 connection,
                 null,
-                scripts,
                 null,
-                null,
+                recordsAffected,
                 batch,
                 null,
-                executionTime,
-                fullTime,
-                stackTrace,
-                args,
                 null,
-                dbTransaction,
-                token);
-        }
-        public static ScriptExecuteEventArgs BatchException(DbConnection connection, IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? args, DbBatch batch, Exception exception, TimeSpan? executionTime, TimeSpan fullTime, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
-        {
-            return new ScriptExecuteEventArgs(ScriptExecutState.BatchException,
-                connection,
-                null,
-                scripts,
-                exception,
-                null,
-                batch,
-                null,
-                executionTime,
-                fullTime,
-                stackTrace,
-                args,
-                null,
-                dbTransaction,
-                token);
+                scriptUnits,
+                traceUnit,
+                dbTransaction);
         }
 #endif
-        public static ScriptExecuteEventArgs Skip(DbConnection connection, IEnumerable<string> scripts, IEnumerable<KeyValuePair<string, object?>>? args, StackTrace? stackTrace, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs Skip(DbConnection connection, ScriptUnit scriptUnit, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.Skip,
                 connection,
                 null,
-                scripts,
+                null,
+                null,
+#if !NETSTANDARD2_0
+                null,
+                null,
+#endif
+                scriptUnit,
+                null,
+                traceUnit,
+                dbTransaction);
+        }
+        public static ScriptExecuteEventArgs Skip(DbConnection connection, IEnumerable<ScriptUnit> scriptUnits, TraceUnit traceUnit, DbTransaction? dbTransaction)
+        {
+            return new ScriptExecuteEventArgs(ScriptExecutState.Skip,
+                connection,
+                null,
                 null,
                 null,
 #if !NETSTANDARD2_0
@@ -410,112 +516,89 @@ namespace FastBIRe
                 null,
 #endif
                 null,
-                null,
-                stackTrace,
-                args == null ? null : Enumerable.Repeat(args, 1),
-                args,
-                dbTransaction,
-                token);
+                scriptUnits,
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs StartReading(DbConnection connection, DbCommand command, IEnumerable<KeyValuePair<string, object?>>? args, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs StartReading(DbConnection connection, DbCommand command, ScriptUnit scriptUnit, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.StartReading,
                 connection,
                 command,
-                new[] { command.CommandText },
                 null,
                 null,
 #if !NETSTANDARD2_0
                 null,
                 null,
 #endif
-                executingTime,
-                fullTime,
-                stackTrace,
-                args == null ? null : Enumerable.Repeat(args, 1),
-                args,
-                dbTransaction,
-                token);
+                scriptUnit,
+                null,
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs EndReading(DbConnection connection, DbCommand command, IEnumerable<KeyValuePair<string, object?>>? args, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs EndReading(DbConnection connection, DbCommand command, ScriptUnit scriptUnit, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.EndReading,
                 connection,
                 command,
-                new[] { command.CommandText },
                 null,
                 null,
 #if !NETSTANDARD2_0
                 null,
                 null,
 #endif
-                executingTime,
-                fullTime,
-                stackTrace,
-                args == null ? null : Enumerable.Repeat(args, 1),
-                args,
-                dbTransaction,
-                token);
+                scriptUnit,
+                null,
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs BeginTranscation(DbConnection connection, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs BeginTranscation(DbConnection connection, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.BeginTransaction,
                 connection,
                 null,
                 null,
                 null,
-                null,
 #if !NETSTANDARD2_0
                 null,
                 null,
 #endif
-                executingTime,
-                fullTime,
-                stackTrace,
                 null,
                 null,
-                dbTransaction,
-                token);
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs CommitedTransaction(DbConnection connection, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs CommitedTransaction(DbConnection connection, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.CommitedTransaction,
                 connection,
                 null,
                 null,
                 null,
-                null,
 #if !NETSTANDARD2_0
                 null,
                 null,
 #endif
-                executingTime,
-                fullTime,
-                stackTrace,
                 null,
                 null,
-                dbTransaction,
-                token);
+                traceUnit,
+                dbTransaction);
         }
-        public static ScriptExecuteEventArgs RollbackedTransaction(DbConnection connection, StackTrace? stackTrace, TimeSpan? executingTime, TimeSpan? fullTime, DbTransaction? dbTransaction, CancellationToken token)
+        public static ScriptExecuteEventArgs RollbackedTransaction(DbConnection connection, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.RollbackedTransaction,
                 connection,
                 null,
                 null,
                 null,
-                null,
 #if !NETSTANDARD2_0
                 null,
                 null,
 #endif
-                executingTime,
-                fullTime,
-                stackTrace,
                 null,
                 null,
-                dbTransaction,
-                token);
+                traceUnit,
+                dbTransaction);
         }
     }
 }

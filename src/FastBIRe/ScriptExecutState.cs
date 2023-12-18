@@ -10,7 +10,6 @@
         CreatedBatch,
         LoadBatchItem,
         Exception,
-        BatchException,
         Skip,
         StartReading,
         EndReading,

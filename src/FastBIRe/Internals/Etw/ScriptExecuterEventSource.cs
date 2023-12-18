@@ -15,18 +15,17 @@ namespace FastBIRe.Internals.Etw
         private bool IsEnableStackTrace => IsEnabled(EventLevel.Verbose, EventKeywords.All);
 
         [Event(1, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
-        public void WriteBegin(string? connectionString, string? database, string? script, string? stackTrace, string? args)
+        public void WriteBegin(string? connectionString, string? database, string? script, string? stackTrace)
         {
-            EventData* datas = stackalloc EventData[5];
+            EventData* datas = stackalloc EventData[4];
             WriteString(&datas[0], connectionString);
             WriteString(&datas[1], database);
             WriteString(&datas[2], script);
             WriteString(&datas[3], stackTrace);
-            WriteString(&datas[4], args);
-            WriteEventCore(1, 5, datas);
+            WriteEventCore(1, 4, datas);
         }
         [Event(2, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
-        public void WriteCreatedCommand(string? connectionString, string? database, string? script, string? stackTrace, string? args)
+        public void WriteCreatedCommand(string? connectionString, string? database, string? script, string? stackTrace)
         {
             EventData* datas = stackalloc EventData[4];
             WriteString(&datas[0], connectionString);
@@ -36,7 +35,7 @@ namespace FastBIRe.Internals.Etw
             WriteEventCore(2, 4, datas);
         }
         [Event(3, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
-        public void WriteLoadCommand(string? connectionString, string? database, string? script, int timeout, bool inTrans, string? stackTrace, string? args)
+        public void WriteLoadCommand(string? connectionString, string? database, string? script, int timeout, bool inTrans, string? stackTrace)
         {
             EventData* datas = stackalloc EventData[6];
             WriteString(&datas[0], connectionString);
@@ -51,11 +50,11 @@ namespace FastBIRe.Internals.Etw
             WriteEventCore(3, 6, datas);
         }
         [Event(4, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
-        public void WriteExecuted(string? connectionString, string? database, string? script, int timeout, bool inTrans, double executeTime, double fullTime, int recordsAffected, string? stackTrace, string? args)
+        public void WriteExecuted(string? connectionString, string? database, string? script, int timeout, bool inTrans, double executeTime, double fullTime, int recordsAffected, string? stackTrace)
         {
             var aff = recordsAffected < 0 ? 0 : recordsAffected;
             var s = inTrans ? 1 : 0;
-            EventData* datas = stackalloc EventData[10];
+            EventData* datas = stackalloc EventData[9];
             WriteString(&datas[0], connectionString);
             WriteString(&datas[1], database);
             WriteString(&datas[2], script);
@@ -74,15 +73,14 @@ namespace FastBIRe.Internals.Etw
             datas[7].DataPointer = (IntPtr)(&s);
             datas[7].Size = sizeof(int);
             WriteString(&datas[8], stackTrace);
-            WriteString(&datas[9], args);
 
-            WriteEventCore(4, 10, datas);
+            WriteEventCore(4, 9, datas);
         }
         [Event(5, Level = EventLevel.Error, Channel = EventChannel.Analytic, Keywords = KeyWords)]
-        public void WriteException(string? connectionString, string? database, string? script, int timeout, bool inTrans, double executeTime, double fullTime, string? stackTrans, string? exception, string? args)
+        public void WriteException(string? connectionString, string? database, string? script, int timeout, bool inTrans, double executeTime, double fullTime, string? stackTrans, string? exception)
         {
             var s = inTrans ? 1 : 0;
-            EventData* datas = stackalloc EventData[10];
+            EventData* datas = stackalloc EventData[9];
             WriteString(&datas[0], connectionString);
             WriteString(&datas[1], database);
             WriteString(&datas[2], script);
@@ -101,15 +99,14 @@ namespace FastBIRe.Internals.Etw
             datas[7].Size = sizeof(int);
 
             WriteString(&datas[8], exception);
-            WriteString(&datas[9], args);
 
-            WriteEventCore(5, 10, datas);
+            WriteEventCore(5, 9, datas);
         }
         [Event(6, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
-        public void WriteCreateBatch(string? connectionString, string? database, string? script, bool inTrans, string? stackTrace, string? args)
+        public void WriteCreateBatch(string? connectionString, string? database, string? script, bool inTrans, string? stackTrace)
         {
             var s = inTrans ? 1 : 0;
-            EventData* datas = stackalloc EventData[6];
+            EventData* datas = stackalloc EventData[5];
             WriteString(&datas[0], connectionString);
             WriteString(&datas[1], database);
             WriteString(&datas[2], script);
@@ -117,15 +114,14 @@ namespace FastBIRe.Internals.Etw
             datas[3].DataPointer = (IntPtr)(&s);
             datas[3].Size = sizeof(int);
             WriteString(&datas[4], stackTrace);
-            WriteString(&datas[5], args);
 
-            WriteEventCore(6, 6, datas);
+            WriteEventCore(6, 5, datas);
         }
         [Event(7, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
-        public void WriteLoadBatch(string? connectionString, string? database, string? script, bool inTrans, string? stackTrace, string? args)
+        public void WriteLoadBatch(string? connectionString, string? database, string? script, bool inTrans, string? stackTrace)
         {
             var s = inTrans ? 1 : 0;
-            EventData* datas = stackalloc EventData[6];
+            EventData* datas = stackalloc EventData[5];
             WriteString(&datas[0], connectionString);
             WriteString(&datas[1], database);
             WriteString(&datas[2], script);
@@ -134,16 +130,15 @@ namespace FastBIRe.Internals.Etw
             datas[3].Size = sizeof(int);
 
             WriteString(&datas[4], stackTrace);
-            WriteString(&datas[5], args);
 
-            WriteEventCore(7, 6, datas);
+            WriteEventCore(7, 5, datas);
         }
         [Event(8, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
-        public void WriteExecutedBatch(string? connectionString, string? database, string? script, int timeout, bool inTrans, double executeTime, double fullTime, int recordsAffected, string? stackTrace, string? args)
+        public void WriteExecutedBatch(string? connectionString, string? database, string? script, int timeout, bool inTrans, double executeTime, double fullTime, int recordsAffected, string? stackTrace)
         {
             var aff = recordsAffected < 0 ? 0 : recordsAffected;
             var s = inTrans ? 1 : 0;
-            EventData* datas = stackalloc EventData[10];
+            EventData* datas = stackalloc EventData[9];
             WriteString(&datas[0], connectionString);
             WriteString(&datas[1], database);
             WriteString(&datas[2], script);
@@ -163,41 +158,13 @@ namespace FastBIRe.Internals.Etw
             datas[7].Size = sizeof(int);
 
             WriteString(&datas[8], script);
-            WriteString(&datas[9], args);
-            WriteEventCore(8, 10, datas);
-        }
-        [Event(9, Level = EventLevel.Error, Channel = EventChannel.Analytic, Keywords = KeyWords)]
-        public void WriteBatchException(string? connectionString, string? database, string? script, int timeout, bool inTrans, double executeTime, double fullTime, string? stackTrans, string? exception, string? args)
-        {
-            var s = inTrans ? 1 : 0;
-            EventData* datas = stackalloc EventData[10];
-            WriteString(&datas[0], connectionString);
-            WriteString(&datas[1], database);
-            WriteString(&datas[2], script);
-            datas[3].DataPointer = (IntPtr)(&timeout);
-            datas[3].Size = sizeof(int);
-
-            WriteString(&datas[4], stackTrans);
-
-            datas[5].DataPointer = (IntPtr)(&executeTime);
-            datas[5].Size = sizeof(double);
-
-            datas[6].DataPointer = (IntPtr)(&fullTime);
-            datas[6].Size = sizeof(double);
-
-            datas[7].DataPointer = (IntPtr)(&s);
-            datas[7].Size = sizeof(int);
-
-            WriteString(&datas[8], exception);
-            WriteString(&datas[9], args);
-
-            WriteEventCore(9, 10, datas);
+            WriteEventCore(8, 9, datas);
         }
         [Event(10, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
-        public void WriteSkip(string? connectionString, string? database, string? script, bool inTrans, string? stackTrace, string? args)
+        public void WriteSkip(string? connectionString, string? database, string? script, bool inTrans, string? stackTrace)
         {
             var s = inTrans ? 1 : 0;
-            EventData* datas = stackalloc EventData[6];
+            EventData* datas = stackalloc EventData[5];
             WriteString(&datas[0], connectionString);
             WriteString(&datas[1], database);
             WriteString(&datas[2], script);
@@ -206,14 +173,13 @@ namespace FastBIRe.Internals.Etw
             datas[3].Size = sizeof(int);
 
             WriteString(&datas[4], stackTrace);
-            WriteString(&datas[5], args);
-            WriteEventCore(10, 6, datas);
+            WriteEventCore(10, 5, datas);
         }
         [Event(11, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
-        public void WriteStartReading(string? connectionString, string? database, string? script, bool inTrans, int timeout, string? stackTrace, string? args)
+        public void WriteStartReading(string? connectionString, string? database, string? script, bool inTrans, int timeout, string? stackTrace)
         {
             var s = inTrans ? 1 : 0;
-            EventData* datas = stackalloc EventData[7];
+            EventData* datas = stackalloc EventData[6];
             WriteString(&datas[0], connectionString);
             WriteString(&datas[1], database);
             WriteString(&datas[2], script);
@@ -225,14 +191,13 @@ namespace FastBIRe.Internals.Etw
             datas[4].Size = sizeof(int);
 
             WriteString(&datas[5], stackTrace);
-            WriteString(&datas[6], args);
-            WriteEventCore(11, 7, datas);
+            WriteEventCore(11, 6, datas);
         }
         [Event(12, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
-        public void WriteEndReading(string? connectionString, string? database, string? script, bool inTrans, double executeTime, double fullTime, string? stackTrace, string? args)
+        public void WriteEndReading(string? connectionString, string? database, string? script, bool inTrans, double executeTime, double fullTime, string? stackTrace)
         {
             var s = inTrans ? 1 : 0;
-            EventData* datas = stackalloc EventData[8];
+            EventData* datas = stackalloc EventData[7];
             WriteString(&datas[0], connectionString);
             WriteString(&datas[1], database);
             WriteString(&datas[2], script);
@@ -247,8 +212,7 @@ namespace FastBIRe.Internals.Etw
             datas[5].Size = sizeof(int);
 
             WriteString(&datas[6], stackTrace);
-            WriteString(&datas[7], args);
-            WriteEventCore(12, 8, datas);
+            WriteEventCore(12, 7, datas);
         }
         [Event(13, Channel = EventChannel.Analytic, Keywords = KeyWords, Level = EventLevel.Informational)]
         public void WriteBeginTranscation(string? connectionString, string? database, string? script, bool inTrans, double executeTime, double fullTime, string? stackTrace)
@@ -316,53 +280,50 @@ namespace FastBIRe.Internals.Etw
         [NonEvent]
         public void WriteScriptExecuteEventArgs(in ScriptExecuteEventArgs e)
         {
-            var stackTrace = IsEnableStackTrace ? e.StackTrace?.ToString() : null;
-            switch (e.state)
+            var stackTrace = IsEnableStackTrace ? e.TraceUnit?.StackTrace?.ToString() : null;
+            switch (e.State)
             {
                 case ScriptExecutState.Begin:
-                    WriteBegin(e.Connection.ConnectionString, e.Connection.Database, e.Scripts?.FirstOrDefault(), stackTrace, AsString(e.Argss));
+                    WriteBegin(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), stackTrace);
                     break;
                 case ScriptExecutState.CreatedCommand:
-                    WriteCreatedCommand(e.Connection.ConnectionString, e.Connection.Database, e.Scripts?.FirstOrDefault(), stackTrace, AsString(e.Argss));
+                    WriteCreatedCommand(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), stackTrace);
                     break;
                 case ScriptExecutState.LoaedCommand:
-                    WriteLoadCommand(e.Connection.ConnectionString, e.Connection.Database, e.Scripts?.FirstOrDefault(), e.Command!.CommandTimeout, e.Transaction != null, stackTrace, AsString(e.Argss));
+                    WriteLoadCommand(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command!.CommandTimeout, e.Transaction != null, stackTrace);
                     break;
                 case ScriptExecutState.Executed:
-                    WriteExecuted(e.Connection.ConnectionString, e.Connection.Database, e.Scripts?.FirstOrDefault(), e.Command!.CommandTimeout, e.Transaction != null, e.ExecutionTime?.TotalMilliseconds ?? 0, e.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0, stackTrace, AsString(e.Argss));
+                    WriteExecuted(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command!.CommandTimeout, e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0, stackTrace);
                     break;
                 case ScriptExecutState.ExecutedBatch:
-                    WriteExecutedBatch(e.Connection.ConnectionString, e.Connection.Database, ToString(e.Scripts), e.Command!.CommandTimeout, e.Transaction != null, e.ExecutionTime?.TotalMilliseconds ?? 0, e.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0, stackTrace, AsString(e.Argss));
+                    WriteExecutedBatch(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command!.CommandTimeout, e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0, stackTrace);
                     break;
                 case ScriptExecutState.CreatedBatch:
-                    WriteCreateBatch(e.Connection.ConnectionString, e.Connection.Database, ToString(e.Scripts), e.Transaction != null, stackTrace, AsString(e.Argss));
+                    WriteCreateBatch(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, stackTrace);
                     break;
                 case ScriptExecutState.LoadBatchItem:
-                    WriteLoadBatch(e.Connection.ConnectionString, e.Connection.Database, ToString(e.Scripts), e.Transaction != null, stackTrace, AsString(e.Argss));
+                    WriteLoadBatch(e.Connection.ConnectionString, e.Connection.Database,e.GetScriptDebugString(), e.Transaction != null, stackTrace);
                     break;
                 case ScriptExecutState.Exception:
-                    WriteException(e.Connection.ConnectionString, e.Connection.Database, e.Scripts?.FirstOrDefault(), e.Command?.CommandTimeout ?? 0, e.Transaction != null, e.ExecutionTime?.TotalMilliseconds ?? 0, e.FullTime?.TotalMilliseconds ?? 0, e.StackTrace?.ToString(), e.ExecuteException?.ToString(), AsString(e.Argss));
-                    break;
-                case ScriptExecutState.BatchException:
-                    WriteBatchException(e.Connection.ConnectionString, e.Connection.Database, ToString(e.Scripts), e.Command?.CommandTimeout ?? 0, e.Transaction != null, e.ExecutionTime?.TotalMilliseconds ?? 0, e.FullTime?.TotalMilliseconds ?? 0, e.StackTrace?.ToString(), e.ExecuteException?.ToString(), AsString(e.Argss));
+                    WriteException(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command?.CommandTimeout ?? 0, e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.TraceUnit?.StackTrace?.ToString(), e.ExecuteException?.ToString());
                     break;
                 case ScriptExecutState.Skip:
-                    WriteSkip(e.Connection.ConnectionString, e.Connection.Database, ToString(e.Scripts), e.Transaction != null, stackTrace, AsString(e.Argss));
+                    WriteSkip(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, stackTrace);
                     break;
                 case ScriptExecutState.StartReading:
-                    WriteStartReading(e.Connection.ConnectionString, e.Connection.Database, e.Scripts?.FirstOrDefault(), e.Transaction != null, e.Command?.CommandTimeout ?? 0, stackTrace, AsString(e.Argss));
+                    WriteStartReading(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.Command?.CommandTimeout ?? 0, stackTrace);
                     break;
                 case ScriptExecutState.EndReading:
-                    WriteEndReading(e.Connection.ConnectionString, e.Connection.Database, e.Scripts?.FirstOrDefault(), e.Transaction != null, e.ExecutionTime?.TotalMilliseconds ?? 0, e.FullTime?.TotalMilliseconds ?? 0, stackTrace, AsString(e.Argss));
+                    WriteEndReading(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
                     break;
                 case ScriptExecutState.BeginTransaction:
-                    WriteBeginTranscation(e.Connection.ConnectionString, e.Connection.Database, e.Scripts?.FirstOrDefault(), e.Transaction != null, e.ExecutionTime?.TotalMilliseconds ?? 0, e.FullTime?.TotalMilliseconds ?? 0, stackTrace);
+                    WriteBeginTranscation(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
                     break;
                 case ScriptExecutState.CommitedTransaction:
-                    WriteCommitedTransaction(e.Connection.ConnectionString, e.Connection.Database, e.Scripts?.FirstOrDefault(), e.Transaction != null, e.ExecutionTime?.TotalMilliseconds ?? 0, e.FullTime?.TotalMilliseconds ?? 0, stackTrace);
+                    WriteCommitedTransaction(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
                     break;
                 case ScriptExecutState.RollbackedTransaction:
-                    WriteRollbackedTransaction(e.Connection.ConnectionString, e.Connection.Database, e.Scripts?.FirstOrDefault(), e.Transaction != null, e.ExecutionTime?.TotalMilliseconds ?? 0, e.FullTime?.TotalMilliseconds ?? 0, stackTrace);
+                    WriteRollbackedTransaction(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
                     break;
                 default:
                     break;
