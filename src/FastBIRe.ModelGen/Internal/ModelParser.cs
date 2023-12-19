@@ -63,6 +63,8 @@ namespace FastBIRe.ModelGen.Internal
             }
             var nullableEnd = (symbol.IsReferenceType&&(nullableEnable & NullableContext.Enabled) != 0) ? "?" : string.Empty;
 
+            var ctxNullableEnd = (nullableEnable & NullableContext.Enabled) != 0 ? "?" : string.Empty;
+
             var props = symbol.GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(x => x.DeclaredAccessibility== Accessibility.Public&&!x.HasAttribute(Consts.CompilerGeneratedAttribute.FullName)&&!x.HasAttribute(Consts.IgnoreAttribute.FullName))
@@ -139,7 +141,7 @@ namespace FastBIRe.ModelGen.Internal
             var ordians = string.Join("\n", writeReadColumnResults.Select(x => x.OridinalCall+";"));
             var writes = string.Join(",\n", writeReadColumnResults.Select(x => x.WriteCall));
 
-            var deleteByKeyBody = "return global::String.Empty";
+            var deleteByKeyBody = "return global::System.String.Empty;";
             var keyProp = props.Where(x => x.IsKey).ToImmutableList();
             if (keyProp.Count != 0)
             {
@@ -147,7 +149,7 @@ namespace FastBIRe.ModelGen.Internal
 return $""DELETE FROM {{escaper.Quto(tableName)}} WHERE {string.Join(" AND ", keyProp.Select(x=>$"{{escaper.Quto(\"{x.Symbol.Name}\")}} = {{escaper.WrapValue(instance.{x.Symbol.Name})}}"))}"";";
             }
 
-            var updateByKeyBody = "return global::String.Empty";
+            var updateByKeyBody = "return global::System.String.Empty;";
             if (keyProp.Count != 0)
             {
                 updateByKeyBody = @$"global::FastBIRe.Wrapping.IEscaper escaper = global::FastBIRe.SqlTypGetExtensions.GetEscaper(sqlType);
@@ -203,22 +205,22 @@ return $""UPDATE {{escaper.Quto(tableName)}} SET {string.Join(", ",props.Except(
                                 return false;
                         }}
                     }}
-                    public global::System.Boolean TryGetValue<T>(global::System.Object instance, global::System.String propertyName, out T{nullableEnd} value)
+                    public global::System.Boolean TryGetValue<T>(global::System.Object instance, global::System.String propertyName, out T{ctxNullableEnd} value)
                     {{
                         var inst=({fullName})instance;
                         switch(propertyName)
                         {{
-                            {string.Join("\n", props.Select(x => $"case \"{x.Symbol.Name}\":value=AsOrCase<{x.Symbol.Type},T{nullableEnd}>(inst.{x.Symbol.Name});return true;"))}
+                            {string.Join("\n", props.Select(x => $"case \"{x.Symbol.Name}\":value=AsOrCase<{x.Symbol.Type},T{ctxNullableEnd}>(inst.{x.Symbol.Name});return true;"))}
                             default:
                                 value = default(T);
                                 return false;
                         }}
                     }}
-                    private TOutput{nullableEnd} AsOrCase<TInput,TOutput>(TInput input)
+                    private TOutput{ctxNullableEnd} AsOrCase<TInput,TOutput>(TInput input)
                     {{
                         if(typeof(TInput) == typeof(TOutput))
-                            return global::System.Runtime.CompilerServices.Unsafe.As<TInput,TOutput{nullableEnd}>(ref input);
-                        return (TOutput{nullableEnd})Convert.ChangeType(input, typeof(TOutput),null);
+                            return global::System.Runtime.CompilerServices.Unsafe.As<TInput,TOutput{ctxNullableEnd}>(ref input);
+                        return (TOutput{ctxNullableEnd})Convert.ChangeType(input, typeof(TOutput),null);
                     }}
                     public global::System.Boolean TryGetValue({fullName} instance, global::System.String propertyName, out global::System.Object? value)
                     {{
@@ -234,7 +236,7 @@ return $""UPDATE {{escaper.Quto(tableName)}} SET {string.Join(", ",props.Except(
                     {{
                         switch(propertyName)
                         {{
-                            {string.Join("\n", props.Select(x => $"case \"{x.Symbol.Name}\":value=AsOrCase<{x.Symbol.Type},TValue{nullableEnd}>(instance.{x.Symbol.Name});return true;"))}
+                            {string.Join("\n", props.Select(x => $"case \"{x.Symbol.Name}\":value=AsOrCase<{x.Symbol.Type},TValue{ctxNullableEnd}>(instance.{x.Symbol.Name});return true;"))}
                             default:
                                 value = default(TValue);
                                 return false;
@@ -300,7 +302,7 @@ return $""UPDATE {{escaper.Quto(tableName)}} SET {string.Join(", ",props.Except(
                     {{
                         return Config{symbol.Name}(builder,name,null);
                     }}
-                    public static global::FastBIRe.Builders.ITablesProviderBuilder Config{symbol.Name}(this global::FastBIRe.Builders.ITablesProviderBuilder builder,global::System.String name,Action<global::FastBIRe.Builders.ITableBuilder>{nullableEnd} config = null)
+                    public static global::FastBIRe.Builders.ITablesProviderBuilder Config{symbol.Name}(this global::FastBIRe.Builders.ITablesProviderBuilder builder,global::System.String name,Action<global::FastBIRe.Builders.ITableBuilder>{ctxNullableEnd} config = null)
                     {{
                         var tableBuilder = builder.GetTableBuilder(name);
                         {(string.IsNullOrEmpty(@namespace)?string.Empty:(@namespace+ "."))}{className}.Instance.Config(tableBuilder);
