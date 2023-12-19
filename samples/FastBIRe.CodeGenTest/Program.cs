@@ -1,4 +1,5 @@
-﻿using FastBIRe;
+﻿using DatabaseSchemaReader.DataSchema;
+using FastBIRe;
 using FastBIRe.Annotations;
 using FastBIRe.Builders;
 using Microsoft.Data.Sqlite;
@@ -16,6 +17,7 @@ internal class Program
             .ConfigStudent("student")
             .BuildContext(executer);
         await ctx.ExecuteMigrationScriptsAsync();
+
         for (int i = 0; i < 100; i++)
         {
             await executer.ExecuteAsync(CreateInsertSql());
@@ -39,7 +41,13 @@ internal class Program
 
     public static string CreateInsertSql()
     {
-        return $"INSERT INTO [student](name,Age,Flag) VALUES(\'awdaw{Random.Shared.Next()}\',{Random.Shared.Next()},{Random.Shared.Next()})";
+        return StudentModel.Instance.CreateInsertSql(SqlType.SQLite, "student", new Student
+        {
+            Age = Random.Shared.Next(),
+            Flag = Random.Shared.Next(),
+            Id = Random.Shared.Next(),
+            Name = Random.Shared.Next() + "dsawdqawd"
+        });
     }
 }
 [GenerateModel]
@@ -50,12 +58,13 @@ public record class Student
     [ColumnName("id")]
     public int Id { get; set; }
 
-    [Index]
+    [Index(IndexName = "dsioahgwodhq", IndexGroup = 1)]
     [Required]
     [ColumnName("name")]
     [MaxLength(256)]
     public string? Name { get; set; }
 
+    [Index(IndexGroup = 1, IsDesc = true)]
     [Required]
     public long Age { get; set; }
 
