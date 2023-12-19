@@ -53,5 +53,13 @@ namespace FastBIRe.Benchmarks.Actions
         {
             await scriptExecuter.ReadOneAsync<int>("SELECT 1");
         }
+        [Benchmark]
+        public async Task EnumerableExecute()
+        {
+            await foreach (var item in scriptExecuter.EnumerableAsync<int>("SELECT 1"))
+            {
+
+            }
+        }
     }
 }

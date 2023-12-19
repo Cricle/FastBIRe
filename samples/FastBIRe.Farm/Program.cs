@@ -77,9 +77,9 @@ namespace FastBIRe.Farm
             await farm.DestFarmWarehouse.ScriptExecuter.ExecuteAsync("SET memory_limit='128MB';");
             farm.DestFarmWarehouse.ScriptExecuter.RegistScriptStated((o, e) =>
             {
-                if (e.State == ScriptExecutState.Executed || e.State == ScriptExecutState.EndReading)
+                if (e.TryToKnowString(out var msg))
                 {
-                    Console.WriteLine($"Executed({e.ExecutionTime?.TotalMilliseconds:F3}ms) {e.Script}");
+                    Console.WriteLine(msg);
                 }
             });
             var storage = new FolderCheckpointStorage(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, farm.SourceFarmWarehouse.SqlType.ToString(), "checkpoints"));

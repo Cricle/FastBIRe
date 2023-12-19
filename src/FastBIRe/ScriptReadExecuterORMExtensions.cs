@@ -158,7 +158,7 @@ namespace FastBIRe
                 return EmptyTaskResult<T>.EmptyResult;
             }, args: PrepareArgs(args), token: token);
         }
-        public static T? ReadOneAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null)
+        public static T? ReadOne<T>(this IScriptExecuter scriptExecuter, string script, object? args = null)
         {
             return scriptExecuter.ReadResult(script, static (o, e) =>
             {

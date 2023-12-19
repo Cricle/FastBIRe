@@ -21,6 +21,7 @@
             IsDateTime = typeof(T) == typeof(DateTime) || typeof(T) == typeof(DateTime?);
             IsDecimal = typeof(T) == typeof(decimal) || typeof(T) == typeof(decimal?);
             IsString = typeof(T) == typeof(string);
+            IsNullable = typeof(T).IsGenericType && typeof(T).GetElementType() == typeof(Nullable<>);
         }
 
         public static readonly bool IsBool;
@@ -39,5 +40,7 @@
         public static readonly bool IsGuid;
         public static readonly bool IsDateTime;
         public static readonly bool IsDecimal;
+
+        public static readonly bool IsNullable;
     }
 }

@@ -12,7 +12,7 @@ internal class Program
         conn.Open();
         var executer = new DefaultScriptExecuter(conn);
         executer.ScriptStated += OnScriptStated;
-        var ctx = new TablesProviderBuilder(conn.GetRequiredSqlType())
+        var ctx = conn.CreateTablesProviderBuilder()
             .ConfigStudent("student")
             .BuildContext(executer);
         await ctx.ExecuteMigrationScriptsAsync();
@@ -22,9 +22,9 @@ internal class Program
         }
         for (int i = 0; i < 2; i++)
         {
-            await foreach (var item in executer.EnumerableAsync<Student>("SELECT * FROM student WHERE id%10=0"))
+            foreach (var item in executer.Enumerable<Student>("SELECT * FROM student WHERE id%10=@p1", new { p1 = 0 }))
             {
-                Console.WriteLine(item);
+                //Console.WriteLine(item);
             }
         }
     }

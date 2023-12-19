@@ -40,13 +40,13 @@ namespace FastBIRe
 
         public int CommandTimeout { get; set; } = DefaultCommandTimeout;
 
-        public bool UseBatch { get; set; }
+        public bool UseBatch { get; set; } = true;
 
         public bool CaptureStackTrace { get; set; }
 
         public bool StackTraceNeedFileInfo { get; set; } = true;
 
-        public bool EnableSqlParameterConversion { get; set; }
+        public bool EnableSqlParameterConversion { get; set; } = true;
 
         public bool EnableSqlQutoConversion { get; set; }
 
