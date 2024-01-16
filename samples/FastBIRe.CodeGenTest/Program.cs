@@ -16,19 +16,27 @@ internal class Program
         var ctx = conn.CreateTablesProviderBuilder()
             .ConfigStudent("student")
             .BuildContext(executer);
+        Console.ReadLine();
         await ctx.ExecuteMigrationScriptsAsync();
 
-        for (int i = 0; i < 100; i++)
+        while (true)
         {
-            await executer.ExecuteAsync(CreateInsertSql());
-        }
-        for (int i = 0; i < 2; i++)
-        {
-            foreach (var item in executer.Enumerable<Student>("SELECT * FROM student WHERE id%10=@p1", new { p1 = 0 }))
+            executer.BeginTransaction();
+            for (int i = 0; i < 100; i++)
             {
-                //Console.WriteLine(item);
+                await executer.ExecuteAsync(CreateInsertSql());
             }
+            for (int i = 0; i < 2; i++)
+            {
+                foreach (var item in executer.Enumerable<Student>("SELECT * FROM student WHERE id%10=@p1", new { p1 = 0 }))
+                {
+                    //Console.WriteLine(item);
+                }
+            }
+            executer.Commit();
+            await Task.Delay(Random.Shared.Next(0, 1000));
         }
+        Console.ReadLine();
     }
 
     private static void OnScriptStated(object? sender, ScriptExecuteEventArgs e)

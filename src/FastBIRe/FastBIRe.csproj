@@ -17,6 +17,8 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
 		<ProjectReference Include="../FastBIRe.ModelGen/FastBIRe.ModelGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="None" />
+		<ProjectReference Include="..\Diagnostics.Generator.Core\Diagnostics.Generator.Core.csproj" />
+		<ProjectReference Include="..\Diagnostics.Generator\Diagnostics.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
 		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />

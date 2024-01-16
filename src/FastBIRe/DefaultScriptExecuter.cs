@@ -1,5 +1,5 @@
 ﻿using DatabaseSchemaReader.DataSchema;
-using FastBIRe.Internals.Etw;
+using FastBIRe.Internals;
 using FastBIRe.Wrapping;
 using System.Data.Common;
 

@@ -8,7 +8,7 @@ using System.Collections;
 using System.Data;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
-
+[module: DapperAot]
 namespace FastBIRe.Benchmarks.Actions
 {
     [MemoryDiagnoser]

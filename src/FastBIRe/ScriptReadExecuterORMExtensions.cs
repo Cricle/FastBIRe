@@ -131,6 +131,14 @@ namespace FastBIRe
                 return Task.CompletedTask;
             }, token: token);
         }
+        public static Task<int> ExecuteAsync(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
+        {
+            return scriptExecuter.ExecuteAsync(script, args: PrepareArgs(args), token: token);
+        }
+        public static int Execute(this IScriptExecuter scriptExecuter, string script, object? args = null, CancellationToken token = default)
+        {
+            return scriptExecuter.Execute(script, args: PrepareArgs(args), token: token);
+        }
         public static Task ReadAsync(this IScriptExecuter scriptExecuter,string script, ReadDataHandlerSync handler,  object? args = null, CancellationToken token = default)
         {
             return scriptExecuter.ReadAsync(script, (o, e) =>
