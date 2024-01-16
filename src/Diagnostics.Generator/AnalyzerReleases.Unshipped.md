@@ -11,4 +11,4 @@ DG0003 | Diagnostics.Generator | Error | Related activity id must guid
 DG0004 | Diagnostics.Generator | Error | Field type must int, long, double, float, IncrementingEventCounter, EventCounter
 DG0005 | Diagnostics.Generator | Error | Counter type is IncrementingEventCounter, EventCounter, the field type must be that
 DG0006 | Diagnostics.Generator | Error | IncrementingPollingCounter, IncrementingEventCounter must input DisplayRateTimeScaleMs and more than zero
-DG0007 | Diagnostics.Generator | Error | PollingCounter or IncrementingPollingCounter field type must int, long, double, float
+DG0007 | Diagnostics.Generator | Error | PollingCounter or IncrementingPollingCounter field type must long, double, float

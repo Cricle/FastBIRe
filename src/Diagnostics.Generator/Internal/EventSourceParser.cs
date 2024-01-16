@@ -77,7 +77,6 @@ namespace Diagnostics.Generator.Internal
         {
             switch (type.SpecialType)
             {
-                case SpecialType.System_Int32:
                 case SpecialType.System_Int64:
                 case SpecialType.System_Single:
                 case SpecialType.System_Double:
@@ -198,7 +197,7 @@ namespace Diagnostics.Generator.Internal
                     specialName = char.ToUpper(specialName[0]) + specialName.Substring(1);
                     addins.AppendLine($@"
 [global::System.Diagnostics.Tracing.NonEventAttribute]
-public void Increment{specialName}(global::System.Int32 inc=1)
+public void Increment{specialName}({item.Type} inc=1)
 {{
     if(inc==1)
         global::System.Threading.Interlocked.Increment(ref {item.Name});
