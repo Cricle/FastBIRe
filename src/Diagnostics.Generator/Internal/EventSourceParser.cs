@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -146,18 +147,18 @@ namespace Diagnostics.Generator.Internal
         {
             var counter = symbol.GetMembers()
                 .OfType<IFieldSymbol>()
-                .Where(x => x.HasAttribute(Consts.CounterAttibute.Name))
+                .Where(x => x.HasAttribute(Consts.CounterAttribute.Name))
                 .ToList();
             var addins = new StringBuilder();
             var bodys = new StringBuilder();
             foreach (var item in counter)
             {
-                var counterAttr = item.GetAttribute(Consts.CounterAttibute.Name)!;
+                var counterAttr = item.GetAttribute(Consts.CounterAttribute.Name)!;
                 var name = counterAttr.GetByIndex<string>(0)!;
                 var type = counterAttr.GetByIndex<CounterTypes>(1);
-                var displayRateTimeScaleMs = counterAttr.GetByNamed<double>(Consts.CounterAttibute.DisplayRateTimeScaleMs);
-                var displayUnits = counterAttr.GetByNamed<string>(Consts.CounterAttibute.DisplayUnits);
-                var displayName = counterAttr.GetByNamed<string>(Consts.CounterAttibute.DisplayName);
+                var displayRateTimeScaleMs = counterAttr.GetByNamed<double>(Consts.CounterAttribute.DisplayRateTimeScaleMs);
+                var displayUnits = counterAttr.GetByNamed<string>(Consts.CounterAttribute.DisplayUnits);
+                var displayName = counterAttr.GetByNamed<string>(Consts.CounterAttribute.DisplayName);
 
                 var typeName = GetCounterName(type);
                 var isSupportCounterType = IsSupportCounterType(item.Type);

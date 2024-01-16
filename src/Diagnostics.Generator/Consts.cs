@@ -24,9 +24,9 @@
         {
             public const string Name = "Diagnostics.Generator.Core.Annotations.RelatedActivityIdAttribute";
         }
-        public static class CounterAttibute
+        public static class CounterAttribute
         {
-            public const string Name = "Diagnostics.Generator.Core.Annotations.CounterAttibute";
+            public const string Name = "Diagnostics.Generator.Core.Annotations.CounterAttribute";
 
             public const string DisplayRateTimeScaleMs = "DisplayRateTimeScaleMs";
 
