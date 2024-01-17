@@ -33,8 +33,7 @@ namespace Diagnostics.Generator.Internal
 
             var methods = symbol.GetMembers()
                 .OfType<IMethodSymbol>()
-                .Where(x => x.HasAttribute(Consts.EventAttribute.Name) && (x.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is MethodDeclarationSyntax m &&
-                    m.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword))))
+                .Where(x => x.HasAttribute(Consts.EventAttribute.Name) && HasKeyword(x, SyntaxKind.PartialKeyword))
                 .ToList();
             var command = GenerateOnEventCommand(symbol, ctxNullableEnd, out var diagnostic);
             if (diagnostic != null)
@@ -53,12 +52,32 @@ namespace Diagnostics.Generator.Internal
                 }
                 methodBody.AppendLine(str);
             }
+            var classHasUnsafe = HasKeyword(symbol, SyntaxKind.UnsafeKeyword);
+            var unsafeKeyword = classHasUnsafe ? "unsafe" : string.Empty;
+            var interfaceBody = string.Empty;
+            var importInterface = string.Empty;
+            var attr = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.Name)!;
+            if (attr.GetByNamed<bool>(Consts.EventSourceGenerateAttribute.IncludeInterface))
+            {
+                var interfaceAccessibility = (Accessibility)attr.GetByNamed<int>(Consts.EventSourceGenerateAttribute.InterfaceVisilbility);
+                if (interfaceAccessibility== Accessibility.NotApplicable)
+                {
+                    interfaceAccessibility = Accessibility.Public;
+                }
+                var interfaceAccessibilityStr = GeneratorTransformResult<ISymbol>.GetAccessibilityString(interfaceAccessibility);
+                interfaceBody = $@"
+{interfaceAccessibilityStr} interface I{symbol.Name}
+{{
+    {string.Join("\n", methods.Select(GenerateInterfaceMethod))}
+}}
+";
+                importInterface = $":I{symbol.Name}";
+            }
             var code = @$"
 #nullable enable
             {nameSpaceStart}
 
-                {Consts.CompilerGenerated}
-                {visibility} partial class {className}
+                {visibility} {unsafeKeyword} partial class {className} {importInterface}
                 {{
                     {methodBody}
 
@@ -66,12 +85,17 @@ namespace Diagnostics.Generator.Internal
                     [global::System.Diagnostics.Tracing.NonEventAttribute]
                     partial void OnEventCommandExecuted(global::System.Diagnostics.Tracing.EventCommandEventArgs command);
                 }}
+                {interfaceBody}
             }}
 #nullable restore
                 ";
 
             code = Helpers.FormatCode(code);
             context.AddSource($"{className}.g.cs", code);
+        }
+        private string GenerateInterfaceMethod(IMethodSymbol method)
+        {
+            return $@"{method.ReturnType} {method.Name}({string.Join(",",method.Parameters)});";
         }
         private bool IsSupportCounterType(ITypeSymbol type)
         {
@@ -128,16 +152,32 @@ namespace Diagnostics.Generator.Internal
         private string GenerateCreateCounter(string left, string name, CounterTypes type, double displayRateTimeScaleMs, string? displayUnits, string? displayName, string? right)
         {
             var typeName = GetCounterName(type);
+            if (string.IsNullOrEmpty(displayName))
+            {
+                displayName = "global::System.String.Empty";
+            }
+            else
+            {
+                displayName= $"\"{displayName}\"";
+            }
+            if (string.IsNullOrEmpty(displayUnits))
+            {
+                displayUnits = "global::System.String.Empty";
+            }
+            else
+            {
+                displayUnits = $"\"{displayUnits}\"";
+            }
             switch (type)
             {
                 case CounterTypes.EventCounter:
-                    return $"{left} new {typeName}(\"{name}\",this){{ DisplayName = \"{displayName}\",DisplayUnits=\"{displayUnits}\" }}";
+                    return $"{left} new {typeName}(\"{name}\",this){{ DisplayName = {displayName},DisplayUnits={displayUnits} }}";
                 case CounterTypes.IncrementingEventCounter:
-                    return $"{left} new {typeName}(\"{name}\",this){{ DisplayName = \"{displayName}\",DisplayUnits=\"{displayUnits}\", DisplayRateTimeScale=global::System.TimeSpan.FromMilliseconds({displayRateTimeScaleMs})}}";
+                    return $"{left} new {typeName}(\"{name}\",this){{ DisplayName = {displayName},DisplayUnits={displayUnits}, DisplayRateTimeScale=global::System.TimeSpan.FromMilliseconds({displayRateTimeScaleMs})}}";
                 case CounterTypes.PollingCounter:
-                    return $"{left} new {typeName}(\"{name}\",this,{right}){{ DisplayName = \"{displayName}\",DisplayUnits=\"{displayUnits}\" }}";
+                    return $"{left} new {typeName}(\"{name}\",this,{right}){{ DisplayName = {displayName},DisplayUnits={displayUnits} }}";
                 case CounterTypes.IncrementingPollingCounter:
-                    return $"{left} new {typeName}(\"{name}\",this{right}){{ DisplayName = \"{displayName}\",DisplayUnits=\"{displayUnits}\", DisplayRateTimeScale=global::System.TimeSpan.FromMilliseconds({displayRateTimeScaleMs})}}";
+                    return $"{left} new {typeName}(\"{name}\",this,{right}){{ DisplayName = {displayName},DisplayUnits={displayUnits}, DisplayRateTimeScale=global::System.TimeSpan.FromMilliseconds({displayRateTimeScaleMs})}}";
                 default:
                     throw new NotSupportedException(type.ToString());
             }
@@ -195,17 +235,33 @@ namespace Diagnostics.Generator.Internal
                     addins.AppendFormat("private {0}{1} {2}; \n", typeName, nullableTail, counterName);
                     var specialName = item.Name.TrimStart('_');
                     specialName = char.ToUpper(specialName[0]) + specialName.Substring(1);
+
+                    var invokeBody = $"global::System.Threading.Interlocked.Read(ref {item.Name})";
+                    var parType = item.Type;
+                    if (parType.SpecialType!= SpecialType.System_Int64)
+                    {
+                        invokeBody = $"global::System.Threading.Volatile.Read(ref {item.Name})";//Thread safe?
+                    }
+                    var addinBody = $@"    
+if(inc==1)
+    global::System.Threading.Interlocked.Increment(ref {item.Name});
+else
+    global::System.Threading.Interlocked.Add(ref {item.Name},inc);
+";
+                    if (parType.SpecialType == SpecialType.System_Single||parType.SpecialType== SpecialType.System_Double)
+                    {
+                        addinBody = $@"
+    global::Diagnostics.Generator.Core.InterlockedHelper.Add(ref {item.Name},inc);
+";
+                    }
                     addins.AppendLine($@"
 [global::System.Diagnostics.Tracing.NonEventAttribute]
 public void Increment{specialName}({item.Type} inc=1)
 {{
-    if(inc==1)
-        global::System.Threading.Interlocked.Increment(ref {item.Name});
-    else
-        global::System.Threading.Interlocked.Add(ref {item.Name},inc);
+    {addinBody}
 }}
 ");
-                    bodys.AppendLine(GenerateCreateCounter($"{counterName} ??=", name, type, displayRateTimeScaleMs, displayUnits, displayName, $"()=>global::System.Threading.Interlocked.Read(ref {item.Name})") + ";");
+                    bodys.AppendLine(GenerateCreateCounter($"{counterName} ??=", name, type, displayRateTimeScaleMs, displayUnits, displayName, $"()=> {invokeBody}") + ";");
                 }
             }
 
@@ -271,6 +327,27 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             }
             return false;
         }
+        private bool HasKeyword(ISymbol symbol, SyntaxKind kind)
+        {
+            var syntax = symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax();
+            if (symbol == null)
+            {
+                return false;
+            }
+            if (syntax is MemberDeclarationSyntax m)
+            {
+                return m.Modifiers.Any(x => x.IsKind(kind));
+            }
+            if (syntax is ClassDeclarationSyntax c)
+            {
+                return c.Modifiers.Any(x => x.IsKind(kind));
+            }
+            if (syntax is StructDeclarationSyntax s)
+            {
+                return s.Modifiers.Any(x => x.IsKind(kind));
+            }
+            return false;
+        }
         private string GenerateMethod(IMethodSymbol method, out Diagnostic? diagnostic)
         {
             var pars = method.Parameters;
@@ -305,9 +382,13 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             var actualDatasCount = pars.Length - relatedActivityIds.Count;
             var datasDeclare = $"global::System.Diagnostics.Tracing.EventSource.EventData* datas = stackalloc global::System.Diagnostics.Tracing.EventSource.EventData[{actualDatasCount}];";
             var datasPar = "datas";
+            if (!HasKeyword(method, SyntaxKind.UnsafeKeyword))
+            {
+                unsafeKeyWord = string.Empty;
+            }
             if (actualDatasCount == 0)
             {
-                unsafeKeyWord = datasDeclare = string.Empty;
+                datasDeclare = string.Empty;
                 datasPar = "null";
             }
 
@@ -318,13 +399,24 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             {
                 invokeMethod = $"WriteEvent({eventId});";
             }
+            var argList = string.Join(",", pars.Select(x => x.ToString()));
+            var parExecuteDeclare = string.Empty;
+            var invokeParDeclare = string.Empty;
+            if (method.ReturnsVoid)
+            {
+                parExecuteDeclare = $"partial void On{method.Name}({argList});";
+                invokeParDeclare = $"On{method.Name}({string.Join(",", pars.Select(x => x.Name))});";
+            }
             var s = $@"
-{GeneratorTransformResult<ISymbol>.GetAccessibilityString(method.DeclaredAccessibility)} {unsafeKeyWord} partial {method.ReturnType} {method.Name}({string.Join(",", pars.Select(x => x.ToString()))})
+{GeneratorTransformResult<ISymbol>.GetAccessibilityString(method.DeclaredAccessibility)} {unsafeKeyWord} partial {method.ReturnType} {method.Name}({argList})
 {{
     {datasDeclare}
     {string.Join("\n", pars.Except(relatedActivityIds).Select(GenerateWrite))}
     {invokeMethod}
-}}";
+    {invokeParDeclare}
+}}
+{parExecuteDeclare}
+";
             diagnostic = null;
             return s;
         }

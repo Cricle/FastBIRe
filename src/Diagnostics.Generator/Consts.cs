@@ -15,6 +15,10 @@
         public static class EventSourceGenerateAttribute
         {
             public const string Name = "Diagnostics.Generator.Core.Annotations.EventSourceGenerateAttribute";
+
+            public const string IncludeInterface = "IncludeInterface";
+
+            public const string InterfaceVisilbility = "InterfaceAccessibility";
         }
         public static class EventAttribute
         {
