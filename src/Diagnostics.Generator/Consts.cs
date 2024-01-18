@@ -19,6 +19,8 @@
             public const string IncludeInterface = "IncludeInterface";
 
             public const string InterfaceVisilbility = "InterfaceAccessibility";
+
+            public const string GenerateSingleton = "GenerateSingleton";
         }
         public static class EventAttribute
         {

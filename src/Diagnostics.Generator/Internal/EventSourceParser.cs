@@ -55,8 +55,20 @@ namespace Diagnostics.Generator.Internal
             var classHasUnsafe = HasKeyword(symbol, SyntaxKind.UnsafeKeyword);
             var unsafeKeyword = classHasUnsafe ? "unsafe" : string.Empty;
             var interfaceBody = string.Empty;
-            var importInterface = string.Empty;
+            var imports = new List<string>();
+            var eventSourceSymbol=node.SemanticModel.Compilation.GetTypeByMetadataName("System.Diagnostics.Tracing.EventSource");
+            if (symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is ClassDeclarationSyntax classDeclarationSyntax
+                && !(classDeclarationSyntax.BaseList?.Types.Any(x => SymbolEqualityComparer.Default.Equals(node.SemanticModel.GetSymbolInfo(x.Type).Symbol, eventSourceSymbol)) ?? false))
+            {
+                imports.Add("global::System.Diagnostics.Tracing.EventSource");
+            }
             var attr = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.Name)!;
+            var singletonExpression = string.Empty;
+
+            if (attr.GetByNamed<bool>(Consts.EventSourceGenerateAttribute.GenerateSingleton))
+            {
+                singletonExpression = $"public static readonly global::{symbol} Instance = new global::{symbol}();";
+            }
             if (attr.GetByNamed<bool>(Consts.EventSourceGenerateAttribute.IncludeInterface))
             {
                 var interfaceAccessibility = (Accessibility)attr.GetByNamed<int>(Consts.EventSourceGenerateAttribute.InterfaceVisilbility);
@@ -71,14 +83,22 @@ namespace Diagnostics.Generator.Internal
     {string.Join("\n", methods.Select(GenerateInterfaceMethod))}
 }}
 ";
-                importInterface = $":I{symbol.Name}";
+                imports.Add($"I{symbol.Name}");
+
+            }
+            var importExpression = string.Empty;
+            if (imports.Count!=0)
+            {
+                importExpression = ":" + string.Join(",", imports);
             }
             var code = @$"
 #nullable enable
             {nameSpaceStart}
 
-                {visibility} {unsafeKeyword} partial class {className} {importInterface}
-                {{
+                {visibility} {unsafeKeyword} partial class {className} {importExpression}
+                {{ 
+                    {singletonExpression}
+
                     {methodBody}
 
                     {command}

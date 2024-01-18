@@ -8,5 +8,7 @@ namespace Diagnostics.Generator.Core.Annotations
         public bool IncludeInterface { get; set; }
 
         public Accessibility InterfaceAccessibility { get; set; }
+
+        public bool GenerateSingleton { get; set; }
     }
 }

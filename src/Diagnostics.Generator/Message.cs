@@ -40,5 +40,13 @@ namespace Diagnostics.Generator
             "EventSourceGenerator",
             "PollingCounter or IncrementingPollingCounter field type must int, long, double, float", Category,
              DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor NameNeedEndWithEventSource = new DiagnosticDescriptor("DG0008",
+            "EventSourceGenerator",
+            "The event source name recommendation end with EventSource, such as ProcessEventSource", Category,
+             DiagnosticSeverity.Info, true);
+        public static readonly DiagnosticDescriptor WriteEventBody = new DiagnosticDescriptor("DG0009",
+            "EventSourceGenerator",
+            "Auto write event body", Category,
+             DiagnosticSeverity.Info, true);
     }
 }
