@@ -102,7 +102,7 @@ namespace Diagnostics.Generator.CodeFixes
                             SyntaxFactory.ConditionalExpression(
                                 SyntaxFactory.BinaryExpression(
                                     SyntaxKind.EqualsExpression,
-                                    SyntaxFactory.IdentifierName("id"),
+                                    SyntaxFactory.IdentifierName(name),
                                     SyntaxFactory.LiteralExpression(
                                         SyntaxKind.NullLiteralExpression)),
                                 SyntaxFactory.MemberAccessExpression(
@@ -157,7 +157,7 @@ namespace Diagnostics.Generator.CodeFixes
                                                             SyntaxFactory.IdentifierName("GetReference")))
                                                     .WithArgumentList(
                                                         SyntaxFactory.ArgumentList(
-                                                            arguments: SyntaxFactory.SingletonSeparatedList<ArgumentSyntax>(
+                                                            arguments: SyntaxFactory.SingletonSeparatedList(
                                                                 SyntaxFactory.Argument(
                                                                     SyntaxFactory.InvocationExpression(
                                                                         SyntaxFactory.MemberAccessExpression(
@@ -173,7 +173,7 @@ namespace Diagnostics.Generator.CodeFixes
                             SyntaxFactory.ConditionalExpression(
                                 SyntaxFactory.BinaryExpression(
                                     SyntaxKind.EqualsExpression,
-                                    SyntaxFactory.IdentifierName("id"),
+                                    SyntaxFactory.IdentifierName(name),
                                     SyntaxFactory.LiteralExpression(
                                         SyntaxKind.NullLiteralExpression)),
                                 SyntaxFactory.LiteralExpression(
@@ -188,7 +188,7 @@ namespace Diagnostics.Generator.CodeFixes
                                                 SyntaxKind.AddExpression,
                                                 SyntaxFactory.MemberAccessExpression(
                                                     SyntaxKind.SimpleMemberAccessExpression,
-                                                    SyntaxFactory.IdentifierName("id"),
+                                                    SyntaxFactory.IdentifierName(name),
                                                     SyntaxFactory.IdentifierName("Length")),
                                                 SyntaxFactory.LiteralExpression(
                                                     SyntaxKind.NumericLiteralExpression,

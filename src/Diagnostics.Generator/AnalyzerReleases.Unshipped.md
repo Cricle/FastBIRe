@@ -13,3 +13,4 @@ DG0005 | Diagnostics.Generator | Error | Counter type is IncrementingEventCounte
 DG0006 | Diagnostics.Generator | Error | IncrementingPollingCounter, IncrementingEventCounter must input DisplayRateTimeScaleMs and more than zero
 DG0007 | Diagnostics.Generator | Error | PollingCounter or IncrementingPollingCounter field type must long, double, float
 DG0008 | Diagnostics.Generator | Info | The event source name recommendation end with EventSource, such as ProcessEventSource
+DG0009 | Diagnostics.Generator | Info | Auto write event body

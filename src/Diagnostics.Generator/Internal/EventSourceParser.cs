@@ -92,6 +92,7 @@ namespace Diagnostics.Generator.Internal
                 importExpression = ":" + string.Join(",", imports);
             }
             var code = @$"
+#pragma warning disable CS8604
 #nullable enable
             {nameSpaceStart}
 
@@ -108,6 +109,7 @@ namespace Diagnostics.Generator.Internal
                 {interfaceBody}
             }}
 #nullable restore
+#pragma warning restore
                 ";
 
             code = Helpers.FormatCode(code);
