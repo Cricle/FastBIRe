@@ -39,7 +39,7 @@ namespace Diagnostics.Generator
         public static readonly DiagnosticDescriptor PollingCounterMustSimpleType = new DiagnosticDescriptor("DG0007",
             "EventSourceGenerator",
             "PollingCounter or IncrementingPollingCounter field type must int, long, double, float", Category,
-             DiagnosticSeverity.Error, true);
+             DiagnosticSeverity.Warning, true);
         public static readonly DiagnosticDescriptor NameNeedEndWithEventSource = new DiagnosticDescriptor("DG0008",
             "The event source name recommendation end with EventSource, such as ProcessEventSource",
             "The event source name recommendation end with EventSource, such as ProcessEventSource", Category,

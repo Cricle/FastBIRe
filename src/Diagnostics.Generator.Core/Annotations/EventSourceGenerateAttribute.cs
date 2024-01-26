@@ -10,5 +10,7 @@ namespace Diagnostics.Generator.Core.Annotations
         public Accessibility InterfaceAccessibility { get; set; }
 
         public bool GenerateSingleton { get; set; }
+
+        public bool UseIsEnable { get; set; } = true;
     }
 }

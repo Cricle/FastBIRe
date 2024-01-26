@@ -42,9 +42,11 @@ namespace Diagnostics.Generator.Internal
                 return;
             }
             var methodBody = new StringBuilder();
+            var isEnable = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.Name)?
+                .GetByNamed<bool>(Consts.EventSourceGenerateAttribute.UseIsEnable) ?? true;
             foreach (var item in methods)
             {
-                var str = GenerateMethod(item, out var diag);
+                var str = GenerateMethod(item, isEnable, out var diag);
                 if (diag != null)
                 {
                     context.ReportDiagnostic(diag);
@@ -210,6 +212,11 @@ namespace Diagnostics.Generator.Internal
                 .OfType<IFieldSymbol>()
                 .Where(x => x.HasAttribute(Consts.CounterAttribute.Name))
                 .ToList();
+            if (counter.Count == 0)
+            {
+                diagnostic = null;
+                return string.Empty;
+            }
             var addins = new StringBuilder();
             var bodys = new StringBuilder();
             foreach (var item in counter)
@@ -370,7 +377,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             }
             return false;
         }
-        private string GenerateMethod(IMethodSymbol method, out Diagnostic? diagnostic)
+        private string GenerateMethod(IMethodSymbol method,bool useIsEnable, out Diagnostic? diagnostic)
         {
             var pars = method.Parameters;
             for (int i = 0; i < pars.Length; i++)
@@ -426,16 +433,29 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             var invokeParDeclare = string.Empty;
             if (method.ReturnsVoid)
             {
-                parExecuteDeclare = $"partial void On{method.Name}({argList});";
+                parExecuteDeclare = $"[global::System.Diagnostics.Tracing.NonEventAttribute] partial void On{method.Name}({argList});";
                 invokeParDeclare = $"On{method.Name}({string.Join(",", pars.Select(x => x.Name))});";
+            }
+
+            var isEnableTop = string.Empty;
+            var isEnableBegin = string.Empty;
+            var isEnableEnd = string.Empty;
+            if (useIsEnable)
+            {
+                isEnableTop = "if(IsEnabled())";
+                isEnableBegin = "{";
+                isEnableEnd = "}";
             }
             var s = $@"
 {GeneratorTransformResult<ISymbol>.GetAccessibilityString(method.DeclaredAccessibility)} {unsafeKeyWord} partial {method.ReturnType} {method.Name}({argList})
 {{
-    {datasDeclare}
-    {string.Join("\n", pars.Except(relatedActivityIds).Select(GenerateWrite))}
-    {invokeMethod}
-    {invokeParDeclare}
+    {isEnableTop}
+    {isEnableBegin}
+        {datasDeclare}
+        {string.Join("\n", pars.Except(relatedActivityIds).Select(GenerateWrite))}
+        {invokeMethod}
+        {invokeParDeclare}
+    {isEnableEnd}
 }}
 {parExecuteDeclare}
 ";
@@ -449,7 +469,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
                 return $@"
 datas[{index}] = new global::System.Diagnostics.Tracing.EventSource.EventData
 {{
-    DataPointer = {parameter.Name}==null?global::System.IntPtr.Zero:(nint)global::System.Runtime.CompilerServices.Unsafe.AsPointer(ref global::System.Runtime.InteropServices.MemoryMarshal.GetReference({parameter.Name}.AsSpan())),
+    DataPointer = {parameter.Name}==null?global::System.IntPtr.Zero:(nint)global::System.Runtime.CompilerServices.Unsafe.AsPointer(ref global::System.Runtime.InteropServices.MemoryMarshal.GetReference(global::System.MemoryExtensions.AsSpan({parameter.Name}))),
     Size ={parameter.Name} == null ? 0 : checked(({parameter.Name}.Length + 1) * sizeof(char))
 }};";
             }

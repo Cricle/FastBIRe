@@ -21,6 +21,8 @@
             public const string InterfaceVisilbility = "InterfaceAccessibility";
 
             public const string GenerateSingleton = "GenerateSingleton";
+
+            public const string UseIsEnable = "UseIsEnable";
         }
         public static class EventAttribute
         {
@@ -39,6 +41,10 @@
             public const string DisplayName = "DisplayName";
 
             public const string DisplayUnits = "DisplayUnits";
+        }
+        public static class ArrayOptionsAttribute
+        {
+            public const string Name = "Diagnostics.Generator.Core.Annotations.ArrayOptionsAttribute";
         }
     }
 }
