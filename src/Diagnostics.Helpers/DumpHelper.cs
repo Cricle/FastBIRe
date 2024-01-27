@@ -1,20 +1,16 @@
-﻿using System;
+﻿using Microsoft.Diagnostics.NETCore.Client;
+using System;
 using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Diagnostics.Helpers
 {
-    public static partial class DumpHelper
+    public static class DumpHelper
     {
-        private static readonly IMemoryDumper windowDumper = new WindowsMemoryDumper();
-        private static readonly IMemoryDumper linuxDumper = new LinuxMemoryDumper();
-
-        public static bool IsSupportPlatform => PlatformHelper.IsWindows || PlatformHelper.IsLinux;
-
         public static Task DumpSelfAsync(string outputPath)
         {
-            var proc = Process.GetCurrentProcess();
-            return DumpAsync(proc, outputPath);
+            return DumpAsync(PlatformHelper.CurrentProcessId, outputPath);
         }
         public static Task DumpAsync(string processName, string outputPath)
         {
@@ -23,31 +19,12 @@ namespace Diagnostics.Helpers
             {
                 throw new ArgumentException($"Process {proc} not found");
             }
-            return DumpAsync(proc[0], outputPath);
+            return DumpAsync(proc[0].Id, outputPath);
         }
-        public static Task DumpAsync(int processId, string outputPath)
+        public static Task DumpAsync(int processId, string outputPath, DumpType dumpType = DumpType.Full, WriteDumpFlags dumpFlags = WriteDumpFlags.None, CancellationToken token = default)
         {
-            var proc = Process.GetProcessById(processId);
-            if (proc == null)
-            {
-                throw new ArgumentException($"Process {proc} not found");
-            }
-            return DumpAsync(proc, outputPath);
-        }
-        public static Task DumpAsync(Process process, string outputPath)
-        {
-            if (PlatformHelper.IsWindows)
-            {
-                return windowDumper.CreateDumpAsync(process, outputPath);
-            }
-            else if (PlatformHelper.IsLinux)
-            {
-                return linuxDumper.CreateDumpAsync(process, outputPath);
-            }
-            else
-            {
-                throw new PlatformNotSupportedException("Can't collect a memory dump on this platform.");
-            }
+            var client = new DiagnosticsClient(processId);
+            return client.WriteDumpAsync(dumpType, outputPath, dumpFlags, token);
         }
     }
 }
