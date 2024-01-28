@@ -1,11 +1,8 @@
 ﻿using Microsoft.Diagnostics.Monitoring.EventPipe;
 using Microsoft.Diagnostics.NETCore.Client;
 using Microsoft.Diagnostics.Tracing;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Runtime;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,11 +10,11 @@ namespace Diagnostics.Helpers
 {
     public static class CounterHelper
     {
-        public static ICounterResult CreateCounter(int processId, IEnumerable<EventPipeProvider> providers,CounterConfiguration? configuration=null, bool requestRundown = true, int bufferSizeInMB = 256)
+        public static ICounterResult CreateCounter(int processId, IEnumerable<EventPipeProvider> providers, CounterConfiguration? configuration = null, bool requestRundown = true, int bufferSizeInMB = 256, int defaultIntervalSeconds = 1)
         {
-            configuration ??= new CounterConfiguration(CounterFilter.AllCounters(1));
+            configuration ??= new CounterConfiguration(CounterFilter.AllCounters(defaultIntervalSeconds));
             var client = new DiagnosticsClient(processId);
-            return new CounterResult(processId, providers, configuration, requestRundown, bufferSizeInMB,client);
+            return new CounterResult(processId, providers, configuration, requestRundown, bufferSizeInMB, client);
         }
     }
     public readonly record struct ExceptionReceivedPlayload
@@ -69,12 +66,20 @@ namespace Diagnostics.Helpers
 
         public async Task StartSessionAsync(CancellationToken token)
         {
-            var taskSource = new TaskCompletionSource<bool>();
-            token.Register(() => taskSource.SetResult(true));
+            var taskSource= new TaskCompletionSource<bool>();
             using (var session = Client.StartEventPipeSession(Providers, RequestRundown, BufferSizeInMB))
             using (var source = new EventPipeEventSource(session.EventStream))
             {
-                Client.ResumeRuntime();
+                token.Register(() =>
+                {
+                    taskSource.SetResult(true);
+                    source.StopProcessing();
+                    session.Stop();
+                });
+                if (RequestRundown)
+                {
+                    Client.ResumeRuntime();
+                }
                 source.Dynamic.All += (traceEvent) =>
                 {
                     try
@@ -89,6 +94,7 @@ namespace Diagnostics.Helpers
                         ExceptionReceived?.Invoke(this, new ExceptionReceivedPlayload(traceEvent, ex));
                     }
                 };
+
                 source.Process();
                 await taskSource.Task;
             }

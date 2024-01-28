@@ -60,6 +60,8 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
         public int Series { get; }
 
         public TraceEvent TraceEvent { get; }
+
+        public string? Name => ((IDictionary<string, object>?)((IDictionary<string, object>?)TraceEvent.PayloadValue(0))?["Payload"])?["Name"]?.ToString();
     }
 
     internal sealed class EventCounterPayload : CounterPayload

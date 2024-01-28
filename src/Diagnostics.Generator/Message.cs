@@ -23,7 +23,7 @@ namespace Diagnostics.Generator
 
         public static readonly DiagnosticDescriptor FieldMustReturnNumber = new DiagnosticDescriptor("DG0004",
             "EventSourceGenerator",
-            "Field type must int, long, double, float, IncrementingEventCounter, EventCounter", Category,
+            "Field type must int, long, double, float, Enum, IncrementingEventCounter, EventCounter", Category,
              DiagnosticSeverity.Error, true);
 
         public static readonly DiagnosticDescriptor EventCounterMustType = new DiagnosticDescriptor("DG0005",

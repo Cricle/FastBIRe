@@ -12,6 +12,8 @@ namespace Diagnostics.Helpers
 
         CounterMetadata CounterMetadata { get; }
 
+        string? Name { get; }
+    
         string DisplayName { get; }
 
         string Unit { get; }

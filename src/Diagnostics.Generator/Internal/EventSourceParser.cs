@@ -326,7 +326,8 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
              SpecialType.System_Double,
              SpecialType.System_Decimal,
              SpecialType.System_String,
-             SpecialType.System_DateTime
+             SpecialType.System_DateTime,
+             SpecialType.System_Enum
         };
         private bool IsSupportType(ITypeSymbol type)
         {
