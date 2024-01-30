@@ -4,14 +4,26 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
 
 namespace Diagnostics.Generator.Internal
 {
-    internal class EventSourceParser
+    internal abstract class ParserBase
+    {
+        protected string GetSpecialName(string name)
+        {
+            var specialName = name.TrimStart('_');
+            return char.ToUpper(specialName[0]) + specialName.Substring(1);
+        }
+
+        protected string GetVisiblity(ISymbol symbol)
+        {
+            return GeneratorTransformResult<ISymbol>.GetAccessibilityString(symbol.DeclaredAccessibility);
+        }
+    }
+    internal class EventSourceParser: ParserBase
     {
         public void Execute(SourceProductionContext context, GeneratorTransformResult<ISymbol> node)
         {
@@ -262,8 +274,7 @@ namespace Diagnostics.Generator.Internal
                 {
                     var counterName = item.Name + "Counter";
                     addins.AppendFormat("private {0}{1} {2}; \n", typeName, nullableTail, counterName);
-                    var specialName = item.Name.TrimStart('_');
-                    specialName = char.ToUpper(specialName[0]) + specialName.Substring(1);
+                    var specialName = GetSpecialName(item.Name);
 
                     var invokeBody = $"global::System.Threading.Interlocked.Read(ref {item.Name})";
                     var parType = item.Type;
@@ -331,7 +342,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
         };
         private bool IsSupportType(ITypeSymbol type)
         {
-            if (supportTypes.Contains(type.SpecialType))
+            if (supportTypes.Contains(type.SpecialType)|| type.TypeKind== TypeKind.Enum)
             {
                 return true;
             }
@@ -482,10 +493,7 @@ datas[{index}] = new global::System.Diagnostics.Tracing.EventSource.EventData
 }};
 ";
         }
-        public string GetVisiblity(ISymbol symbol)
-        {
-            return GeneratorTransformResult<ISymbol>.GetAccessibilityString(symbol.DeclaredAccessibility);
-        }
+        
 
         public static bool Predicate(SyntaxNode node, CancellationToken token)
         {

@@ -46,5 +46,19 @@
         {
             public const string Name = "Diagnostics.Generator.Core.Annotations.ArrayOptionsAttribute";
         }
+        public static class CounterMappingAttribute
+        {
+            public const string Name = "Diagnostics.Generator.Core.Annotations.CounterMappingAttribute";
+
+            public const string ForProviders = "ForProviders";
+
+            public const string ForAnysProviders = "ForAnysProviders";
+        }
+        public static class CounterItemAttribute
+        {
+            public const string Name = "Diagnostics.Generator.Core.Annotations.CounterItemAttribute";
+
+            public const string EventName = "EventName";
+        }
     }
 }

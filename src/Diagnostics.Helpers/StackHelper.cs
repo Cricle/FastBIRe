@@ -13,6 +13,11 @@ namespace Diagnostics.Helpers
             var dt = DataTarget.AttachToProcess(PlatformHelper.CurrentProcessId, false);
             return GetStackSnapshots(dt);
         }
+        public static StackSnapshotCollection GetStackSnapshots(int processId)
+        {
+            var dt = DataTarget.AttachToProcess(processId, false);
+            return GetStackSnapshots(dt);
+        }
         public static StackSnapshotCollection GetStackSnapshots(DataTarget dataTarget)
         {
             var isTarget64Bit = dataTarget.DataReader.PointerSize == 8;
@@ -79,7 +84,7 @@ namespace Diagnostics.Helpers
             using (var runtime = ClrInfo.CreateRuntime())
             {
                 var s = new StringBuilder();
-                s.AppendFormat("CLR: {0}", ClrInfo);
+                s.AppendFormat("CLR: {0}, Thread Count: {1}", ClrInfo, runtime.Threads.Length);
                 s.AppendLine();
                 GetThreadString(s, runtime, true);
                 return s.ToString();
@@ -96,7 +101,7 @@ namespace Diagnostics.Helpers
         }
         public static void GetThreadString(this ClrThread thread, StringBuilder builder, ClrRuntime runtime, bool withDos)
         {
-            builder.AppendFormat("Thread {0:X}", thread.OSThreadId);
+            builder.AppendFormat("Thread {0:X}, LockCount {1}, IsGc {2}, State {3:X}", thread.OSThreadId, thread.LockCount, thread.IsGc, thread.State);
             builder.AppendLine();
             builder.AppendFormat("Stack: {0:X} - {1:X}", thread.StackBase, thread.StackLimit);
             builder.AppendLine();
@@ -130,7 +135,6 @@ namespace Diagnostics.Helpers
                 (stop, start) = (start, stop);
             }
 
-            builder.AppendLine();
             builder.AppendLine("Stack objects:");
 
             for (ulong ptr = start; ptr <= stop; ptr += (uint)IntPtr.Size)

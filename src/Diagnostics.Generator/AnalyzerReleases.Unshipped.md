@@ -14,3 +14,5 @@ DG0006 | Diagnostics.Generator | Error | IncrementingPollingCounter, Incrementin
 DG0007 | Diagnostics.Generator | Error | PollingCounter or IncrementingPollingCounter field type must long, double, float
 DG0008 | Diagnostics.Generator | Info | The event source name recommendation end with EventSource, such as ProcessEventSource
 DG0009 | Diagnostics.Generator | Info | Auto write event body
+DG0010 | Diagnostics.Generator | Error | When ForAnysProviders=true, must input ForProviders
+DG0011 | Diagnostics.Generator | Warning | Messages

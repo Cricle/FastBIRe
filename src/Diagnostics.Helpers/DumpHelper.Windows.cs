@@ -1,10 +1,9 @@
 ﻿using Microsoft.Win32.SafeHandles;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Diagnostics.Helpers
 {
@@ -99,7 +98,7 @@ namespace Diagnostics.Helpers
                             }
                             else
                             {
-                                Console.WriteLine($"retrying due to PARTIAL_COPY #{i}");
+                                Debug.WriteLine($"retrying due to PARTIAL_COPY #{i}");
                             }
                         }
                     }

@@ -6,10 +6,20 @@ namespace Diagnostics.Helpers
 {
     public interface ISampleResult : IDisposable
     {
+        bool IsStop { get; }
+
         RuntimeEventCounter Counter { get; }
 
         ICounterResult CounterResult { get; }
 
-        Task StartAsync(CancellationToken token);
+        Task Task { get; }
+
+        void Pause();
+
+        void Resume();
+
+        Task OnceAsync(Action<RuntimeEventCounter> action, CancellationToken token);
+
+        Task<RuntimeEventCounter> OnceAsync(CancellationToken token);
     }
 }

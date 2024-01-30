@@ -82,16 +82,19 @@ namespace Diagnostics.Helpers
                 }
                 source.Dynamic.All += (traceEvent) =>
                 {
-                    try
+                    if (PayloadReceived != null)
                     {
-                        if (traceEvent.TryGetCounterPayload(Configuration, out ICounterPayload counterPayload))
+                        try
                         {
-                            PayloadReceived?.Invoke(this, counterPayload);
+                            if (traceEvent.TryGetCounterPayload(Configuration, out ICounterPayload counterPayload))
+                            {
+                                PayloadReceived?.Invoke(this, counterPayload);
+                            }
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        ExceptionReceived?.Invoke(this, new ExceptionReceivedPlayload(traceEvent, ex));
+                        catch (Exception ex)
+                        {
+                            ExceptionReceived?.Invoke(this, new ExceptionReceivedPlayload(traceEvent, ex));
+                        }
                     }
                 };
 

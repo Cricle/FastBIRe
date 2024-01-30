@@ -48,5 +48,13 @@ namespace Diagnostics.Generator
             "Auto write event body",
             "Auto write event body", Category,
              DiagnosticSeverity.Info, true);
+        public static readonly DiagnosticDescriptor ForProviderMustInput = new DiagnosticDescriptor("DG0010",
+            "EventSourceGenerator",
+            "When ForAnysProviders=true, must input ForProviders", Category,
+             DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor TheIdHasSames = new DiagnosticDescriptor("DG0011",
+            "EventSourceGenerator",
+            "The id has same", Category,
+             DiagnosticSeverity.Warning, true);
     }
 }
