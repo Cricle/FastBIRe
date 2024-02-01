@@ -8,6 +8,8 @@ namespace Diagnostics.Helpers
     public static class WellKnowsEventProvider
     {
         public const string DotNetRuntime = "Microsoft-Windows-DotNETRuntime";
+        public const string AspNetCoreHosting = "Microsoft.AspNetCore.Hosting";
+        public const string Kestrel = "Microsoft-AspNetCore-Server-Kestrel";
         public const string DotNetRuntimePrivate = "Microsoft-Windows-DotNETRuntimePrivate";
 
         public const string Runtime = "System.Runtime";

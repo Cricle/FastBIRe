@@ -90,7 +90,7 @@ new global::System.Collections.Generic.Dictionary<global::System.String, global:
             if (withInterval)
             {
                 incrCodes = $@"
-public partial class Interval{symbol.Name} : {symbol.Name}, global::System.IDisposable
+{visibility} partial class Interval{symbol.Name} : {symbol.Name}, global::System.IDisposable
 {{
     private global::System.Int32 isChanged;
     private readonly global::System.Threading.Timer timer;
@@ -133,6 +133,12 @@ public partial class Interval{symbol.Name} : {symbol.Name}, global::System.IDisp
                 var providers = symbol.GetAttributes(Consts.EventPipeProviderAttribute.FullName);
                 if (providers.Count != 0)
                 {
+                    var creatorNameHead = symbol.Name;
+                    if (creatorNameHead.EndsWith("EventCounter"))
+                    {
+                        creatorNameHead = creatorNameHead.Substring(0, creatorNameHead.Length - 12);
+                    }
+                    var creatorName = creatorNameHead + "EventSampleCreator";
                     var providerNames = providers.Select(x => x.GetByIndex<string>(0));
                     var providerNameJoined = string.Join(",", providerNames.Select(x=>$"\"{x}\""));
                     var intervalCreate = $"throw new global::System.NotSupportedException(\"The {symbol.Name} has not support interval sample\");";
@@ -143,7 +149,7 @@ public partial class Interval{symbol.Name} : {symbol.Name}, global::System.IDisp
                     var instanceCode = string.Empty;
                     if (creatorHasInstance)
                     {
-                        instanceCode = $"public static readonly {symbol.Name}EventSampleCreator Instance = new {symbol.Name}EventSampleCreator();";
+                        instanceCode = $"public static readonly {creatorName} Instance = new {creatorName}();";
                     }
                     var builderCodes = new List<string>();
                     var builderIndex = 0;
@@ -200,7 +206,7 @@ yield return {builderName}.Build();
                     var builderCodesJoined = string.Join("\n", builderCodes);
                     var builderCodeJoined = string.Join("\n", builderCodes);
                     creatorCode = $@"
-    public partial class {symbol.Name}EventSampleCreator : global::Diagnostics.Helpers.IEventSampleCreator
+    {visibility} partial class {creatorNameHead}EventSampleCreator : global::Diagnostics.Helpers.IEventSampleCreator
     {{
         private static readonly global::System.Collections.Generic.HashSet<global::System.String> providerNames = new global::System.Collections.Generic.HashSet<global::System.String> {{ {providerNameJoined} }};
             
@@ -251,7 +257,7 @@ yield return {builderName}.Build();
 #pragma warning disable IDE0039
 {nullableDeclareStart}
 {nameSpaceStart}
-    public partial class {symbol.Name}
+    {visibility} partial class {symbol.Name}
     {{
         private static readonly global::System.Collections.Generic.IReadOnlyDictionary<global::System.String, global::System.Action<{symbol.Name}, global::Diagnostics.Helpers.ICounterPayload>> valueSetter = {mapImpl};
             
@@ -282,11 +288,22 @@ yield return {builderName}.Build();
 
         public global::System.Boolean AllNotNull => {string.Join("&&\n", fields.Select(x => $"{specialNames[x.Name]} != null"))};
 
+        public global::System.Collections.Generic.IEnumerable<global::System.String> EventNames => valueSetter.Keys;
+
         public void Reset()
         {{
             {string.Join("\n", fields.Select(x=>WriteWriteNull(x,nullableEnd)))}
         }}
         public event global::System.EventHandler{ctxNullableEnd} Changed;
+        
+        public global::System.Boolean TryGetCounterPayload(global::System.String name, out global::Diagnostics.Helpers.ICounterPayload? payload)
+        {{
+            {string.Join("\n",fields.Select(x=>$"if(name==\"{x.GetAttribute(Consts.CounterItemAttribute.FullName)!.GetByIndex<string>(0)!}\") {{ payload = {specialNames[x.Name]};return true;}}"))}
+            
+            payload = null;
+            return false;
+        }}
+        
         public async global::System.Threading.Tasks.Task OnceAsync(global::System.Threading.CancellationToken token = default)
         {{
 #if NETSTANDARD2_0

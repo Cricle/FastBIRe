@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,9 +8,13 @@ namespace Diagnostics.Helpers
 {
     public interface IEventCounterProvider
     {
+        IEnumerable<string> EventNames { get; }
+
         bool AllNotNull { get; }
 
         event EventHandler? Changed;
+
+        bool TryGetCounterPayload(string name, out ICounterPayload? payload);
 
         void Reset();
         void Update(ICounterPayload payload);

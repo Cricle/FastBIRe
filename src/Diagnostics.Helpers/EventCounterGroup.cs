@@ -44,6 +44,8 @@ namespace Diagnostics.Helpers
             }
         }
 
+        public IEnumerable<string> EventNames => this.SelectMany(x => x.EventNames).Distinct();
+
         public event EventHandler? Changed;
 
         public IEnumerator<IEventCounterProvider> GetEnumerator()
@@ -132,6 +134,19 @@ namespace Diagnostics.Helpers
             {
                 await this[i].OnceAsync(token);
             }
+        }
+
+        public bool TryGetCounterPayload(string name, out ICounterPayload? payload)
+        {
+            for (int i = 0; i < Count; i++)
+            {
+                if (this[i].TryGetCounterPayload(name,out payload))
+                {
+                    return true;
+                }
+            }
+            payload = null;
+            return false;
         }
     }
 }
