@@ -476,5 +476,6 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 /uploadnuget.ps1
+/uploaddiagnuget.ps1
 /samples/FastBIRe.Project.WebSample/dbs/*
 /samples/FastBIRe.Project.WebSample/projects
