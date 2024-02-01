@@ -16,12 +16,12 @@ namespace Diagnostics.Helpers
         }
         public static void WriteGcDump(int processId, Stream outputStream, int timeout = 30, TextWriter? log = null, CancellationToken token = default)
         {
-            if (TryCollectMemoryGraph(token, processId, timeout, log, out MemoryGraph memoryGraph))
+            if (TryCollectMemoryGraph(processId, timeout, log, out MemoryGraph memoryGraph, token))
             {
                 GCHeapDump.WriteMemoryGraph(memoryGraph, outputStream);
             }
         }
-        internal static bool TryCollectMemoryGraph(CancellationToken ct, int processId, int timeout, TextWriter? log, out MemoryGraph memoryGraph)
+        public static bool TryCollectMemoryGraph(int processId, int timeout, TextWriter? log, out MemoryGraph memoryGraph, CancellationToken ct)
         {
             DotNetHeapInfo heapInfo = new();
             log ??= TextWriter.Null;

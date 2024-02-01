@@ -8,7 +8,7 @@ namespace Diagnostics.Generator
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var provider = context.SyntaxProvider.ForAttributeWithMetadataName(Consts.CounterMappingAttribute.Name,
+            var provider = context.SyntaxProvider.ForAttributeWithMetadataName(Consts.CounterMappingAttribute.FullName,
                 CounterMappingParser.Predicate,
                 CounterMappingParser.Transform);
             context.RegisterSourceOutput(provider, Execute);

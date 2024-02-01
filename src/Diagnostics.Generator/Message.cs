@@ -54,7 +54,19 @@ namespace Diagnostics.Generator
              DiagnosticSeverity.Error, true);
         public static readonly DiagnosticDescriptor TheIdHasSames = new DiagnosticDescriptor("DG0011",
             "EventSourceGenerator",
-            "The id has same", Category,
+            "The id \"{0}\" has same", Category,
              DiagnosticSeverity.Warning, true);
+        public static readonly DiagnosticDescriptor NoProvider = new DiagnosticDescriptor("DG0012",
+            "EventSourceGenerator",
+            "The WithCreator is true, but found nothing providers", Category,
+             DiagnosticSeverity.Warning, true);
+        public static readonly DiagnosticDescriptor LevelNotSpport = new DiagnosticDescriptor("DG0013",
+            "EventSourceGenerator",
+            "The EventLevel \"{0}\" is not support", Category,
+             DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor FailToParseArguments = new DiagnosticDescriptor("DG0014",
+            "EventSourceGenerator",
+            "Fail to parse arguments \"{0}\", the Arguments must like interval=123,a1=2 or \"interval\"=\"123\",\"a1\"=\"2\"", Category,
+             DiagnosticSeverity.Error, true);
     }
 }

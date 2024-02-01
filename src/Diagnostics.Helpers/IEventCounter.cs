@@ -5,17 +5,34 @@ using System.Threading.Tasks;
 
 namespace Diagnostics.Helpers
 {
-    public interface IEventCounter<TCounter>
+    public interface IEventCounterProvider
     {
         bool AllNotNull { get; }
 
         event EventHandler? Changed;
 
-        TCounter Copy();
-        Task<TCounter> OnceAsync(CancellationToken token = default);
-        Task OnceAsync(Action<TCounter> action, CancellationToken token = default);
         void Reset();
         void Update(ICounterPayload payload);
-        void WriteTo(TextWriter sb);
+        void WriteTo(TextWriter writer);
+        Task OnceAsync(CancellationToken token = default);
+    }
+    public interface IEventCounter<TCounter> : IEventCounterProvider
+    {
+        TCounter Copy();
+    }
+    public static class EventCounterOnceExtensions
+    {
+        public static async Task<TCounter> OnceAndReturnAsync<TCounter>(this TCounter counter,CancellationToken token = default)
+            where TCounter : IEventCounter<TCounter>
+        {
+            await counter.OnceAsync(token);
+            return counter;
+        }
+        public static async Task OnceAsync<TCounter>(this TCounter counter, Action<TCounter> action, CancellationToken token = default)
+            where TCounter : IEventCounter<TCounter>
+        {
+            await counter.OnceAsync(token);
+            action(counter);
+        }
     }
 }

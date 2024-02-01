@@ -8,7 +8,7 @@ namespace Diagnostics.Generator
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var provider = context.SyntaxProvider.ForAttributeWithMetadataName(Consts.EventSourceGenerateAttribute.Name,
+            var provider = context.SyntaxProvider.ForAttributeWithMetadataName(Consts.EventSourceGenerateAttribute.FullName,
                 EventSourceParser.Predicate,
                 EventSourceParser.Transform);
             context.RegisterSourceOutput(provider, Execute);

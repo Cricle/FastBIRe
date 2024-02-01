@@ -1,8 +1,26 @@
 ﻿using Diagnostics.Generator.Core.Annotations;
+using Diagnostics.Helpers.Annotations;
+using Microsoft.Diagnostics.Tracing.Parsers;
+using System.Diagnostics.Tracing;
 
 namespace Diagnostics.Helpers
 {
-    [CounterMapping]
+    [EventPipeProvider("Microsoft.AspNetCore.Hosting", EventLevel.Informational,Keywords = (long)ClrTraceEventParser.Keywords.None)]
+    [CounterMapping(ForAnysProviders = true, ForProviders = new[] { "Microsoft.AspNetCore.Hosting" }, WithInterval = true,WithCreator =true, CreatorHasInstance =true)]
+    public partial class AspNetCoreHostingEventCounter : IEventCounter<AspNetCoreHostingEventCounter>
+    {
+        [CounterItem("requests-per-second")]
+        private ICounterPayload? requestPreSecond;
+        [CounterItem("current-requests")]
+        private ICounterPayload? concurrentRequests;
+        [CounterItem("failed-requests")]
+        private ICounterPayload? failedRequests;
+        [CounterItem("total-requests")]
+        private ICounterPayload? totalRequests;
+    }
+
+    [EventPipeProvider(WellKnowsEventProvider.Runtime, EventLevel.Informational, Keywords = (long)ClrTraceEventParser.Keywords.None)]
+    [CounterMapping(ForAnysProviders = true, ForProviders = new[] { "System.Runtime" },WithInterval =true, WithCreator = true, CreatorHasInstance = true)]
     public partial class RuntimeEventCounter : IEventCounter<RuntimeEventCounter>
     {
         [CounterItem("time-in-gc")]

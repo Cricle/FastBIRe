@@ -14,7 +14,7 @@
 
         public static class EventSourceGenerateAttribute
         {
-            public const string Name = "Diagnostics.Generator.Core.Annotations.EventSourceGenerateAttribute";
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.EventSourceGenerateAttribute";
 
             public const string IncludeInterface = "IncludeInterface";
 
@@ -26,15 +26,15 @@
         }
         public static class EventAttribute
         {
-            public const string Name = "System.Diagnostics.Tracing.EventAttribute";
+            public const string FullName = "System.Diagnostics.Tracing.EventAttribute";
         }
         public static class RelatedActivityIdAttribute
         {
-            public const string Name = "Diagnostics.Generator.Core.Annotations.RelatedActivityIdAttribute";
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.RelatedActivityIdAttribute";
         }
         public static class CounterAttribute
         {
-            public const string Name = "Diagnostics.Generator.Core.Annotations.CounterAttribute";
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.CounterAttribute";
 
             public const string DisplayRateTimeScaleMs = "DisplayRateTimeScaleMs";
 
@@ -44,21 +44,39 @@
         }
         public static class ArrayOptionsAttribute
         {
-            public const string Name = "Diagnostics.Generator.Core.Annotations.ArrayOptionsAttribute";
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.ArrayOptionsAttribute";
         }
         public static class CounterMappingAttribute
         {
-            public const string Name = "Diagnostics.Generator.Core.Annotations.CounterMappingAttribute";
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.CounterMappingAttribute";
 
             public const string ForProviders = "ForProviders";
 
             public const string ForAnysProviders = "ForAnysProviders";
+
+            public const string WithInterval = "WithInterval";
+
+            public const string WithCreator = "WithCreator";
+
+            public const string CreatorHasInstance = "CreatorHasInstance";
         }
         public static class CounterItemAttribute
         {
-            public const string Name = "Diagnostics.Generator.Core.Annotations.CounterItemAttribute";
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.CounterItemAttribute";
 
             public const string EventName = "EventName";
+        }
+        public static class EventPipeProviderAttribute
+        {
+            public const string FullName = "Diagnostics.Helpers.Annotations.EventPipeProviderAttribute";
+
+            public const string Name = "Name";
+
+            public const string Level = "Level";
+
+            public const string Keywords = "Keywords";
+
+            public const string Arguments = "Arguments";
         }
     }
 }

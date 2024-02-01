@@ -45,7 +45,7 @@ namespace Diagnostics.Generator.Internal
 
             var methods = symbol.GetMembers()
                 .OfType<IMethodSymbol>()
-                .Where(x => x.HasAttribute(Consts.EventAttribute.Name) && HasKeyword(x, SyntaxKind.PartialKeyword))
+                .Where(x => x.HasAttribute(Consts.EventAttribute.FullName) && HasKeyword(x, SyntaxKind.PartialKeyword))
                 .ToList();
             var command = GenerateOnEventCommand(symbol, ctxNullableEnd, out var diagnostic);
             if (diagnostic != null)
@@ -54,7 +54,7 @@ namespace Diagnostics.Generator.Internal
                 return;
             }
             var methodBody = new StringBuilder();
-            var isEnable = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.Name)?
+            var isEnable = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.FullName)?
                 .GetByNamed<bool>(Consts.EventSourceGenerateAttribute.UseIsEnable) ?? true;
             foreach (var item in methods)
             {
@@ -76,7 +76,7 @@ namespace Diagnostics.Generator.Internal
             {
                 imports.Add("global::System.Diagnostics.Tracing.EventSource");
             }
-            var attr = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.Name)!;
+            var attr = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.FullName)!;
             var singletonExpression = string.Empty;
 
             if (attr.GetByNamed<bool>(Consts.EventSourceGenerateAttribute.GenerateSingleton))
@@ -222,7 +222,7 @@ namespace Diagnostics.Generator.Internal
         {
             var counter = symbol.GetMembers()
                 .OfType<IFieldSymbol>()
-                .Where(x => x.HasAttribute(Consts.CounterAttribute.Name))
+                .Where(x => x.HasAttribute(Consts.CounterAttribute.FullName))
                 .ToList();
             if (counter.Count == 0)
             {
@@ -233,7 +233,7 @@ namespace Diagnostics.Generator.Internal
             var bodys = new StringBuilder();
             foreach (var item in counter)
             {
-                var counterAttr = item.GetAttribute(Consts.CounterAttribute.Name)!;
+                var counterAttr = item.GetAttribute(Consts.CounterAttribute.FullName)!;
                 var name = counterAttr.GetByIndex<string>(0)!;
                 var type = counterAttr.GetByIndex<CounterTypes>(1);
                 var displayRateTimeScaleMs = counterAttr.GetByNamed<double>(Consts.CounterAttribute.DisplayRateTimeScaleMs);
@@ -403,7 +403,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
                 }
             }
             //relatedActivityId
-            var relatedActivityIds = pars.Where(x => x.HasAttribute(Consts.RelatedActivityIdAttribute.Name)).ToList();
+            var relatedActivityIds = pars.Where(x => x.HasAttribute(Consts.RelatedActivityIdAttribute.FullName)).ToList();
             if (relatedActivityIds.Count > 1)
             {
                 diagnostic = Diagnostic.Create(Messages.RelatedActivityIdOnlyOne, relatedActivityIds[1].Locations[0]);
@@ -433,7 +433,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
                 datasPar = "null";
             }
 
-            var eventId = method.GetAttribute(Consts.EventAttribute.Name)!
+            var eventId = method.GetAttribute(Consts.EventAttribute.FullName)!
                 .GetByIndex<int>(0);
             var invokeMethod = $"WriteEventWithRelatedActivityIdCore({eventId},{relate}, {actualDatasCount}, {datasPar});";
             if (actualDatasCount == 0)
