@@ -389,7 +389,7 @@ yield return {builderName}.Build();
 ";
 
             code = Helpers.FormatCode(code);
-            context.AddSource($"{className}.g.cs", code);
+            context.AddSource($"{className}.CounterMapping.g.cs", code);
         }
         private static bool TryParse(string input, out string? result)
         {

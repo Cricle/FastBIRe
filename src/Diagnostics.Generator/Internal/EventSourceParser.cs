@@ -48,6 +48,7 @@ namespace Diagnostics.Generator.Internal
                 .Where(x => x.HasAttribute(Consts.EventAttribute.FullName) && HasKeyword(x, SyntaxKind.PartialKeyword))
                 .ToList();
             var command = GenerateOnEventCommand(symbol, ctxNullableEnd, out var diagnostic);
+            var hasCommand = command != string.Empty;
             if (diagnostic != null)
             {
                 context.ReportDiagnostic(diagnostic);
@@ -81,7 +82,35 @@ namespace Diagnostics.Generator.Internal
 
             if (attr.GetByNamed<bool>(Consts.EventSourceGenerateAttribute.GenerateSingleton))
             {
-                singletonExpression = $"public static readonly global::{symbol} Instance = new global::{symbol}();";
+                //Check if not exists EventSourceAccesstorInstanceAttribute
+                var accesstorInstances = symbol.GetMembers()
+                    .Where(x => x is IFieldSymbol || x is IPropertySymbol)
+                    .Where(x => x.HasAttribute(Consts.EventSourceAccesstorInstanceAttribute.FullName))
+                    .ToList();
+                if (accesstorInstances.Count > 1)
+                {
+                    for (int i = 0; i < accesstorInstances.Count; i++)
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(Messages.AccesstorInstanceMustOnlyOne, accesstorInstances[i].Locations[0]));
+                    }
+                    return;
+                }
+                var attrStr = string.Empty;
+                if (accesstorInstances.Count == 0)
+                {
+                    attrStr = $"[{Consts.EventSourceAccesstorInstanceAttribute.FullName}]";
+                }
+                else
+                {
+                    var acc = accesstorInstances[0];
+                    var isAccept = acc.IsStatic && (acc.DeclaredAccessibility.HasFlag(Accessibility.Internal) || acc.DeclaredAccessibility.HasFlag(Accessibility.Public));
+                    if (!isAccept)
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(Messages.AccesstorInstanceDeclareError, acc.Locations[0]));
+                        return;
+                    }
+                }
+                singletonExpression = $"{attrStr} public static readonly global::{symbol} Instance = new global::{symbol}();";
             }
             if (attr.GetByNamed<bool>(Consts.EventSourceGenerateAttribute.IncludeInterface))
             {
@@ -105,6 +134,11 @@ namespace Diagnostics.Generator.Internal
             {
                 importExpression = ":" + string.Join(",", imports);
             }
+            var onEventCommandExecutedCode = string.Empty;
+            if (hasCommand)
+            {
+                onEventCommandExecutedCode = "[global::System.Diagnostics.Tracing.NonEventAttribute] partial void OnEventCommandExecuted(global::System.Diagnostics.Tracing.EventCommandEventArgs command);";
+            }
             var code = @$"
 #pragma warning disable CS8604
 #nullable enable
@@ -117,8 +151,7 @@ namespace Diagnostics.Generator.Internal
                     {methodBody}
 
                     {command}
-                    [global::System.Diagnostics.Tracing.NonEventAttribute]
-                    partial void OnEventCommandExecuted(global::System.Diagnostics.Tracing.EventCommandEventArgs command);
+                    {onEventCommandExecutedCode}
                 }}
                 {interfaceBody}
             }}

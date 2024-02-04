@@ -68,5 +68,17 @@ namespace Diagnostics.Generator
             "EventSourceGenerator",
             "Fail to parse arguments \"{0}\", the Arguments must like interval=123,a1=2 or \"interval\"=\"123\",\"a1\"=\"2\"", Category,
              DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor AccesstorInstanceMustOnlyOne = new DiagnosticDescriptor("DG0015",
+            "EventSourceGenerator",
+            "The EventSourceAccesstorInstanceAttribute only can be zero or one", Category,
+             DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor AccesstorInstanceDeclareError = new DiagnosticDescriptor("DG0016",
+            "EventSourceGenerator",
+            "The AccesstorInstance must static interval/public", Category,
+             DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor NoAccesstorNoCallTogether = new DiagnosticDescriptor("DG0017",
+            "EventSourceGenerator",
+            "The event source \"{0}\" has no GenerateSingleton or tag EventSourceAccesstorInstanceAttribute field or property, can't set WithCalledTogetherExtensions = ture", Category,
+             DiagnosticSeverity.Error, true);
     }
 }

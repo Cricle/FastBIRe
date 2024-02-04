@@ -1,4 +1,6 @@
-﻿namespace Diagnostics.Generator
+﻿using System.Diagnostics;
+
+namespace Diagnostics.Generator
 {
     internal static class Consts
     {
@@ -77,6 +79,40 @@
             public const string Keywords = "Keywords";
 
             public const string Arguments = "Arguments";
+        }
+        public static class MapToActivityAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.MapToActivityAttribute";
+
+            public const string ActivityClassType = "ActivityClassType";
+
+            public const string WithEventSourceCall = "WithEventSourceCall";
+
+            public const string CallEventAtEnd = "CallEventAtEnd";
+        }
+        public static class ActivityIgnoreAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.ActivityIgnoreAttribute";
+        }
+        public static class ActivityTagAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.ActivityTagAttribute";
+
+            public const string Name = "Name";
+
+            public const string Expression = "Expression";
+
+            public const string IsSet = "IsSet";
+
+            public const string IsAdd = "IsAdd";
+        }
+        public static class ActivityNoEventAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.ActivityNoEventAttribute";
+        }
+        public static class EventSourceAccesstorInstanceAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.EventSourceAccesstorInstanceAttribute";
         }
     }
 }

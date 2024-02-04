@@ -489,7 +489,7 @@ namespace Graphs
         // To support very space efficient encodings, and to allow for easy serialiation (persistence to file)
         // Types are given an index and their data is stored in a m_types array.  TypeInfo is the data in this
         // array.
-        internal struct TypeInfo
+        public struct TypeInfo
         {
             public string Name;                         // If DeferredTypeInfo.Module != null then this is a type name suffix.
             public int Size;

@@ -42,11 +42,11 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
     /// <summary>
     /// Writes the memory graph 'graph' as a .gcump file to 'stream'
     /// </summary>
-    public static void WriteMemoryGraph(MemoryGraph graph, Stream stream, string? toolName = null)
+    public static void WriteMemoryGraph(MemoryGraph graph, Stream stream, string? toolName = null,bool leaveOpen=false)
     {
         GCHeapDump dumper = new(graph);
         dumper.CreationTool = toolName;
-        dumper.WriteStream(stream);
+        dumper.WriteStream(stream, leaveOpen);
     }
 
     /// <summary>
@@ -208,10 +208,10 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
     /// <summary>
     /// Writes the data to stream
     /// </summary>
-    private void WriteStream(Stream stream)
+    private void WriteStream(Stream stream, bool leaveOpen = false)
     {
         Debug.Assert(MemoryGraph != null);
-        Serializer serializer = new(new IOStreamStreamWriter(stream, config: new SerializationConfiguration() { StreamLabelWidth = StreamLabelWidth.FourBytes }), this);
+        Serializer serializer = new(new IOStreamStreamWriter(stream, config: new SerializationConfiguration() { StreamLabelWidth = StreamLabelWidth.FourBytes }, leaveOpen: leaveOpen), this);
         serializer.Close();
     }
 
