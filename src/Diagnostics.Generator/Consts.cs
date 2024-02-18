@@ -114,5 +114,13 @@ namespace Diagnostics.Generator
         {
             public const string FullName = "Diagnostics.Generator.Core.Annotations.EventSourceAccesstorInstanceAttribute";
         }
+        public static class LoggerMessageAttribute
+        {
+            public const string FullName = "Microsoft.Extensions.Logging.LoggerMessageAttribute";
+        }
+        public static class MapToEventSourceAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.MapToEventSourceAttribute";
+        }
     }
 }
