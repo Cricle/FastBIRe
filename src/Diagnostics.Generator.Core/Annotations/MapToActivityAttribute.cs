@@ -15,5 +15,7 @@ namespace Diagnostics.Generator.Core.Annotations
         public bool WithEventSourceCall { get; set; }
 
         public bool CallEventAtEnd { get; set; }
+
+        public bool GenerateWithLog { get; set; }
     }
 }

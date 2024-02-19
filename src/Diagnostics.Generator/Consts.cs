@@ -89,6 +89,8 @@ namespace Diagnostics.Generator
             public const string WithEventSourceCall = "WithEventSourceCall";
 
             public const string CallEventAtEnd = "CallEventAtEnd";
+
+            public const string GenerateWithLog = "GenerateWithLog";
         }
         public static class ActivityIgnoreAttribute
         {

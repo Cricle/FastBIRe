@@ -67,7 +67,9 @@ namespace Diagnostics.Generator.Internal
             }
             var nullableEnd = symbol.IsReferenceType && (nullableEnable & NullableContext.Enabled) != 0 ? "?" : string.Empty;
 
-            var ctxNullableEnd = (nullableEnable & NullableContext.Enabled) != 0 ? "?" : string.Empty;
+            var ctxNullableEnd = "?";
+
+            var generateWithLog= mapToActivityAttr!.GetByNamed<bool>(Consts.MapToActivityAttribute.GenerateWithLog);
 
             code = @$"
 #pragma warning disable CS8604
@@ -76,7 +78,7 @@ namespace Diagnostics.Generator.Internal
                 [global::Diagnostics.Generator.Core.Annotations.ActivityMapToEventSourceAttribute(typeof(global::{source}),{eventSourceEvents.Count()})]
                 {visibility} partial class {symbol.Name}
                 {{
-                    {string.Join("\n", eventSourceEvents.Select(x => WriteMethodMap(symbol.IsStatic, x, ctxNullableEnd, withCallTog, instanceAccesstCode, callEventAtEnd, logMode)))}
+                    {string.Join("\n", eventSourceEvents.Select(x => WriteMethodMap(symbol.IsStatic, x, ctxNullableEnd, withCallTog, instanceAccesstCode, callEventAtEnd, logMode, generateWithLog)))}
                 }}
             }}
 #nullable restore
@@ -86,7 +88,8 @@ namespace Diagnostics.Generator.Internal
             code = Helpers.FormatCode(code);
             return true;
         }
-        private static string WriteMethodMap(bool isStatic, IMethodSymbol method, string nullableEnd, bool withCallTog, string eventSource, bool callEventAtEnd,bool logMode)
+
+        private static string WriteMethodMap(bool isStatic, IMethodSymbol method, string nullableEnd, bool withCallTog, string eventSource, bool callEventAtEnd,bool logMode,bool generateWithLog)
         {
             var visibility = GeneratorTransformResult<ISymbol>.GetAccessibilityString(method.DeclaredAccessibility);
             var staticKeyword = isStatic ? "static" : string.Empty;
@@ -100,7 +103,7 @@ namespace Diagnostics.Generator.Internal
             var pars = method.Parameters;
             if (logMode)
             {
-                pars=pars.Skip(1).ToImmutableArray();
+                pars = pars.Skip(1).ToImmutableArray();
             }
             if (pars.Length != 0)
             {
@@ -133,7 +136,8 @@ if(additionTags != null)
             var inputJoined = string.Join(",", inputs);
             var additionArgs = string.Empty;
             var invokeArgsJoined = string.Empty;
-            if (pars.Length != 0)
+            var hasPars = pars.Length != 0;
+            if (hasPars)
             {
                 additionArgs = $"{inputJoined},";
                 invokeArgsJoined = string.Join(",", pars.Select(x => x.Name)) + ",";
@@ -195,7 +199,38 @@ if(additionTags != null)
             {
                 beginCallEventSourceCodes = callEventSourceCodes;
             }
+
+            var withLogCode = string.Empty;
+
+            if (logMode&&generateWithLog)
+            {
+                var noActivityArgs = endsArgs;
+                var invokeCode = invokeArgsJoined.TrimEnd(',');
+                if (hasPars)
+                {
+                    noActivityArgs = "," + noActivityArgs;
+                    invokeCode = "," + invokeCode;
+                }
+                var invokeLog = $"{method.ContainingType}.{method.Name}(logger{invokeCode});";
+
+                withLogCode = $@"
+{activityMapToEventAttr}
+{visibility} {staticKeyword} {method.ReturnType} {method.Name}(global::Microsoft.Extensions.Logging.ILogger logger{noActivityArgs})
+{{
+    {invokeLog}
+    {method.Name}(global::System.Diagnostics.Activity.Current,{invokeCodes});
+}}
+{activityMapToEventAttr}
+{visibility} {staticKeyword} {method.ReturnType} {method.Name}(global::Microsoft.Extensions.Logging.ILogger logger,{argCode})
+{{
+    {invokeLog}
+    {method.Name}(activity,{invokeCodes});
+}}
+";
+            }
+
             return $@"
+#region {method.Name}
 {activityMapToEventAttr}
 {visibility} {staticKeyword} {method.ReturnType} {method.Name}({endsArgs})
 {{
@@ -217,6 +252,11 @@ if(additionTags != null)
 
 }}
 {staticKeyword} partial {method.ReturnType} On{method.Name}({argCode});
+
+
+{withLogCode}
+#endregion
+
 ";
         }
 
