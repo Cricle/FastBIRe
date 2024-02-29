@@ -1,5 +1,6 @@
 ﻿using Diagnostics.Generator.Core;
 using Diagnostics.Generator.Core.Annotations;
+using System.Diagnostics;
 using System.Diagnostics.Tracing;
 
 namespace FastBIRe.Internals
@@ -79,13 +80,13 @@ namespace FastBIRe.Internals
                     ScriptExecuterActivity.WriteBegin(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), stackTrace);
                     break;
                 case ScriptExecutState.CreatedCommand:
-                    WriteCreatedCommand(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), stackTrace);
+                    ScriptExecuterActivity.WriteCreatedCommand(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), stackTrace);
                     break;
                 case ScriptExecutState.LoaedCommand:
-                    WriteLoadCommand(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command!.CommandTimeout, e.Transaction != null, stackTrace);
+                    ScriptExecuterActivity.WriteLoadCommand(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command!.CommandTimeout, e.Transaction != null, stackTrace);
                     break;
                 case ScriptExecutState.Executed:
-                    WriteExecuted(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command!.CommandTimeout, e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0, stackTrace);
+                    ScriptExecuterActivity.WriteExecuted(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command!.CommandTimeout, e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0, stackTrace);
 #if !NETSTANDARD2_0
                     IncrementTotalExecute();
                     if (executedTime != null && e.TraceUnit?.ExecutionTime != null)
@@ -99,28 +100,29 @@ namespace FastBIRe.Internals
 #endif
                     break;
                 case ScriptExecutState.ExecutedBatch:
-                    WriteExecutedBatch(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command!.CommandTimeout, e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0, stackTrace);
+                    ScriptExecuterActivity.WriteExecutedBatch(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command!.CommandTimeout, e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0, stackTrace);
                     break;
                 case ScriptExecutState.CreatedBatch:
-                    WriteCreateBatch(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, stackTrace);
+                    ScriptExecuterActivity.WriteCreateBatch(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, stackTrace);
                     break;
                 case ScriptExecutState.LoadBatchItem:
-                    WriteLoadBatch(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, stackTrace);
+                    ScriptExecuterActivity.WriteLoadBatch(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, stackTrace);
                     break;
                 case ScriptExecutState.Exception:
-                    WriteException(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command?.CommandTimeout ?? 0, e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.TraceUnit?.StackTrace?.ToString(), e.ExecuteException?.ToString());
+                    ScriptExecuterActivity.WriteException(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Command?.CommandTimeout ?? 0, e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.TraceUnit?.StackTrace?.ToString(), e.ExecuteException?.ToString());
 #if !NETSTANDARD2_0
                     IncrementTotalFail();
 #endif
+                    Activity.Current?.SetStatus(ActivityStatusCode.Error, e.ExecuteException?.Message);
                     break;
                 case ScriptExecutState.Skip:
-                    WriteSkip(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, stackTrace);
+                    ScriptExecuterActivity.WriteSkip(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, stackTrace);
                     break;
                 case ScriptExecutState.StartReading:
-                    WriteStartReading(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.Command?.CommandTimeout ?? 0, stackTrace);
+                    ScriptExecuterActivity.WriteStartReading(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.Command?.CommandTimeout ?? 0, stackTrace);
                     break;
                 case ScriptExecutState.EndReading:
-                    WriteEndReading(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
+                    ScriptExecuterActivity.WriteEndReading(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
 #if !NETSTANDARD2_0
                     IncrementTotalRead();
                     if (readTime != null && e.TraceUnit?.ExecutionTime != null)
@@ -134,16 +136,16 @@ namespace FastBIRe.Internals
 #endif
                     break;
                 case ScriptExecutState.BeginTransaction:
-                    WriteBeginTranscation(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
+                    ScriptExecuterActivity.WriteBeginTranscation(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
                     break;
                 case ScriptExecutState.CommitedTransaction:
-                    WriteCommitedTransaction(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
+                    ScriptExecuterActivity.WriteCommitedTransaction(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
 #if !NETSTANDARD2_0
                     IncrementTotalCommitTransaction();
 #endif
                     break;
                 case ScriptExecutState.RollbackedTransaction:
-                    WriteRollbackedTransaction(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
+                    ScriptExecuterActivity.WriteRollbackedTransaction(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
 #if !NETSTANDARD2_0
                     IncrementTotalRollbackTranscation();
 #endif
