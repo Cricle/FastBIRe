@@ -90,6 +90,10 @@ namespace FastBIRe.Wrapping
             {
                 return sql;
             }
+            if (!sql.Contains(originPrefix))
+            {
+                return sql;
+            }
             var inString = false;
             var inQuto = false;
             var s = new StringBuilder(sql.Length);
@@ -123,6 +127,10 @@ namespace FastBIRe.Wrapping
         public string? ReplaceQutoSql(string? sql, char startQuto, char endQuto)
         {
             if (string.IsNullOrWhiteSpace(sql) || (startQuto == QutoStart && endQuto == QutoEnd))
+            {
+                return sql;
+            }
+            if (!sql.Contains(startQuto)&&!sql.Contains(endQuto))
             {
                 return sql;
             }

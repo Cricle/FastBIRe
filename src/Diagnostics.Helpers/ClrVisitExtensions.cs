@@ -15,7 +15,7 @@ namespace Diagnostics.Helpers
         }
         public static void GetThreadString(this ClrThread thread, StringBuilder builder, ClrRuntime runtime, bool withDos)
         {
-            builder.AppendFormat("Thread {0:X}, LockCount {1}, IsGc {2}, State {3:X}", thread.OSThreadId, thread.LockCount, thread.IsGc, thread.State);
+            builder.AppendFormat("Thread {0:X}, LockCount:{1}, IsGc:{2}, State:{3:X} IsFinalizer:{4}", thread.OSThreadId, thread.LockCount, thread.IsGc, thread.State, thread.IsFinalizer);
             builder.AppendLine();
             builder.AppendFormat("Stack: {0:X} - {1:X}", thread.StackBase, thread.StackLimit);
             builder.AppendLine();

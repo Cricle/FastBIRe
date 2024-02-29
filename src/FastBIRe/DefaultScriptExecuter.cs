@@ -2,6 +2,7 @@
 using FastBIRe.Internals;
 using FastBIRe.Wrapping;
 using System.Data.Common;
+using System.Diagnostics.Tracing;
 
 namespace FastBIRe
 {
@@ -21,7 +22,23 @@ namespace FastBIRe
             }
             SqlType = sqlType!.Value;
             Escaper = SqlType.GetEscaper();
+#if NETSTANDARD2_0
             ScriptStated += OnScriptStated;
+#else
+            ScriptExecuterEventSource.Instance.EventCommandExecuted += OnEventCommandExecuted;
+#endif
+        }
+
+        private void OnEventCommandExecuted(object? sender, EventCommandEventArgs e)
+        {
+            if (e.Command== EventCommand.Enable)
+            {
+                ScriptStated += OnScriptStated;
+            }
+            else if (e.Command== EventCommand.Disable)
+            {
+                ScriptStated -= OnScriptStated;
+            }
         }
 
         private void OnScriptStated(object? sender, ScriptExecuteEventArgs e)

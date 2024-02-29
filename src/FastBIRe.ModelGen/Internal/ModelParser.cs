@@ -220,7 +220,7 @@ return $""UPDATE {{escaper.Quto(tableName)}} SET {string.Join(", ",props.Except(
                     {{
                         if(typeof(TInput) == typeof(TOutput))
                             return global::System.Runtime.CompilerServices.Unsafe.As<TInput,TOutput{ctxNullableEnd}>(ref input);
-                        return (TOutput{ctxNullableEnd})Convert.ChangeType(input, typeof(TOutput),null);
+                        return (TOutput{ctxNullableEnd})global::System.Convert.ChangeType(input, typeof(TOutput),null);
                     }}
                     public global::System.Boolean TryGetValue({fullName} instance, global::System.String propertyName, out global::System.Object? value)
                     {{

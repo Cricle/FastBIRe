@@ -17,19 +17,19 @@ namespace Diagnostics.Helpers
 
         public const string Sample = "Microsoft-DotNETCore-SampleProfiler";
 
-        public static IEnumerable<EventPipeProvider> CpuSamplingProviders => new[]
+        public static IReadOnlyList<EventPipeProvider> CpuSamplingProviders => new[]
         {
             new EventPipeProvider(Sample, EventLevel.Informational),
             new EventPipeProvider(DotNetRuntime, EventLevel.Informational, (long)ClrTraceEventParser.Keywords.Default),
         };
-        public static IEnumerable<EventPipeProvider> GCVerboseProviders { get; }= new[]
+        public static IReadOnlyList<EventPipeProvider> GCVerboseProviders { get; }= new[]
         {
             new EventPipeProvider(DotNetRuntime, EventLevel.Verbose,
                 keywords: (long)ClrTraceEventParser.Keywords.GC |
                           (long)ClrTraceEventParser.Keywords.GCHandle |
                           (long)ClrTraceEventParser.Keywords.Exception)
         };
-        public static IEnumerable<EventPipeProvider> GCCollectProviders { get; } = new[]
+        public static IReadOnlyList<EventPipeProvider> GCCollectProviders { get; } = new[]
         {
             new EventPipeProvider(
                 name: DotNetRuntime,
@@ -42,7 +42,7 @@ namespace Diagnostics.Helpers
                 keywords: (long)ClrTraceEventParser.Keywords.GC
             )
         };
-        public static IEnumerable<EventPipeProvider> DatabaseProviders { get; } = new[]
+        public static IReadOnlyList<EventPipeProvider> DatabaseProviders { get; } = new[]
         {
             new EventPipeProvider(
                 name: "System.Threading.Tasks.TplEventSource",

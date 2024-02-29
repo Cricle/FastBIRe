@@ -145,15 +145,28 @@ namespace FastBIRe
                 {
                     return;
                 }
-                //After https://github.com/dotnet/runtime/pull/89503
-                //foreach (var item in unit.Parameters)
-                //{
-                //    command.Parameters[item.Key] = xxx;
-                //}
+#if NET8_0_OR_GREATER
+                foreach (var item in unit.Parameters)
+                {
+                    if (item.Value is DbParameter par)
+                    {
+                        command.Parameters.Add(item.Value);
+                    }
+                    else
+                    {
+                        var dbPar = command.CreateParameter();
+                        SetValue(dbPar, item.Key, item.Value);
+                        command.Parameters.Add(dbPar);
+
+                    }
+                }
+#else
                 foreach (var item in unit.Parameters)
                 {
                     command.Parameters.Add(item.Value);
+             
                 }
+#endif
             }
 #endif
             public void RaiseException(DbCommand? command
@@ -186,6 +199,12 @@ namespace FastBIRe
             {
                 Executer.ScriptStated?.Invoke(Executer, ScriptExecuteEventArgs.EndReading(Executer.Connection, command, ScriptUnit!.Value, Trace, Executer.dbTransaction));
             }
+            private static void SetValue(DbParameter par,string key,object? value)
+            {
+                par.ParameterName = key;
+                par.Value = value;
+                par.DbType = GetDbType(value);
+            }
             public void LoadParamters(DbCommand command)
             {
                 Debug.Assert(ScriptUnit != null);
@@ -200,16 +219,14 @@ namespace FastBIRe
                         else
                         {
                             var par = command.CreateParameter();
-                            par.ParameterName = item.Key;
-                            par.Value = item.Value;
-                            par.DbType = GetDbType(item.Value);
+                            SetValue(par,item.Key,item.Value);
                             command.Parameters.Add(par);
                         }
                     }
                 }
                 command.CommandText = Executer.SqlQutoConversion(Executer.SqlParameterConversion(ScriptUnit!.Value.Script));
                 command.CommandTimeout = Executer.CommandTimeout;
-                command.Transaction = Executer.dbTransaction;
+                //command.Transaction = Executer.dbTransaction;
             }
 
             public void EndTime()

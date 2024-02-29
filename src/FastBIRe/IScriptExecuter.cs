@@ -1,5 +1,5 @@
-﻿using System.Data.Common;
-using System.Diagnostics;
+﻿using System.Data;
+using System.Data.Common;
 
 namespace FastBIRe
 {
@@ -9,25 +9,25 @@ namespace FastBIRe
     public delegate TResult ReadDataResultHandlerSync<TResult>(IScriptExecuter executer, ReadingDataArgs args);
     public interface IScriptExecuter : IDisposable
     {
-        Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
+        Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction=null, CancellationToken token = default);
 
-        int Execute(string script, IEnumerable<KeyValuePair<string, object?>>? args = null);
+        int Execute(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null);
 
-        Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, CancellationToken token = default);
+        Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null, CancellationToken token = default);
 
-        int ExecuteBatch(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null);
+        int ExecuteBatch(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null);
 
-        Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
+        Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null, CancellationToken token = default);
 
-        void Read(string script, ReadDataHandlerSync handler, IEnumerable<KeyValuePair<string, object?>>? args = null);
+        void Read(string script, ReadDataHandlerSync handler, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null);
 
-        Task<IScriptReadResult> ReadAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
+        Task<IScriptReadResult> ReadAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null, CancellationToken token = default);
 
-        IScriptReadResult Read(string script, IEnumerable<KeyValuePair<string, object?>>? args = null);
+        IScriptReadResult Read(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null);
 
-        Task<TResult> ReadResultAsync<TResult>(string script, ReadDataResultHandler<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default);
+        Task<TResult> ReadResultAsync<TResult>(string script, ReadDataResultHandler<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null, CancellationToken token = default);
         
-        TResult ReadResult<TResult>(string script, ReadDataResultHandlerSync<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null);
+        TResult ReadResult<TResult>(string script, ReadDataResultHandlerSync<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null);
     }
     public interface IScriptReadResult : IDisposable
     {

@@ -2,6 +2,8 @@
 using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
+using FastBIRe.Wrapping;
+using System.Data.Common;
 
 namespace FastBIRe
 {
@@ -9,7 +11,11 @@ namespace FastBIRe
     {
         SqlType SqlType { get; }
 
+        IEscaper Escaper { get; }
+
         IDbScriptExecuter Executer { get; }
+
+        DbConnection Connection { get; }
 
         DatabaseReader DatabaseReader { get; }
 
@@ -17,10 +23,10 @@ namespace FastBIRe
     }
     public static class FastBIReContextGenExtensions
     {
-        public static Task<int> ExecuteMigrationScriptsAsync(this IFastBIReContext context,string tableName, Action<DatabaseTable>? configRemoteTable = null, CancellationToken token = default)
+        public static Task<int> ExecuteMigrationScriptsAsync(this IFastBIReContext context, string tableName, Action<DatabaseTable>? configRemoteTable = null, CancellationToken token = default)
         {
             var res = GetMigrationScripts(context, tableName, configRemoteTable);
-            if (res.Scripts.Count==0)
+            if (res.Scripts.Count == 0)
             {
                 return Task.FromResult(0);
             }
@@ -49,7 +55,7 @@ namespace FastBIRe
             }
             return new MigrationScriptsResult(tables, results);
         }
-        public static MigrationScriptResult GetMigrationScripts(this IFastBIReContext context, string tableName,Action<DatabaseTable>? configRemoteTable=null)
+        public static MigrationScriptResult GetMigrationScripts(this IFastBIReContext context, string tableName, Action<DatabaseTable>? configRemoteTable = null)
         {
             var localTable = context.TableProvider.GetTable(tableName);
             if (localTable == null)

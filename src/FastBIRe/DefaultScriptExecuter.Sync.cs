@@ -1,35 +1,37 @@
-﻿using System.Diagnostics;
+﻿using System.Data.Common;
+using System.Diagnostics;
 
 namespace FastBIRe
 {
     public partial class DefaultScriptExecuter
     {
-        public int Execute(string script, IEnumerable<KeyValuePair<string, object?>>? args = null)
+        public int Execute(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null)
         {
-            return Execute(script, null, args, GetStackTrace());
+            return Execute(script, null, args,transaction, GetStackTrace());
         }
 
-        public int ExecuteBatch(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null)
+        public int ExecuteBatch(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null)
         {
-            return ExecuteBatch(scripts, GetStackTrace(), argss);
+            return ExecuteBatch(scripts, GetStackTrace(), argss,transaction);
         }
 
-        public void Read(string script, ReadDataHandlerSync handler, IEnumerable<KeyValuePair<string, object?>>? args = null)
+        public void Read(string script, ReadDataHandlerSync handler, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null)
         {
-            ReadResult<bool>(script, (o, e) =>
+            ReadResult(script, (o, e) =>
             {
                 handler(o, e);
                 return false;
             }, args);
         }
 
-        public IScriptReadResult Read(string script, IEnumerable<KeyValuePair<string, object?>>? args = null)
+        public IScriptReadResult Read(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null)
         {
             var s = new CommandState(this, GetStackTrace(), new ScriptUnit(script, args));
             s.RaiseBegin();
             var command = Connection.CreateCommand();
             try
             {
+                command.Transaction = dbTransaction ?? transaction;
                 s.RaiseCreatedCommand(command);
                 s.LoadParamters(command);
                 s.RaiseLoadCommand(command);
@@ -53,7 +55,7 @@ namespace FastBIRe
                 throw;
             }
         }
-        public int ExecuteBatch(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null)
+        public int ExecuteBatch(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null)
         {
             if (!scripts.Any())
             {
@@ -70,7 +72,7 @@ namespace FastBIRe
             return ExecuteBatchSlow(scripts, stackTrace, argss);
         }
 
-        public TResult ReadResult<TResult>(string script, ReadDataResultHandlerSync<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null)
+        public TResult ReadResult<TResult>(string script, ReadDataResultHandlerSync<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null)
         {
             var s = new CommandState(this, GetStackTrace(), new ScriptUnit(script, args));
             s.RaiseBegin();
@@ -78,6 +80,7 @@ namespace FastBIRe
             {
                 try
                 {
+                    command.Transaction = dbTransaction ?? transaction;
                     s.RaiseCreatedCommand(command);
                     s.LoadParamters(command);
                     s.RaiseLoadCommand(command);
@@ -103,7 +106,7 @@ namespace FastBIRe
                 }
             }
         }
-        private int ExecuteBatchSlow(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null)
+        private int ExecuteBatchSlow(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null)
         {
             var res = 0;
             var argEnumerator = argss?.GetEnumerator();
@@ -116,7 +119,7 @@ namespace FastBIRe
                 }
                 foreach (var item in scripts)
                 {
-                    res += Execute(item, scripts, args, stackTrace);
+                    res += Execute(item, scripts, args, transaction,stackTrace);
                 }
             }
             finally
@@ -126,7 +129,7 @@ namespace FastBIRe
             return res;
         }
 #if !NETSTANDARD2_0
-        protected int? BatchExecuteAdo(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null)
+        protected int? BatchExecuteAdo(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null)
         {
             var s = new CommandState(this, stackTrace, CreateScriptUnits(scripts, argss));
             s.RaiseBegin();
@@ -137,7 +140,7 @@ namespace FastBIRe
                 {
                     try
                     {
-                        batch.Transaction = dbTransaction;
+                        batch.Transaction = dbTransaction ?? transaction;
                         s.RaiseCreateBatch(batch);
                         foreach (var item in s.ScriptUnits!)
                         {
@@ -168,7 +171,7 @@ namespace FastBIRe
         }
 #endif
 
-        protected virtual int Execute(string script, IEnumerable<string>? scripts, IEnumerable<KeyValuePair<string, object?>>? args, StackTrace? stackTrace)
+        protected virtual int Execute(string script, IEnumerable<string>? scripts, IEnumerable<KeyValuePair<string, object?>>? args, DbTransaction? transaction, StackTrace? stackTrace)
         {
             var s = new CommandState(this, stackTrace, new ScriptUnit(script, args));
             s.RaiseBegin();
@@ -182,6 +185,7 @@ namespace FastBIRe
             {
                 try
                 {
+                    command.Transaction = dbTransaction ?? transaction;
                     s.RaiseCreatedCommand(command);
                     s.LoadParamters(command);
                     s.RaiseLoadCommand(command);

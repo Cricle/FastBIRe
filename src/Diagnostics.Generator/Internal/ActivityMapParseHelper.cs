@@ -75,7 +75,7 @@ namespace Diagnostics.Generator.Internal
 #pragma warning disable CS8604
 #nullable enable
             {nameSpaceStart}
-                [global::Diagnostics.Generator.Core.Annotations.ActivityMapToEventSourceAttribute(typeof(global::{source}),{eventSourceEvents.Count()})]
+                [global::Diagnostics.Generator.Core.Annotations.ActivityMapToEventSourceAttribute(typeof(global::{source.ToString().TrimEnd('?')}),{eventSourceEvents.Count()})]
                 {visibility} partial class {symbol.Name}
                 {{
                     {string.Join("\n", eventSourceEvents.Select(x => WriteMethodMap(symbol.IsStatic, x, ctxNullableEnd, withCallTog, instanceAccesstCode, callEventAtEnd, logMode, generateWithLog)))}
@@ -181,7 +181,7 @@ if(additionTags != null)
             var loggerMessageAttr = method.GetAttribute(Consts.LoggerMessageAttribute.FullName);
             var logMessageData = LoggerMessageData.FromAttribute(method.Name, loggerMessageAttr, method.GetAttribute(Consts.EventAttribute.FullName));
             var eventId =logMessageData.EventId;
-            var activityMapToEventAttr = $"[global::Diagnostics.Generator.Core.Annotations.ActivityMapToEventAttribute({eventId},\"{method.Name}\",new global::System.Type[]{{ {string.Join(",", pars.Select(x => $"typeof({x.Type})"))} }})]";
+            var activityMapToEventAttr = $"[global::Diagnostics.Generator.Core.Annotations.ActivityMapToEventAttribute({eventId},\"{method.Name}\",new global::System.Type[]{{ {string.Join(",", pars.Select(x => $"typeof({x.Type.ToString().TrimEnd('?')})"))} }})]";
             var argCode = $"global::System.Diagnostics.Activity{nullableEnd} activity, {endsArgs}";
 
             var callEventSourceCodes = string.Empty;

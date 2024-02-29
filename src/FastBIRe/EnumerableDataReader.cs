@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
-    public class EnumerableDataReader<T> : IDataReader
+    public readonly struct EnumerableDataReader<T> : IDataReader
     {
         public object this[int i] => GetValue(i);
 
@@ -22,7 +22,7 @@ namespace FastBIRe
 
         private readonly IEnumerator<IReadOnlyList<T>> enumerable;
 
-        private IReadOnlyList<T>? values;
+        private IReadOnlyList<T>? Values => enumerable.Current;
 
         public EnumerableDataReader(IEnumerator<IReadOnlyList<T>> enumerable, DataSchema schema)
         {
@@ -35,7 +35,7 @@ namespace FastBIRe
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void ThrowIfValuesNull()
         {
-            if (values == null)
+            if (Values == null)
             {
                 throw new InvalidOperationException("Must use Read");
             }
@@ -54,7 +54,7 @@ namespace FastBIRe
         private TInst? GetOrCase<TInst>(int i)
         {
             ThrowIfValuesNull();
-            var val = values![i];
+            var val = Values![i];
             if (val == null)
             {
                 return default;
@@ -177,21 +177,21 @@ namespace FastBIRe
         public string GetString(int i)
         {
             ThrowIfValuesNull();
-            return values![i]?.ToString()!;
+            return Values![i]?.ToString()!;
         }
 
         public object GetValue(int i)
         {
-            return values![i]!;
+            return Values![i]!;
         }
 
         public int GetValues(object?[] values)
         {
             ThrowIfValuesNull();
-            var copyCount = Math.Min(values.Length, this.values!.Count);
+            var copyCount = Math.Min(values.Length, this.Values!.Count);
             for (int i = 0; i < copyCount; i++)
             {
-                values[i] = this.values[i];
+                values[i] = this.Values[i];
             }
             return copyCount;
         }
@@ -199,7 +199,7 @@ namespace FastBIRe
         public bool IsDBNull(int i)
         {
             ThrowIfValuesNull();
-            var val = values![i];
+            var val = Values![i];
             return val == null ||DBNull.Value.Equals(val);
         }
 
@@ -212,7 +212,6 @@ namespace FastBIRe
         {
             if (enumerable.MoveNext())
             {
-                values = enumerable.Current;
                 return true;
             }
             return false;

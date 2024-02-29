@@ -4,6 +4,7 @@ using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Validators;
+using FastBIRe.Benchmarks.Actions;
 
 namespace FastBIRe.Benchmarks
 {
@@ -11,9 +12,10 @@ namespace FastBIRe.Benchmarks
     {
         static void Main(string[] args)
         {
-            //var cr = new CsvBenchmark();
-            //cr.SimpleParse();
-            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args,new MyConfig());
+            //var cr = new OrmBenchmarks();
+            //cr.Setup();
+            //cr.FastBIReOutterRun().GetAwaiter().GetResult();
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, new MyConfig());
         }
     }
     public class MyConfig : ManualConfig

@@ -14,6 +14,57 @@ namespace FastBIRe.Builders
     }
     public static class TableBuilderSetExtensions
     {
+        public static async Task CreateOrMigrationAsync(this IFastBIReContext context, string database, Action<DatabaseTable>? configRemoteTable = null)
+        {
+            var oldDatabase = context.Executer.Connection.Database;
+            var needsChangedDb = context.SqlType != SqlType.DuckDB && context.SqlType != SqlType.SQLite && database != oldDatabase && !string.IsNullOrWhiteSpace(oldDatabase);
+            try
+            {
+#if NETSTANDARD2_0
+                context.Executer.Connection.ChangeDatabase(database);
+#else
+                await context.Executer.Connection.ChangeDatabaseAsync(database);
+#endif
+
+                var adapter = context.SqlType.GetDatabaseCreateAdapter()!;
+                var tables = context.DatabaseReader.TablesQuickView();
+                var ddl = new DdlGeneratorFactory(context.SqlType);
+                var existsSql = adapter.CheckDatabaseExists(database);
+                var exists = await context.Executer.ExistsAsync(existsSql);
+                if (exists)
+                {
+                    foreach (var item in context.TableProvider)
+                    {
+                        if (tables.Any(x => x.Name == item.Name))
+                        {
+                            var mig = context.GetMigrationScripts(item.Name, configRemoteTable);
+                            await context.Executer.ExecuteAsync(mig.Script);
+                        }
+                        else
+                        {
+                            var sql = ddl.TableGenerator(item).Write();
+                            await context.Executer.ExecuteAsync(sql);
+                        }
+                    }
+                }
+                else
+                {
+                    await context.Executer.ExecuteAsync(adapter.CreateDatabase(database));
+                    await context.Executer.ExecuteAsync(ToCreateTablesSql(context.TableProvider));
+                }
+            }
+            finally
+            {
+                if (needsChangedDb)
+                {
+#if NETSTANDARD2_0
+                    context.Executer.Connection.ChangeDatabase(oldDatabase);
+#else
+                    await context.Executer.Connection.ChangeDatabaseAsync(oldDatabase);
+#endif
+                }
+            }
+        }
         public static string ToCreateTablesSql(this ITableProvider provider)
         {
             var schema = new DatabaseSchema(string.Empty, provider.SqlType);
@@ -61,7 +112,7 @@ namespace FastBIRe.Builders
         }
         public static ITableBuilder DateTimeColumn(this ITableBuilder builder,
             string name,
-            int? length=null,
+            int? length = null,
             string? computedDefinition = null,
             bool nullable = true,
             int? scale = null,
@@ -241,7 +292,7 @@ namespace FastBIRe.Builders
             }
             return builder;
         }
-        public static ITableBuilder AddIndex(this ITableBuilder builder, IEnumerable<string> columns, IEnumerable<bool>? orderDescs = null, bool isUnique = false,string? indexType=null, string? name = null, Action<DatabaseIndex>? configurate = null)
+        public static ITableBuilder AddIndex(this ITableBuilder builder, IEnumerable<string> columns, IEnumerable<bool>? orderDescs = null, bool isUnique = false, string? indexType = null, string? name = null, Action<DatabaseIndex>? configurate = null)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -252,9 +303,9 @@ namespace FastBIRe.Builders
                 Name = name!,
                 IsUnique = isUnique,
                 IndexType = indexType,
-                TableName=builder.Table.Name,
+                TableName = builder.Table.Name,
             };
-            if (builder.SqlType== SqlType.MySql)
+            if (builder.SqlType == SqlType.MySql)
             {
                 constraint.IndexType = "BTREE";
             }

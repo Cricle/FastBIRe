@@ -1,18 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using FastBIRe.Internals;
+using System.Data.Common;
 using System.Diagnostics;
-using System.Text;
 
 namespace FastBIRe
 {
     public partial class DefaultScriptExecuter
     {
-        public Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        public Task<int> ExecuteAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
-            return ExecuteAsync(script, null, args, GetStackTrace(), token);
+            return ExecuteAsync(script, null, args, GetStackTrace(),transaction, token);
         }
 
-        protected virtual async Task<int> ExecuteAsync(string script, IEnumerable<string>? scripts, IEnumerable<KeyValuePair<string, object?>>? args, StackTrace? stackTrace, CancellationToken token = default)
+        protected virtual async Task<int> ExecuteAsync(string script, IEnumerable<string>? scripts, IEnumerable<KeyValuePair<string, object?>>? args, StackTrace? stackTrace, DbTransaction? transaction = null, CancellationToken token = default)
         {
             var s = new CommandState(this, stackTrace, new ScriptUnit(script, args));
             s.RaiseBegin();
@@ -26,6 +25,8 @@ namespace FastBIRe
             {
                 try
                 {
+                    command.Transaction = dbTransaction ?? transaction;
+
                     s.RaiseCreatedCommand(command);
                     s.LoadParamters(command);
                     s.RaiseLoadCommand(command);
@@ -46,7 +47,7 @@ namespace FastBIRe
                 }
             }
         }
-        private async Task<int> ExecuteBatchSlowAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, CancellationToken token = default)
+        private async Task<int> ExecuteBatchSlowAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
             var res = 0;
             var argEnumerator = argss?.GetEnumerator();
@@ -59,7 +60,7 @@ namespace FastBIRe
                 }
                 foreach (var item in scripts)
                 {
-                    res += await ExecuteAsync(item, scripts, args, stackTrace, token);
+                    res += await ExecuteAsync(item, scripts, args, stackTrace,transaction, token);
                 }
             }
             finally
@@ -69,7 +70,7 @@ namespace FastBIRe
             return res;
         }
 #if !NETSTANDARD2_0
-        protected async Task<int?> BatchExecuteAdoAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, CancellationToken token = default)
+        protected async Task<int?> BatchExecuteAdoAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
             var s = new CommandState(this, stackTrace, CreateScriptUnits(scripts, argss));
             s.RaiseBegin();
@@ -80,7 +81,7 @@ namespace FastBIRe
                 {
                     try
                     {
-                        batch.Transaction = dbTransaction;
+                        batch.Transaction = dbTransaction??transaction;
                         s.RaiseCreateBatch(batch);
                         foreach (var item in s.ScriptUnits!)
                         {
@@ -110,11 +111,11 @@ namespace FastBIRe
             return null;
         }
 #endif
-        public Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, CancellationToken token = default)
+        public Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
-            return ExecuteBatchAsync(scripts, GetStackTrace(), argss, token);
+            return ExecuteBatchAsync(scripts, GetStackTrace(), argss,transaction, token);
         }
-        public async Task<TResult> ReadResultAsync<TResult>(string script, ReadDataResultHandler<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        public async Task<TResult> ReadResultAsync<TResult>(string script, ReadDataResultHandler<TResult> handler, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
             var s = new CommandState(this, GetStackTrace(), new ScriptUnit(script, args));
             s.RaiseBegin();
@@ -122,6 +123,8 @@ namespace FastBIRe
             {
                 try
                 {
+                    command.Transaction = dbTransaction ?? transaction;
+
                     s.RaiseCreatedCommand(command);
                     s.LoadParamters(command);
                     s.RaiseLoadCommand(command);
@@ -147,21 +150,22 @@ namespace FastBIRe
                 }
             }
         }
-        public Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        public Task ReadAsync(string script, ReadDataHandler handler, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
             return ReadResultAsync(script, async (o, e) =>
             {
                 await handler(o, e);
                 return true;
-            }, args, token);
+            }, args,transaction, token);
         }
-        public async Task<IScriptReadResult> ReadAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        public async Task<IScriptReadResult> ReadAsync(string script, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
             var s = new CommandState(this, GetStackTrace(), new ScriptUnit(script, args));
             s.RaiseBegin();
             var command = Connection.CreateCommand();
             try
             {
+                command.Transaction = dbTransaction ?? transaction;
                 s.RaiseCreatedCommand(command);
                 s.LoadParamters(command);
                 s.RaiseLoadCommand(command);
@@ -185,12 +189,12 @@ namespace FastBIRe
                 throw;
             }
         }
-        public Task<int> ExecuteAsync(string script, StackTrace? stackTrace, IEnumerable<KeyValuePair<string, object?>>? args = null, CancellationToken token = default)
+        public Task<int> ExecuteAsync(string script, StackTrace? stackTrace, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
-            return ExecuteAsync(script, null, args, stackTrace, token);
+            return ExecuteAsync(script, null, args, stackTrace, transaction, token);
         }
 
-        public async Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, CancellationToken token = default)
+        public async Task<int> ExecuteBatchAsync(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
             if (!scripts.Any())
             {
@@ -198,13 +202,13 @@ namespace FastBIRe
             }
             stackTrace ??= GetStackTrace();
 #if !NETSTANDARD2_0
-            var res = await BatchExecuteAdoAsync(scripts, stackTrace, argss, token);
+            var res = await BatchExecuteAdoAsync(scripts, stackTrace, argss,transaction, token);
             if (res != null)
             {
                 return res.Value;
             }
 #endif
-            return await ExecuteBatchSlowAsync(scripts, stackTrace, argss, token);
+            return await ExecuteBatchSlowAsync(scripts, stackTrace, argss, transaction, token);
         }
 
     }
