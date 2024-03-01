@@ -20,11 +20,15 @@ namespace FastBIRe.Builders
             var needsChangedDb = context.SqlType != SqlType.DuckDB && context.SqlType != SqlType.SQLite && database != oldDatabase && !string.IsNullOrWhiteSpace(oldDatabase);
             try
             {
+                if (needsChangedDb)
+                {
+
 #if NETSTANDARD2_0
-                context.Executer.Connection.ChangeDatabase(database);
+                    context.Executer.Connection.ChangeDatabase(database);
 #else
-                await context.Executer.Connection.ChangeDatabaseAsync(database);
+                    await context.Executer.Connection.ChangeDatabaseAsync(database);
 #endif
+                }
 
                 var adapter = context.SqlType.GetDatabaseCreateAdapter()!;
                 var tables = context.DatabaseReader.TablesQuickView();

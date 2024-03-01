@@ -3,10 +3,68 @@ using DatabaseSchemaReader.Compare;
 using DatabaseSchemaReader.DataSchema;
 using DatabaseSchemaReader.SqlGen;
 using FastBIRe.Wrapping;
+using System.Data;
 using System.Data.Common;
 
 namespace FastBIRe
 {
+    public interface IFastBIReContextFactory : IDisposable
+    {
+        Task<IFastBIReContext> CreateContextAsync(CancellationToken token = default);
+
+        IFastBIReContext CreateContext();
+    }
+    public class DelegateFastBIReContextFactory : IFastBIReContextFactory
+    {
+        public DelegateFastBIReContextFactory(Func<IDbScriptExecuter> scriptExecuterFactory, ITableProvider tableProvider)
+        {
+            ScriptExecuterFactory = scriptExecuterFactory ?? throw new ArgumentNullException(nameof(scriptExecuterFactory));
+            TableProvider = tableProvider ?? throw new ArgumentNullException(nameof(tableProvider));
+        }
+
+        public Func<IDbScriptExecuter> ScriptExecuterFactory { get; }
+
+        public ITableProvider TableProvider { get; }
+
+        public IFastBIReContext CreateContext()
+        {
+            var db = ScriptExecuterFactory();
+            if (db.Connection.State != ConnectionState.Open)
+            {
+
+                db.Connection.Open();
+            }
+            return new FastBIReContext(db, TableProvider);
+        }
+
+        public async Task<IFastBIReContext> CreateContextAsync(CancellationToken token = default)
+        {
+            var db = ScriptExecuterFactory();
+            if (db.Connection.State != ConnectionState.Open)
+            {
+                await db.Connection.OpenAsync(token);
+            }
+            return new FastBIReContext(db, TableProvider);
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+    public abstract class FastBIReContextFactoryBase : IFastBIReContextFactory
+    {
+        public abstract IFastBIReContext CreateContext();
+
+        public Task<IFastBIReContext> CreateContextAsync(CancellationToken token = default)
+        {
+            token.ThrowIfCancellationRequested();
+            return Task.FromResult(CreateContext());
+        }
+
+        public virtual void Dispose()
+        {
+        }
+    }
     public interface IFastBIReContext : IDisposable
     {
         SqlType SqlType { get; }

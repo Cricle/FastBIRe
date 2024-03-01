@@ -140,7 +140,7 @@ namespace FastBIRe
             }
             public void LoadParamters(DbBatch batch, DbBatchCommand command, ScriptUnit unit)
             {
-                command.CommandText = Executer.SqlQutoConversion(Executer.SqlParameterConversion(unit.Script));
+                command.CommandText = unit.Script;
                 if (unit.Parameters == null)
                 {
                     return;
@@ -224,7 +224,7 @@ namespace FastBIRe
                         }
                     }
                 }
-                command.CommandText = Executer.SqlQutoConversion(Executer.SqlParameterConversion(ScriptUnit!.Value.Script));
+                command.CommandText = ScriptUnit.Value.Script;
                 command.CommandTimeout = Executer.CommandTimeout;
                 //command.Transaction = Executer.dbTransaction;
             }

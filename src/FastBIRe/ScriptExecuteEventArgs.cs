@@ -46,6 +46,14 @@ namespace FastBIRe
             Script = script;
             Parameters = parameters;
         }
+        public string GetParamterString()
+        {
+            if (Parameters==null)
+            {
+                return string.Empty;
+            }
+            return string.Join(",", Parameters.Select(x => $"[{x.Key}={x.Value}]"));
+        }
 
         public override string? ToString()
         {
@@ -53,7 +61,7 @@ namespace FastBIRe
             {
                 return Script;
             }
-            return $"{Script}{Environment.NewLine}{string.Join(",", Parameters.Select(x => $"[{x.Key}={x.Value}]"))}";
+            return $"{Script}{Environment.NewLine}{GetParamterString()}";
         }
     }
 

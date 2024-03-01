@@ -2,7 +2,6 @@
 using FastBIRe.Internals;
 using FastBIRe.Wrapping;
 using System.Data.Common;
-using System.Diagnostics.Tracing;
 
 namespace FastBIRe
 {
@@ -22,31 +21,12 @@ namespace FastBIRe
             }
             SqlType = sqlType!.Value;
             Escaper = SqlType.GetEscaper();
-#if NETSTANDARD2_0
             ScriptStated += OnScriptStated;
-#else
-            ScriptExecuterEventSource.Instance.EventCommandExecuted += OnEventCommandExecuted;
-#endif
-        }
-
-        private void OnEventCommandExecuted(object? sender, EventCommandEventArgs e)
-        {
-            if (e.Command== EventCommand.Enable)
-            {
-                ScriptStated += OnScriptStated;
-            }
-            else if (e.Command== EventCommand.Disable)
-            {
-                ScriptStated -= OnScriptStated;
-            }
         }
 
         private void OnScriptStated(object? sender, ScriptExecuteEventArgs e)
         {
-            if (ScriptExecuterEventSource.Instance.IsEnabled())
-            {
-                ScriptExecuterEventSource.Instance.WriteScriptExecuteEventArgs(e);
-            }
+            ScriptExecuterEventSource.Instance.WriteScriptExecuteEventArgs(e);
         }
 
         public DbConnection Connection { get; }
@@ -74,6 +54,19 @@ namespace FastBIRe
         public char QutoEnd { get; set; } = ']';
 
         public event EventHandler<ScriptExecuteEventArgs>? ScriptStated;
+        public event EventHandler? Disposed;
+
+        public void SafeRegistStated(EventHandler<ScriptExecuteEventArgs> handler)
+        {
+            ScriptStated += handler;
+            void DisposeEvent(object? _, EventArgs __)
+            {
+                ScriptStated -= handler;
+                Disposed -= DisposeEvent;
+            }
+
+            Disposed += DisposeEvent;
+        }
 
         private IEnumerable<ScriptUnit> CreateScriptUnits(IEnumerable<string> scripts, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss)
         {
@@ -104,6 +97,7 @@ namespace FastBIRe
         {
             Connection?.Dispose();
             DetchEventSource();
+            Disposed?.Invoke(this, EventArgs.Empty);
         }
         public void DetchEventSource()
         {

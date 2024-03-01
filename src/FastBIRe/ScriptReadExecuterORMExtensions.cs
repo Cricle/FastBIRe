@@ -141,7 +141,6 @@ namespace FastBIRe
         {
             return scriptExecuter.ReadResult(script, static (o, e) => RecordToObjectManager<T>.ToList(e.Reader), args: ParamterParser.Parse(args), transaction);
         }
-
         public static async IAsyncEnumerable<T?> EnumerableAsync<T>(this IScriptExecuter scriptExecuter, string script, object? args = null, DbTransaction? transaction = null, [EnumeratorCancellation] CancellationToken token = default)
         {
             using (var result = await scriptExecuter.ReadAsync(script, ParamterParser.Parse(args), transaction: transaction, token))
