@@ -27,7 +27,7 @@ namespace FastBIRe
         public EnumerableDataReader(IEnumerator<IReadOnlyList<T>> enumerable, DataSchema schema)
         {
             this.enumerable = enumerable ?? throw new ArgumentNullException(nameof(enumerable));
-            Schema = schema ?? throw new ArgumentNullException(nameof(schema));
+            Schema = schema;
         }
 
         public DataSchema Schema { get; }

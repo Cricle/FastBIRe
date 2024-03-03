@@ -65,6 +65,28 @@ namespace FastBIRe
                 return Task.CompletedTask;
             }, args: ParamterParser.Parse(args), transaction, token: token);
         }
+        public static Task<IDataSchemaDataTable> ReadTableAsync(this IScriptExecuter scriptExecuter, string script, object? args = null, DbTransaction? transaction = null, CancellationToken token = default)
+        {
+            return scriptExecuter.ReadTableAsync(script, ParamterParser.Parse(args), transaction, token);
+        }
+        public static async Task<IDataSchemaDataTable> ReadTableAsync(this IScriptExecuter scriptExecuter, string script, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null, CancellationToken token = default)
+        {
+            using (var scope = await scriptExecuter.ReadAsync(script, args, transaction, token))
+            {
+                return scope.Args.Reader.ToSchemaTable();
+            }
+        }
+        public static IDataSchemaDataTable ReadTable(this IScriptExecuter scriptExecuter, string script, object? args = null, DbTransaction? transaction = null)
+        {
+            return scriptExecuter.ReadTable(script, ParamterParser.Parse(args), transaction);
+        }
+        public static IDataSchemaDataTable ReadTable(this IScriptExecuter scriptExecuter, string script, IEnumerable<KeyValuePair<string, object?>>? args = null, DbTransaction? transaction = null)
+        {
+            using (var scope = scriptExecuter.Read(script, args, transaction))
+            {
+                return scope.Args.Reader.ToSchemaTable();
+            }
+        }
         public static void Read(this IScriptExecuter scriptExecuter, string script, ReadDataHandlerSync handler, object? args = null, DbTransaction? transaction = null)
         {
             scriptExecuter.Read(script, (o, e) =>

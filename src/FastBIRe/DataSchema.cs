@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
-    public record class DataSchema
+    public readonly record struct DataSchema
     {
         public DataSchema(IReadOnlyList<string> names, IReadOnlyList<Type> types)
         {
@@ -43,7 +43,7 @@ namespace FastBIRe
             return DataSchemaDataTable.FromReader(schema, reader);
         }
     }
-    public class DataSchemaDataTable : IDisposable
+    public class DataSchemaDataTable : IDisposable, IDataSchemaDataTable
     {
         public DataSchema DataSchema { get; }
 
@@ -55,11 +55,37 @@ namespace FastBIRe
         {
             get
             {
-                if (_arrayFromPool == null)
+                if (_pos == 0 || DataSchema.Names.Count == 0)
                 {
                     return 0;
                 }
-                return (int)Math.Ceiling(_arrayFromPool.Length / (double)DataSchema.Names.Count);
+                return (int)Math.Ceiling(_pos / (double)DataSchema.Names.Count);
+            }
+        }
+
+        public int Count => _pos;
+
+        public object? this[int index]
+        {
+            get
+            {
+                if (_arrayFromPool == null||index >= _pos)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(index));
+                }
+                return _arrayFromPool[_pos];
+            }
+        }
+        public object? this[int row,int column]
+        {
+            get
+            {
+                var start = row * DataSchema.Names.Count;
+                if (_arrayFromPool == null || (start + column) >= _pos)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(row) + " " + nameof(column));
+                }
+                return _arrayFromPool[start + column];
             }
         }
 
@@ -68,7 +94,7 @@ namespace FastBIRe
             DataSchema = dataSchema;
         }
 
-        public static DataSchemaDataTable FromReader(DataSchema dataSchema,IDataReader reader)
+        public static DataSchemaDataTable FromReader(DataSchema dataSchema, IDataReader reader)
         {
             var table = new DataSchemaDataTable(dataSchema);
             table.AppendTable(reader);
@@ -76,9 +102,9 @@ namespace FastBIRe
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private object?[] GetRowBuffer()
+        public object?[] GetRowBuffer()
         {
-            if (rowBuffer==null)
+            if (rowBuffer == null)
             {
                 rowBuffer = new object?[DataSchema.Names.Count];
             }
@@ -95,32 +121,6 @@ namespace FastBIRe
             return _arrayFromPool.AsSpan(actualIndex, DataSchema.Names.Count);
         }
 
-        public object? GetRowColumn(int index,int columnIndex)
-        {
-            return GetRow(index)[columnIndex];
-        }
-
-        public object? GetRowColumn(int index, string columnName)
-        {
-            var colIndex = FindColumnIndex(columnName);
-            if (colIndex==-1)
-            {
-                throw new ArgumentException($"No such column {columnName}");
-            }
-            return GetRowColumn(index, colIndex);
-        }
-
-        private int FindColumnIndex(string columnName)
-        {
-            for (int i = 0; i < DataSchema.Names.Count; i++)
-            {
-                if (DataSchema.Names[i]==columnName)
-                {
-                    return i;
-                }
-            }
-            return -1;
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(object? item)
@@ -128,7 +128,7 @@ namespace FastBIRe
             int pos = _pos;
 
             // Workaround for https://github.com/dotnet/runtime/issues/72004
-            if (_arrayFromPool!=null&&(uint)pos < (uint)_arrayFromPool.Length)
+            if (_arrayFromPool != null && (uint)pos < (uint)_arrayFromPool.Length)
             {
                 _arrayFromPool[pos] = item;
                 _pos = pos + 1;
@@ -138,26 +138,11 @@ namespace FastBIRe
                 AddWithResize(item);
             }
         }
-        public void AppendTable(IDataReader reader)
-        {
-            var buffer = GetRowBuffer();
-            while (reader.Read())
-            {
-                var size = reader.GetValues(buffer!);
-                Append(buffer.AsSpan(size));
-            }
-        }
-        public void AppendRow(IDataRecord record)
-        {
-            var buff = GetRowBuffer();
-            var size = record.GetValues(buff!);
-            Append(buff.AsSpan(size));
-        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(scoped ReadOnlySpan<object?> source)
         {
             int pos = _pos;
-            if (_arrayFromPool != null&& source.Length == 1 && (uint)pos < (uint)_arrayFromPool.Length)
+            if (_arrayFromPool != null && source.Length == 1 && (uint)pos < (uint)_arrayFromPool.Length)
             {
                 _arrayFromPool[pos] = source[0];
                 _pos = pos + 1;
@@ -170,7 +155,7 @@ namespace FastBIRe
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void AppendMultiChar(scoped ReadOnlySpan<object?> source)
         {
-            if (_arrayFromPool==null||((uint)(_pos + source.Length) > (uint)_arrayFromPool.Length))
+            if (_arrayFromPool == null || ((uint)(_pos + source.Length) > (uint)_arrayFromPool.Length))
             {
                 Grow(_arrayFromPool?.Length ?? 0 - _pos + source.Length);
             }
@@ -215,7 +200,7 @@ namespace FastBIRe
             }
 
             object?[] array = ArrayPool<object?>.Shared.Rent(nextCapacity);
-            if (_arrayFromPool!=null)
+            if (_arrayFromPool != null)
             {
                 _arrayFromPool.AsSpan(_pos).CopyTo(array.AsSpan());
             }

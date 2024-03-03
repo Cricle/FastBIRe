@@ -27,41 +27,49 @@ namespace FastBIRe.Benchmarks.Actions
         [Benchmark(Baseline = true)]
         public async Task DapperRun()
         {
-            await connection.QueryAsync<AddressObject>("SELECT * FROM `address` limit 100;");
+            await connection.QueryAsync("SELECT * FROM `address` limit 100;");
         }
-        [Benchmark]
-        public async Task FastBIReRun()
-        {
-            await scriptExecuter.ReadAsync<AddressObject>("SELECT * FROM `address` limit 100;");
-        }
-        [Benchmark]
-        public async Task FastBIReEnumerableRun()
-        {
-            await scriptExecuter.EnumerableAsync<AddressObject>("SELECT * FROM `address` limit 100;", x =>
-            {
+        //[Benchmark]
+        //public async Task FastBIReRun()
+        //{
+        //    await scriptExecuter.ReadAsync<AddressObject>("SELECT * FROM `address` limit 100;");
+        //}
+        //[Benchmark]
+        //public async Task FastBIReEnumerableRun()
+        //{
+        //    await scriptExecuter.EnumerableAsync<AddressObject>("SELECT * FROM `address` limit 100;", x =>
+        //    {
 
-            });
-        }
+        //    });
+        //}
         [Benchmark]
-        public async Task FastBIReOutterRun()
+        public async Task FastBIReTableRun()
         {
             using (var result = await scriptExecuter.ReadAsync("SELECT * FROM `address` limit 100;"))
             {
-                var reader = result.Args.Reader;
-                while (reader.Read())
-                {
-                    result.Read<AddressObject>();
-                }
+                result.Args.Reader.ToSchemaTable().Dispose();
             }
         }
-        [Benchmark]
-        public async Task FastBIReAsynIre()
-        {
-            await foreach (var item in scriptExecuter.EnumerableAsync<AddressObject>("SELECT * FROM `address` limit 100;"))
-            {
+        //[Benchmark]
+        //public async Task FastBIReOutterRun()
+        //{
+        //    using (var result = await scriptExecuter.ReadAsync("SELECT * FROM `address` limit 100;"))
+        //    {
+        //        var reader = result.Args.Reader;
+        //        while (reader.Read())
+        //        {
+        //            result.Read<AddressObject>();
+        //        }
+        //    }
+        //}
+        //[Benchmark]
+        //public async Task FastBIReAsynIre()
+        //{
+        //    await foreach (var item in scriptExecuter.EnumerableAsync<AddressObject>("SELECT * FROM `address` limit 100;"))
+        //    {
 
-            }
-        }
+        //    }
+        //}
     }
     [GenerateModel]
     public record struct AddressObject

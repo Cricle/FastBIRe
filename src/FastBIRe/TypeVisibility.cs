@@ -21,9 +21,14 @@
             IsDateTime = typeof(T) == typeof(DateTime) || typeof(T) == typeof(DateTime?);
             IsDecimal = typeof(T) == typeof(decimal) || typeof(T) == typeof(decimal?);
             IsString = typeof(T) == typeof(string);
-            IsNullable = typeof(T).IsGenericType && typeof(T).GetElementType() == typeof(Nullable<>);
+            IsNullable = typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(Nullable<>);
+            if (IsNullable)
+            {
+                ActualType = typeof(T).GenericTypeArguments[0];
+            }
+            Type = typeof(T);
         }
-
+        public static readonly Type Type;
         public static readonly bool IsBool;
         public static readonly bool IsByte;
         public static readonly bool IsSByte;
@@ -40,7 +45,31 @@
         public static readonly bool IsGuid;
         public static readonly bool IsDateTime;
         public static readonly bool IsDecimal;
-
+        public static readonly Type? ActualType;
         public static readonly bool IsNullable;
+
+        public static T? ChangeType(object? val)
+        {
+            if (val is null)
+            {
+                return default;
+            }
+            if (val is T t)
+            {
+                return t;
+            }
+            try
+            {
+                return (T?)Convert.ChangeType(val, ActualType??Type);
+            }
+            catch (Exception)
+            {
+                if (IsNullable)
+                {
+                    return default;
+                }
+                throw;
+            }
+        }
     }
 }
