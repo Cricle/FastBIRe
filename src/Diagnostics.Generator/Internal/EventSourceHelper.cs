@@ -39,14 +39,18 @@ namespace Diagnostics.Generator.Internal
             var nullableEnd = symbol.IsReferenceType && (nullableEnable & NullableContext.Enabled) != 0 ? "?" : string.Empty;
 
             var ctxNullableEnd = (nullableEnable & NullableContext.Enabled) != 0 ? "?" : string.Empty;
-
-            var command = GenerateOnEventCommand(symbol, ctxNullableEnd, out var diagnostic);
-            var hasCommand = command != string.Empty;
-            if (diagnostic != null)
+            var command = string.Empty;
+            var hasCommand = false;
+            if (!logMode)
             {
-                context.ReportDiagnostic(diagnostic);
-                outCode = null;
-                return false;
+                command = GenerateOnEventCommand(symbol, ctxNullableEnd, out var diagnostic);
+                hasCommand = command != string.Empty;
+                if (diagnostic != null)
+                {
+                    context.ReportDiagnostic(diagnostic);
+                    outCode = null;
+                    return false;
+                }
             }
             var methodBody = new StringBuilder();
             var isEnable = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.FullName)?
@@ -264,7 +268,7 @@ namespace Diagnostics.Generator.Internal
                 var displayRateTimeScaleMs = counterAttr.GetByNamed<double>(Consts.CounterAttribute.DisplayRateTimeScaleMs);
                 var displayUnits = counterAttr.GetByNamed<string>(Consts.CounterAttribute.DisplayUnits);
                 var displayName = counterAttr.GetByNamed<string>(Consts.CounterAttribute.DisplayName);
-
+                //Debugger.Launch();
                 var typeName = GetCounterName(type);
                 var isSupportCounterType = IsSupportCounterType(item.Type);
                 var isEventCouterType = IsEventCounterType(item.Type);

@@ -212,11 +212,26 @@ namespace FastBIRe
         {
             return SqlServerTableCreateProcedureScripts;
         }
-        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, Action<string?> scriptReceiver, Predicate<TableRef>? tableFilter = null, bool hasDropTable = true, bool includeSchema = false)
+        public record class DumpTableResult
+        {
+            public DumpTableResult(string dropScript, string createScripts, TableRef tableRef)
+            {
+                DropScript = dropScript;
+                CreateScripts = createScripts;
+                TableRef = tableRef;
+            }
+
+            public string DropScript { get; }
+
+            public string CreateScripts { get;}
+
+            public TableRef TableRef { get; }
+        }
+        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, Action<DumpTableResult> scriptReceiver, Predicate<TableRef>? tableFilter = null, bool includeSchema = false,bool sortTheTableByRef=false)
         {
             var reader = new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database };
             var tables = reader.AllTables();
-            var refs = DatabaseHelper.SortTable(tables);
+            var refs = sortTheTableByRef ? DatabaseHelper.SortTable(tables) : TableRef.CreateRange(tables);
             var dbAdapter = SqlType.GetDatabaseCreateAdapter()!;
             var ddl = new DdlGeneratorFactory(SqlType);
             for (int i = 0; i < refs.Count; i++)
@@ -226,25 +241,27 @@ namespace FastBIRe
                 {
                     continue;
                 }
-                if (hasDropTable)
-                {
-                    scriptReceiver(dbAdapter.DropTableIfExists(@ref.Table.Name));
-                }
-                scriptReceiver(await DumpTableCreateAsync(@ref.Table.Name,
+                var dropScript = (dbAdapter.DropTableIfExists(@ref.Table.Name));
+                var createScript = (await DumpTableCreateAsync(@ref.Table.Name,
                     scriptExecuter,
                     includeSchema: includeSchema,
                     ddlGeneratorFactory: ddl,
                     databaseReader: reader) + ";");
+                scriptReceiver(new DumpTableResult(dropScript, createScript,@ref));
             }
         }
-        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, StreamWriter writer, Predicate<TableRef>? tableFilter = null, bool hasDropTable = true, bool includeSchema = false)
+        public async Task DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, StreamWriter writer, Predicate<TableRef>? tableFilter = null, bool includeSchema = false, bool sortTheTableByRef = false)
         {
-            await DumpDatabaseCreateAsync(scriptExecuter, s => writer.WriteLine(s), tableFilter, hasDropTable: hasDropTable, includeSchema: includeSchema);
+            await DumpDatabaseCreateAsync(scriptExecuter, s =>
+            {
+                writer.WriteLine(s.DropScript);
+                writer.WriteLine(s.CreateScripts);
+            }, tableFilter, includeSchema: includeSchema, sortTheTableByRef: sortTheTableByRef);
         }
-        public async Task<IList<string?>?> DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, Predicate<TableRef>? tableFilter = null, bool hasDropTable = true, bool includeSchema = false)
+        public async Task<IList<DumpTableResult>?> DumpDatabaseCreateAsync(IDbScriptExecuter scriptExecuter, Predicate<TableRef>? tableFilter = null, bool includeSchema = false, bool sortTheTableByRef = false)
         {
-            var res = new List<string?>();
-            await DumpDatabaseCreateAsync(scriptExecuter, s => res.Add(s), tableFilter, hasDropTable: hasDropTable, includeSchema: includeSchema);
+            var res = new List<DumpTableResult>();
+            await DumpDatabaseCreateAsync(scriptExecuter, s => res.Add(s), tableFilter, includeSchema: includeSchema, sortTheTableByRef: sortTheTableByRef);
             return res;
         }
         public Task<string?> DumpTableCreateAsync(string table,
