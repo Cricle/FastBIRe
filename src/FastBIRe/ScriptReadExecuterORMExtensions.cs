@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace FastBIRe
@@ -10,7 +11,11 @@ namespace FastBIRe
         {
             public static readonly Task<T?> EmptyResult = Task.FromResult(default(T?));
         }
-        public static Task<bool> ExistsAsync(this IScriptExecuter scriptExecuter, string script, object? args = null, DbTransaction? transaction = null, CancellationToken token = default)
+        public static Task<bool> ExistsAsync(this IScriptExecuter scriptExecuter, string script,
+#if NET7_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+            object? args = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
             return scriptExecuter.ReadResultAsync(script, static (o, e) =>
             {
@@ -49,10 +54,14 @@ namespace FastBIRe
                 return Task.CompletedTask;
             }, transaction: transaction, token: token);
         }
-        public static Task<int> ExecuteAsync(this IScriptExecuter scriptExecuter, string script, object? args = null, DbTransaction? transaction = null, CancellationToken token = default)
+        public static Task<int> ExecuteAsync(this IScriptExecuter scriptExecuter, string script,
+#if NET7_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+            object? args = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
             return scriptExecuter.ExecuteAsync(script, args: ParamterParser.Parse(args), transaction, token: token);
-        }
+        }                                                                                                                                                                                                                                                                                         
         public static int Execute(this IScriptExecuter scriptExecuter, string script, object? args = null, DbTransaction? transaction = null, CancellationToken token = default)
         {
             return scriptExecuter.Execute(script, args: ParamterParser.Parse(args), transaction, token: token);

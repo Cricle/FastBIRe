@@ -23,6 +23,7 @@ namespace Diagnostics.Generator.Internal
                 context.AddSource($"{eventSourceSymbol.Name}.FromLog.g.cs", code);
 
                 var mapToActivityAttr = symbol.GetAttribute(Consts.MapToActivityAttribute.FullName);
+                //Debugger.Launch();
                 if (mapToActivityAttr != null)
                 {
                     var activitySymbol=mapToActivityAttr.GetByIndex<ISymbol>(0);

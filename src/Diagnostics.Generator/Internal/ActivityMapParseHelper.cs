@@ -105,9 +105,10 @@ namespace Diagnostics.Generator.Internal
             {
                 pars = pars.Skip(1).ToImmutableArray();
             }
-            if (pars.Length != 0)
+            var parsActual = pars.Where(x => !x.HasAttribute(Consts.ActivityIgnoreAttribute.FullName)).ToImmutableArray();
+            if (parsActual.Length != 0)
             {
-                var methodArgs = string.Join("\n", pars.Select(x => $"tags[\"{x.Name}\"] = {x.Name};"));
+                var methodArgs = string.Join("\n", parsActual.Select(x => $"tags[\"{x.Name}\"] = {x.Name};"));
                 eventTagCodes = $@"
 tags = new global::System.Diagnostics.ActivityTagsCollection();
 {methodArgs}

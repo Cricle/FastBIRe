@@ -8,6 +8,9 @@
 		<Nullable>enable</Nullable>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(PublishAot)'!=''">
+		<TargetFrameworks>net8.0</TargetFrameworks>
+	</PropertyGroup>
 	<ItemGroup>
 		<None Remove="Resources\*.sql" />
 	</ItemGroup>

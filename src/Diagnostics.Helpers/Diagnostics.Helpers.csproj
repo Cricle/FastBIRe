@@ -10,6 +10,7 @@
 	</PropertyGroup>
 	<PropertyGroup Condition="$(PublishAot)!=''">
 		<TargetFrameworks>net8.0</TargetFrameworks>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 	</PropertyGroup>
 
 	<ItemGroup>

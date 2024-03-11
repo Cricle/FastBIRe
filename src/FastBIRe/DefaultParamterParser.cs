@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
@@ -29,7 +30,11 @@ namespace FastBIRe
 
             public readonly IList<ObjectPropertyMap> propertyReaders;
 
-            public IEnumerable<KeyValuePair<string, object?>> EnumerableProperties(object instance)
+            public IEnumerable<KeyValuePair<string, object?>> EnumerableProperties(
+#if NET7_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+                object instance)
             {
                 for (int i = 0; i < propertyReaders.Count; i++)
                 {
@@ -38,7 +43,11 @@ namespace FastBIRe
                 }
             }
 
-            public ObjectVisitor(Type type)
+            public ObjectVisitor(
+#if NET7_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+            Type type)
             {
                 Type = type;
                 propertyReaders = new ObjectPropertyMap[type.GetProperties().Length];

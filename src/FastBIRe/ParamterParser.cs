@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 
 namespace FastBIRe
 {
@@ -15,7 +16,11 @@ namespace FastBIRe
             return paramterParsers.ContainsKey(type);
         }
 
-        public static IEnumerable<KeyValuePair<string, object?>> Parse(object? value)
+        public static IEnumerable<KeyValuePair<string, object?>> Parse(
+#if NET7_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+#endif
+            object? value)
         {
             if (value == null)
             {
@@ -24,7 +29,11 @@ namespace FastBIRe
             return Get(value.GetType()).Parse(value);
         }
 
-        public static IParamterParser Get(Type type)
+        public static IParamterParser Get(
+#if NET7_0_OR_GREATER
+            [DynamicallyAccessedMembers( DynamicallyAccessedMemberTypes.All)]
+#endif
+            Type type)
         {
             if (paramterParsers.TryGetValue(type, out var parser))
             {
