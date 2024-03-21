@@ -19,6 +19,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="../Diagnostics.Generator.Core/CounterTypes.cs"></Compile>
+		<Compile Include="../Diagnostics.Generator.Core/MeterTypes.cs"></Compile>
 		<Compile Include="../Diagnostics.Generator.Core/ArrayOptions.cs"></Compile>
 	</ItemGroup>
 </Project>

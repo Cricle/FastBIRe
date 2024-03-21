@@ -5,10 +5,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Xml.Linq;
 
 namespace Diagnostics.Generator.Internal
 {
@@ -66,7 +64,7 @@ namespace Diagnostics.Generator.Internal
                 }
                 methodBody.AppendLine(str);
             }
-            var classHasUnsafe = HasKeyword(symbol, SyntaxKind.UnsafeKeyword);
+            var classHasUnsafe = ParserBase.HasKeyword(symbol, SyntaxKind.UnsafeKeyword);
             var unsafeKeyword = classHasUnsafe ? "unsafe" : string.Empty;
             var interfaceBody = string.Empty;
             var imports = new List<string>();
@@ -330,6 +328,13 @@ public void Increment{specialName}({item.Type} inc=1)
     {addinBody}
 }}
 ");
+                    addins.AppendLine($@"
+[global::System.Diagnostics.Tracing.NonEventAttribute]
+public void Set{specialName}({item.Type} value = 0)
+{{
+    global::System.Threading.Interlocked.Exchange(ref {item.Name},value);
+}}
+");
                     bodys.AppendLine(GenerateCreateCounter($"{counterName} ??=", name, type, displayRateTimeScaleMs, displayUnits, displayName, $"()=> {invokeBody}") + ";");
                 }
             }
@@ -397,27 +402,6 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             }
             return false;
         }
-        internal static bool HasKeyword(ISymbol symbol, SyntaxKind kind)
-        {
-            var syntax = symbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax();
-            if (symbol == null)
-            {
-                return false;
-            }
-            if (syntax is MemberDeclarationSyntax m)
-            {
-                return m.Modifiers.Any(x => x.IsKind(kind));
-            }
-            if (syntax is ClassDeclarationSyntax c)
-            {
-                return c.Modifiers.Any(x => x.IsKind(kind));
-            }
-            if (syntax is StructDeclarationSyntax s)
-            {
-                return s.Modifiers.Any(x => x.IsKind(kind));
-            }
-            return false;
-        }
         private static string GenerateMethod(IMethodSymbol method, bool useIsEnable, bool logMode, out Diagnostic? diagnostic)
         {
             var pars = method.Parameters;
@@ -456,7 +440,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             var actualDatasCount = pars.Length - relatedActivityIds.Count;
             var datasDeclare = $"global::System.Diagnostics.Tracing.EventSource.EventData* datas = stackalloc global::System.Diagnostics.Tracing.EventSource.EventData[{actualDatasCount}];";
             var datasPar = "datas";
-            if (!HasKeyword(method, SyntaxKind.UnsafeKeyword))
+            if (!ParserBase.HasKeyword(method, SyntaxKind.UnsafeKeyword))
             {
                 unsafeKeyWord = string.Empty;
             }
@@ -544,11 +528,6 @@ datas[{index}] = new global::System.Diagnostics.Tracing.EventSource.EventData
     }
     internal class LoggerMessageData
     {
-#if false
-        int? level = null;
-                string message = string.Empty;
-                string? eventName = null;
-#endif
 
         public int EventId { get; set; }
 

@@ -5,14 +5,14 @@ using System.Threading;
 
 namespace Diagnostics.Generator.Internal
 {
-    internal class EventSourceParser: ParserBase
+    internal class EventSourceParser : ParserBase
     {
         public void Execute(SourceProductionContext context, GeneratorTransformResult<ISymbol> node)
         {
             var symbol = (INamedTypeSymbol)node.SyntaxContext.TargetSymbol;
             var methods = symbol.GetMembers().OfType<IMethodSymbol>()
-                .Where(x => x.HasAttribute(Consts.EventAttribute.FullName) && EventSourceHelper.HasKeyword(x, SyntaxKind.PartialKeyword));
-            if (EventSourceHelper.TryWriteCode(context, node.SemanticModel, symbol,false, methods, out var code))
+                .Where(x => x.HasAttribute(Consts.EventAttribute.FullName) && HasKeyword(x, SyntaxKind.PartialKeyword));
+            if (EventSourceHelper.TryWriteCode(context, node.SemanticModel, symbol, false, methods, out var code))
             {
                 code = Helpers.FormatCode(code!);
                 context.AddSource($"{symbol.Name}.g.cs", code);

@@ -212,7 +212,7 @@ if(additionTags != null)
                     noActivityArgs = "," + noActivityArgs;
                     invokeCode = "," + invokeCode;
                 }
-                var invokeLog = $"{method.ContainingType}.{method.Name}(logger{invokeCode});";
+                var invokeLog = $"global::{method.ContainingType}.{method.Name}(logger{invokeCode});";
 
                 withLogCode = $@"
 {activityMapToEventAttr}

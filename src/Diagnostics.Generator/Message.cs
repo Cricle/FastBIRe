@@ -80,5 +80,21 @@ namespace Diagnostics.Generator
             "EventSourceGenerator",
             "The event source \"{0}\" has no GenerateSingleton or tag EventSourceAccesstorInstanceAttribute field or property, can't set WithCalledTogetherExtensions = ture", Category,
              DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor MeterNotFound = new DiagnosticDescriptor("DG0018",
+            "EventSourceGenerator",
+            "The meter member \"{0}\" was not found, please check the type \"{1}\" has any this member", Category,
+             DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor UnknowMeter = new DiagnosticDescriptor("DG0019",
+            "EventSourceGenerator",
+            "The meter member type \"{0}\" was unknow, now avaliable types is Counter, Histogram and UpDownCounter", Category,
+             DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor MeterMethodInputError = new DiagnosticDescriptor("DG0020",
+            "EventSourceGenerator",
+            "The meter method first paramter must same as counter generic type \"{0}\"", Category,
+             DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor MeterMethodError = new DiagnosticDescriptor("DG0021",
+            "EventSourceGenerator",
+            "The meter method must return void and not generic method", Category,
+             DiagnosticSeverity.Error, true);
     }
 }

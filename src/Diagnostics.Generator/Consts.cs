@@ -124,5 +124,13 @@ namespace Diagnostics.Generator
         {
             public const string FullName = "Diagnostics.Generator.Core.Annotations.MapToEventSourceAttribute";
         }
+        public static class MeterRecordAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.MeterRecordAttribute";
+        }
+        public static class MeterGenerateAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.MeterGenerateAttribute";
+        }
     }
 }
