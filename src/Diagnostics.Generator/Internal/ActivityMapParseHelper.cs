@@ -169,7 +169,7 @@ if(additionTags != null)
                 tagCodes = s.ToString();
             }
 
-            var endsArgs = $"{additionArgs} global::System.DateTimeOffset timestamp = default, global::System.Collections.Generic.IEnumerable<global::System.Collections.Generic.KeyValuePair<global::System.String, global::System.Object{nullableEnd}>>{nullableEnd} additionTags = null";
+            var endsArgs = $"{additionArgs} global::System.DateTimeOffset timestamp = default, global::System.Collections.Generic.IEnumerable<global::System.Collections.Generic.KeyValuePair<global::System.String, global::System.Object{nullableEnd}>>{nullableEnd} additionTags = null,[global::System.Runtime.CompilerServices.CallerFilePathAttribute] string? filePath = null,[global::System.Runtime.CompilerServices.CallerMemberNameAttribute] string? memberName = null,[global::System.Runtime.CompilerServices.CallerLineNumberAttribute] int lineNumber = 0";
 
             var eventSourceParInvokeJoined = string.Join(",", pars.Select(x => x.Name));
 
@@ -230,6 +230,37 @@ if(additionTags != null)
 ";
             }
 
+            string specialTagCodes = string.Empty;
+            var specialAttr = method.GetAttribute(Consts.ActivitySpecialValueAttribute.FullName);
+            if (specialAttr!=null)
+            {
+                var hasFilePath = specialAttr.GetByNamed<bool>(Consts.ActivitySpecialValueAttribute.FilePath);
+                var hasMemberName = specialAttr.GetByNamed<bool>(Consts.ActivitySpecialValueAttribute.MemberName);
+                var hasLineNumber = specialAttr.GetByNamed<bool>(Consts.ActivitySpecialValueAttribute.LineNumber);
+                var specialCodes = new List<string>(3);
+                if (hasFilePath)
+                {
+                    specialCodes.Add("tags.Add(\"special.filepath\",filePath);");
+                }
+                if (hasMemberName)
+                {
+                    specialCodes.Add("tags.Add(\"special.membername\",memberName);");
+                }
+                if (hasLineNumber)
+                {
+                    specialCodes.Add("tags.Add(\"special.linenumber\",lineNumber);");
+                }
+                if (specialCodes.Count!=0)
+                {
+                    specialTagCodes = $@"
+if(tags == null)
+{{
+    tags = new global::System.Diagnostics.ActivityTagsCollection();
+}}
+{string.Join("\n", specialCodes)}
+";
+                }
+            }
             return $@"
 #region {method.Name}
 {activityMapToEventAttr}
@@ -245,6 +276,7 @@ if(additionTags != null)
     {{
         global::System.Diagnostics.ActivityTagsCollection{nullableEnd} tags = null;
         {eventTagCodes}
+        {specialTagCodes}
         activity.AddEvent(new global::System.Diagnostics.ActivityEvent(""{method.Name}"", timestamp, tags));
         {tagCodes}
         On{method.Name}(activity,{invokeArgsJoined}timestamp, additionTags);

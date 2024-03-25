@@ -132,5 +132,13 @@ namespace Diagnostics.Generator
         {
             public const string FullName = "Diagnostics.Generator.Core.Annotations.MeterGenerateAttribute";
         }
+        public static class ActivitySpecialValueAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.ActivitySpecialValueAttribute";
+
+            public const string FilePath = "FilePath";
+            public const string MemberName = "MemberName";
+            public const string LineNumber = "LineNumber";
+        }
     }
 }
