@@ -1,0 +1,43 @@
+{
+  "Id": "weibingzaimoyu_id",
+  "Name": "guidang",
+  "Columns": [
+    {
+      "Id": "weibingzaixuerust_0",
+      "Name": "_id",
+      "Type": "Int32",
+      "PK": true,
+      "AI": true
+    },
+    {
+      "Id": "weibingzaixuerust_1",
+      "Name": "datetime",
+      "Type": "Datetime",
+      "Nullable": false,
+      "IX": true
+    },
+    {
+      "Id": "weibingzaixuerust_2",
+      "Name": "ja1",
+      "Type": "Datetime",
+      "IX": true
+    },
+    {
+      "Id": "weibingzaixuerust_3",
+      "Name": "ja2",
+      "Type": "Int64",
+      "IX": true
+    },
+    {
+      "Id": "weibingzaixuerust_4",
+      "Name": "sa3",
+      "Type": "Decimal"
+    },
+    {
+      "Id": "weibingzaixuerust_5",
+      "Name": "ca4",
+      "Type": "String",
+      "Length": 22
+    }
+  ]
+}
