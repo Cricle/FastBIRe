@@ -5,11 +5,16 @@
 		<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
 		<Description>Event source generator</Description>
 		<PackageId>Fast.Diagnostics.Generator</PackageId>
+		<LangVersion>latest</LangVersion>
 	</PropertyGroup>
 	<PropertyGroup Condition="$(PublishAot)!='' or $(PublishSingleFile)!=''">
 		<TargetFrameworks>net8.0</TargetFrameworks>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="../Diagnostics.Generator/bin/$(Configuration)/netstandard2.0/Diagnostics.Generator.dll" Pack="true" PackagePath="analyzers/dotnet" Visible="true" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
+	  <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
+	  <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
 	</ItemGroup>
 </Project>

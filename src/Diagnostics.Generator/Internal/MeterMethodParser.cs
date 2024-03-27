@@ -147,8 +147,15 @@ namespace Diagnostics.Generator.Internal
                 }
                 codeBuilder.AppendLine($"{thisCode}.{meterMemberName}.{recordMethod}({method.Parameters[0].Name},in tagList);");
             }
-            codeBuilder.AppendLine();
-            codeBuilder.Append('}');
+            if (!method.IsStatic)
+            {
+                codeBuilder.AppendLine($"On{method.Name}({string.Join(", ", method.Parameters.Select(x => x.Name))});");
+            }
+            codeBuilder.AppendLine("}");
+            if (!method.IsStatic)
+            {
+                codeBuilder.AppendLine($"partial void On{method.Name}({string.Join(", ", method.Parameters.Select(x => x.ToString()))});");
+            }
             code = codeBuilder.ToString();
             return true;
         }

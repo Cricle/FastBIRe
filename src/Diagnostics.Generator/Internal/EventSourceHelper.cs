@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -185,6 +186,16 @@ namespace Diagnostics.Generator.Internal
                     return false;
             }
         }
+        private static bool IsIncrementingCounterType(ITypeSymbol type)
+        {
+            switch (type.ToString().TrimEnd('?'))
+            {
+                case "System.Diagnostics.Tracing.IncrementingPollingCounter":
+                    return true;
+                default:
+                    return false;
+            }
+        }
         private static bool IsEventCounterType(ITypeSymbol type)
         {
             switch (type.ToString().TrimEnd('?'))
@@ -270,6 +281,7 @@ namespace Diagnostics.Generator.Internal
                 var typeName = GetCounterName(type);
                 var isSupportCounterType = IsSupportCounterType(item.Type);
                 var isEventCouterType = IsEventCounterType(item.Type);
+                //Debugger.Launch();
                 var isPollingCounter = type == CounterTypes.PollingCounter || type == CounterTypes.IncrementingPollingCounter;
                 var isEventCounter = type == CounterTypes.EventCounter || type == CounterTypes.IncrementingEventCounter;
 
@@ -286,6 +298,11 @@ namespace Diagnostics.Generator.Internal
                 if ((type == CounterTypes.IncrementingPollingCounter || type == CounterTypes.IncrementingEventCounter) && displayRateTimeScaleMs <= 0)
                 {
                     diagnostic = Diagnostic.Create(Messages.PollingCounterMustInputRate, item.Locations[0]);
+                    return string.Empty;
+                }
+                if (type== CounterTypes.IncrementingPollingCounter&& IsIncrementingCounterType(item.Type))
+                {
+                    diagnostic = Diagnostic.Create(Messages.PollingCounterMustSimpleType, item.Locations[0]);
                     return string.Empty;
                 }
                 if (isEventCounter && !isEventCouterType)
