@@ -2,12 +2,12 @@
 
 	<Import Project="..\..\eng\pkg.props" />
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="MySqlCdc" Version="3.0.2" />
+		<PackageReference Include="MySqlCdc" Version="4.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

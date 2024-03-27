@@ -81,13 +81,13 @@ namespace FastBIRe.Cdc.MySql
                 {
                     checkpoint = new MySqlCheckpoint(options.Position, options.Filename);
                 }
-                if (item is WriteRowsEvent wre)
+                if (item.Item2 is WriteRowsEvent wre)
                 {
                     var rows = wre.Rows.Select(x => (ICdcDataRow)new CdcDataRow(x.Cells)).ToList();
                     var insertArg = new InsertEventArgs(wre, wre.TableId, GetTableMapInfo(wre.TableId), rows, checkpoint);
                     RaiseEvent(insertArg);
                 }
-                else if (item is UpdateRowsEvent ure)
+                else if (item.Item2 is UpdateRowsEvent ure)
                 {
                     var ups = ure.Rows.Select(x => (ICdcUpdateRow)new CdcUpdateRow(
                         new CdcDataRow(x.BeforeUpdate.Cells),
@@ -96,13 +96,13 @@ namespace FastBIRe.Cdc.MySql
                     var up = new UpdateEventArgs(ure, ure.TableId, GetTableMapInfo(ure.TableId), ups, checkpoint);
                     RaiseEvent(up);
                 }
-                else if (item is DeleteRowsEvent dre)
+                else if (item.Item2 is DeleteRowsEvent dre)
                 {
                     var rows = dre.Rows.Select(x => (ICdcDataRow)new CdcDataRow(x.Cells)).ToList();
                     var insertArg = new DeleteEventArgs(dre, dre.TableId, GetTableMapInfo(dre.TableId), rows, checkpoint);
                     RaiseEvent(insertArg);
                 }
-                else if (item is TableMapEvent tme)
+                else if (item.Item2 is TableMapEvent tme)
                 {
                     var mapInfo = new TableMapInfo(tme.TableId, tme.DatabaseName, tme.TableName);
                     tableMapInfos[tme.TableId] = mapInfo;

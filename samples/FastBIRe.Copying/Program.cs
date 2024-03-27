@@ -16,10 +16,10 @@ namespace FastBIRe.Copying
                 await exec.ExecuteAsync(item);
             }
             return;
-            var c = new MySqlConnection("Server=192.168.1.101;Port=3306;Uid=root;Pwd=Syc123456.;Connection Timeout=2000;Character Set=utf8;Database=ffd7dd6fd4014cad86d11265c6e878f4_project;");
-            c.Open();
-            var res = await TableHelper.MySql.DumpDatabaseCreateAsync(new DefaultScriptExecuter(c));
-            await File.WriteAllLinesAsync("a.sql", res);
+            //var c = new MySqlConnection("Server=192.168.1.101;Port=3306;Uid=root;Pwd=Syc123456.;Connection Timeout=2000;Character Set=utf8;Database=ffd7dd6fd4014cad86d11265c6e878f4_project;");
+            //c.Open();
+            //var res = await TableHelper.MySql.DumpDatabaseCreateAsync(new DefaultScriptExecuter(c));
+            //await File.WriteAllLinesAsync("a.sql", res);
             //var s = Stopwatch.GetTimestamp();
             //using (var comm = c.CreateCommand())
             //{
