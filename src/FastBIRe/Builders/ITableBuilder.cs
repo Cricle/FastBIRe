@@ -16,57 +16,57 @@ namespace FastBIRe.Builders
     {
         public static async Task CreateOrMigrationAsync(this IFastBIReContext context, string database, Action<DatabaseTable>? configRemoteTable = null)
         {
+            if (context.Connection.State!= ConnectionState.Open)
+            {
+                await context.Connection.OpenAsync();
+            }
             var oldDatabase = context.Executer.Connection.Database;
             var needsChangedDb = context.SqlType != SqlType.DuckDB && context.SqlType != SqlType.SQLite && database != oldDatabase && !string.IsNullOrWhiteSpace(oldDatabase);
-            try
+
+            var adapter = context.SqlType.GetDatabaseCreateAdapter()!;
+            var existsSql = adapter.CheckDatabaseExists(database);
+            var exists = await context.Executer.ExistsAsync(existsSql);
+            if (exists)
             {
                 if (needsChangedDb)
                 {
 
 #if NETSTANDARD2_0
-                    context.Executer.Connection.ChangeDatabase(database);
+                        context.Executer.Connection.ChangeDatabase(database);
 #else
                     await context.Executer.Connection.ChangeDatabaseAsync(database);
 #endif
                 }
-
-                var adapter = context.SqlType.GetDatabaseCreateAdapter()!;
                 var tables = context.DatabaseReader.TablesQuickView();
                 var ddl = new DdlGeneratorFactory(context.SqlType);
-                var existsSql = adapter.CheckDatabaseExists(database);
-                var exists = await context.Executer.ExistsAsync(existsSql);
-                if (exists)
+
+                foreach (var item in context.TableProvider)
                 {
-                    foreach (var item in context.TableProvider)
+                    if (tables.Any(x => x.Name == item.Name))
                     {
-                        if (tables.Any(x => x.Name == item.Name))
-                        {
-                            var mig = context.GetMigrationScripts(item.Name, configRemoteTable);
-                            await context.Executer.ExecuteAsync(mig.Script);
-                        }
-                        else
-                        {
-                            var sql = ddl.TableGenerator(item).Write();
-                            await context.Executer.ExecuteAsync(sql);
-                        }
+                        var mig = context.GetMigrationScripts(item.Name, configRemoteTable);
+                        await context.Executer.ExecuteAsync(mig.Script);
+                    }
+                    else
+                    {
+                        var sql = ddl.TableGenerator(item).Write();
+                        await context.Executer.ExecuteAsync(sql);
                     }
                 }
-                else
-                {
-                    await context.Executer.ExecuteAsync(adapter.CreateDatabase(database));
-                    await context.Executer.ExecuteAsync(ToCreateTablesSql(context.TableProvider));
-                }
             }
-            finally
+            else
             {
+                await context.Executer.ExecuteAsync(adapter.CreateDatabase(database));
                 if (needsChangedDb)
                 {
+
 #if NETSTANDARD2_0
-                    context.Executer.Connection.ChangeDatabase(oldDatabase);
+                        context.Executer.Connection.ChangeDatabase(database);
 #else
-                    await context.Executer.Connection.ChangeDatabaseAsync(oldDatabase);
+                    await context.Executer.Connection.ChangeDatabaseAsync(database);
 #endif
                 }
+                await context.Executer.ExecuteAsync(ToCreateTablesSql(context.TableProvider));
             }
         }
         public static string ToCreateTablesSql(this ITableProvider provider)

@@ -1,6 +1,7 @@
 ﻿using DatabaseSchemaReader;
 using DatabaseSchemaReader.DataSchema;
 using System.Data.Common;
+using System.Text;
 
 namespace FastBIRe
 {
@@ -75,7 +76,7 @@ namespace FastBIRe
                 ColumnNames = names;
                 SelectsMask = sm;
             }
-            ColumnNameJoined = string.Join(", ", ColumnNames);
+            ColumnNameJoined = string.Join(", ", ColumnNames.Select(x=>SqlType.Wrap(x)));
             var keys = new List<ITableColumnSnapshot>();
             for (int i = 0; i < table.Columns.Count; i++)
             {
@@ -119,21 +120,21 @@ namespace FastBIRe
                 case SqlType.SqlServer:
                 case SqlType.SqlServerCe:
                     {
-                        var idMatchs = string.Join(" AND ", KeysMask.Select(x => $"target.[{x.Name}] = source.[{x.Name}]"));
+                        var idMatchs = string.Join(" AND ", KeysMask.Select(x => $"target.{SqlType.Wrap(x.Name)} = source.{SqlType.Wrap(x.Name)}"));
                         return $@"MERGE {WrapTableName} AS target
 USING (VALUES ({valueJoined})) AS source ({ColumnNameJoined})
 ON {idMatchs}
 WHEN MATCHED THEN
-    UPDATE SET {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"target.{x.Name} = source.{x.Name}"))}
+    UPDATE SET {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"target.{SqlType.Wrap(x.Name)} = source.{SqlType.Wrap(x.Name)}"))}
 WHEN NOT MATCHED THEN
     INSERT ({ColumnNameJoined})
-    VALUES ({string.Join(", ", SelectsExceptKeyMask.Select((x) => $"source.{x.Name}"))});";
+    VALUES ({string.Join(", ", SelectsExceptKeyMask.Select((x) => $"source.{SqlType.Wrap(x.Name)}"))});";
                     }
                 case SqlType.MySql:
                     {
                         return $@"INSERT INTO {WrapTableName} ({ColumnNameJoined})
 VALUES ({valueJoined})
-ON DUPLICATE KEY UPDATE {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{x.Name} = VALUES({x.Name})"))};";
+ON DUPLICATE KEY UPDATE {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{SqlType.Wrap(x.Name)} = VALUES({SqlType.Wrap(x.Name)})"))};";
                     }
                 case SqlType.SQLite:
                     return $@"INSERT OR REPLACE INTO {WrapTableName} ({ColumnNameJoined}) VALUES ({valueJoined});";
@@ -141,8 +142,8 @@ ON DUPLICATE KEY UPDATE {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"
                 case SqlType.DuckDB:
                     return $@"INSERT INTO {WrapTableName} ({ColumnNameJoined})
 VALUES ({valueJoined})
-ON CONFLICT ({string.Join(", ", KeysMask.Select(x => x.Name))})
-DO UPDATE SET {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{x.Name}=EXCLUDED.{x.Name}"))};";
+ON CONFLICT ({string.Join(", ", KeysMask.Select(x => SqlType.Wrap(x.Name)))})
+DO UPDATE SET {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{SqlType.Wrap(x.Name)}=EXCLUDED.{SqlType.Wrap(x.Name)}"))};";
                 case SqlType.Oracle:
                 case SqlType.Db2:
                 default:
@@ -165,7 +166,7 @@ DO UPDATE SET {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{x.Name}=E
 
         public string CreateInsertSql(IEnumerable<object?> values)
         {
-            return $"INSERT INTO {WrapTableName}({ColumnNameJoined}) VALUES ({GetSelectValueJoined(values)})";
+            return $"INSERT INTO {WrapTableName}({ColumnNameJoined}) VALUES ({GetSelectValueJoined(new OneEnumerable<IEnumerable<object?>>(values))})";
         }
         public string CreateUpdateByKeySql(IEnumerable<object?> values)
         {

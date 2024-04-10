@@ -13,16 +13,20 @@ namespace FastBIRe
         Task<IFastBIReContext> CreateContextAsync(CancellationToken token = default);
 
         IFastBIReContext CreateContext();
+
+        IFastBIReContext CreateNoDatabaseContext();
     }
     public class DelegateFastBIReContextFactory : IFastBIReContextFactory
     {
-        public DelegateFastBIReContextFactory(Func<IDbScriptExecuter> scriptExecuterFactory, ITableProvider tableProvider)
+        public DelegateFastBIReContextFactory(Func<IDbScriptExecuter> scriptExecuterFactory, Func<IDbScriptExecuter> scriptNoDatabaseExecuterFactory, ITableProvider tableProvider)
         {
             ScriptExecuterFactory = scriptExecuterFactory ?? throw new ArgumentNullException(nameof(scriptExecuterFactory));
             TableProvider = tableProvider ?? throw new ArgumentNullException(nameof(tableProvider));
+            ScriptNoDatabaseExecuterFactory = scriptNoDatabaseExecuterFactory ?? throw new ArgumentNullException(nameof(scriptNoDatabaseExecuterFactory));
         }
 
         public Func<IDbScriptExecuter> ScriptExecuterFactory { get; }
+        public Func<IDbScriptExecuter> ScriptNoDatabaseExecuterFactory { get; }
 
         public ITableProvider TableProvider { get; }
 
@@ -31,7 +35,6 @@ namespace FastBIRe
             var db = ScriptExecuterFactory();
             if (db.Connection.State != ConnectionState.Open)
             {
-
                 db.Connection.Open();
             }
             return new FastBIReContext(db, TableProvider);
@@ -43,6 +46,16 @@ namespace FastBIRe
             if (db.Connection.State != ConnectionState.Open)
             {
                 await db.Connection.OpenAsync(token);
+            }
+            return new FastBIReContext(db, TableProvider);
+        }
+
+        public IFastBIReContext CreateNoDatabaseContext()
+        {
+            var db = ScriptNoDatabaseExecuterFactory();
+            if (db.Connection.State != ConnectionState.Open)
+            {
+                db.Connection.Open();
             }
             return new FastBIReContext(db, TableProvider);
         }
@@ -60,6 +73,8 @@ namespace FastBIRe
             token.ThrowIfCancellationRequested();
             return Task.FromResult(CreateContext());
         }
+
+        public abstract IFastBIReContext CreateNoDatabaseContext();
 
         public virtual void Dispose()
         {

@@ -19,7 +19,7 @@ namespace FastBIRe
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+
         }
 
         public IEnumerator<T> GetEnumerator()
@@ -31,7 +31,7 @@ namespace FastBIRe
         {
             if (isFirst)
             {
-                isFirst = true;
+                isFirst = false;
                 return true;
             }
             return false;

@@ -16,17 +16,27 @@ namespace FastBIRe
         public static string SetDatabase(string connectString, string database, SqlType sqlType)
         {
             string repl;
+            if (!connectString.EndsWith(";"))
+            {
+                connectString += ";";
+            }
             switch (sqlType)
             {
                 case SqlType.SQLite:
                 case SqlType.DuckDB:
-                    repl = $";Data Source={database};";
+                    repl = $"Data Source={database};";
                     break;
                 default:
-                    repl = $";Database={database};";
+                    repl = $"Database={database};";
                     break;
             }
-            return databaseSqlServerRegex.Replace(databaseRegex.Replace(connectString, repl), repl);
+            var replaceRes= databaseSqlServerRegex.Replace(databaseRegex.Replace(connectString, repl), repl);
+            if (replaceRes==connectString)
+            {
+                replaceRes += $"Database={database}";
+            }
+
+            return replaceRes;
         }
     }
 }
