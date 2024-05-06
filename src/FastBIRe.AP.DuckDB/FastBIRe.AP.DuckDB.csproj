@@ -8,7 +8,7 @@
 	<LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DuckDB.NET.Data.Full" Version="0.10.1.2" />
+    <PackageReference Include="DuckDB.NET.Data.Full" Version="0.10.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FastBIRe.Cdc\FastBIRe.Cdc.csproj" />

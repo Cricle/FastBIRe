@@ -35,6 +35,8 @@ namespace FastBIRe
 
         ReadingDataArgs Args { get; }
 
+        IDataReader Reader { get; }
+
         T? Read<T>();
     }
     public readonly struct DefaultScriptReadResult : IScriptReadResult
@@ -52,6 +54,8 @@ namespace FastBIRe
         public IScriptExecuter Executer { get; }
 
         public ReadingDataArgs Args { get; }
+
+        public IDataReader Reader => Args.Reader;
 
         public void Dispose()
         {
