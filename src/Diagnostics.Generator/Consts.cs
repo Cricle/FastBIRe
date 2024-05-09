@@ -140,5 +140,23 @@ namespace Diagnostics.Generator
             public const string MemberName = "MemberName";
             public const string LineNumber = "LineNumber";
         }
+        public static class ActivityAsAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.ActivityAsAttribute";
+
+            public const string As = "As";
+            public const string Key = "Key";
+            public const string TargetType = "TargetType";
+            public const string IgnorePaths = "IgnorePaths";
+            public const string GenerateSingleton = "GenerateSingleton";
+        }
+        public static class ActivityAsNameAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.ActivityAsNameAttribute";
+        }
+        public static class ActivityAsIgnoreAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.ActivityAsIgnoreAttribute";
+        }
     }
 }

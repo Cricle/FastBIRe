@@ -2,7 +2,7 @@
 
 namespace FastBIRe
 {
-    internal struct OneEnumerable<T> : IEnumerable<T>, IEnumerator<T>
+    public struct OneEnumerable<T> : IEnumerable<T>, IEnumerator<T>
     {
         private readonly T value;
         private bool isFirst;

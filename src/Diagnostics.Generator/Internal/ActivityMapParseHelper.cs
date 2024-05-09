@@ -209,14 +209,13 @@ if(additionTags != null)
                 var invokeCode = invokeArgsJoined.TrimEnd(',');
                 if (hasPars)
                 {
-                    noActivityArgs = "," + noActivityArgs;
                     invokeCode = "," + invokeCode;
                 }
                 var invokeLog = $"global::{method.ContainingType}.{method.Name}(logger{invokeCode});";
 
                 withLogCode = $@"
 {activityMapToEventAttr}
-{visibility} {staticKeyword} {method.ReturnType} {method.Name}(global::Microsoft.Extensions.Logging.ILogger logger{noActivityArgs})
+{visibility} {staticKeyword} {method.ReturnType} {method.Name}(global::Microsoft.Extensions.Logging.ILogger logger,{noActivityArgs})
 {{
     {invokeLog}
     {method.Name}(global::System.Diagnostics.Activity.Current,{invokeCodes});

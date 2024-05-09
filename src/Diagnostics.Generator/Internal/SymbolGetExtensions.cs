@@ -61,10 +61,14 @@ namespace Diagnostics.Generator.Internal
         }
         private static T? Cast<T>(TypedConstant val)
         {
+            if (val.Value==null)
+            {
+                return default;
+            }
             var ttype = typeof(T);
             if (ttype.IsEnum)
             {
-                return (T)Enum.Parse(typeof(T), val.Value!.ToString(), true);
+                return (T)Enum.Parse(typeof(T), val.Value.ToString(), true);
             }
             if (val.IsNull)
             {

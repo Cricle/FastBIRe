@@ -96,5 +96,17 @@ namespace Diagnostics.Generator
             "EventSourceGenerator",
             "The meter method must return void and not generic method", Category,
              DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor TagAsTargetNotClassOrStructError = new DiagnosticDescriptor("DG0022",
+            "EventSourceGenerator",
+            "The \"{0}\" is not class or struct", Category,
+             DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor TagAsLoopReferenceError = new DiagnosticDescriptor("DG0023",
+            "EventSourceGenerator",
+            "The \"{0}\" is loop reference, path is \"{1}\", the generator can't parse loop reference", Category,
+             DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor TagAsSelfMustNotStaticError = new DiagnosticDescriptor("DG0024",
+            "EventSourceGenerator",
+            "Tag as self must not static", Category,
+             DiagnosticSeverity.Error, true);
     }
 }
