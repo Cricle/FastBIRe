@@ -26,7 +26,7 @@
             value.Dispose();
         }
 
-        private void LoopDispose(object? state)
+        private async void LoopDispose(object? state)
         {
             var mgr = (ZipTraceManager<TIdentity>)state!;
             var ts = mgr.tokenSource;
@@ -60,6 +60,10 @@
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
 
+                }
+                finally
+                {
+                    await Task.Delay(mgr.RemoveWhenNoVisitTime);
                 }
             }
 

@@ -4,4 +4,8 @@
     {
         Task HandleAsync(T input, CancellationToken token);
     }
+    public interface IInputHandlerSync<T>
+    {
+       void Handle(T input);
+    }
 }

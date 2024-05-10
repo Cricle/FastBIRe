@@ -2,7 +2,7 @@
 
 namespace Diagnostics.Traces
 {
-    public interface IMetricTraceHandler : IInputHandler<Metric>
+    public interface IMetricTraceHandler : IInputHandler<Metric>,IInputHandlerSync<Metric>
     {
     }
 }

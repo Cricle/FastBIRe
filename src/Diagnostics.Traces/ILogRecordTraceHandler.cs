@@ -2,7 +2,7 @@
 
 namespace Diagnostics.Traces
 {
-    public interface ILogRecordTraceHandler : IInputHandler<LogRecord>
+    public interface ILogRecordTraceHandler : IInputHandler<LogRecord>,IInputHandlerSync<LogRecord>
     {
     }
 }

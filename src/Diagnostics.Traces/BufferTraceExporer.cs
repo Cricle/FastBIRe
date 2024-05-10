@@ -8,17 +8,14 @@ namespace Diagnostics.Traces
         protected readonly BufferOperator<T> bufferOperator;
 
         public BufferTraceExporer(IInputHandler<T> handler)
-            : this(handler, new BufferOperator<T>(handler))
+            : this(new BufferOperator<T>(handler))
         {
 
         }
-        public BufferTraceExporer(IInputHandler<T> handler, BufferOperator<T> bufferOperator)
+        public BufferTraceExporer(BufferOperator<T> bufferOperator)
         {
-            Handler = handler ?? throw new ArgumentNullException(nameof(handler));
             this.bufferOperator = bufferOperator;
         }
-
-        public IInputHandler<T> Handler { get; }
 
         public override ExportResult Export(in Batch<T> batch)
         {

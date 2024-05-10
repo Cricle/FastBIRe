@@ -2,7 +2,7 @@
 
 namespace Diagnostics.Traces
 {
-    public interface IActivityTraceHandler : IInputHandler<Activity>
+    public interface IActivityTraceHandler : IInputHandler<Activity>,IInputHandlerSync<Activity>
     {
     }
 }

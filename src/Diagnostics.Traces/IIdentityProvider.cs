@@ -3,8 +3,20 @@
     public interface IIdentityProvider<TIdentity, TInput>
         where TIdentity : IEquatable<TIdentity>
     {
-        bool HasIdentity(TInput identity);
+        GetIdentityResult<TIdentity> GetIdentity(TInput input);
+    }
+    public readonly record struct GetIdentityResult<TIdentity>
+    {
+        public static readonly GetIdentityResult<TIdentity> Fail = new GetIdentityResult<TIdentity>(default, false);
 
-        TIdentity GetIdentity(TInput input);
+        public GetIdentityResult(TIdentity? identity, bool succeed)
+        {
+            Identity = identity;
+            Succeed = succeed;
+        }
+
+        public TIdentity? Identity { get; }
+
+        public bool Succeed { get; }
     }
 }
