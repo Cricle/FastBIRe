@@ -9,10 +9,16 @@
     {
         public static readonly GetIdentityResult<TIdentity> Fail = new GetIdentityResult<TIdentity>(default, false);
 
-        public GetIdentityResult(TIdentity? identity, bool succeed)
+        internal GetIdentityResult(TIdentity? identity, bool succeed)
         {
             Identity = identity;
             Succeed = succeed;
+        }
+
+        public GetIdentityResult(TIdentity? identity)
+        {
+            Identity = identity;
+            Succeed = true;
         }
 
         public TIdentity? Identity { get; }
