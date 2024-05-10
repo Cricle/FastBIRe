@@ -173,7 +173,7 @@ namespace Diagnostics.Traces.LiteDb
                 }
                 if (index != 0)
                 {
-                    var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Activity);
+                    var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Log);
                     var coll = database.GetCollection("logs");
                     coll.InsertBulk(buffer.Take(index));
                 }
@@ -206,7 +206,7 @@ namespace Diagnostics.Traces.LiteDb
                 if (index != 0)
                 {
                     var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Activity);
-                    var coll = database.GetCollection("activities", BsonAutoId.Int64);
+                    var coll = database.GetCollection("activities");
                     coll.InsertBulk(buffer.Take(index));
                 }
             }
