@@ -1,21 +1,20 @@
-﻿using CommunityToolkit.HighPerformance.Buffers;
-using LiteDB;
+﻿using LiteDB;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
+using System.Buffers;
 using System.Diagnostics;
-using System.Text;
-using System.Text.Json;
 
 namespace Diagnostics.Traces.LiteDb
 {
+
     public class LiteTraceHandler<TIdentity> : IActivityTraceHandler, ILogRecordTraceHandler, IMetricTraceHandler, IBatchActivityTraceHandler, IBatchLogRecordTraceHandler, IBatchMetricTraceHandler, IDisposable
         where TIdentity : IEquatable<TIdentity>
     {
         public LiteTraceHandler(ILiteDatabaseSelector<TIdentity> databaseSelector,
             IIdentityProvider<TIdentity, Activity>? activityIdentityProvider,
             IIdentityProvider<TIdentity, LogRecord>? logIdentityProvider,
-            IIdentityProvider<TIdentity, Metric>? metricIdentityProvider=null)
+            IIdentityProvider<TIdentity, Metric>? metricIdentityProvider = null)
         {
             DatabaseSelector = databaseSelector;
             ActivityIdentityProvider = activityIdentityProvider;
@@ -33,7 +32,7 @@ namespace Diagnostics.Traces.LiteDb
 
         public IIdentityProvider<TIdentity, Metric>? MetricIdentityProvider { get; }
 
-        private bool TryCreateActivityDocument(Activity activity,out TIdentity? identity, out BsonDocument? doc)
+        private bool TryCreateActivityDocument(Activity activity, out TIdentity? identity, out BsonDocument? doc)
         {
             doc = null;
             identity = default;
@@ -48,30 +47,15 @@ namespace Diagnostics.Traces.LiteDb
                 return false;
             }
             identity = res.Identity;
-            using (var bufferWriter = new ArrayPoolBufferWriter<byte>())
-            {
-                using (var utf8Writer = new Utf8JsonWriter(bufferWriter, new JsonWriterOptions
-                {
-                    SkipValidation =
-#if DEBUG 
-                       false
-#else
-                       true
-#endif
-                }))
-                {
-                    ActivityJsonConverter.Write(utf8Writer, activity);
-                }
-                var str = Encoding.UTF8.GetString(bufferWriter.WrittenSpan);
-                doc = LiteDB.JsonSerializer.Deserialize(str).AsDocument;
+            doc = new BsonDocument();
+            ActivityToLiteHelper.Write(doc, activity);
 
-                return true;
-            }
+            return true;
         }
 
         public void Handle(Activity input)
         {
-            if (TryCreateActivityDocument(input,out var identity,out var doc)&&identity!=null)
+            if (TryCreateActivityDocument(input, out var identity, out var doc) && identity != null)
             {
                 var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Activity);
                 var coll = database.GetCollection("activities");
@@ -79,7 +63,7 @@ namespace Diagnostics.Traces.LiteDb
             }
         }
 
-        private bool TryCreateLogDocument(LogRecord input,out TIdentity? identity,out BsonDocument? doc)
+        private bool TryCreateLogDocument(LogRecord input, out TIdentity? identity, out BsonDocument? doc)
         {
             identity = default;
             doc = null;
@@ -93,18 +77,27 @@ namespace Diagnostics.Traces.LiteDb
             {
                 return false;
             }
-            identity=res.Identity;
-            doc = new BsonDocument(new Dictionary<string, BsonValue>()
+            identity = res.Identity;
+            doc = new BsonDocument();
+            doc["timestamp"] = input.Timestamp;
+            doc["logLevel"] = input.LogLevel.ToString();
+            doc["categoryName"] = input.CategoryName;
+            doc["traceId"] = input.TraceId.ToString();
+            doc["spanId"] = input.SpanId.ToString();
+            var arr = new BsonArray();
+            if (input.Attributes != null && input.Attributes.Count != 0)
             {
-                ["timestamp"] = input.Timestamp,
-                ["logLevel"] = input.LogLevel.ToString(),
-                ["categoryName"] = input.CategoryName,
-                ["traceId"] = input.TraceId.ToString(),
-                ["spanId"] = input.SpanId.ToString(),
-                ["attributes"] = LiteDB.JsonSerializer.Deserialize(System.Text.Json.JsonSerializer.Serialize(input.Attributes)),
-                ["formattedMessage"] = input.FormattedMessage,
-                ["body"] = input.Body
-            });
+                foreach (var item in input.Attributes)
+                {
+                    arr.Add(new BsonDocument
+                    {
+                        [item.Key] = item.Value?.ToString()
+                    });
+                }
+            }
+            doc["attributes"] = arr;
+            doc["formattedMessage"] = input.FormattedMessage;
+            doc["body"] = input.Body;
             return true;
         }
 
@@ -164,24 +157,30 @@ namespace Diagnostics.Traces.LiteDb
             Handle(inputs);
             return Task.CompletedTask;
         }
-        private int count = 0;
+
         public void Handle(in Batch<LogRecord> inputs)
         {
-            var docs = new List<BsonDocument>((int)inputs.Count);
-            foreach (var item in inputs)
+            var buffer = ArrayPool<BsonDocument>.Shared.Rent((int)inputs.Count);
+            try
             {
-                if (TryCreateLogDocument(item,out _,out var doc)&&doc!=null)
+                var index = 0;
+                foreach (var item in inputs)
                 {
-                    docs.Add(doc);
+                    if (TryCreateLogDocument(item, out _, out var doc) && doc != null)
+                    {
+                        buffer[index++] = doc;
+                    }
+                }
+                if (index != 0)
+                {
+                    var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Activity);
+                    var coll = database.GetCollection("logs");
+                    coll.InsertBulk(buffer.Take(index));
                 }
             }
-            if (docs.Count!=0)
+            finally
             {
-                var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Activity);
-                var coll = database.GetCollection("logs");
-                coll.InsertBulk(docs);
-                count += docs.Count;
-                Console.WriteLine(count);
+                ArrayPool<BsonDocument>.Shared.Return(buffer);
             }
         }
 
@@ -193,19 +192,28 @@ namespace Diagnostics.Traces.LiteDb
         }
         public void Handle(in Batch<Activity> inputs)
         {
-            var docs = new List<BsonDocument>((int)inputs.Count);
-            foreach (var item in inputs)
+            var buffer = ArrayPool<BsonDocument>.Shared.Rent((int)inputs.Count);
+            try
             {
-                if (TryCreateActivityDocument(item, out _, out var doc) && doc != null)
+                var index = 0;
+                foreach (var item in inputs)
                 {
-                    docs.Add(doc);
+                    if (TryCreateActivityDocument(item, out _, out var doc) && doc != null)
+                    {
+                        buffer[index++] = doc;
+                    }
+                }
+                if (index != 0)
+                {
+                    var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Activity);
+                    var coll = database.GetCollection("activities", BsonAutoId.Int64);
+                    coll.InsertBulk(buffer.Take(index));
                 }
             }
-            if (docs.Count != 0)
+            finally
             {
-                var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Activity);
-                var coll = database.GetCollection("activities", BsonAutoId.Int64);
-                coll.InsertBulk(docs);
+                ArrayPool<BsonDocument>.Shared.Return(buffer);
+
             }
         }
     }
