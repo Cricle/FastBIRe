@@ -2,7 +2,7 @@
 
 namespace Diagnostics.Traces.LiteDb
 {
-    public class DelegateDatabaseSelector<TIdentity> : ILiteDatabaseSelector<TIdentity>
+    public class DelegateDatabaseSelector : ILiteDatabaseSelector
     {
         public DelegateDatabaseSelector(Func<TraceTypes, ILiteDatabase> databaseFactory)
         {
@@ -13,6 +13,10 @@ namespace Diagnostics.Traces.LiteDb
         public ILiteDatabase GetLiteDatabase(TraceTypes type)
         {
             return DatabaseFactory(type);
+        }
+
+        public void ReportInserted(TraceTypes type, int count)
+        {
         }
     }
 }

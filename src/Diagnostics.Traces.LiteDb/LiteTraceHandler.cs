@@ -7,10 +7,11 @@ using System.Diagnostics;
 
 namespace Diagnostics.Traces.LiteDb
 {
+
     public class LiteTraceHandler<TIdentity> : IActivityTraceHandler, ILogRecordTraceHandler, IMetricTraceHandler, IBatchActivityTraceHandler, IBatchLogRecordTraceHandler, IBatchMetricTraceHandler, IDisposable
         where TIdentity : IEquatable<TIdentity>
     {
-        public LiteTraceHandler(ILiteDatabaseSelector<TIdentity> databaseSelector,
+        public LiteTraceHandler(ILiteDatabaseSelector databaseSelector,
             IIdentityProvider<TIdentity, Activity>? activityIdentityProvider,
             IIdentityProvider<TIdentity, LogRecord>? logIdentityProvider,
             IIdentityProvider<TIdentity, Metric>? metricIdentityProvider = null)
@@ -21,7 +22,7 @@ namespace Diagnostics.Traces.LiteDb
             MetricIdentityProvider = metricIdentityProvider;
         }
 
-        public ILiteDatabaseSelector<TIdentity> DatabaseSelector { get; }
+        public ILiteDatabaseSelector DatabaseSelector { get; }
 
         public IIdentityProvider<TIdentity, Activity>? ActivityIdentityProvider { get; }
 
@@ -55,8 +56,9 @@ namespace Diagnostics.Traces.LiteDb
             if (TryCreateActivityDocument(input, out var identity, out var doc) && identity != null)
             {
                 var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Activity);
-                var coll = database.GetCollection("activities");
+                var coll = database.GetCollection(LiteTraceCollectionNames.Activity);
                 coll.Insert(doc);
+                DatabaseSelector.ReportInserted(TraceTypes.Activity, 1);
             }
         }
 
@@ -77,7 +79,7 @@ namespace Diagnostics.Traces.LiteDb
             identity = res.Identity;
             doc = new BsonDocument();
             doc["timestamp"] = input.Timestamp;
-            doc["logLevel"] = input.LogLevel.ToString();
+            doc["logLevel"] = string.Intern(input.LogLevel.ToString());
             doc["categoryName"] = input.CategoryName;
             doc["traceId"] = input.TraceId.ToString();
             doc["spanId"] = input.SpanId.ToString();
@@ -100,8 +102,9 @@ namespace Diagnostics.Traces.LiteDb
             if (TryCreateLogDocument(input, out var identity, out var doc) && identity != null)
             {
                 var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Log);
-                var coll = database.GetCollection("logs");
+                var coll = database.GetCollection(LiteTraceCollectionNames.Log);
                 coll.Insert(doc);
+                DatabaseSelector.ReportInserted(TraceTypes.Log, 1);
             }
         }
 
@@ -109,9 +112,10 @@ namespace Diagnostics.Traces.LiteDb
         {
             if (TryCreateMetricDocument(input, out var identity, out var doc) && identity != null)
             {
-                var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Log);
-                var coll = database.GetCollection("metrics");
+                var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Metric);
+                var coll = database.GetCollection(LiteTraceCollectionNames.Metrics);
                 coll.Insert(doc);
+                DatabaseSelector.ReportInserted(TraceTypes.Metric, 1);
             }
         }
 
@@ -164,8 +168,8 @@ namespace Diagnostics.Traces.LiteDb
             doc = new BsonDocument();
             doc["name"] = input.Name;
             doc["unit"] = input.Unit;
-            doc["metricType"] = input.MetricType.ToString();
-            doc["temporality"] = input.Temporality.ToString();
+            doc["metricType"] = string.Intern(input.MetricType.ToString());
+            doc["temporality"] = string.Intern(input.Temporality.ToString());
             doc["description"] = input.Description;
             doc["unit"] = input.Unit;
             doc["meterName"] = input.MeterName;
@@ -308,9 +312,10 @@ namespace Diagnostics.Traces.LiteDb
                 }
                 if (index != 0)
                 {
-                    var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Log);
-                    var coll = database.GetCollection("metrics");
+                    var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Metric);
+                    var coll = database.GetCollection(LiteTraceCollectionNames.Metrics);
                     coll.InsertBulk(buffer.Take(index));
+                    DatabaseSelector.ReportInserted(TraceTypes.Metric, index);
                 }
             }
             finally
@@ -342,8 +347,9 @@ namespace Diagnostics.Traces.LiteDb
                 if (index != 0)
                 {
                     var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Log);
-                    var coll = database.GetCollection("logs");
+                    var coll = database.GetCollection(LiteTraceCollectionNames.Log);
                     coll.InsertBulk(buffer.Take(index));
+                    DatabaseSelector.ReportInserted(TraceTypes.Log, index);
                 }
             }
             finally
@@ -374,8 +380,9 @@ namespace Diagnostics.Traces.LiteDb
                 if (index != 0)
                 {
                     var database = DatabaseSelector.GetLiteDatabase(TraceTypes.Activity);
-                    var coll = database.GetCollection("activities");
+                    var coll = database.GetCollection(LiteTraceCollectionNames.Activity);
                     coll.InsertBulk(buffer.Take(index));
+                    DatabaseSelector.ReportInserted(TraceTypes.Activity,index);
                 }
             }
             finally
