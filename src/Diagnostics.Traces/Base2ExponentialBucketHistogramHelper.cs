@@ -1,17 +1,4 @@
-﻿/* 项目“Diagnostics.Traces (netstandard2.0)”的未合并的更改
-在此之前:
-namespace Diagnostics.Traces.Zips
-在此之后:
-using Diagnostics.Traces.Zips
-*/
-
-/* 项目“Diagnostics.Traces (net461)”的未合并的更改
-在此之前:
-namespace Diagnostics.Traces.Zips
-在此之后:
-using Diagnostics.Traces.Zips
-*/
-namespace Diagnostics.Traces
+﻿namespace Diagnostics.Traces
 {
     internal static class Base2ExponentialBucketHistogramHelper
     {

@@ -22,17 +22,17 @@ namespace Diagnostics.Traces.Zips
                 tags = $"{{ {string.Join(", ", metric.MeterTags.Select(x => $"{x.Key}:{x.Value}"))} }}";
             }
             msg.Write("[[ ");
-            msg.WriteLine($"{metric.Name}{metricInfo} {tags}");
+            msg.WriteLine($"{metric.Name}{metricInfo} {tags} {metric.MetricType}");
 
 #if false
             [[cc [test:] {}
 #endif
+            var metricType = metric.MetricType;
             foreach (ref readonly var metricPoint in metric.GetMetricPoints())
             {
                 msg.WriteLine();
                 string valueDisplay = string.Empty;
 
-                var metricType = metric.MetricType;
 
                 if (metricType == MetricType.Histogram || metricType == MetricType.ExponentialHistogram)
                 {
@@ -130,7 +130,6 @@ namespace Diagnostics.Traces.Zips
                     }
                 }
 
-                msg.Write(metric.MetricType);
                 if (metricPoint.Tags.Count != 0)
                 {
                     msg.Write(' ');

@@ -13,5 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Diagnostics.Traces\Diagnostics.Traces.csproj" />
   </ItemGroup>
-
+	<ItemGroup>
+		<Compile Include="../Diagnostics.Traces/Base2ExponentialBucketHistogramHelper.cs"></Compile>
+	</ItemGroup>
 </Project>
