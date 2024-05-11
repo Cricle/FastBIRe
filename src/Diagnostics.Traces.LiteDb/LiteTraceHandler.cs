@@ -180,7 +180,7 @@ namespace Diagnostics.Traces.LiteDb
             }
             doc["meterTags"] = tags;
             var points = new BsonArray();
-            
+            doc["points"] = points;
             var metricType = input.MetricType;
 
             foreach (ref readonly var metricPoint in input.GetMetricPoints())

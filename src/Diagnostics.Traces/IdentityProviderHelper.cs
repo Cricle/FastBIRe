@@ -1,4 +1,5 @@
 ﻿using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
 using System.Diagnostics;
 
 namespace Diagnostics.Traces
@@ -13,7 +14,11 @@ namespace Diagnostics.Traces
         {
             return LogByAttribute(x => x == key, x => x.ToString());
         }
-        public static IIdentityProvider<TIdentity, Activity> ActivityByTagObjects<TIdentity>(Func<string, bool> equals, Func<object, TIdentity> caster)
+        public static IIdentityProvider<string, Metric> MetricByTags(string key)
+        {
+            return MetricByTags(x => x == key, x => x.ToString());
+        }
+        public static IIdentityProvider<TIdentity, Activity> ActivityByTagObjects<TIdentity>(Func<string, bool> equals, Func<object, TIdentity?> caster)
             where TIdentity : IEquatable<TIdentity>
         {
             return new DelegateIdentityProvider<TIdentity, Activity>(s =>
@@ -28,7 +33,7 @@ namespace Diagnostics.Traces
                 return GetIdentityResult<TIdentity>.Fail;
             });
         }
-        public static IIdentityProvider<TIdentity, LogRecord> LogByAttribute<TIdentity>(Func<string, bool> equals, Func<object, TIdentity> caster)
+        public static IIdentityProvider<TIdentity, LogRecord> LogByAttribute<TIdentity>(Func<string, bool> equals, Func<object, TIdentity?> caster)
             where TIdentity : IEquatable<TIdentity>
         {
             return new DelegateIdentityProvider<TIdentity, LogRecord>(s =>
@@ -40,6 +45,24 @@ namespace Diagnostics.Traces
                         if (item.Value != null && equals(item.Key))
                         {
                             return new GetIdentityResult<TIdentity>(caster(item.Value));
+                        }
+                    }
+                }
+                return GetIdentityResult<TIdentity>.Fail;
+            });
+        }
+        public static IIdentityProvider<TIdentity, Metric> MetricByTags<TIdentity>(Func<string, bool> equals, Func<object, TIdentity?> caster)
+            where TIdentity : IEquatable<TIdentity>
+        {
+            return new DelegateIdentityProvider<TIdentity, Metric>(s =>
+            {
+                foreach (ref readonly var point in s.GetMetricPoints())
+                {
+                    foreach (var tag in point.Tags)
+                    {
+                        if (equals(tag.Key)&&tag.Value!=null)
+                        {
+                            return new GetIdentityResult<TIdentity>(caster(tag.Value));
                         }
                     }
                 }
