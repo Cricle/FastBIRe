@@ -1,18 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<Import Project="..\..\eng\pkg.props" />
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;netstandard2.0;net461</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(PublishAot)'!='' or $(PublishSingleFile)!=''">
+		<TargetFrameworks>net8.0;</TargetFrameworks>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="LiteDB" Version="5.0.19" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="LiteDB" Version="5.0.19" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Diagnostics.Traces\Diagnostics.Traces.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Diagnostics.Traces\Diagnostics.Traces.csproj" />
+	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="../Diagnostics.Traces/Base2ExponentialBucketHistogramHelper.cs"></Compile>
 	</ItemGroup>
