@@ -3,6 +3,7 @@ using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 
 namespace Diagnostics.Traces.DuckDB
 {

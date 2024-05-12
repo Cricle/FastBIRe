@@ -177,7 +177,6 @@ namespace Diagnostics.Traces.LiteDb
             doc["metricType"] = string.Intern(input.MetricType.ToString());
             doc["temporality"] = string.Intern(input.Temporality.ToString());
             doc["description"] = input.Description;
-            doc["unit"] = input.Unit;
             doc["meterName"] = input.MeterName;
             doc["meterVersion"] = input.MeterVersion;
             var tags = new BsonDocument();
@@ -243,6 +242,7 @@ namespace Diagnostics.Traces.LiteDb
                     else
                     {
                         var exponentialHistogramDoc = new BsonDocument();
+                        point["histogram"] = exponentialHistogramDoc;
                         var exponentialHistogramBuckets=new BsonArray();
                         exponentialHistogramDoc["buckets"] = exponentialHistogramBuckets;
                         var exponentialHistogramData = metricPoint.GetExponentialHistogramData();
