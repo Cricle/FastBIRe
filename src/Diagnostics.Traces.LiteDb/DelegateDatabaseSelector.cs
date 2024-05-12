@@ -4,19 +4,21 @@ namespace Diagnostics.Traces.LiteDb
 {
     public class DelegateDatabaseSelector : ILiteDatabaseSelector
     {
-        public DelegateDatabaseSelector(Func<TraceTypes, ILiteDatabase> databaseFactory)
-        {
-            DatabaseFactory = databaseFactory;
-        }
-        public Func<TraceTypes, ILiteDatabase> DatabaseFactory { get; }
 
-        public ILiteDatabase GetLiteDatabase(TraceTypes type)
+        public Func<TraceTypes, Action<LiteDatabaseCreatedResult>> Getter { get; }
+
+        public DelegateDatabaseSelector(Func<TraceTypes, Action<LiteDatabaseCreatedResult>> getter)
         {
-            return DatabaseFactory(type);
+            Getter = getter;
         }
 
         public void ReportInserted(TraceTypes type, int count)
         {
+        }
+
+        public void UsingDatabaseResult(TraceTypes type, Action<LiteDatabaseCreatedResult> @using)
+        {
+            throw new NotImplementedException();
         }
     }
 }
