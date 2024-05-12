@@ -1,4 +1,5 @@
-﻿using LiteDB;
+﻿using Diagnostics.Traces.Stores;
+using LiteDB;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
@@ -7,11 +8,10 @@ using System.Diagnostics;
 
 namespace Diagnostics.Traces.LiteDb
 {
-
     public class LiteTraceHandler<TIdentity> : IActivityTraceHandler, ILogRecordTraceHandler, IMetricTraceHandler, IBatchActivityTraceHandler, IBatchLogRecordTraceHandler, IBatchMetricTraceHandler, IDisposable
         where TIdentity : IEquatable<TIdentity>
     {
-        public LiteTraceHandler(ILiteDatabaseSelector databaseSelector,
+        public LiteTraceHandler(IUndefinedDatabaseSelector<LiteDatabaseCreatedResult> databaseSelector,
             IIdentityProvider<TIdentity, Activity>? activityIdentityProvider,
             IIdentityProvider<TIdentity, LogRecord>? logIdentityProvider,
             IIdentityProvider<TIdentity, Metric>? metricIdentityProvider = null)
@@ -22,7 +22,7 @@ namespace Diagnostics.Traces.LiteDb
             MetricIdentityProvider = metricIdentityProvider;
         }
 
-        public ILiteDatabaseSelector DatabaseSelector { get; }
+        public IUndefinedDatabaseSelector<LiteDatabaseCreatedResult> DatabaseSelector { get; }
 
         public IIdentityProvider<TIdentity, Activity>? ActivityIdentityProvider { get; }
 

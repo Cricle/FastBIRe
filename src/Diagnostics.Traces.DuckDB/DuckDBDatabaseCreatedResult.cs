@@ -1,11 +1,11 @@
 ﻿using Diagnostics.Traces.Stores;
-using LiteDB;
+using DuckDB.NET.Data;
 
-namespace Diagnostics.Traces.LiteDb
+namespace Diagnostics.Traces.DuckDB
 {
-    public readonly struct LiteDatabaseCreatedResult : IDatabaseCreatedResult,IDisposable
+    public readonly struct DuckDBDatabaseCreatedResult : IDatabaseCreatedResult,IDisposable
     {
-        public LiteDatabaseCreatedResult(ILiteDatabase database, string? filePath)
+        public DuckDBDatabaseCreatedResult(DuckDBConnection database, string? filePath)
         {
             Database = database;
             FilePath = filePath;
@@ -14,7 +14,7 @@ namespace Diagnostics.Traces.LiteDb
 
         public object Root { get; }
 
-        public ILiteDatabase Database { get; }
+        public DuckDBConnection Database { get; }
 
         public string? FilePath { get; }
 

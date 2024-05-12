@@ -1,7 +1,8 @@
-﻿namespace Diagnostics.Traces.LiteDb
+﻿using Diagnostics.Traces.Stores;
+
+namespace Diagnostics.Traces.LiteDb
 {
-    public interface IDatabaseAfterSwitched
+    public interface IDatabaseAfterSwitched: IUndefinedDatabaseAfterSwitched<LiteDatabaseCreatedResult>
     {
-        void AfterSwitched(LiteDatabaseCreatedResult result);
     }
 }
