@@ -32,7 +32,7 @@
             {
                 lastCreateTime = DateTime.Now;
                 var old = result;
-                if (old != null)
+                if (old?.Root != null)
                 {
                     Monitor.Enter(old.Root);
                 }
@@ -49,14 +49,13 @@
                 }
                 finally
                 {
-                    if (old != null)
+                    if (old?.Root != null)
                     {
                         Monitor.Exit(old.Root);
                     }
                 }
             }
-
-            public void UsingDatabaseResult(Action<TResult> @using)
+            private void BeforeUsingDatabaseResult()
             {
                 if (result == null)
                 {
@@ -78,20 +77,30 @@
                         }
                     }
                 }
-                lock (result!.Root)
-                {
-                    @using(result);
-                }
+            }
+            public void UsingDatabaseResult<TState>(TState state,Action<TResult,TState> @using)
+            {
+                BeforeUsingDatabaseResult();
+                @using(result!, state);
+            }
+
+
+            public void UsingDatabaseResult(Action<TResult> @using)
+            {
+                BeforeUsingDatabaseResult();
+                @using(result!);
             }
 
             public void ReportInserted(int count)
             {
-                lock (locker)
+                if (Interlocked.Add(ref inserted, count) > LimitCount)
                 {
-                    inserted += count;
-                    if (inserted > LimitCount)
+                    lock (locker)
                     {
-                        Switch();
+                        if (inserted > LimitCount)
+                        {
+                            Switch();
+                        }
                     }
                 }
             }
@@ -101,14 +110,17 @@
 
         public DayOrLimitDatabaseSelector(Func<TraceTypes, TResult> databaseCreator,
             long limitCount = DefaultLimitCount,
-            IUndefinedDatabaseAfterSwitched<TResult>? afterSwitched = null)
+            IUndefinedDatabaseAfterSwitched<TResult>? afterSwitched = null,
+            IUndefinedResultInitializer<TResult>? initializer = null)
         {
             manager = new DatabaseManager(limitCount, () => databaseCreator(TraceTypes.Log));
             DatabaseCreator = databaseCreator;
             AfterSwitched = afterSwitched;
+            Initializer = initializer;
         }
 
         private IUndefinedDatabaseAfterSwitched<TResult>? afterSwitched;
+        private IUndefinedResultInitializer<TResult>? initializer;
 
         public Func<TraceTypes, TResult> DatabaseCreator { get; }
 
@@ -121,6 +133,15 @@
                 afterSwitched = value;
             }
         }
+        public IUndefinedResultInitializer<TResult>? Initializer
+        {
+            get => initializer;
+            set
+            {
+                manager.ResultInitializer = value;
+                initializer = value;
+            }
+        }
 
         public void UsingDatabaseResult(TraceTypes type, Action<TResult> @using)
         {
@@ -130,6 +151,11 @@
         public void ReportInserted(TraceTypes type, int count)
         {
             manager.ReportInserted(count);
+        }
+
+        public void UsingDatabaseResult<TState>(TraceTypes type, TState state, Action<TResult, TState> @using)
+        {
+            manager.UsingDatabaseResult(state, @using);
         }
     }
 }

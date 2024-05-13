@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace Diagnostics.Traces.LiteDb
 {
-    public class LiteTraceHandler<TIdentity> : IActivityTraceHandler, ILogRecordTraceHandler, IMetricTraceHandler, IBatchActivityTraceHandler, IBatchLogRecordTraceHandler, IBatchMetricTraceHandler, IDisposable
+    public class LiteTraceHandler<TIdentity> : TraceHandlerBase<TIdentity>
         where TIdentity : IEquatable<TIdentity>
     {
         public LiteTraceHandler(IUndefinedDatabaseSelector<LiteDatabaseCreatedResult> databaseSelector,
@@ -51,7 +51,7 @@ namespace Diagnostics.Traces.LiteDb
             return true;
         }
 
-        public void Handle(Activity input)
+        public override void Handle(Activity input)
         {
             if (TryCreateActivityDocument(input, out var identity, out var doc) && identity != null)
             {
@@ -99,7 +99,7 @@ namespace Diagnostics.Traces.LiteDb
             return true;
         }
 
-        public void Handle(LogRecord input)
+        public override void Handle(LogRecord input)
         {
             if (TryCreateLogDocument(input, out var identity, out var doc) && identity != null)
             {
@@ -112,7 +112,7 @@ namespace Diagnostics.Traces.LiteDb
             }
         }
 
-        public void Handle(Metric input)
+        public override void Handle(Metric input)
         {
             if (TryCreateMetricDocument(input, out var identity, out var doc) && identity != null)
             {
@@ -125,37 +125,6 @@ namespace Diagnostics.Traces.LiteDb
             }
         }
 
-        public Task HandleAsync(Activity input, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(input);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(LogRecord input, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(input);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(Metric input, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(input);
-            return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-        }
-
-        public Task HandleAsync(Batch<Metric> inputs, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(inputs);
-            return Task.CompletedTask;
-        }
         private bool TryCreateMetricDocument(Metric input, out TIdentity? identity, out BsonDocument? doc)
         {
             identity = default;
@@ -303,7 +272,7 @@ namespace Diagnostics.Traces.LiteDb
             }
             return true;
         }
-        public void Handle(in Batch<Metric> inputs)
+        public override void Handle(in Batch<Metric> inputs)
         {
             var buffer = ArrayPool<BsonDocument>.Shared.Rent((int)inputs.Count);
             try
@@ -332,14 +301,7 @@ namespace Diagnostics.Traces.LiteDb
             }
         }
          
-        public Task HandleAsync(Batch<LogRecord> inputs, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(inputs);
-            return Task.CompletedTask;
-        }
-
-        public void Handle(in Batch<LogRecord> inputs)
+        public override void Handle(in Batch<LogRecord> inputs)
         {
             var buffer = ArrayPool<BsonDocument>.Shared.Rent((int)inputs.Count);
             try
@@ -368,13 +330,7 @@ namespace Diagnostics.Traces.LiteDb
             }
         }
 
-        public Task HandleAsync(Batch<Activity> inputs, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(inputs);
-            return Task.CompletedTask;
-        }
-        public void Handle(in Batch<Activity> inputs)
+        public override void Handle(in Batch<Activity> inputs)
         {
             var buffer = ArrayPool<BsonDocument>.Shared.Rent((int)inputs.Count);
             try

@@ -4,7 +4,7 @@ namespace Diagnostics.Traces.DuckDB
 {
     internal static class DbExtensions
     {
-        public static DbDataReader Query(this DbConnection connection, string sql, int? timeout=null, DbTransaction? transaction = null)
+        public static DbDataReader Query(this DbConnection connection, string sql, int? timeout = null, DbTransaction? transaction = null)
         {
             using (var command = connection.CreateCommand())
             {
@@ -20,20 +20,20 @@ namespace Diagnostics.Traces.DuckDB
                 return command.ExecuteReader();
             }
         }
-        public static int Execute(this DbConnection connection, string sql,int? timeout = null, DbTransaction? transaction=null)
+        public static int Execute(this DbConnection connection, string sql, int? timeout = null, DbTransaction? transaction = null, bool noAsync = false)
         {
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = sql;
-                if (transaction!=null)
+                if (transaction != null)
                 {
                     command.Transaction = transaction;
                 }
-                if (timeout!=null)
+                if (timeout != null)
                 {
                     command.CommandTimeout = timeout.Value;
                 }
-               return command.ExecuteNonQuery();
+                return command.ExecuteNonQuery();
             }
         }
     }

@@ -1,20 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="DuckDB.NET.Data.Full" Version="0.10.2" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="DuckDB.NET.Data.Full" Version="0.10.2" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Diagnostics.Traces\Diagnostics.Traces.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Diagnostics.Traces\Diagnostics.Traces.csproj" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Include="../Diagnostics.Traces/Base2ExponentialBucketHistogramHelper.cs"></Compile>
+		<Compile Include="../FastBIRe/OneEnumerable.cs"></Compile>
 	</ItemGroup>
 </Project>

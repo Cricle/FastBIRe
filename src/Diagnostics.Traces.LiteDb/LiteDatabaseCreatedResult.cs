@@ -3,7 +3,7 @@ using LiteDB;
 
 namespace Diagnostics.Traces.LiteDb
 {
-    public readonly struct LiteDatabaseCreatedResult : IDatabaseCreatedResult,IDisposable
+    public class LiteDatabaseCreatedResult : IDatabaseCreatedResult,IDisposable
     {
         public LiteDatabaseCreatedResult(ILiteDatabase database, string? filePath)
         {

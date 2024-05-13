@@ -4,7 +4,9 @@ namespace Diagnostics.Traces.DuckDB
 {
     public class DuckDBResultInitializer : IUndefinedResultInitializer<DuckDBDatabaseCreatedResult>
     {
-        private const string InitSql = @"
+        public static readonly DuckDBResultInitializer Instance = new DuckDBResultInitializer();
+
+        private const string InitSqlLogs = @"
 CREATE TABLE IF NOT EXISTS ""logs""(
     timestamp DATETIME,
     logLevel INTEGER,
@@ -15,7 +17,9 @@ CREATE TABLE IF NOT EXISTS ""logs""(
     formattedMessage VARCHAR,
     body VARCHAR
 );
+";
 
+        private const string InitSqlActivities = @"
 CREATE TABLE IF NOT EXISTS ""activities""(
     id VARCHAR,
     status INTEGER,
@@ -42,8 +46,9 @@ CREATE TABLE IF NOT EXISTS ""activities""(
     activityTraceFlags INTEGER,
     parentSpanId VARCHAR
 );
-
-CREATE TABLE IF NOT EXISTS ""metric""(
+";
+        private const string InitSqlMetrics= @"
+CREATE TABLE IF NOT EXISTS ""metrics""(
     name VARCHAR,
     unit VARCHAR,
     metricType INTEGER,
@@ -64,13 +69,13 @@ CREATE TABLE IF NOT EXISTS ""metric""(
         histogram STRUCT(
             rangeLeft DOUBLE,
             rangeRight DOUBLE,
-            bucketCount INTEGER,
-            zeroBucketCount BIGINT,
-            buckets STRUCT(
-                lowerBound DOUBLE,
-                upperBound DOUBLE,
-                bucketCount BIGINT
-            )[]
+            bucketCount INTEGER
+        )[],
+        zeroBucketCount BIGINT,
+        buckets STRUCT(
+            lowerBound DOUBLE,
+            upperBound DOUBLE,
+            bucketCount BIGINT
         )[]
     )[]
 );
@@ -78,7 +83,15 @@ CREATE TABLE IF NOT EXISTS ""metric""(
 
         public void InitializeResult(DuckDBDatabaseCreatedResult result)
         {
-            result.Database.Execute(InitSql);
+            result.Database.Execute(InitSqlLogs);
+            result.Database.Execute(InitSqlMetrics);
+            result.Database.Execute(InitSqlActivities);
+            result.Database.Execute("PRAGMA memory_limit='64mb';");
+            AfterInitializeResult(result);
+        }
+        protected virtual void AfterInitializeResult(DuckDBDatabaseCreatedResult result)
+        {
+
         }
     }
 }

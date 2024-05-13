@@ -1,13 +1,14 @@
 ﻿using Diagnostics.Traces.Stores;
+using FastBIRe;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using System.Diagnostics;
-using System.Text.Json.Serialization;
+using System.Text;
 
 namespace Diagnostics.Traces.DuckDB
 {
-    public class DuckDBTraceHandler<TIdentity> : IActivityTraceHandler, ILogRecordTraceHandler, IMetricTraceHandler, IBatchActivityTraceHandler, IBatchLogRecordTraceHandler, IBatchMetricTraceHandler, IDisposable
+    public class DuckDBTraceHandler<TIdentity> : TraceHandlerBase<TIdentity>
         where TIdentity : IEquatable<TIdentity>
     {
         public DuckDBTraceHandler(IUndefinedDatabaseSelector<DuckDBDatabaseCreatedResult> databaseSelector,
@@ -29,81 +30,204 @@ namespace Diagnostics.Traces.DuckDB
 
         public IIdentityProvider<TIdentity, Metric>? MetricIdentityProvider { get; }
 
-        public void Dispose()
+        private string BuildSql(IEnumerator<LogRecord> logs)
         {
+            var s = new StringBuilder("INSERT INTO \"logs\" VALUES ");
+            while (logs.MoveNext())
+            {
+                var item = logs.Current;
+
+                s.Append('(');
+                s.Append(DuckHelper.WrapValue(item.Timestamp));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.LogLevel));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.TraceId));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.SpanId));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Attributes));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.FormattedMessage));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Body));
+                s.Append("),");
+            }
+            s.Remove(s.Length - 1, 1);
+            return s.ToString();
+        }
+        private string BuildSql(IEnumerator<Activity> activities)
+        {
+            var s = new StringBuilder("INSERT INTO \"activities\" VALUES ");
+            while (activities.MoveNext())
+            {
+                var item = activities.Current;
+
+                s.Append('(');
+                s.Append(DuckHelper.WrapValue(item.Id));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Status));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.StatusDescription));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.HasRemoteParent));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Kind));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.OperationName));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.DisplayName));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Source.Name));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Source.Version));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Duration.TotalMilliseconds));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.StartTimeUtc));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.ParentId));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.RootId));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Tags));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Events));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Links));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Baggage));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Context));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.TraceStateString));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.SpanId.ToString()));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.TraceId.ToString()));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Recorded));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.ActivityTraceFlags));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.ParentSpanId.ToString()));
+                s.Append("),");
+            }
+            s.Remove(s.Length - 1, 1);
+            return s.ToString();
+        }
+        private string BuildSql(IEnumerator<Metric> metrics)
+        {
+            var s = new StringBuilder("INSERT INTO \"metrics\" VALUES ");
+            while (metrics.MoveNext())
+            {
+                var item = metrics.Current;
+
+                s.Append('(');
+                s.Append(DuckHelper.WrapValue(item.Name));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Unit));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.MetricType));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Temporality));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.Description));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.MeterName));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.MeterVersion));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.MeterTags));
+                s.Append(',');
+                DuckHelper.MapAsString(s, item.MetricType, item.GetMetricPoints());
+
+                s.Append("),");
+            }
+            s.Remove(s.Length - 1, 1);
+            return s.ToString();
         }
 
-        public void Handle(Activity input)
+        public override void Handle(Activity input)
         {
-            throw new NotImplementedException();
+            var sql = BuildSql(new OneEnumerable<Activity>(input));
+            DatabaseSelector.UsingDatabaseResult(TraceTypes.Activity, sql, static (res, sql) =>
+            {
+                res.Database.Execute(sql);
+            });
+            DatabaseSelector.ReportInserted(TraceTypes.Activity, 1);
         }
 
-        public void Handle(LogRecord input)
+        public override void Handle(LogRecord input)
         {
-            throw new NotImplementedException();
+            var sql = BuildSql(new OneEnumerable<LogRecord>(input));
+            DatabaseSelector.UsingDatabaseResult(TraceTypes.Log, sql, static (res, sql) =>
+            {
+                res.Database.Execute(sql);
+            });
+            DatabaseSelector.ReportInserted(TraceTypes.Log, 1);
         }
 
-        public void Handle(Metric input)
+        public override void Handle(Metric input)
         {
-            throw new NotImplementedException();
+            var sql = BuildSql(new OneEnumerable<Metric>(input));
+            DatabaseSelector.UsingDatabaseResult(TraceTypes.Metric, sql, static (res, sql) =>
+            {
+                res.Database.Execute(sql);
+            });
+            DatabaseSelector.ReportInserted(TraceTypes.Metric, 1);
         }
 
-        public void Handle(in Batch<Activity> inputs)
+        public override void Handle(in Batch<Activity> inputs)
         {
-            throw new NotImplementedException();
+            if (inputs.Count == 0)
+            {
+                return;
+            }
+            using (var enu = inputs.GetEnumerator())
+            {
+                var sql = BuildSql(enu);
+                DatabaseSelector.UsingDatabaseResult(TraceTypes.Activity, sql, static (res, sql) =>
+                {
+                    res.Database.Execute(sql);
+                });
+                DatabaseSelector.ReportInserted(TraceTypes.Activity, (int)inputs.Count);
+            }
         }
 
-        public void Handle(in Batch<LogRecord> inputs)
+        public override void Handle(in Batch<LogRecord> inputs)
         {
-            throw new NotImplementedException();
+            if (inputs.Count == 0)
+            {
+                return;
+            }
+            using (var enu = inputs.GetEnumerator())
+            {
+                var sql = BuildSql(enu);
+                DatabaseSelector.UsingDatabaseResult(TraceTypes.Log, sql, static (res, sql) =>
+                {
+                    res.Database.Execute(sql);
+                });
+                DatabaseSelector.ReportInserted(TraceTypes.Log, (int)inputs.Count);
+            }
         }
 
-        public void Handle(in Batch<Metric> inputs)
+        public override void Handle(in Batch<Metric> inputs)
         {
-            throw new NotImplementedException();
+            if (inputs.Count == 0)
+            {
+                return;
+            }
+            using (var enu = inputs.GetEnumerator())
+            {
+                var sql = BuildSql(enu);
+                DatabaseSelector.UsingDatabaseResult(TraceTypes.Metric, sql, static (res, sql) =>
+                {
+                    res.Database.Execute(sql);
+                });
+                DatabaseSelector.ReportInserted(TraceTypes.Metric, (int)inputs.Count);
+            }
         }
 
-
-        public Task HandleAsync(Activity input, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(input);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(LogRecord input, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(input);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(Metric input, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(input);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(Batch<Activity> inputs, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(inputs);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(Batch<LogRecord> inputs, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(inputs);
-            return Task.CompletedTask;
-        }
-
-        public Task HandleAsync(Batch<Metric> inputs, CancellationToken token)
-        {
-            token.ThrowIfCancellationRequested();
-            Handle(inputs);
-            return Task.CompletedTask;
-        }
     }
 }

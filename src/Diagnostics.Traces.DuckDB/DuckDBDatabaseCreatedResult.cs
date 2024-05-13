@@ -3,7 +3,7 @@ using DuckDB.NET.Data;
 
 namespace Diagnostics.Traces.DuckDB
 {
-    public readonly struct DuckDBDatabaseCreatedResult : IDatabaseCreatedResult,IDisposable
+    public class DuckDBDatabaseCreatedResult : IDatabaseCreatedResult,IDisposable
     {
         public DuckDBDatabaseCreatedResult(DuckDBConnection database, string? filePath)
         {
@@ -20,7 +20,7 @@ namespace Diagnostics.Traces.DuckDB
 
         public void Dispose()
         {
-            Database.Dispose();
+            Database?.Dispose();
         }
     }
 }
