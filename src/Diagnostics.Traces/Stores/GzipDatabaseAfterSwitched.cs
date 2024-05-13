@@ -26,6 +26,8 @@ namespace Diagnostics.Traces.Stores
             return Task.Delay(1000);
         }
 
+        public event EventHandler<Exception>? ExceptionRaised;
+
         public void AfterSwitched(TResult result)
         {
             var filePath = GetFilePath(result);
@@ -54,6 +56,10 @@ namespace Diagnostics.Traces.Stores
                         }
                         File.Delete(filePath);
                     }
+                }
+                catch (Exception ex)
+                {
+                    ExceptionRaised?.Invoke(this,ex);
                 }
                 finally
                 {

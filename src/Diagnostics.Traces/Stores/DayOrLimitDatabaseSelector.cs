@@ -1,18 +1,17 @@
 ﻿namespace Diagnostics.Traces.Stores
 {
     public class DayOrLimitDatabaseSelector<TResult> : IUndefinedDatabaseSelector<TResult>
-        where TResult:IDatabaseCreatedResult
+        where TResult : IDatabaseCreatedResult
     {
         public const long DefaultLimitCount = 500_000;
 
         class DatabaseManager
         {
+            private int switching;
             private long inserted;
             private DateTime lastCreateTime;
 
             private TResult? result;
-
-            private readonly object locker = new object();
 
             public DatabaseManager(long limitCount, Func<TResult> databaseCreator)
             {
@@ -28,80 +27,89 @@
 
             public IUndefinedResultInitializer<TResult>? ResultInitializer { get; set; }
 
+            private void GetLocker(int sleepTime = 10)
+            {
+                while (Interlocked.CompareExchange(ref switching, 1, 0) != 0)
+                {
+                    Thread.Sleep(sleepTime);
+                }
+            }
+
+            private void ReleaseLocker()
+            {
+                Interlocked.Exchange(ref switching, 0);
+            }
+
             private void Switch()
             {
-                lastCreateTime = DateTime.Now;
-                var old = result;
-                if (old?.Root != null)
-                {
-                    Monitor.Enter(old.Root);
-                }
+                GetLocker();
                 try
                 {
-                    result = DatabaseCreator();
-                    old?.Dispose();
-                    if (old != null)
+                    if (result == null || DateTime.Now.Date != lastCreateTime.Date || inserted > LimitCount)
                     {
-                        AfterSwitched?.AfterSwitched(old);
+                        lastCreateTime = DateTime.Now;
+                        var old = result;
+                        result = DatabaseCreator();
+                        old?.Dispose();
+                        if (old != null)
+                        {
+                            AfterSwitched?.AfterSwitched(old);
+                        }
+                        ResultInitializer?.InitializeResult(result);
+                        inserted = 0;
                     }
-                    ResultInitializer?.InitializeResult(result);
-                    inserted = 0;
                 }
                 finally
                 {
-                    if (old?.Root != null)
-                    {
-                        Monitor.Exit(old.Root);
-                    }
+                    ReleaseLocker();
                 }
             }
             private void BeforeUsingDatabaseResult()
             {
                 if (result == null)
                 {
-                    lock (locker)
-                    {
-                        if (result == null)
-                        {
-                            Switch();
-                        }
-                    }
+                    Switch();
                 }
                 if (DateTime.Now.Date != lastCreateTime.Date)
                 {
-                    lock (locker)
-                    {
-                        if (DateTime.Now.Date != lastCreateTime.Date)
-                        {
-                            Switch();
-                        }
-                    }
+                    Switch();
                 }
             }
-            public void UsingDatabaseResult<TState>(TState state,Action<TResult,TState> @using)
+            public void UsingDatabaseResult<TState>(TState state, Action<TResult, TState> @using)
             {
                 BeforeUsingDatabaseResult();
-                @using(result!, state);
+                GetLocker();
+                try
+                {
+                    @using(result!, state);
+                }
+                finally
+                {
+                    ReleaseLocker();
+                }
             }
 
 
             public void UsingDatabaseResult(Action<TResult> @using)
             {
                 BeforeUsingDatabaseResult();
-                @using(result!);
+                GetLocker();
+                try
+                {
+                    @using(result!);
+
+                }
+                finally
+                {
+                    ReleaseLocker();
+                }
             }
 
             public void ReportInserted(int count)
             {
                 if (Interlocked.Add(ref inserted, count) > LimitCount)
                 {
-                    lock (locker)
-                    {
-                        if (inserted > LimitCount)
-                        {
-                            Switch();
-                        }
-                    }
+                    Switch();
                 }
             }
         }
