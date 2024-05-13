@@ -20,7 +20,7 @@ namespace Diagnostics.Traces.DuckDB
                 return command.ExecuteReader();
             }
         }
-        public static int Execute(this DbConnection connection, string sql, int? timeout = null, DbTransaction? transaction = null, bool noAsync = false)
+        public static int Execute(this DbConnection connection, string sql, int? timeout = null, DbTransaction? transaction = null)
         {
             using (var command = connection.CreateCommand())
             {

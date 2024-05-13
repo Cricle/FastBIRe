@@ -1,4 +1,5 @@
-﻿using OpenTelemetry.Metrics;
+﻿using OpenTelemetry;
+using OpenTelemetry.Metrics;
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -59,6 +60,10 @@ namespace Diagnostics.Traces.DuckDB
             {
                 return MapAsString(context);
             }
+            else if (input is ReadOnlyTagCollection tags)
+            {
+                return MapAsString(tags);
+            }
             else if (input is bool b)
             {
                 return b ? "true" : "false";
@@ -67,7 +72,7 @@ namespace Diagnostics.Traces.DuckDB
             {
                 if (double.IsPositiveInfinity(d))
                 {
-                    return "'+Infinity'";
+                    return "'Infinity'";
                 }
                 else if (double .IsNegativeInfinity(d))
                 {
@@ -82,7 +87,7 @@ namespace Diagnostics.Traces.DuckDB
             {
                 if (float.IsPositiveInfinity(f))
                 {
-                    return "'+Infinity'";
+                    return "'Infinity'";
                 }
                 else if (float.IsNegativeInfinity(f))
                 {
@@ -101,67 +106,77 @@ namespace Diagnostics.Traces.DuckDB
         }
         private static void MapAsString(StringBuilder s,MetricType metricType,in MetricPoint point)
         {
-            s.Append("JSON_ARRAY(");
+            s.Append("JSON_OBJECT(");
             if (metricType == MetricType.Histogram || metricType == MetricType.ExponentialHistogram)
             {
-                s.Append(WrapValue(point.GetSumDouble()));
-                s.Append(',');
+                s.Append("'value',NULL,'sum',");
+                s.Append(WrapValue(point.GetHistogramSum()));
+                s.Append(",'count',");
                 s.Append(WrapValue(point.GetHistogramCount()));
                 s.Append(',');
                 if (point.TryGetHistogramMinMaxValues(out double min, out double max))
                 {
+                    s.Append("'min',");
                     s.Append(WrapValue(min));
-                    s.Append(',');
+                    s.Append(",'max',");
                     s.Append(WrapValue(max));
                     s.Append(',');
                 }
+                else
+                {
+
+                    s.Append("'min',NULL,'max',NULL,");
+                }
+                s.Append("'histogram',JSON_ARRAY(");
                 if (metricType == MetricType.Histogram)
                 {
                     var isFirstIteration = true;
                     var previousExplicitBound = 0d;
 
-                    s.Append("JSON_ARRAY(");
                     foreach (var histogramMeasurement in point.GetHistogramBuckets())
                     {
                         s.Append("JSON_OBJECT(");
                         if (isFirstIteration)
                         {
-                            s.Append("\"rangeLeft\",");
+                            s.Append("'rangeLeft',");
                             s.Append(WrapValue(double.NegativeInfinity));
-                            s.Append(",\"rangeRight\",");
+                            s.Append(",'rangeRight',");
                             s.Append(WrapValue(histogramMeasurement.ExplicitBound));
 
-                            s.Append(",\"bucketCount\",");
+                            s.Append(",'bucketCount',");
                             s.Append(WrapValue(histogramMeasurement.BucketCount));
+                            previousExplicitBound = histogramMeasurement.ExplicitBound;
+                            isFirstIteration = false;
                         }
                         else
                         {
-                            s.Append("\"rangeLeft\",");
+                            s.Append("'rangeLeft',");
                             s.Append(WrapValue(previousExplicitBound));
-                            s.Append(",\"rangeRight\",");
+                            s.Append(",'rangeRight',");
 
                             if (histogramMeasurement.ExplicitBound != double.PositiveInfinity)
                             {
                                 s.Append(WrapValue(histogramMeasurement.ExplicitBound));
+                                previousExplicitBound = histogramMeasurement.ExplicitBound;
                             }
                             else
                             {
                                 s.Append(WrapValue(double.PositiveInfinity));
                             }
 
-                            s.Append(",\"bucketCount\",");
+                            s.Append(",'bucketCount',");
                             s.Append(WrapValue(histogramMeasurement.BucketCount));
                         }
                         s.Append("),");
                     }
-                    s.Append("NULL,JSON_ARRAY())");
+                    s.Remove(s.Length - 1, 1);
                 }
                 else
                 {
                     var exponentialHistogramData = point.GetExponentialHistogramData();
-                    s.Append("JSON_ARRAY(),");
+                    s.Append("'histogram',NULL,zeroCount',");
                     s.Append(WrapValue(exponentialHistogramData.ZeroCount));
-                    s.Append("JSON_ARRAY(");
+                    s.Append("'buckets',JSON_ARRAY(");
 
                     var scale = exponentialHistogramData.Scale;
                     var offset = exponentialHistogramData.PositiveBuckets.Offset;
@@ -178,10 +193,43 @@ namespace Diagnostics.Traces.DuckDB
                         s.Append("),");
                     }
                     s.Remove(s.Length - 1, 1);
-                    s.Append(')');
                 }
+                s.Append("),'zeroBucketCount',NULL,'buckets',NULL,");
             }
-            s.Append(')');
+            else
+            {
+                s.Append("'value',");
+                if (metricType.IsDouble())
+                {
+                    if (metricType.IsSum())
+                    {
+                        s.Append(WrapValue(point.GetSumDouble()));
+                    }
+                    else
+                    {
+                        s.Append(WrapValue(point.GetGaugeLastValueDouble()));
+                    }
+                }
+                else if (metricType.IsLong())
+                {
+                    if (metricType.IsSum())
+                    {
+                        s.Append(WrapValue(point.GetSumLong()));
+                    }
+                    else
+                    {
+                        s.Append(WrapValue(point.GetGaugeLastValueLong()));
+                    }
+                }
+                s.Append(",'sum',NULL,'min',NULL,'max',NULL,'count',NULL,'histogram',NULL,'zeroBucketCount',NULL,'buckets',NULL,");
+            }
+            s.Append("'startTime',");
+            s.Append(WrapValue(point.StartTime));
+            s.Append(",'endTime',");
+            s.Append(WrapValue(point.StartTime));
+            s.Append(",'tags',");
+            s.Append(WrapValue(point.Tags));
+            s.Append(")");
         }
         internal static void MapAsString(StringBuilder s, MetricType metricType,in MetricPointsAccessor points)
         {
@@ -253,6 +301,24 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append(",'tags',");
                 s.Append(WrapValue(item.Tags));
                 s.Append("),");
+            }
+            s.Remove(s.Length - 1, 1);
+            s.Append(')');
+            return s.ToString();
+        }
+        private static string MapAsString(in ReadOnlyTagCollection tags)
+        {
+            if (tags.Count==0)
+            {
+                return "JSON_OBJECT()";
+            }
+            var s = new StringBuilder("JSON_OBJECT(");
+            foreach (var item in tags)
+            {
+                s.Append(WrapValue(item.Key));
+                s.Append(',');
+                s.Append(WrapValue(item.Value?.ToString()));
+                s.Append(',');
             }
             s.Remove(s.Length - 1, 1);
             s.Append(')');

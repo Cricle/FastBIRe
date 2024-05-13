@@ -58,14 +58,11 @@ CREATE TABLE IF NOT EXISTS ""metrics""(
     meterVersion VARCHAR,
     meterTags MAP(VARCHAR,VARCHAR),
     points STRUCT(
+        value DOUBLE, 
         sum DOUBLE,
         count INTEGER, 
         min DOUBLE,
         max DOUBLE, 
-        value DOUBLE, 
-        startTime DATETIME,
-        endTime DATETIME, 
-        tags MAP(VARCHAR,VARCHAR), 
         histogram STRUCT(
             rangeLeft DOUBLE,
             rangeRight DOUBLE,
@@ -76,7 +73,10 @@ CREATE TABLE IF NOT EXISTS ""metrics""(
             lowerBound DOUBLE,
             upperBound DOUBLE,
             bucketCount BIGINT
-        )[]
+        )[],
+        tags MAP(VARCHAR,VARCHAR), 
+        startTime DATETIME,
+        endTime DATETIME
     )[]
 );
 ";

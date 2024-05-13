@@ -42,9 +42,11 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append(',');
                 s.Append(DuckHelper.WrapValue(item.LogLevel));
                 s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.TraceId));
+                s.Append(DuckHelper.WrapValue(item.CategoryName));
                 s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.SpanId));
+                s.Append(DuckHelper.WrapValue(item.TraceId.ToString()));
+                s.Append(',');
+                s.Append(DuckHelper.WrapValue(item.SpanId.ToString()));
                 s.Append(',');
                 s.Append(DuckHelper.WrapValue(item.Attributes));
                 s.Append(',');

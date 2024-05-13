@@ -166,7 +166,7 @@ namespace Diagnostics.Traces.LiteDb
                 var point = new BsonDocument();
                 if (metricType == MetricType.Histogram|| metricType == MetricType.ExponentialHistogram)
                 {
-                    point["sum"] = metricPoint.GetSumDouble();
+                    point["sum"] = metricPoint.GetHistogramSum();
                     point["count"] = metricPoint.GetHistogramCount();
                     if (metricPoint.TryGetHistogramMinMaxValues(out double min, out double max))
                     {
