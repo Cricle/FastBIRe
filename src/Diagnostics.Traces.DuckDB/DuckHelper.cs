@@ -1,9 +1,6 @@
 ﻿using OpenTelemetry;
 using OpenTelemetry.Metrics;
-using System;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Text;
 using ValueBuffer;
 
 namespace Diagnostics.Traces.DuckDB

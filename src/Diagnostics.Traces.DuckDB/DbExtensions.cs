@@ -1,40 +1,66 @@
-﻿using System.Data.Common;
+﻿using DuckDB.NET.Native;
 
 namespace Diagnostics.Traces.DuckDB
 {
     internal static class DbExtensions
     {
-        public static DbDataReader Query(this DbConnection connection, string sql, int? timeout = null, DbTransaction? transaction = null)
+        public static int Execute(this DuckDBNativeConnection connection, string sql)
         {
-            using (var command = connection.CreateCommand())
+            var results = PrepareMultiple(connection, sql);
+
+            var count = 0;
+
+            foreach (var result in results)
             {
-                command.CommandText = sql;
-                if (transaction != null)
+                var current = result;
+                count += (int)NativeMethods.Query.DuckDBRowsChanged(ref current);
+            }
+
+            return count;
+        }
+        private static IEnumerable<DuckDBResult> PrepareMultiple(DuckDBNativeConnection connection, string query)
+        {
+            using var unmanagedQuery = query.ToUnmanagedString();
+
+            var statementCount = NativeMethods.ExtractStatements.DuckDBExtractStatements(connection, unmanagedQuery, out var extractedStatements);
+
+            using (extractedStatements)
+            {
+                if (statementCount <= 0)
                 {
-                    command.Transaction = transaction;
+                    var error = NativeMethods.ExtractStatements.DuckDBExtractStatementsError(extractedStatements);
+                    throw new TraceDuckDbException(error.ToManagedString(false));
                 }
-                if (timeout != null)
+
+                for (int index = 0; index < statementCount; index++)
                 {
-                    command.CommandTimeout = timeout.Value;
+                    var status = NativeMethods.ExtractStatements.DuckDBPrepareExtractedStatement(connection, extractedStatements, index, out var statement);
+
+                    if (status.IsSuccess())
+                    {
+                        using var result = Execute(statement);
+                        yield return result;
+                    }
+                    else
+                    {
+                        var errorMessage = NativeMethods.PreparedStatements.DuckDBPrepareError(statement).ToManagedString(false);
+
+                        throw new TraceDuckDbException(string.IsNullOrEmpty(errorMessage) ? "DuckDBQuery failed" : errorMessage, status);
+                    }
                 }
-                return command.ExecuteReader();
             }
         }
-        public static int Execute(this DbConnection connection, string sql, int? timeout = null, DbTransaction? transaction = null)
+        public static DuckDBResult Execute(DuckDBPreparedStatement statement)
         {
-            using (var command = connection.CreateCommand())
+            var status = NativeMethods.PreparedStatements.DuckDBExecutePreparedStreaming(statement, out var queryResult);
+            if (!status.IsSuccess())
             {
-                command.CommandText = sql;
-                if (transaction != null)
-                {
-                    command.Transaction = transaction;
-                }
-                if (timeout != null)
-                {
-                    command.CommandTimeout = timeout.Value;
-                }
-                return command.ExecuteNonQuery();
+                var errorMessage = NativeMethods.Query.DuckDBResultError(ref queryResult).ToManagedString(false);
+                queryResult.Dispose();
+                throw new TraceDuckDbException(string.IsNullOrEmpty(errorMessage) ? "DuckDBQuery failed" : errorMessage, status);
             }
+
+            return queryResult;
         }
     }
 }

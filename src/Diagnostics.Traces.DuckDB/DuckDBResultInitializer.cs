@@ -80,13 +80,12 @@ CREATE TABLE IF NOT EXISTS ""metrics""(
     )[]
 );
 ";
-
         public void InitializeResult(DuckDBDatabaseCreatedResult result)
         {
-            result.Database.Execute(InitSqlLogs);
-            result.Database.Execute(InitSqlMetrics);
-            result.Database.Execute(InitSqlActivities);
-            result.Database.Execute("PRAGMA memory_limit='64mb';");
+            result.Connection.Execute(InitSqlLogs);
+            result.Connection.Execute(InitSqlMetrics);
+            result.Connection.Execute(InitSqlActivities);
+            result.Connection.Execute("PRAGMA memory_limit='64mb';");
             AfterInitializeResult(result);
         }
         protected virtual void AfterInitializeResult(DuckDBDatabaseCreatedResult result)

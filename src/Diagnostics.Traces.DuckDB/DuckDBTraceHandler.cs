@@ -161,7 +161,7 @@ namespace Diagnostics.Traces.DuckDB
             var sql = BuildSql(new OneEnumerable<Activity>(input));
             DatabaseSelector.UsingDatabaseResult(TraceTypes.Activity, sql, static (res, sql) =>
             {
-                res.Database.Execute(sql);
+                res.Connection.Execute(sql);
             });
             DatabaseSelector.ReportInserted(TraceTypes.Activity, 1);
         }
@@ -171,7 +171,7 @@ namespace Diagnostics.Traces.DuckDB
             var sql = BuildSql(new OneEnumerable<LogRecord>(input));
             DatabaseSelector.UsingDatabaseResult(TraceTypes.Log, sql, static (res, sql) =>
             {
-                res.Database.Execute(sql);
+                res.Connection.Execute(sql);
             });
             DatabaseSelector.ReportInserted(TraceTypes.Log, 1);
         }
@@ -181,7 +181,7 @@ namespace Diagnostics.Traces.DuckDB
             var sql = BuildSql(new OneEnumerable<Metric>(input));
             DatabaseSelector.UsingDatabaseResult(TraceTypes.Metric, sql, static (res, sql) =>
             {
-                res.Database.Execute(sql);
+                res.Connection.Execute(sql);
             });
             DatabaseSelector.ReportInserted(TraceTypes.Metric, 1);
         }
@@ -197,7 +197,7 @@ namespace Diagnostics.Traces.DuckDB
                 var sql = BuildSql(enu);
                 DatabaseSelector.UsingDatabaseResult(TraceTypes.Activity, sql, static (res, sql) =>
                 {
-                    res.Database.Execute(sql);
+                    res.Connection.Execute(sql);
                 });
                 DatabaseSelector.ReportInserted(TraceTypes.Activity, (int)inputs.Count);
             }
@@ -214,7 +214,7 @@ namespace Diagnostics.Traces.DuckDB
                 var sql = BuildSql(enu);
                 DatabaseSelector.UsingDatabaseResult(TraceTypes.Log, sql, static (res, sql) =>
                 {
-                    res.Database.Execute(sql);
+                    res.Connection.Execute(sql);
                 });
                 DatabaseSelector.ReportInserted(TraceTypes.Log, (int)inputs.Count);
             }
@@ -231,7 +231,7 @@ namespace Diagnostics.Traces.DuckDB
                 var sql = BuildSql(enu);
                 DatabaseSelector.UsingDatabaseResult(TraceTypes.Metric, sql, static (res, sql) =>
                 {
-                    res.Database.Execute(sql);
+                    res.Connection.Execute(sql);
                 });
                 DatabaseSelector.ReportInserted(TraceTypes.Metric, (int)inputs.Count);
             }

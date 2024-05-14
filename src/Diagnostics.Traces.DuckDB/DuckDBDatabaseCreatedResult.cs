@@ -1,12 +1,20 @@
 ﻿using Diagnostics.Traces.Stores;
-using DuckDB.NET.Data;
+using DuckDB.NET.Native;
 
 namespace Diagnostics.Traces.DuckDB
 {
     public class DuckDBDatabaseCreatedResult : IDatabaseCreatedResult,IDisposable
     {
-        public DuckDBDatabaseCreatedResult(DuckDBConnection database, string? filePath)
+        public DuckDBDatabaseCreatedResult(DuckDBDatabase database, string? filePath)
         {
+            var status = NativeMethods.Startup.DuckDBConnect(database, out var conn);
+            if (status!= DuckDBState.Success)
+            {
+                throw new TraceDuckDbException($"Fail to open duckdb {filePath}");
+            }
+
+            Connection = conn;
+
             Database = database;
             FilePath = filePath;
             Root = new object();
@@ -14,12 +22,15 @@ namespace Diagnostics.Traces.DuckDB
 
         public object Root { get; }
 
-        public DuckDBConnection Database { get; }
+        public DuckDBNativeConnection Connection { get; }
+
+        public DuckDBDatabase Database { get; }
 
         public string? FilePath { get; }
 
         public void Dispose()
         {
+            Connection?.Dispose();
             Database?.Dispose();
         }
     }
