@@ -2,73 +2,23 @@
 
 namespace Diagnostics.Traces.Stores
 {
-    public class GzipDatabaseAfterSwitched<TResult> : IUndefinedDatabaseAfterSwitched<TResult>
-        where TResult: IDatabaseCreatedResult
+    public class GzipDatabaseAfterSwitched<TResult> : DatabaseAfterSwitchedBase<TResult>
+        where TResult : IDatabaseCreatedResult
     {
         public CompressionLevel Level { get; }
 
-        public GzipDatabaseAfterSwitched(CompressionLevel level)
+        public GzipDatabaseAfterSwitched(CompressionLevel level, IDeleteRules? deleteRules = null, IFileConversionProvider? fileConversionProvider = null)
+            : base(deleteRules, fileConversionProvider)
         {
             Level = level;
         }
-        protected virtual object? GetLocker(TResult result)
+        protected override Stream GetAfterStream(Stream stream)
         {
-            return result.Root;
+            return new GZipStream(stream, Level);
         }
-
-        protected virtual string? GetFilePath(TResult result)
+        protected override string FailGetConvertsionPath(string filePath)
         {
-            return result.FilePath;
-        }
-
-        protected virtual Task BeginGzipAsync()
-        {
-            return Task.Delay(1000);
-        }
-
-        public event EventHandler<Exception>? ExceptionRaised;
-
-        public void AfterSwitched(TResult result)
-        {
-            var filePath = GetFilePath(result);
-            if (string.IsNullOrEmpty(filePath))
-            {
-                return;
-            }
-            _ = Task.Factory.StartNew(async () =>
-            {
-                await BeginGzipAsync();
-                var locker= GetLocker(result);
-                if (locker != null)
-                {
-                    Monitor.Enter(locker);
-                }
-                try
-                {
-                    if (filePath != null && File.Exists(filePath))
-                    {
-                        var gzPath = filePath + ".gz";
-                        using (var raw = File.OpenRead(filePath))
-                        using (var fs = File.Create(gzPath))
-                        using (var gz = new GZipStream(fs, Level))
-                        {
-                            raw.CopyTo(gz);
-                        }
-                        File.Delete(filePath);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ExceptionRaised?.Invoke(this,ex);
-                }
-                finally
-                {
-                    if (locker!=null)
-                    {
-                        Monitor.Exit(locker);
-                    }
-                }
-            });
+            return filePath + ".gz";
         }
     }
 }

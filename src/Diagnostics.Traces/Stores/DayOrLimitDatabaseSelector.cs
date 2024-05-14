@@ -7,7 +7,7 @@
 
         class DatabaseManager
         {
-            private int switching;
+            private SpinLock locker;
             private long inserted;
             private DateTime lastCreateTime;
 
@@ -15,6 +15,7 @@
 
             public DatabaseManager(long limitCount, Func<TResult> databaseCreator)
             {
+                locker = new SpinLock();
                 LimitCount = limitCount;
                 DatabaseCreator = databaseCreator;
             }
@@ -29,15 +30,13 @@
 
             private void GetLocker(int sleepTime = 10)
             {
-                while (Interlocked.CompareExchange(ref switching, 1, 0) != 0)
-                {
-                    Thread.Sleep(sleepTime);
-                }
+                bool b = false;
+                locker.Enter(ref b);
             }
 
             private void ReleaseLocker()
             {
-                Interlocked.Exchange(ref switching, 0);
+                locker.Exit();
             }
 
             private void Switch()
