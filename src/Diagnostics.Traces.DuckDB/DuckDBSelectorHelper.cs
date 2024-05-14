@@ -10,7 +10,7 @@ namespace Diagnostics.Traces.DuckDB
             Func<string>? fileNameProvider = null,
             Action<DuckDBDatabaseCreatedResult>? databaseIniter = null,
             CompressionLevel gzipLevel = CompressionLevel.Fastest,
-            int keepFileCount = 100,
+            int keepFileCount = 10,
             long preLimitCount = DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>.DefaultLimitCount)
         {
             return new DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>(t =>
