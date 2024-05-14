@@ -102,7 +102,7 @@ namespace Diagnostics.Traces.DuckDB
             }
             return input.ToString()!;
         }
-        private static void MapAsString(in ValueStringBuilder s,MetricType metricType,in MetricPoint point)
+        private static void MapAsString(ref ValueStringBuilder s,MetricType metricType,in MetricPoint point)
         {
             s.Append("{");
             if (metricType == MetricType.Histogram || metricType == MetricType.ExponentialHistogram)
@@ -125,19 +125,22 @@ namespace Diagnostics.Traces.DuckDB
 
                     s.Append("'min':NULL,'max':NULL,");
                 }
-                s.Append("'histogram',ARRAY [");
+                s.Append("'histogram':ARRAY [");
                 if (metricType == MetricType.Histogram)
                 {
                     var isFirstIteration = true;
                     var previousExplicitBound = 0d;
-
                     foreach (var histogramMeasurement in point.GetHistogramBuckets())
                     {
+                        if (!isFirstIteration)
+                        {
+                            s.Append(',');
+                        }
                         s.Append("{");
                         if (isFirstIteration)
                         {
                             s.Append("'rangeLeft':");
-                            s.Append(WrapValue(double.NegativeInfinity));
+                            s.Append(WrapValue(double.NegativeInfinity)+"::DOUBLE");
                             s.Append(",'rangeRight':");
                             s.Append(WrapValue(histogramMeasurement.ExplicitBound));
 
@@ -159,15 +162,14 @@ namespace Diagnostics.Traces.DuckDB
                             }
                             else
                             {
-                                s.Append(WrapValue(double.PositiveInfinity));
+                                s.Append(WrapValue(double.PositiveInfinity) + "::DOUBLE");
                             }
 
                             s.Append(",'bucketCount':");
                             s.Append(WrapValue(histogramMeasurement.BucketCount));
                         }
-                        s.Append("),");
+                        s.Append("}");
                     }
-                    s._chars.RemoveLast(1);
                     //s.Remove(s.Length - 1, 1);
                 }
                 else
@@ -179,9 +181,18 @@ namespace Diagnostics.Traces.DuckDB
 
                     var scale = exponentialHistogramData.Scale;
                     var offset = exponentialHistogramData.PositiveBuckets.Offset;
+                    var isFirst = true;
 
                     foreach (var bucketCount in exponentialHistogramData.PositiveBuckets)
                     {
+                        if (isFirst)
+                        {
+                            isFirst = false;
+                        }
+                        else
+                        {
+                            s.Append(',');
+                        }
                         s.Append("{");
                         s.Append("\"lowerBound\":");
                         s.Append(WrapValue(Base2ExponentialBucketHistogramHelper.CalculateLowerBoundary(offset, scale)));
@@ -189,9 +200,9 @@ namespace Diagnostics.Traces.DuckDB
                         s.Append(WrapValue(Base2ExponentialBucketHistogramHelper.CalculateLowerBoundary(offset, scale)));
                         s.Append(",\"bucketCount\":");
                         s.Append(WrapValue(bucketCount));
-                        s.Append("},");
+                        s.Append("}");
                     }
-                    s._chars.RemoveLast(1);
+                    s.Append("]");
                     //s.Remove(s.Length - 1, 1);
                 }
                 s.Append("],'zeroBucketCount':NULL,'buckets':NULL,");
@@ -225,23 +236,29 @@ namespace Diagnostics.Traces.DuckDB
             }
             s.Append("'startTime':");
             s.Append(WrapValue(point.StartTime));
-            s.Append(",'endTime';");
+            s.Append(",'endTime':");
             s.Append(WrapValue(point.StartTime));
             s.Append(",'tags':");
             s.Append(WrapValue(point.Tags));
             s.Append("}");
         }
-        internal static void MapAsString(in ValueStringBuilder s, MetricType metricType,in MetricPointsAccessor points)
+        internal static void MapAsString(ref ValueStringBuilder s, MetricType metricType,in MetricPointsAccessor points)
         {
-            s.Append("JSON_ARRAY(");
+            s.Append("ARRAY [");
+            var isFirst = true;
             foreach (ref readonly var item in points)
             {
-                MapAsString(in s, metricType, item);
-                s.Append(',');
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    s.Append(',');
+                }
+                MapAsString(ref s, metricType, item);
             }
-            s._chars.RemoveLast(1);
-            //s.Remove(s.Length - 1, 1);
-            s.Append(')');
+            s.Append(']');
         }
         private static string MapAsString(in ActivityContext context)
         {
@@ -268,20 +285,27 @@ namespace Diagnostics.Traces.DuckDB
                 return "ARRAY []";
             }
 
-
+            var isFirst = true;
             using var s = new ValueStringBuilder();
             s.Append("ARRAY [");
             foreach (var item in links)
             {
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    s.Append(',');
+                }
                 s.Append("{");
                 s.Append("'context':");
                 s.Append(WrapValue(item.Context));
                 s.Append(",'tags':");
                 s.Append(WrapValue(item.Tags));
-                s.Append("},");
+                s.Append("}");
             }
 
-            s._chars.RemoveLast(1);
             //s.Remove(s.Length - 1, 1);
             s.Append(']');
             return s.ToString();
@@ -294,11 +318,19 @@ namespace Diagnostics.Traces.DuckDB
                 return "ARRAY []";
             }
 
-
+            var isFirst = true;
             using var s = new ValueStringBuilder();
             s.Append("ARRAY [");
             foreach (var item in events)
             {
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    s.Append(',');
+                }
                 s.Append("{");
                 s.Append("'name':");
                 s.Append(WrapValue(item.Name));
@@ -306,9 +338,8 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append(WrapValue(item.Timestamp));
                 s.Append(",'tags':");
                 s.Append(WrapValue(item.Tags));
-                s.Append("},");
+                s.Append("}");
             }
-            s._chars.RemoveLast(1);
             //s.Remove(s.Length - 1, 1);
             s.Append(']');
             return s.ToString();
@@ -317,18 +348,25 @@ namespace Diagnostics.Traces.DuckDB
         {
             if (tags.Count==0)
             {
-                return "{}";
+                return "MAP {}";
             }
+            var isFirst = true;
             using var s = new ValueStringBuilder();
-            s.Append("{");
+            s.Append("MAP {");
             foreach (var item in tags)
             {
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    s.Append(',');
+                }
                 s.Append(WrapValue(item.Key));
-                s.Append(',');
+                s.Append(':');
                 s.Append(WrapValue(item.Value?.ToString()));
-                s.Append(',');
             }
-            s._chars.RemoveLast(1);
             //s.Remove(s.Length - 1, 1);
             s.Append('}');
             return s.ToString();
@@ -339,16 +377,23 @@ namespace Diagnostics.Traces.DuckDB
             {
                 return "MAP {}";
             }
+            var isFirst = true;
             using var s = new ValueStringBuilder();
             s.Append("MAP {");
             foreach (var item in arrayObject)
             {
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    s.Append(',');
+                }
                 s.Append(WrapValue(item.Key));
                 s.Append(':');
                 s.Append(WrapValue(item.Value?.ToString()));
-                s.Append(',');
             }
-            s._chars.RemoveLast(1);
             //s.Remove(s.Length-1, 1);
             s.Append('}');
             return s.ToString();

@@ -124,36 +124,50 @@ namespace Diagnostics.Traces.DuckDB
         }
         private string BuildSql(IEnumerator<Metric> metrics)
         {
-            using var s = new ValueStringBuilder();
-            s.Append("INSERT INTO \"metrics\" VALUES ");
-            while (metrics.MoveNext())
+            var s = new ValueStringBuilder();
+            try
             {
-                var item = metrics.Current;
+                s.Append("INSERT INTO \"metrics\" VALUES ");
+                var isFirst = true;
+                while (metrics.MoveNext())
+                {
+                    var item = metrics.Current;
+                    if (isFirst)
+                    {
+                        isFirst = false;
+                    }
+                    else
+                    {
+                        s.Append(',');
+                    }
+                    s.Append('(');
+                    s.Append(DuckHelper.WrapValue(item.Name));
+                    s.Append(',');
+                    s.Append(DuckHelper.WrapValue(item.Unit));
+                    s.Append(',');
+                    s.Append(DuckHelper.WrapValue(item.MetricType));
+                    s.Append(',');
+                    s.Append(DuckHelper.WrapValue(item.Temporality));
+                    s.Append(',');
+                    s.Append(DuckHelper.WrapValue(item.Description));
+                    s.Append(',');
+                    s.Append(DuckHelper.WrapValue(item.MeterName));
+                    s.Append(',');
+                    s.Append(DuckHelper.WrapValue(item.MeterVersion));
+                    s.Append(',');
+                    s.Append(DuckHelper.WrapValue(item.MeterTags));
+                    s.Append(',');
+                    DuckHelper.MapAsString(ref s, item.MetricType, item.GetMetricPoints());
 
-                s.Append('(');
-                s.Append(DuckHelper.WrapValue(item.Name));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Unit));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.MetricType));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Temporality));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Description));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.MeterName));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.MeterVersion));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.MeterTags));
-                s.Append(',');
-                DuckHelper.MapAsString(in s, item.MetricType, item.GetMetricPoints());
-
-                s.Append("),");
+                    s.Append(")");
+                }
+                //s.Remove(s.Length - 1, 1);
+                return s.ToString();
             }
-            s._chars.RemoveLast(1);
-            //s.Remove(s.Length - 1, 1);
-            return s.ToString();
+            finally
+            {
+                s.Dispose();
+            }
         }
 
         public override void Handle(Activity input)
