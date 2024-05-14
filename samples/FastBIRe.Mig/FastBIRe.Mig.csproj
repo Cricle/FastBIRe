@@ -9,7 +9,7 @@
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.4" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.4" />
 		<PackageReference Include="MySqlConnector" Version="2.3.7" />
-		<PackageReference Include="Npgsql" Version="8.0.2" />
+		<PackageReference Include="Npgsql" Version="8.0.3" />
 		<PackageReference Include="DuckDB.NET.Data.Full" Version="0.10.2" />
 	</ItemGroup>
 	<ItemGroup>

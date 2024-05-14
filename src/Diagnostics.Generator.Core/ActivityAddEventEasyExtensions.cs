@@ -4,6 +4,10 @@ namespace System.Diagnostics
 {
     public static class ActivityAddEventEasyExtensions
     {
+        public static Activity StartActivity(this ActivitySource source, string name, ActivityKind kind= ActivityKind.Internal, ActivityContext parentContext=default, IEnumerable<KeyValuePair<string, object>> tags = null, IEnumerable<ActivityLink> links = null, DateTimeOffset startTime = default)
+        {
+            return source.StartActivity(name, kind, parentContext, tags, links, startTime);
+        }
         public static void AddEvent(this Activity activity, string name, ActivityTagsCollection tags = null, DateTimeOffset timestamp = default)
         {
             if (activity == null)

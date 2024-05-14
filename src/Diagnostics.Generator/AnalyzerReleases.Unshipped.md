@@ -26,3 +26,6 @@ DG0018 | Diagnostics.Generator | Error | The meter member \"{0}\" was not found,
 DG0019 | Diagnostics.Generator | Error | The meter member type \"{0}\" was unknow, now avaliable types is Counter, Histogram and UpDownCounter
 DG0020 | Diagnostics.Generator | Error | The meter method first paramter must same as counter generic type \"{0}\"
 DG0021 | Diagnostics.Generator | Error | The meter method must return void and not generic method
+DG0022 | Diagnostics.Generator | Error | The \"{0}\" is not class or struct
+DG0023 | Diagnostics.Generator | Error | The \"{0}\" is loop reference, path is \"{1}\", the generator can't parse loop reference
+DG0024 | Diagnostics.Generator | Error | Tag as self must not static
