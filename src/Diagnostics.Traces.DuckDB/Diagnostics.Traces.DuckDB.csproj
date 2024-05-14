@@ -13,6 +13,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="DuckDB.NET.Data.Full" Version="0.10.2" />
+		<PackageReference Include="ValueBuffer" Version="1.3.2" />
 	</ItemGroup>
 
 	<ItemGroup>

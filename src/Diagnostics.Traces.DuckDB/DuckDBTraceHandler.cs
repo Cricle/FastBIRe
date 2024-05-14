@@ -4,7 +4,7 @@ using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using System.Diagnostics;
-using System.Text;
+using ValueBuffer;
 
 namespace Diagnostics.Traces.DuckDB
 {
@@ -32,7 +32,8 @@ namespace Diagnostics.Traces.DuckDB
 
         private string BuildSql(IEnumerator<LogRecord> logs)
         {
-            var s = new StringBuilder("INSERT INTO \"logs\" VALUES ");
+            using var s = new ValueStringBuilder();
+            s.Append("INSERT INTO \"logs\" VALUES ");
             while (logs.MoveNext())
             {
                 var item = logs.Current;
@@ -55,12 +56,14 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append(DuckHelper.WrapValue(item.Body));
                 s.Append("),");
             }
-            s.Remove(s.Length - 1, 1);
+            s._chars.RemoveLast(1);
+            //s.Remove(s.Length - 1, 1);
             return s.ToString();
         }
         private string BuildSql(IEnumerator<Activity> activities)
         {
-            var s = new StringBuilder("INSERT INTO \"activities\" VALUES ");
+            using var s = new ValueStringBuilder();
+            s.Append("INSERT INTO \"activities\" VALUES ");
             while (activities.MoveNext())
             {
                 var item = activities.Current;
@@ -115,12 +118,14 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append(DuckHelper.WrapValue(item.ParentSpanId.ToString()));
                 s.Append("),");
             }
-            s.Remove(s.Length - 1, 1);
+            s._chars.RemoveLast(1);
+            //s.Remove(s.Length - 1, 1);
             return s.ToString();
         }
         private string BuildSql(IEnumerator<Metric> metrics)
         {
-            var s = new StringBuilder("INSERT INTO \"metrics\" VALUES ");
+            using var s = new ValueStringBuilder();
+            s.Append("INSERT INTO \"metrics\" VALUES ");
             while (metrics.MoveNext())
             {
                 var item = metrics.Current;
@@ -142,11 +147,12 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append(',');
                 s.Append(DuckHelper.WrapValue(item.MeterTags));
                 s.Append(',');
-                DuckHelper.MapAsString(s, item.MetricType, item.GetMetricPoints());
+                DuckHelper.MapAsString(in s, item.MetricType, item.GetMetricPoints());
 
                 s.Append("),");
             }
-            s.Remove(s.Length - 1, 1);
+            s._chars.RemoveLast(1);
+            //s.Remove(s.Length - 1, 1);
             return s.ToString();
         }
 

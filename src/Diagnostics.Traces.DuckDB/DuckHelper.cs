@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using ValueBuffer;
 
 namespace Diagnostics.Traces.DuckDB
 {
@@ -104,7 +105,7 @@ namespace Diagnostics.Traces.DuckDB
             }
             return input.ToString()!;
         }
-        private static void MapAsString(StringBuilder s,MetricType metricType,in MetricPoint point)
+        private static void MapAsString(in ValueStringBuilder s,MetricType metricType,in MetricPoint point)
         {
             s.Append("{");
             if (metricType == MetricType.Histogram || metricType == MetricType.ExponentialHistogram)
@@ -169,7 +170,8 @@ namespace Diagnostics.Traces.DuckDB
                         }
                         s.Append("),");
                     }
-                    s.Remove(s.Length - 1, 1);
+                    s._chars.RemoveLast(1);
+                    //s.Remove(s.Length - 1, 1);
                 }
                 else
                 {
@@ -192,7 +194,8 @@ namespace Diagnostics.Traces.DuckDB
                         s.Append(WrapValue(bucketCount));
                         s.Append("},");
                     }
-                    s.Remove(s.Length - 1, 1);
+                    s._chars.RemoveLast(1);
+                    //s.Remove(s.Length - 1, 1);
                 }
                 s.Append("],'zeroBucketCount':NULL,'buckets':NULL,");
             }
@@ -231,20 +234,22 @@ namespace Diagnostics.Traces.DuckDB
             s.Append(WrapValue(point.Tags));
             s.Append("}");
         }
-        internal static void MapAsString(StringBuilder s, MetricType metricType,in MetricPointsAccessor points)
+        internal static void MapAsString(in ValueStringBuilder s, MetricType metricType,in MetricPointsAccessor points)
         {
             s.Append("JSON_ARRAY(");
             foreach (ref readonly var item in points)
             {
-                MapAsString(s, metricType, item);
+                MapAsString(in s, metricType, item);
                 s.Append(',');
             }
-            s.Remove(s.Length - 1, 1);
+            s._chars.RemoveLast(1);
+            //s.Remove(s.Length - 1, 1);
             s.Append(')');
         }
         private static string MapAsString(in ActivityContext context)
         {
-            var s = new StringBuilder("{");
+            using var s = new ValueStringBuilder();
+            s.Append("{");
             s.Append("'traceId':");
             s.Append(WrapValue(context.TraceId.ToString()));
             s.Append(",'traceState':");
@@ -267,7 +272,8 @@ namespace Diagnostics.Traces.DuckDB
             }
 
 
-            var s = new StringBuilder("ARRAY [");
+            using var s = new ValueStringBuilder();
+            s.Append("ARRAY [");
             foreach (var item in links)
             {
                 s.Append("{");
@@ -277,7 +283,9 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append(WrapValue(item.Tags));
                 s.Append("},");
             }
-            s.Remove(s.Length - 1, 1);
+
+            s._chars.RemoveLast(1);
+            //s.Remove(s.Length - 1, 1);
             s.Append(']');
             return s.ToString();
 
@@ -290,7 +298,8 @@ namespace Diagnostics.Traces.DuckDB
             }
 
 
-            var s = new StringBuilder("ARRAY [");
+            using var s = new ValueStringBuilder();
+            s.Append("ARRAY [");
             foreach (var item in events)
             {
                 s.Append("{");
@@ -302,7 +311,8 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append(WrapValue(item.Tags));
                 s.Append("},");
             }
-            s.Remove(s.Length - 1, 1);
+            s._chars.RemoveLast(1);
+            //s.Remove(s.Length - 1, 1);
             s.Append(']');
             return s.ToString();
         }
@@ -312,7 +322,8 @@ namespace Diagnostics.Traces.DuckDB
             {
                 return "{}";
             }
-            var s = new StringBuilder("{");
+            using var s = new ValueStringBuilder();
+            s.Append("{");
             foreach (var item in tags)
             {
                 s.Append(WrapValue(item.Key));
@@ -320,7 +331,8 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append(WrapValue(item.Value?.ToString()));
                 s.Append(',');
             }
-            s.Remove(s.Length - 1, 1);
+            s._chars.RemoveLast(1);
+            //s.Remove(s.Length - 1, 1);
             s.Append('}');
             return s.ToString();
         }
@@ -330,7 +342,8 @@ namespace Diagnostics.Traces.DuckDB
             {
                 return "MAP {}";
             }
-            var s = new StringBuilder("MAP {");
+            using var s = new ValueStringBuilder();
+            s.Append("MAP {");
             foreach (var item in arrayObject)
             {
                 s.Append(WrapValue(item.Key));
@@ -338,7 +351,8 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append(WrapValue(item.Value?.ToString()));
                 s.Append(',');
             }
-            s.Remove(s.Length-1, 1);
+            s._chars.RemoveLast(1);
+            //s.Remove(s.Length-1, 1);
             s.Append('}');
             return s.ToString();
         }
