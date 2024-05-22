@@ -1,5 +1,6 @@
 ﻿using OpenTelemetry;
 using OpenTelemetry.Metrics;
+using System.Collections;
 using System.Diagnostics;
 using ValueBuffer;
 
@@ -62,6 +63,10 @@ namespace Diagnostics.Traces.DuckDB
             {
                 return MapAsString(tags);
             }
+            else if (input is IDictionary dictionary)
+            {
+                return MapAsString(dictionary);
+            }
             else if (input is bool b)
             {
                 return b ? "true" : "false";
@@ -70,30 +75,30 @@ namespace Diagnostics.Traces.DuckDB
             {
                 if (double.IsPositiveInfinity(d))
                 {
-                    return "'Infinity'";
+                    return "'Infinity'::DOUBLE";
                 }
-                else if (double .IsNegativeInfinity(d))
+                else if (double.IsNegativeInfinity(d))
                 {
-                    return "'-Infinity'";
+                    return "'-Infinity'::DOUBLE";
                 }
                 else if (double.IsNaN(d))
                 {
-                    return "'NaN'";
+                    return "'NaN'::DOUBLE";
                 }
             }
             else if (input is float f)
             {
                 if (float.IsPositiveInfinity(f))
                 {
-                    return "'Infinity'";
+                    return "'Infinity'::FLOAT";
                 }
                 else if (float.IsNegativeInfinity(f))
                 {
-                    return "'-Infinity'";
+                    return "'-Infinity'::FLOAT";
                 }
                 else if (float.IsNaN(f))
                 {
-                    return "'NaN'";
+                    return "'NaN'::FLOAT";
                 }
             }
             else if (input is Enum e)
@@ -102,7 +107,7 @@ namespace Diagnostics.Traces.DuckDB
             }
             return input.ToString()!;
         }
-        private static void MapAsString(ref ValueStringBuilder s,MetricType metricType,in MetricPoint point)
+        private static void MapAsString(ref ValueStringBuilder s, MetricType metricType, in MetricPoint point)
         {
             s.Append("{");
             if (metricType == MetricType.Histogram || metricType == MetricType.ExponentialHistogram)
@@ -140,7 +145,7 @@ namespace Diagnostics.Traces.DuckDB
                         if (isFirstIteration)
                         {
                             s.Append("'rangeLeft':");
-                            s.Append(WrapValue(double.NegativeInfinity)+"::DOUBLE");
+                            s.Append(WrapValue(double.NegativeInfinity) + "::DOUBLE");
                             s.Append(",'rangeRight':");
                             s.Append(WrapValue(histogramMeasurement.ExplicitBound));
 
@@ -242,7 +247,7 @@ namespace Diagnostics.Traces.DuckDB
             s.Append(WrapValue(point.Tags));
             s.Append("}");
         }
-        internal static void MapAsString(ref ValueStringBuilder s, MetricType metricType,in MetricPointsAccessor points)
+        internal static void MapAsString(ref ValueStringBuilder s, MetricType metricType, in MetricPointsAccessor points)
         {
             s.Append("ARRAY [");
             var isFirst = true;
@@ -346,7 +351,7 @@ namespace Diagnostics.Traces.DuckDB
         }
         private static string MapAsString(in ReadOnlyTagCollection tags)
         {
-            if (tags.Count==0)
+            if (tags.Count == 0)
             {
                 return "MAP {}";
             }
@@ -391,6 +396,37 @@ namespace Diagnostics.Traces.DuckDB
                     s.Append(',');
                 }
                 s.Append(WrapValue(item.Key));
+                s.Append(':');
+                s.Append(WrapValue(item.Value?.ToString()));
+            }
+            //s.Remove(s.Length-1, 1);
+            s.Append('}');
+            return s.ToString();
+        }
+        private static string MapAsString(IDictionary arrayObject)
+        {
+            if (arrayObject.Count == 0)
+            {
+                return "MAP {}";
+            }
+            var isFirst = true;
+            using var s = new ValueStringBuilder();
+            s.Append("MAP {");
+            foreach (KeyValuePair<object, object?> item in arrayObject)
+            {
+                if (item.Key == null)
+                {
+                    continue;
+                }
+                if (isFirst)
+                {
+                    isFirst = false;
+                }
+                else
+                {
+                    s.Append(',');
+                }
+                s.Append(WrapValue(item.Key.ToString()));
                 s.Append(':');
                 s.Append(WrapValue(item.Value?.ToString()));
             }

@@ -1,4 +1,5 @@
-﻿using OpenTelemetry;
+﻿using Diagnostics.Generator.Core;
+using OpenTelemetry;
 
 namespace Diagnostics.Traces
 {
@@ -7,7 +8,7 @@ namespace Diagnostics.Traces
     {
         protected readonly BufferOperator<T> bufferOperator;
 
-        public BufferTraceExporer(IInputHandler<T> handler)
+        public BufferTraceExporer(IOpetatorHandler<T> handler)
             : this(new BufferOperator<T>(handler))
         {
 

@@ -55,11 +55,11 @@ namespace Diagnostics.Traces.LiteDb
         {
             if (TryCreateActivityDocument(input, out var identity, out var doc) && identity != null)
             {
-                DatabaseSelector.UsingDatabaseResult(TraceTypes.Activity, res =>
+                DatabaseSelector.UsingDatabaseResult(res =>
                 {
                     var coll = res.Database.GetCollection(LiteTraceCollectionNames.Activity);
                     coll.Insert(doc);
-                    DatabaseSelector.ReportInserted(TraceTypes.Activity, 1);
+                    DatabaseSelector.ReportInserted(1);
                 });
             }
         }
@@ -103,11 +103,11 @@ namespace Diagnostics.Traces.LiteDb
         {
             if (TryCreateLogDocument(input, out var identity, out var doc) && identity != null)
             {
-                DatabaseSelector.UsingDatabaseResult(TraceTypes.Log, res =>
+                DatabaseSelector.UsingDatabaseResult(res =>
                 {
                     var coll = res.Database.GetCollection(LiteTraceCollectionNames.Log);
                     coll.Insert(doc);
-                    DatabaseSelector.ReportInserted(TraceTypes.Log, 1);
+                    DatabaseSelector.ReportInserted(1);
                 });
             }
         }
@@ -116,11 +116,11 @@ namespace Diagnostics.Traces.LiteDb
         {
             if (TryCreateMetricDocument(input, out var identity, out var doc) && identity != null)
             {
-                DatabaseSelector.UsingDatabaseResult(TraceTypes.Metric, res =>
+                DatabaseSelector.UsingDatabaseResult(res =>
                 {
                     var coll = res.Database.GetCollection(LiteTraceCollectionNames.Metrics);
                     coll.Insert(doc);
-                    DatabaseSelector.ReportInserted(TraceTypes.Metric, 1);
+                    DatabaseSelector.ReportInserted(1);
                 });
             }
         }
@@ -287,11 +287,11 @@ namespace Diagnostics.Traces.LiteDb
                 }
                 if (index != 0)
                 {
-                    DatabaseSelector.UsingDatabaseResult(TraceTypes.Metric, res =>
+                    DatabaseSelector.UsingDatabaseResult(res =>
                     {
                         var coll = res.Database.GetCollection(LiteTraceCollectionNames.Metrics);
                         coll.InsertBulk(buffer.Take(index));
-                        DatabaseSelector.ReportInserted(TraceTypes.Metric, index);
+                        DatabaseSelector.ReportInserted(index);
                     });
                 }
             }
@@ -316,11 +316,11 @@ namespace Diagnostics.Traces.LiteDb
                 }
                 if (index != 0)
                 {
-                    DatabaseSelector.UsingDatabaseResult(TraceTypes.Log, res =>
+                    DatabaseSelector.UsingDatabaseResult(res =>
                     {
                         var coll = res.Database.GetCollection(LiteTraceCollectionNames.Log);
                         coll.InsertBulk(buffer.Take(index));
-                        DatabaseSelector.ReportInserted(TraceTypes.Log, index);
+                        DatabaseSelector.ReportInserted(index);
                     });
                 }
             }
@@ -345,11 +345,11 @@ namespace Diagnostics.Traces.LiteDb
                 }
                 if (index != 0)
                 {
-                    DatabaseSelector.UsingDatabaseResult(TraceTypes.Activity, res =>
+                    DatabaseSelector.UsingDatabaseResult(res =>
                     {
                         var coll = res.Database.GetCollection(LiteTraceCollectionNames.Activity);
                         coll.InsertBulk(buffer.Take(index));
-                        DatabaseSelector.ReportInserted(TraceTypes.Activity, index);                    
+                        DatabaseSelector.ReportInserted(index);                    
                     });
                 }
             }

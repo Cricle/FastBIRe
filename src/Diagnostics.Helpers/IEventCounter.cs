@@ -27,6 +27,17 @@ namespace Diagnostics.Helpers
     }
     public static class EventCounterOnceExtensions
     {
+        public static IEnumerable<KeyValuePair<string,ICounterPayload?>> EnumerablePlayload(this IEventCounterProvider counter,bool includeEmpty=true)
+        {
+            foreach (var item in counter.EventNames)
+            {
+                if (!counter.TryGetCounterPayload(item,out var playload)&&!includeEmpty)
+                {
+                    continue;
+                }
+                yield return new KeyValuePair<string, ICounterPayload?>(item, playload);
+            }
+        }
         public static async Task<TCounter> OnceAndReturnAsync<TCounter>(this TCounter counter,CancellationToken token = default)
             where TCounter : IEventCounter<TCounter>
         {

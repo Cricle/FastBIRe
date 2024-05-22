@@ -1,4 +1,6 @@
-﻿namespace Diagnostics.Traces
+﻿using System;
+
+namespace Diagnostics.Generator.Core
 {
     public readonly struct BufferOperatorExceptionEventArgs<T>
     {

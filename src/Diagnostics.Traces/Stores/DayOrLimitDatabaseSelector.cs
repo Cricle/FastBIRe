@@ -1,4 +1,6 @@
-﻿namespace Diagnostics.Traces.Stores
+﻿using System.Runtime.CompilerServices;
+
+namespace Diagnostics.Traces.Stores
 {
     public class DayOrLimitDatabaseSelector<TResult> : IUndefinedDatabaseSelector<TResult>
         where TResult : IDatabaseCreatedResult
@@ -11,40 +13,44 @@
             private long inserted;
             private DateTime lastCreateTime;
 
-            private TResult? result;
+            internal TResult? result;
 
-            public DatabaseManager(long limitCount, Func<TResult> databaseCreator)
+            public DatabaseManager(long limitCount, Func<TResult> databaseCreator, IList<IUndefinedDatabaseAfterSwitched<TResult>> afterSwitcheds, IList<IUndefinedResultInitializer<TResult>> initializers)
             {
                 locker = new SpinLock();
                 LimitCount = limitCount;
                 DatabaseCreator = databaseCreator;
+                AfterSwitcheds = afterSwitcheds;
+                Initializers = initializers;
             }
 
             public long LimitCount { get; }
 
             public Func<TResult> DatabaseCreator { get; }
 
-            public IUndefinedDatabaseAfterSwitched<TResult>? AfterSwitched { get; set; }
+            public IList<IUndefinedDatabaseAfterSwitched<TResult>> AfterSwitcheds { get; }
 
-            public IUndefinedResultInitializer<TResult>? ResultInitializer { get; set; }
+            public IList<IUndefinedResultInitializer<TResult>> Initializers { get; }
 
-            private void GetLocker(int sleepTime = 10)
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void GetLocker()
             {
                 bool b = false;
                 locker.Enter(ref b);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void ReleaseLocker()
             {
                 locker.Exit();
             }
 
-            private void Switch()
+            public void Switch(bool checkNeeds = true)
             {
                 GetLocker();
                 try
                 {
-                    if (result == null || DateTime.Now.Date != lastCreateTime.Date || inserted > LimitCount)
+                    if (!checkNeeds || (result == null || DateTime.Now.Date != lastCreateTime.Date || inserted > LimitCount))
                     {
                         lastCreateTime = DateTime.Now;
                         var old = result;
@@ -52,9 +58,15 @@
                         old?.Dispose();
                         if (old != null)
                         {
-                            AfterSwitched?.AfterSwitched(old);
+                            for (int i = 0; i < AfterSwitcheds.Count; i++)
+                            {
+                                AfterSwitcheds[i].AfterSwitched(old);
+                            }
                         }
-                        ResultInitializer?.InitializeResult(result);
+                        for (int i = 0; i < Initializers.Count; i++)
+                        {
+                            Initializers[i].InitializeResult(result);
+                        }
                         inserted = 0;
                     }
                 }
@@ -115,54 +127,45 @@
 
         private readonly DatabaseManager manager;
 
-        public DayOrLimitDatabaseSelector(Func<TraceTypes, TResult> databaseCreator,
-            long limitCount = DefaultLimitCount,
-            IUndefinedDatabaseAfterSwitched<TResult>? afterSwitched = null,
-            IUndefinedResultInitializer<TResult>? initializer = null)
+        public DayOrLimitDatabaseSelector(Func<TResult> databaseCreator,
+            long limitCount = DefaultLimitCount)
         {
-            manager = new DatabaseManager(limitCount, () => databaseCreator(TraceTypes.Log));
             DatabaseCreator = databaseCreator;
-            AfterSwitched = afterSwitched;
-            Initializer = initializer;
+            AfterSwitcheds = new List<IUndefinedDatabaseAfterSwitched<TResult>>();
+            Initializers = new List<IUndefinedResultInitializer<TResult>>();
+            manager = new DatabaseManager(limitCount, () => databaseCreator(), AfterSwitcheds, Initializers);
         }
 
-        private IUndefinedDatabaseAfterSwitched<TResult>? afterSwitched;
-        private IUndefinedResultInitializer<TResult>? initializer;
+        public IList<IUndefinedDatabaseAfterSwitched<TResult>> AfterSwitcheds { get; }
 
-        public Func<TraceTypes, TResult> DatabaseCreator { get; }
+        public IList<IUndefinedResultInitializer<TResult>> Initializers { get; }
 
-        public IUndefinedDatabaseAfterSwitched<TResult>? AfterSwitched
-        {
-            get => afterSwitched;
-            set
-            {
-                manager.AfterSwitched = value;
-                afterSwitched = value;
-            }
-        }
-        public IUndefinedResultInitializer<TResult>? Initializer
-        {
-            get => initializer;
-            set
-            {
-                manager.ResultInitializer = value;
-                initializer = value;
-            }
-        }
+        public Func<TResult> DatabaseCreator { get; }
 
-        public void UsingDatabaseResult(TraceTypes type, Action<TResult> @using)
+        public void UsingDatabaseResult(Action<TResult> @using)
         {
             manager.UsingDatabaseResult(@using);
         }
 
-        public void ReportInserted(TraceTypes type, int count)
+        public void ReportInserted(int count)
         {
             manager.ReportInserted(count);
         }
 
-        public void UsingDatabaseResult<TState>(TraceTypes type, TState state, Action<TResult, TState> @using)
+        public void UsingDatabaseResult<TState>(TState state, Action<TResult, TState> @using)
         {
             manager.UsingDatabaseResult(state, @using);
+        }
+
+        public bool Flush()
+        {
+            manager.Switch(false);
+            return true;
+        }
+
+        public TResult? DangerousGetResult()
+        {
+            return manager.result;
         }
     }
 }

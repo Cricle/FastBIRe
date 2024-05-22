@@ -1,8 +1,9 @@
-﻿using OpenTelemetry.Metrics;
+﻿using Diagnostics.Generator.Core;
+using OpenTelemetry.Metrics;
 
 namespace Diagnostics.Traces
 {
-    public interface IMetricTraceHandler : IInputHandler<Metric>,IInputHandlerSync<Metric>
+    public interface IMetricTraceHandler : IOpetatorHandler<Metric>,IInputHandlerSync<Metric>
     {
     }
     public interface IBatchMetricTraceHandler : IBatchInputHandler<Metric>, IBatchInputHandlerSync<Metric>

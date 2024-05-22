@@ -1,12 +1,14 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
 using Diagnostics.Helpers;
 using Microsoft.Diagnostics.Tracing;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.Metrics;
+using System.Diagnostics.Tracing;
+using System.Globalization;
+using System.Text;
 
 namespace Microsoft.Diagnostics.Monitoring.EventPipe
 {
@@ -29,7 +31,148 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
     }
 
     internal record struct ProviderAndCounter(string ProviderName, string CounterName);
+    public static class InnerEventExtensions
+    {
+        public static bool TryGetCounterPayload<T>(this Instrument instrument,T measurement, ReadOnlySpan<KeyValuePair<string,object?>> tags, out ICounterPayload? payload)
+        {
+            double value;
+            if (measurement is double d)
+            {
+                value = d;
+            }
+            else
+            {
+                value = (double)Convert.ChangeType(measurement, typeof(double))!;
+            }
 
+            payload = new EventCounterPayload(
+                    DateTime.Now,
+                    instrument.Name,
+                    instrument.Name, 
+                    instrument.Description,
+                    instrument.Unit,
+                    value,
+                    CounterType.Metric,
+                    -1,
+                    -1,
+                    MakeTagString(instrument.Tags,tags),
+                    null);
+
+            return true;
+        }
+        private static void AppendItem(StringBuilder s, KeyValuePair<string, object?> item)
+        {
+            s.Append('\"');
+            s.Append(item.Key);
+            s.Append("\",");
+            if (item.Value == null)
+            {
+                s.Append("NULL");
+            }
+            else
+            {
+                s.Append('\"');
+                s.Append(item.Value.ToString());
+                s.Append('\"');
+            }
+        }
+        private static string MakeTagString(IEnumerable<KeyValuePair<string,object?>>? tags, ReadOnlySpan<KeyValuePair<string, object?>> otherTags)
+        {
+            var s = new StringBuilder();
+            s.Append('{');
+            if (tags!=null)
+            {
+                var isFirst = true;
+                foreach (var item in tags)
+                {
+                    if (isFirst)
+                    {
+                        isFirst = false;
+                    }
+                    else
+                    {
+                        s.Append(',');
+                    }
+                    AppendItem(s, item);
+                }
+                if (!otherTags.IsEmpty)
+                {
+                    for (int i = 0; i < otherTags.Length; i++)
+                    {
+                        var item = otherTags[i];
+                        if (isFirst)
+                        {
+                            isFirst = false;
+                        }
+                        else
+                        {
+                            s.Append(',');
+                        }
+                    AppendItem(s, item);
+                    }
+                }
+            }
+            s.Append('}');
+            return s.ToString();
+        }
+
+        public static bool TryGetCounterPayload(this EventWrittenEventArgs eventArgs, out ICounterPayload? payload)
+        {
+            if ("EventCounters".Equals(eventArgs.EventName))
+            {
+                IDictionary<string, object> payloadFields = (IDictionary<string, object>)(eventArgs.Payload[0]);
+
+                //Make sure we are part of the requested series. If multiple clients request metrics, all of them get the metrics.
+                string series = payloadFields["Series"].ToString();
+                string counterName = payloadFields["Name"].ToString();
+
+                string metadata = payloadFields["Metadata"].ToString();
+                int seriesValue = TraceEventExtensions.GetInterval(series);
+
+                float intervalSec = (float)payloadFields["IntervalSec"];
+                string displayName = payloadFields["DisplayName"].ToString();
+                string displayUnits = payloadFields["DisplayUnits"].ToString();
+                double value = 0;
+                CounterType counterType = CounterType.Metric;
+
+                if (payloadFields["CounterType"].Equals("Mean"))
+                {
+                    value = (double)payloadFields["Mean"];
+                }
+                else if (payloadFields["CounterType"].Equals("Sum"))
+                {
+                    counterType = CounterType.Rate;
+                    value = (double)payloadFields["Increment"];
+                    if (string.IsNullOrEmpty(displayUnits))
+                    {
+                        displayUnits = "count";
+                    }
+                }
+
+                payload = new EventCounterPayload(
+#if NETSTANDARD2_0
+                    DateTime.Now,
+#else
+                    eventArgs.TimeStamp,
+#endif
+                    eventArgs.EventName,
+                    counterName, displayName,
+                    displayUnits,
+                    value,
+                    counterType,
+                    intervalSec,
+                    seriesValue / 1000,
+                    metadata,
+                    null);
+
+                return true;
+            }
+
+            payload = null;
+            return false;
+        }
+
+    }
     internal static class TraceEventExtensions
     {
         private static Dictionary<ProviderAndCounter, CounterMetadata> counterMetadataByName = new();
@@ -48,7 +191,6 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             counterMetadataByName.Add(providerAndCounter, new CounterMetadata(providerName, counterName, meterTags, instrumentTags, scopeHash));
             return counterMetadataByName[providerAndCounter];
         }
-
         public static bool TryGetCounterPayload(this TraceEvent traceEvent, CounterConfiguration counterConfiguration, out ICounterPayload payload)
         {
             payload = null;
@@ -500,7 +642,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             return quantiles;
         }
 
-        private static int GetInterval(string series)
+        internal static int GetInterval(string series)
         {
             const string comparison = "Interval=";
             int interval = 0;

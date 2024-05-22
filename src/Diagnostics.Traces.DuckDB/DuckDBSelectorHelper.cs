@@ -13,18 +13,21 @@ namespace Diagnostics.Traces.DuckDB
             int keepFileCount = 10,
             long preLimitCount = DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>.DefaultLimitCount)
         {
-            return new DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>(t =>
+            var selector = new DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>(() =>
             {
                 var full = Path.Combine(path, fileNameProvider?.Invoke() ?? $"{DateTime.Now:yyyyMMddHHmmss}.traces");
                 var status = NativeMethods.Startup.DuckDBOpen(full, out var database);
-                if (status!= DuckDBState.Success)
+                if (status != DuckDBState.Success)
                 {
                     throw new TraceDuckDbException($"Fail to open or create database {full}");
                 }
                 var result = new DuckDBDatabaseCreatedResult(database, full);
                 databaseIniter?.Invoke(result);
                 return result;
-            }, limitCount: preLimitCount, afterSwitched: new GzipDatabaseAfterSwitched<DuckDBDatabaseCreatedResult>(gzipLevel, new StartWithLastWriteFileDeleteRules(path, keepFileCount, "*.gz")), initializer: DuckDBResultInitializer.Instance);
+            }, limitCount: preLimitCount);
+            selector.AfterSwitcheds.Add(new GzipDatabaseAfterSwitched<DuckDBDatabaseCreatedResult>(gzipLevel, new StartWithLastWriteFileDeleteRules(path, keepFileCount, "*.gz")));
+            selector.Initializers.Add(DuckDBResultInitializer.Instance);
+            return selector;
         }
     }
 }

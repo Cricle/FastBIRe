@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS ""metrics""(
     meterName VARCHAR,
     meterVersion VARCHAR,
     meterTags MAP(VARCHAR,VARCHAR),
+    createTime DATETIME,
     points STRUCT(
         value DOUBLE, 
         sum DOUBLE,
@@ -80,17 +81,30 @@ CREATE TABLE IF NOT EXISTS ""metrics""(
     )[]
 );
 ";
+        private const string InitSqlException= @"
+CREATE TABLE IF NOT EXISTS ""exceptions""(
+    traceId VARCHAR,
+    spanId VARCHAR,
+    createTime DATETIME,
+    typeName VARCHAR,
+    message VARCHAR,
+    helpLink VARCHAR,
+    hResult INTEGER,
+    data MAP(VARCHAR,VARCHAR),
+    stackTrace VARCHAR,
+    innerException VARCHAR
+);
+";
         public void InitializeResult(DuckDBDatabaseCreatedResult result)
         {
             result.Connection.Execute(InitSqlLogs);
             result.Connection.Execute(InitSqlMetrics);
             result.Connection.Execute(InitSqlActivities);
-            result.Connection.Execute("PRAGMA memory_limit='64mb';");
+            result.Connection.Execute(InitSqlException);
             AfterInitializeResult(result);
         }
         protected virtual void AfterInitializeResult(DuckDBDatabaseCreatedResult result)
         {
-
         }
     }
 }

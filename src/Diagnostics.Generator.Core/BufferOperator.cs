@@ -1,6 +1,9 @@
-﻿using System.Threading.Channels;
+﻿using System;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 
-namespace Diagnostics.Traces
+namespace Diagnostics.Generator.Core
 {
     public class BufferOperator<T> : IDisposable
     {
@@ -9,18 +12,18 @@ namespace Diagnostics.Traces
         private readonly Task task;
         private readonly CancellationTokenSource tokenSource;
 
-        public BufferOperator(IInputHandler<T> handler)
+        public BufferOperator(IOpetatorHandler<T> handler)
             : this(handler, true, false)
         {
         }
-        public BufferOperator(IInputHandler<T> handler, bool wait, bool continueCaptureContext)
+        public BufferOperator(IOpetatorHandler<T> handler, bool wait, bool continueCaptureContext)
         {
             Wait = wait;
             Handler = handler ?? throw new ArgumentNullException(nameof(handler));
             ContinueCaptureContext = continueCaptureContext;
             tokenSource = new CancellationTokenSource();
             channel = Channel.CreateUnbounded<T>(new UnboundedChannelOptions { SingleReader = true });
-            task = Task.Factory.StartNew(HandlerAsync, this, TaskCreationOptions.LongRunning).Unwrap();
+            task = Task.Factory.StartNew(HandleAsync, this, TaskCreationOptions.LongRunning).Unwrap();
             Handler = handler;
         }
 
@@ -28,7 +31,7 @@ namespace Diagnostics.Traces
 
         public bool ContinueCaptureContext { get; }
 
-        public IInputHandler<T> Handler { get; }
+        public IOpetatorHandler<T> Handler { get; }
 
         public Task Task => task;
 
@@ -36,7 +39,7 @@ namespace Diagnostics.Traces
 
         public event EventHandler<BufferOperatorExceptionEventArgs<T>>? ExceptionRaised;
 
-        private async Task HandlerAsync(object? state)
+        private async Task HandleAsync(object state)
         {
             var channel = (BufferOperator<T>)state!;
             var tokenSource = channel.tokenSource;

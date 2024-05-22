@@ -51,7 +51,7 @@ namespace Diagnostics.Generator.Internal
                 {{ 
                     {bodyBuilder}
                 }}
-            }}
+
             {nameSpaceEnd}
 #nullable restore
 #pragma warning restore

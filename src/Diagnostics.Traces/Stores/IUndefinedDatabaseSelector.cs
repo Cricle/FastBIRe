@@ -3,10 +3,16 @@
     public interface IUndefinedDatabaseSelector<TResult>
         where TResult:IDatabaseCreatedResult
     {
-        void UsingDatabaseResult(TraceTypes type, Action<TResult> @using);
+        IList<IUndefinedDatabaseAfterSwitched<TResult>> AfterSwitcheds { get; }
 
-        void UsingDatabaseResult<TState>(TraceTypes type,TState state, Action<TResult,TState> @using);
+        IList<IUndefinedResultInitializer<TResult>> Initializers { get; }
 
-        void ReportInserted(TraceTypes type, int count);
+        void UsingDatabaseResult(Action<TResult> @using);
+
+        void UsingDatabaseResult<TState>(TState state, Action<TResult,TState> @using);
+
+        void ReportInserted(int count);
+
+        bool Flush();
     }
 }

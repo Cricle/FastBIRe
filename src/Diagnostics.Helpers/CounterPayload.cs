@@ -22,7 +22,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             int series,
             string valueTags,
             EventType eventType,
-            TraceEvent traceEvent)
+            TraceEvent? traceEvent)
         {
             Timestamp = timestamp;
             DisplayName = displayName;
@@ -61,7 +61,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
 
         public TraceEvent TraceEvent { get; }
 
-        public string? Name => ((IDictionary<string, object>?)((IDictionary<string, object>?)TraceEvent.PayloadValue(0))?["Payload"])?["Name"]?.ToString();
+        public string? Name => ((IDictionary<string, object>?)((IDictionary<string, object>?)TraceEvent?.PayloadValue(0))?["Payload"])?["Name"]?.ToString();
     }
 
     internal sealed class EventCounterPayload : CounterPayload
@@ -76,7 +76,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             float interval,
             int series,
             string valueTags,
-            TraceEvent traceEvent) : base(timestamp, new(providerName, name, null, null, null), displayName, unit, value, counterType, interval, series, valueTags, EventType.Gauge,traceEvent)
+            TraceEvent? traceEvent) : base(timestamp, new(providerName, name, null, null, null), displayName, unit, value, counterType, interval, series, valueTags, EventType.Gauge,traceEvent)
         {
         }
     }

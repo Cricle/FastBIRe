@@ -6,6 +6,10 @@ namespace Diagnostics.Traces.DuckDB
     {
         public static int Execute(this DuckDBNativeConnection connection, string sql)
         {
+            if (string.IsNullOrEmpty(sql))
+            {
+                return 0;
+            }
             var results = PrepareMultiple(connection, sql);
 
             var count = 0;

@@ -7,7 +7,7 @@ namespace Diagnostics.Helpers
     public class SampleResult<TCounter> : SampleProvider, ISampleResult<TCounter>
         where TCounter : IEventCounter<TCounter>
     {
-        public TCounter Counter { get; }
+        public new TCounter Counter { get; }
 
         IEventCounterProvider ISampleProvider.Counter => Counter;
 

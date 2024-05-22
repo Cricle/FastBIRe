@@ -8,7 +8,7 @@ namespace Diagnostics.Traces.LiteDb
 	{
         public static DayOrLimitDatabaseSelector<LiteDatabaseCreatedResult> CreateByPath(string path, string prefx = "trace", bool useGzip = true, Func<ConnectionString, ConnectionString>? connectionStringFun = null)
         {
-            return new DayOrLimitDatabaseSelector<LiteDatabaseCreatedResult>((type) =>
+            var selector= new DayOrLimitDatabaseSelector<LiteDatabaseCreatedResult>(() =>
             {
                 var now = DateTime.Now;
                 var dir = Path.Combine(path, now.ToString("yyyyMMdd"));
@@ -24,7 +24,12 @@ namespace Diagnostics.Traces.LiteDb
                 };
                 connStr = connectionStringFun?.Invoke(connStr) ?? connStr;
                 return new LiteDatabaseCreatedResult(new LiteDatabase(connStr), fullPath);
-            }, afterSwitched: useGzip ? new GzipDatabaseAfterSwitched<LiteDatabaseCreatedResult>(CompressionLevel.Fastest) : null);
+            });
+            if (useGzip)
+            {
+                selector.AfterSwitcheds.Add(new GzipDatabaseAfterSwitched<LiteDatabaseCreatedResult>(CompressionLevel.Fastest));
+            }
+            return selector;
         }
 
     }

@@ -2,7 +2,6 @@
 using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -57,7 +56,7 @@ namespace Diagnostics.Generator.Internal
             var interfaces = string.Empty;
             if (!origin.IsStatic)
             {
-                interfaces = $":global::Diagnostics.Generator.Core.IActivityTagWriter<{symbolFullName}>,global::Diagnostics.Generator.Core.IActivityTagWriter";
+                interfaces = $":global::Diagnostics.Generator.Core.IActivityTagWriter<{symbolFullName}>,global::Diagnostics.Generator.Core.IActivityTagWriter,global::Diagnostics.Generator.Core.IActivityTagMerge<{symbolFullName}>,global::Diagnostics.Generator.Core.IActivityTagMerge";
                 if (isSelf)
                 {
                     interfaces += ",global::Diagnostics.Generator.Core.IActivityTagExporter";
@@ -65,6 +64,7 @@ namespace Diagnostics.Generator.Internal
             }
             var bodyBuilder = new StringBuilder();
             var writeBuilder = new StringBuilder();
+            var makeTagBuilder = new StringBuilder();
             asMethod = $"activity.{asMethod}";
             var additionPrefx = attr.GetByNamed<string>(Consts.ActivityAsAttribute.Key) ?? string.Empty;
             var generateSingleton = attr.GetByNamed<bool>(Consts.ActivityAsAttribute.GenerateSingleton);
@@ -75,10 +75,17 @@ namespace Diagnostics.Generator.Internal
             }
             //Debugger.Launch();
             var deepType = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            var deepTypeTag = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
             foreach (var item in props)
             {
-                WriteProps(writeBuilder,origin, additionPrefx, "inst.",string.Empty, item, asMethod, deepType,ignorePaths,out var diagnostic);
-                if (diagnostic!=null)
+                WriteProps(writeBuilder, origin, additionPrefx, "input.", string.Empty, item, asMethod, false, deepType, ignorePaths, out var diagnostic);
+                if (diagnostic != null)
+                {
+                    context.ReportDiagnostic(diagnostic);
+                    return;
+                }
+                WriteProps(makeTagBuilder, origin, additionPrefx, "input.", string.Empty, item, "tags", true, deepTypeTag, ignorePaths, out diagnostic);
+                if (diagnostic != null)
                 {
                     context.ReportDiagnostic(diagnostic);
                     return;
@@ -89,14 +96,14 @@ namespace Diagnostics.Generator.Internal
             if (IsNullableType(symbol))
             {
                 nullCheck = $@"
-if(inst==null)
+if(input==null)
 {{
     return;
 }}";
                 symbolFullName += "?";
             }
             bodyBuilder.AppendLine($@"
-public {staticKeywork} void Write(global::System.Diagnostics.Activity? activity, {symbolFullName} inst)
+public {staticKeywork} void Write(global::System.Diagnostics.Activity? activity, {symbolFullName} input)
 {{
     {nullCheck}
 
@@ -107,13 +114,41 @@ public {staticKeywork} void Write(global::System.Diagnostics.Activity? activity,
 
     {writeBuilder}
 }}
+
+public {staticKeywork} void Merge(global::System.Diagnostics.ActivityTagsCollection tags,{symbolFullName} input)
+{{
+    if(tags==null)
+    {{
+        return;
+    }}
+
+    {nullCheck}
+
+    {makeTagBuilder}
+}}
+public {staticKeywork} global::System.Diagnostics.ActivityTagsCollection Merge({symbolFullName} input)
+{{
+    global::System.Diagnostics.ActivityTagsCollection tags = new global::System.Diagnostics.ActivityTagsCollection();
+    Merge(tags,input);
+    return tags;
+}}
+
+public {staticKeywork} void Merge(global::System.Diagnostics.ActivityTagsCollection tags, object input)
+{{
+    Merge(tags,({symbolFullName})input);
+}}
+
+public {staticKeywork} global::System.Diagnostics.ActivityTagsCollection Merge(object input)
+{{
+    return Merge(({symbolFullName})input);
+}}
 ");
             if (!origin.IsStatic)
             {
                 bodyBuilder.AppendLine($@"
-void global::Diagnostics.Generator.Core.IActivityTagWriter.Write(global::System.Diagnostics.Activity? activity, global::System.Object inst)
+void global::Diagnostics.Generator.Core.IActivityTagWriter.Write(global::System.Diagnostics.Activity? activity, global::System.Object input)
 {{
-    Write(activity,({symbolFullName})inst);
+    Write(activity,({symbolFullName})input);
 }}
 ");
             }
@@ -129,7 +164,7 @@ public {staticKeywork} void Write(global::System.Diagnostics.Activity? activity)
             }
             var singletonExp = string.Empty;
             var originFullName = GeneratorTransformResult<ISymbol>.GetTypeFullName(origin);
-            if (!origin.IsStatic&& generateSingleton)
+            if (!origin.IsStatic && generateSingleton)
             {
                 singletonExp = $"public static readonly {originFullName} Instance = new {originFullName}();";
             }
@@ -154,7 +189,7 @@ public {staticKeywork} void Write(global::System.Diagnostics.Activity? activity)
         {
             if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
             {
-                if (namedTypeSymbol.IsGenericType&&typeSymbol.OriginalDefinition.SpecialType== SpecialType.System_Nullable_T)
+                if (namedTypeSymbol.IsGenericType && typeSymbol.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
                 {
                     return true;
                 }
@@ -170,12 +205,13 @@ public {staticKeywork} void Write(global::System.Diagnostics.Activity? activity)
             }
             return IsNullableStruct(typeSymbol);
         }
+
         private static bool CanDeep(ITypeSymbol typeSymbol)
         {
-            if (typeSymbol.SpecialType == SpecialType.None&& typeSymbol is INamedTypeSymbol)
+            if (typeSymbol.SpecialType == SpecialType.None && typeSymbol is INamedTypeSymbol)
             {
                 if (typeSymbol.ToString().StartsWith("System.Collections."))
-                {                    
+                {
                     return false;
                 }
                 if (typeSymbol.TypeKind != TypeKind.Class)
@@ -203,8 +239,9 @@ public {staticKeywork} void Write(global::System.Diagnostics.Activity? activity)
             string prefx,
             string invokePrefx,
             string path,
-            ISymbol symbol, 
+            ISymbol symbol,
             string call,
+            bool isIndexCall,
             HashSet<ISymbol> deeps,
             HashSet<string> ignorePaths,
             out Diagnostic? diagnostic)
@@ -246,11 +283,11 @@ public {staticKeywork} void Write(global::System.Diagnostics.Activity? activity)
             {
                 if (!deeps.Add(valSymbol))
                 {
-                    diagnostic = Diagnostic.Create(Messages.TagAsLoopReferenceError, originSymbol.Locations[0], valSymbol.ToString(), invokePrefx.TrimEnd('.'));
+                    diagnostic = Diagnostic.Create(Messages.TagAsLoopReferenceError, originSymbol.Locations[0], valSymbol.ToString(), invokePrefx.TrimEnd('.')+"."+ targetPath);
                     return;
                 }
                 var actualSymbol = GetActualSymbol(valSymbol);
-                var isNullableChanged =!SymbolEqualityComparer.Default.Equals(actualSymbol ,valSymbol);
+                var isNullableChanged = !SymbolEqualityComparer.Default.Equals(actualSymbol, valSymbol);
                 var props = GetProvidedSymbols((INamedTypeSymbol)actualSymbol);
                 if (nullable)
                 {
@@ -265,8 +302,8 @@ public {staticKeywork} void Write(global::System.Diagnostics.Activity? activity)
                 }
                 foreach (var item in props)
                 {
-                    WriteProps(builder, originSymbol, propPrefx, propInvokPrefx, targetPath, item, call, deeps, ignorePaths, out diagnostic);
-                    if (diagnostic!=null)
+                    WriteProps(builder, originSymbol, propPrefx, propInvokPrefx, targetPath, item, call, isIndexCall, deeps, ignorePaths, out diagnostic);
+                    if (diagnostic != null)
                     {
                         return;
                     }
@@ -279,7 +316,15 @@ public {staticKeywork} void Write(global::System.Diagnostics.Activity? activity)
             else
             {
                 var targetExp = invokePrefx + symbol.Name;
-                var callExp = $"{call}(\"{prefx}{name}\",{targetExp});";
+                string callExp;
+                if (isIndexCall)
+                {
+                    callExp = $"{call}[\"{prefx}{name}\"]={targetExp};";
+                }
+                else
+                {
+                    callExp = $"{call}(\"{prefx}{name}\",{targetExp});";
+                }
                 if (nullable)
                 {
                     callExp = $@"
@@ -291,7 +336,7 @@ if({targetExp} != null)
                 builder.AppendLine(callExp);
             }
         }
-        
+
 
         public static bool Predicate(SyntaxNode node, CancellationToken token)
         {
