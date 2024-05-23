@@ -1,37 +1,39 @@
 ﻿using Diagnostics.Traces.Stores;
-using DuckDB.NET.Native;
+using DuckDB.NET.Data;
+using System.Data.Common;
 
 namespace Diagnostics.Traces.DuckDB
 {
+    internal static class ConnectionExecuteExtensions
+    {
+        public static int ExecuteNoQuery(this DbConnection connection,string sql)
+        {
+            using (var comm = connection.CreateCommand())
+            {
+                comm.CommandText = sql;
+                return comm.ExecuteNonQuery();
+            }
+        }
+    }
+
     public class DuckDBDatabaseCreatedResult : IDatabaseCreatedResult,IDisposable
     {
-        public DuckDBDatabaseCreatedResult(DuckDBDatabase database, string? filePath)
+        public DuckDBDatabaseCreatedResult(DuckDBConnection connection, string? filePath)
         {
-            var status = NativeMethods.Startup.DuckDBConnect(database, out var conn);
-            if (status!= DuckDBState.Success)
-            {
-                throw new TraceDuckDbException($"Fail to open duckdb {filePath}");
-            }
-
-            Connection = conn;
-
-            Database = database;
+            Connection = connection ?? throw new ArgumentNullException(nameof(connection));
             FilePath = filePath;
             Root = new object();
         }
 
         public object Root { get; }
 
-        public DuckDBNativeConnection Connection { get; }
-
-        public DuckDBDatabase Database { get; }
+        public DuckDBConnection Connection { get; }
 
         public string? FilePath { get; }
 
         public void Dispose()
         {
-            Connection?.Dispose();
-            Database?.Dispose();
+            Connection.Dispose();
         }
     }
 }

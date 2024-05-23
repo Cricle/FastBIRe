@@ -255,7 +255,7 @@ namespace Diagnostics.Traces.DuckDB
             var sql = BuildSql(new OneEnumerable<Activity>(input));
             DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
             {
-                res.Connection.Execute(sql);
+                res.Connection.ExecuteNoQuery(sql);
             });
             DatabaseSelector.ReportInserted(1);
         }
@@ -269,7 +269,7 @@ namespace Diagnostics.Traces.DuckDB
             var sql = BuildSql(new OneEnumerable<LogRecord>(input));
             DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
             {
-                res.Connection.Execute(sql);
+                res.Connection.ExecuteNoQuery(sql);
             });
             DatabaseSelector.ReportInserted(1);
         }
@@ -283,7 +283,7 @@ namespace Diagnostics.Traces.DuckDB
             var sql = BuildSql(new OneEnumerable<Metric>(input));
             DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
             {
-                res.Connection.Execute(sql);
+                res.Connection.ExecuteNoQuery(sql);
             });
             DatabaseSelector.ReportInserted(1);
         }
@@ -299,7 +299,7 @@ namespace Diagnostics.Traces.DuckDB
                 var sql = BuildSql(enu);
                 DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
                 {
-                    res.Connection.Execute(sql);
+                    res.Connection.ExecuteNoQuery(sql);
                 });
                 DatabaseSelector.ReportInserted((int)inputs.Count);
             }
@@ -316,7 +316,7 @@ namespace Diagnostics.Traces.DuckDB
                 var sql = BuildSql(enu);
                 DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
                 {
-                    res.Connection.Execute(sql);
+                    res.Connection.ExecuteNoQuery(sql);
                 });
                 DatabaseSelector.ReportInserted((int)inputs.Count);
             }
@@ -333,7 +333,7 @@ namespace Diagnostics.Traces.DuckDB
                 var sql = BuildSql(enu);
                 DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
                 {
-                    res.Connection.Execute(sql);
+                    res.Connection.ExecuteNoQuery(sql);
                 });
                 DatabaseSelector.ReportInserted((int)inputs.Count);
             }
@@ -350,7 +350,7 @@ namespace Diagnostics.Traces.DuckDB
                 var sql = BuildSql(inputs);
                 DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
                 {
-                    res.Connection.Execute(sql);
+                    res.Connection.ExecuteNoQuery(sql);
                 });
                 DatabaseSelector.ReportInserted(inputs.Count);
             }, token);

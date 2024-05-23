@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS ""activities""(
     parentSpanId VARCHAR
 );
 ";
-        private const string InitSqlMetrics= @"
+        private const string InitSqlMetrics = @"
 CREATE TABLE IF NOT EXISTS ""metrics""(
     name VARCHAR,
     unit VARCHAR,
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS ""metrics""(
     )[]
 );
 ";
-        private const string InitSqlException= @"
+        private const string InitSqlException = @"
 CREATE TABLE IF NOT EXISTS ""exceptions""(
     traceId VARCHAR,
     spanId VARCHAR,
@@ -97,10 +97,10 @@ CREATE TABLE IF NOT EXISTS ""exceptions""(
 ";
         public void InitializeResult(DuckDBDatabaseCreatedResult result)
         {
-            result.Connection.Execute(InitSqlLogs);
-            result.Connection.Execute(InitSqlMetrics);
-            result.Connection.Execute(InitSqlActivities);
-            result.Connection.Execute(InitSqlException);
+            result.Connection.ExecuteNoQuery(InitSqlLogs);
+            result.Connection.ExecuteNoQuery(InitSqlMetrics);
+            result.Connection.ExecuteNoQuery(InitSqlActivities);
+            result.Connection.ExecuteNoQuery(InitSqlException);
             AfterInitializeResult(result);
         }
         protected virtual void AfterInitializeResult(DuckDBDatabaseCreatedResult result)

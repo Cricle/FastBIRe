@@ -1,4 +1,4 @@
-﻿using DuckDB.NET.Native;
+﻿using DuckDB.NET.Data;
 using FastBIRe;
 using ValueBuffer;
 
@@ -6,14 +6,14 @@ namespace Diagnostics.Traces.DuckDB
 {
     public class DuckDBCounterStoreProvider : ICounterStoreProvider
     {
-        public DuckDBCounterStoreProvider(DuckDBNativeConnection connection, bool createDropSQL = true, Func<string, string>? nameCreator = null)
+        public DuckDBCounterStoreProvider(DuckDBConnection connection, bool createDropSQL = true, Func<string, string>? nameCreator = null)
         {
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
             CreateDropSQL = createDropSQL;
             NameCreator = nameCreator ?? DefaultNameCreator;
         }
 
-        public DuckDBNativeConnection Connection { get; }
+        public DuckDBConnection Connection { get; }
 
         public bool CreateDropSQL { get; }
 
@@ -27,7 +27,7 @@ namespace Diagnostics.Traces.DuckDB
         public Task InitializeAsync(string name, IEnumerable<CounterStoreColumn> columns)
         {
             var sql = GetCreateTableSql(name, CreateDropSQL, columns);
-            Connection.Execute(sql);
+            Connection.ExecuteNoQuery(sql);
             return Task.CompletedTask;
         }
 
@@ -75,7 +75,7 @@ namespace Diagnostics.Traces.DuckDB
                     s.Append(')');
                 }
 
-                Connection.Execute(s.ToString());
+                Connection.ExecuteNoQuery(s.ToString());
             });
         }
         private string GetCreateTableSql(string name, bool createDropSQL, IEnumerable<CounterStoreColumn> columns)

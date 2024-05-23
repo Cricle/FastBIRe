@@ -1,5 +1,5 @@
 ﻿using Diagnostics.Traces.Stores;
-using DuckDB.NET.Native;
+using DuckDB.NET.Data;
 using System.IO.Compression;
 
 namespace Diagnostics.Traces.DuckDB
@@ -16,11 +16,8 @@ namespace Diagnostics.Traces.DuckDB
             var selector = new DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>(() =>
             {
                 var full = Path.Combine(path, fileNameProvider?.Invoke() ?? $"{DateTime.Now:yyyyMMddHHmmss}.traces");
-                var status = NativeMethods.Startup.DuckDBOpen(full, out var database);
-                if (status != DuckDBState.Success)
-                {
-                    throw new TraceDuckDbException($"Fail to open or create database {full}");
-                }
+                var database = new DuckDBConnection($"Data source={full}");
+                database.Open();
                 var result = new DuckDBDatabaseCreatedResult(database, full);
                 databaseIniter?.Invoke(result);
                 return result;
