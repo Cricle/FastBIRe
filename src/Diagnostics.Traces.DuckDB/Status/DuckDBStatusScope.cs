@@ -8,41 +8,41 @@ namespace Diagnostics.Traces.DuckDB.Status
         internal DuckDBStatusScope(DuckDBConnection connection, string name, string tableName, DuckDBPrepare prepare)
         {
             Connection = connection;
-            Name = name;
-            TableName = tableName;
+            Key = name;
+            Name = tableName;
             this.prepare = prepare;
         }
         internal readonly DuckDBPrepare prepare;
 
+        public override string Name { get; }
+
         public DuckDBConnection Connection { get; }
 
-        public string TableName { get; }
-
-        public override string Name { get; }
+        public override string Key { get; }
 
         public override void Dispose()
         {
             if (!IsComplated)
             {
-                OnComplate(StatuTypes.Unset);
+                OnComplate(StatusTypes.Unset);
             }
         }
 
         public override bool Log(string message)
         {
             ThrowIfComplated();            ;
-            return prepare.Log(Name, DateTime.Now, message) > 0;
+            return prepare.Log(Key, DateTime.Now, message) > 0;
         }
 
         public override bool Set(string status)
         {
             ThrowIfComplated();
-            return prepare.Set(Name, DateTime.Now, status) > 0;
+            return prepare.Set(Key, DateTime.Now, status) > 0;
         }
 
-        protected override void OnComplate(StatuTypes types = StatuTypes.Unset)
+        protected override void OnComplate(StatusTypes types = StatusTypes.Unset)
         {
-            prepare.Complate(Name, types);
+            prepare.Complate(Key, types);
         }
     }
 }

@@ -4,33 +4,13 @@ using DuckDB.NET.Data;
 using DuckDB.NET.Native;
 using System.Collections.Concurrent;
 using System.Data;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace Diagnostics.Traces.DuckDB.Status
 {
-    public enum StatusRemoveMode
-    {
-        DropSucceed = 0,
-        DropAll = 1,
-        KeepAll = 2
-    }
     public class DuckDBStatusManager : StatusManagerBase, IOpetatorHandler<string>, IBatchOperatorHandler<string>
     {
-        private static readonly Func<DuckDBConnection, DuckDBNativeConnection> connectionGetter;
-
         public static readonly TimeSpan DefaultVacuumTime = TimeSpan.FromMinutes(1);
-
-        static DuckDBStatusManager()
-        {
-            var par = Expression.Parameter(typeof(DuckDBConnection));
-            var connRef = typeof(DuckDBConnection).GetField("connectionReference", BindingFlags.NonPublic | BindingFlags.Instance);
-            var connProp = connRef.FieldType.GetProperty("NativeConnection", BindingFlags.Public | BindingFlags.Instance);
-            var getRef = Expression.Field(par, connRef);
-            var body = Expression.Call(Expression.Convert(getRef, connRef.FieldType), connProp.GetMethod);
-            connectionGetter = Expression.Lambda<Func<DuckDBConnection, DuckDBNativeConnection>>(body, par).Compile();
-        }
 
         private readonly ConcurrentDictionary<string, DuckDBPrepare> prepares = new ConcurrentDictionary<string, DuckDBPrepare>();
         private readonly BufferOperator<string> bufferOperator;
@@ -45,7 +25,7 @@ namespace Diagnostics.Traces.DuckDB.Status
             }
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
             bufferOperator = new BufferOperator<string>(this, false, false);
-            nativeConnection = connectionGetter(connection);
+            nativeConnection = DuckDBNativeHelper.GetNativeConnection(connection);
             RemoveMode = removeMode;
             if (vacuumDelayTime != null)
             {
@@ -101,7 +81,7 @@ namespace Diagnostics.Traces.DuckDB.Status
                 ReadTimePairs(record[2]),
                 ReadTimePairs(record[3]),
                 record.IsDBNull(4) ? null : record.GetDateTime(4),
-                record.IsDBNull(5) ? null : (StatuTypes)record.GetByte(5));
+                record.IsDBNull(5) ? null : (StatusTypes)record.GetByte(5));
         }
         private static List<TimePairValue> ReadTimePairs(object? value)
         {
@@ -311,22 +291,15 @@ namespace Diagnostics.Traces.DuckDB.Status
 
         Task IOpetatorHandler<string>.HandleAsync(string input, CancellationToken token)
         {
-            DuckDBQuery(input);
+            DuckDBNativeHelper.DuckDBQuery(nativeConnection,input);
             return Task.CompletedTask;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DuckDBQuery(string input)
-        {
-            NativeMethods.Query.DuckDBQuery(nativeConnection, input, out var res);
-            NativeMethods.Query.DuckDBDestroyResult(ref res);
         }
 
         Task IBatchOperatorHandler<string>.HandleAsync(BatchData<string> inputs, CancellationToken token)
         {
             foreach (var item in inputs)
             {
-                DuckDBQuery(item);
+                DuckDBNativeHelper.DuckDBQuery(nativeConnection, item);
             }
             return Task.CompletedTask;
         }

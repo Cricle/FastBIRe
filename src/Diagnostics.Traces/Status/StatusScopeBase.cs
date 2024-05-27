@@ -4,11 +4,13 @@
     {
         private long isComplated;
 
-        public abstract string Name { get; }
+        public abstract string Key { get; }
 
         public bool IsComplated => Interlocked.Read(ref isComplated)!=0;
 
-        public bool Complate(StatuTypes types = StatuTypes.Unset)
+        public abstract string Name { get; }
+
+        public bool Complate(StatusTypes types = StatusTypes.Unset)
         {
             if (Interlocked.CompareExchange(ref isComplated,1,0)==0)
             {
@@ -24,9 +26,9 @@
                 throw new InvalidOperationException($"The status scope is comaplted, can't operator");
             }
         }
-        protected abstract void OnComplate(StatuTypes types = StatuTypes.Unset);
+        protected abstract void OnComplate(StatusTypes types = StatusTypes.Unset);
 
-        public virtual Task<bool> ComplateAsync(StatuTypes types = StatuTypes.Unset, CancellationToken token = default)
+        public virtual Task<bool> ComplateAsync(StatusTypes types = StatusTypes.Unset, CancellationToken token = default)
         {
             token.ThrowIfCancellationRequested();
             return Task.FromResult(Complate(types));

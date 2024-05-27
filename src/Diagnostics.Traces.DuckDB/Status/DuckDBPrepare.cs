@@ -82,7 +82,7 @@ namespace Diagnostics.Traces.DuckDB.Status
             bufferOperator.Add(sql);
             return -1;
         }
-        public int Complate(string key, StatuTypes complateStatus)
+        public int Complate(string key, StatusTypes complateStatus)
         {
             string sql;
             if (removeMode == StatusRemoveMode.DropAll)
@@ -94,7 +94,7 @@ namespace Diagnostics.Traces.DuckDB.Status
             {
                 if (removeMode == StatusRemoveMode.DropSucceed)
                 {
-                    if (complateStatus != StatuTypes.Fail && complateStatus != StatuTypes.Interrupt)
+                    if (complateStatus != StatusTypes.Fail && complateStatus != StatusTypes.Interrupt)
                     {
                         sql = $"DELETE FROM  \"{Name}\" WHERE \"time\" = '{key}'";
                         bufferOperator.Add(sql);

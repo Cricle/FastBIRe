@@ -43,5 +43,22 @@
         {
             return scope.SetAsync(string.Format(format, args));
         }
+
+        public static bool ComplateIf(this IStatusScope scope, bool condition, StatusTypes @true, StatusTypes @false)
+        {
+            if (condition)
+            {
+                return scope.Complate(@true);
+            }
+            return scope.Complate(@false);
+        }
+        public static Task<bool> ComplateIfAsync(this IStatusScope scope, bool condition, StatusTypes @true, StatusTypes @false)
+        {
+            if (condition)
+            {
+                return scope.ComplateAsync(@true);
+            }
+            return scope.ComplateAsync(@false);
+        }
     }
 }

@@ -4,6 +4,8 @@
     {
         string Name { get; }
 
+        string Key { get; }
+
         bool IsComplated { get; }
 
         bool Set(string status);
@@ -14,8 +16,8 @@
 
         Task<bool> LogAsync(string message, CancellationToken token = default);
 
-        bool Complate(StatuTypes types = StatuTypes.Unset);
+        bool Complate(StatusTypes types = StatusTypes.Unset);
 
-        Task<bool> ComplateAsync(StatuTypes types = StatuTypes.Unset, CancellationToken token = default);
+        Task<bool> ComplateAsync(StatusTypes types = StatusTypes.Unset, CancellationToken token = default);
     }
 }
