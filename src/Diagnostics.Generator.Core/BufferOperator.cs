@@ -7,6 +7,7 @@ namespace Diagnostics.Generator.Core
 {
     public class BufferOperator<T> : IDisposable
     {
+        private int uncomplatedCount;
         private int disposeCount;
         private readonly Channel<T> channel;
         private readonly Task task;
@@ -37,6 +38,8 @@ namespace Diagnostics.Generator.Core
 
         public ChannelReader<T> Reader => channel.Reader;
 
+        public int UnComplatedCount => uncomplatedCount;
+
         public event EventHandler<BufferOperatorExceptionEventArgs<T>>? ExceptionRaised;
 
         private async Task HandleAsync(object state)
@@ -53,7 +56,7 @@ namespace Diagnostics.Generator.Core
                 {
                     var args = await Reader.ReadAsync(tokenSource.Token);
                     var task = handler.HandleAsync(args, tokenSource.Token);
-                    if (wait)
+                    if (wait && !task.IsCompleted)
                     {
                         await task.ConfigureAwait(continueCaptureContext);
                     }
@@ -64,6 +67,7 @@ namespace Diagnostics.Generator.Core
                 }
                 finally
                 {
+                    Interlocked.Decrement(ref uncomplatedCount);
                     t = default;
                 }
             }
@@ -72,6 +76,7 @@ namespace Diagnostics.Generator.Core
 
         public void Add(T input)
         {
+            Interlocked.Increment(ref uncomplatedCount);
             var task = channel.Writer.WriteAsync(input);
             if (!task.IsCompleted)
             {
