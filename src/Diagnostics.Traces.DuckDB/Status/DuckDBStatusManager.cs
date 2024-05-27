@@ -187,7 +187,7 @@ namespace Diagnostics.Traces.DuckDB.Status
         }
         private string CreateQuerySql(string name, string key)
         {
-            return $"SELECT * FROM \"{name}\" WHERE \"time\" = {key};";
+            return $"SELECT * FROM \"{name}\" WHERE \"time\" = '{key}';";
         }
 
         public override async IAsyncEnumerable<StatusInfo> FindAsync(string name, DateTime? leftTime = null, DateTime? rightTime = null,[EnumeratorCancellation] CancellationToken token = default)

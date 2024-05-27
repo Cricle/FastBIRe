@@ -15,7 +15,7 @@ namespace Diagnostics.Traces.DuckDB
         {
             var selector = new DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>(() =>
             {
-                var full = Path.Combine(path, fileNameProvider?.Invoke() ?? $"{DateTime.Now:yyyyMMddHHmmss}.traces");
+                var full = Path.Combine(path, fileNameProvider?.Invoke() ?? $"{DateTime.Now:yyyyMMddHHmmss}.ducktraces");
                 var database = new DuckDBConnection($"Data source={full}");
                 database.Open();
                 var result = new DuckDBDatabaseCreatedResult(database, full);
