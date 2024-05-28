@@ -1,0 +1,2 @@
+﻿PGSQL: https://github.com/MichaelDBA/pg_get_tabledef
+SQLSERVER: http://www.stormrage.com/SQLStuff/sp_GetDDL_Latest.txt

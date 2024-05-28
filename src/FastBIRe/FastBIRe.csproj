@@ -2,17 +2,34 @@
 
 	<Import Project="..\..\eng\pkg.props" />
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net6.0;net7.0</TargetFrameworks>
+		<TargetFrameworks>netstandard2.0;net6.0;net7.0;net8.0</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(PublishAot)'!=''">
+		<TargetFrameworks>net8.0</TargetFrameworks>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Ao.Stock" Version="1.1.0-preview.8" />
-		<!--<PackageReference Include="Mig.DatabaseSchemaReader" Version="2.7.20" />-->
+		<None Remove="Resources\*.sql" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
+		<EmbeddedResource Include="Resources\*.sql" />
 	</ItemGroup>
-
+	<ItemGroup>
+		<ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
+		<ProjectReference Include="../FastBIRe.ModelGen/FastBIRe.ModelGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="None" />
+		<ProjectReference Include="..\Diagnostics.Generator.Core\Diagnostics.Generator.Core.csproj" />
+		<ProjectReference Include="..\Diagnostics.Generator\Diagnostics.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+		<PackageReference Include="System.Memory" Version="4.5.5" />
+		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
+		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="../FastBIRe.ModelGen/bin/$(Configuration)/netstandard2.0/FastBIRe.ModelGen.dll" Pack="true" PackagePath="analyzers/dotnet" Visible="true" />
+	</ItemGroup>
 </Project>

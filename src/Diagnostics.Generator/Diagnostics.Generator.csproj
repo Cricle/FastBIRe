@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+	</PropertyGroup>
+	<PropertyGroup Condition="$(PublishAot)!='' or $(PublishSingleFile)!=''">
+		<TargetFramework>net8.0</TargetFramework>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.2" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Include="../Diagnostics.Generator.Core/CounterTypes.cs"></Compile>
+		<Compile Include="../Diagnostics.Generator.Core/MeterTypes.cs"></Compile>
+		<Compile Include="../Diagnostics.Generator.Core/ArrayOptions.cs"></Compile> 
+		<Compile Include="../Diagnostics.Generator.Core/ActivityAsTypes.cs"></Compile> 
+	</ItemGroup>
+</Project>

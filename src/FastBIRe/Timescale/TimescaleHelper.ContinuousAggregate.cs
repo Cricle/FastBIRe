@@ -81,7 +81,7 @@ WITH {(noData ? "NO" : string.Empty)} DATA
             if (!string.IsNullOrEmpty(timezone))
                 args.Add($"timezone=> {timezone}");
             if (if_not_exists != null)
-                args.Add($"if_not_exists= {BoolToString(if_not_exists)}");
+                args.Add($"if_not_exists=> {BoolToString(if_not_exists)}");
             if (args.Count == 0)
             {
                 return string.Empty;

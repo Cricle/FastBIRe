@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FastBIRe.Cdc.MongoDB\FastBIRe.Cdc.MongoDB.csproj" />
+    <ProjectReference Include="..\..\src\FastBIRe.Cdc.Mssql\FastBIRe.Cdc.Mssql.csproj" />
+    <ProjectReference Include="..\..\src\FastBIRe.Cdc.MySql\FastBIRe.Cdc.MySql.csproj" />
+    <ProjectReference Include="..\..\src\FastBIRe.Cdc.NpgSql\FastBIRe.Cdc.NpgSql.csproj" />
+    <ProjectReference Include="..\..\src\FastBIRe.Cdc.Triggers\FastBIRe.Cdc.Triggers.csproj" />
+    <ProjectReference Include="..\..\src\FastBIRe.Cdc\FastBIRe.Cdc.csproj" />
+  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.4" />
+		<PackageReference Include="MongoDB.Driver" Version="2.25.0" />
+		<PackageReference Include="MySqlConnector" Version="2.3.7" />
+		<PackageReference Include="DuckDB.NET.Data.Full" Version="0.10.2" />
+		<PackageReference Include="Npgsql" Version="8.0.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="../FastBIRe.Mig/ConnectionProvider.cs"></Compile>
+	</ItemGroup>
+
+</Project>

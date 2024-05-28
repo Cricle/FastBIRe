@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<Import Project="..\..\eng\pkg.props" />
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<PackageId>Fast.Diagnostics.Traces.DuckDB</PackageId>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(PublishAot)'!='' or $(PublishSingleFile)!=''">
+		<TargetFrameworks>net8.0;</TargetFrameworks>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="DuckDB.NET.Data.Full" Version="0.10.3" />
+		<PackageReference Include="ValueBuffer" Version="1.3.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Diagnostics.Traces\Diagnostics.Traces.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="../Diagnostics.Traces/Base2ExponentialBucketHistogramHelper.cs"></Compile>
+		<Compile Include="../FastBIRe/OneEnumerable.cs"></Compile>
+	</ItemGroup>
+</Project>

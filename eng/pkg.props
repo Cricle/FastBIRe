@@ -1,11 +1,11 @@
 <Project>
 	<PropertyGroup>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Version>1.1.12</Version>
+		<Version>1.2.0-preview.40</Version>
 		<Authors>HCricle</Authors>
 		<Description>A fast agger</Description>
-		<RepositoryType>https://github.com/Cricle/FastBIRe.git</RepositoryType>
-
+		<RepositoryUrl>https://github.com/Cricle/FastBIRe.git</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/Cricle/FastBIRe.git</PackageProjectUrl>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>

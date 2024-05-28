@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Dapper.AOT</InterceptorsPreviewNamespaces>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
+		<PackageReference Include="CsvHelper" Version="32.0.1" />
+		<PackageReference Include="Dapper" Version="2.1.35" />
+		<PackageReference Include="Dapper.AOT" Version="1.0.31" />
+		<PackageReference Include="DuckDB.NET.Data.Full" Version="0.10.2" />
+		<!--<PackageReference Include="Dapper" Version="2.1.24" />-->
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.4" />
+		<PackageReference Include="MySqlConnector" Version="2.3.7" />
+		<PackageReference Include="Npgsql" Version="8.0.3" />
+
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\FastBIRe\FastBIRe.csproj" />
+		<ProjectReference Include="..\..\src\FastBIRe.ModelGen\FastBIRe.ModelGen.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="../../samples/FastBIRe.Mig/ConnectionProvider.cs"></Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Resources\a.csv">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+</Project>

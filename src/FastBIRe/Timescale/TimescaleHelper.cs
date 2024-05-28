@@ -4,6 +4,14 @@ namespace FastBIRe.Timescale
 {
     public partial class TimescaleHelper
     {
+        public const string Year = "year";
+        public const string Month = "month";
+        public const string Day = "day";
+        public const string Hour = "hour";
+        public const string Minute = "minute";
+        public const string Second = "second";
+        public const string Quarter = "quarter";
+
         public static readonly TimescaleHelper Default = new TimescaleHelper();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -12,38 +20,12 @@ namespace FastBIRe.Timescale
             return b ?? false ? "true" : "false";
         }
 
-        public string CreateInterval(int value, DateTimeUnit unit)
+        public string CreateInterval(int value, string unit)
         {
             var unitStr = string.Empty;
-            switch (unit)
+            if (unit == Quarter)
             {
-                case DateTimeUnit.Year:
-                    unitStr = "year";
-                    break;
-                case DateTimeUnit.Month:
-                    unitStr = "month";
-                    break;
-                case DateTimeUnit.Day:
-                    unitStr = "day";
-                    break;
-                case DateTimeUnit.Hour:
-                    unitStr = "hour";
-                    break;
-                case DateTimeUnit.Minute:
-                    unitStr = "minute";
-                    break;
-                case DateTimeUnit.Second:
-                    unitStr = "second";
-                    break;
-                case DateTimeUnit.Week:
-                    unitStr = "week";
-                    break;
-                case DateTimeUnit.Quarter:
-                    value *= 3;
-                    unitStr = "months";
-                    break;
-                default:
-                    break;
+                value *= 3;
             }
             return $"INTERVAL '{value} {unitStr}'";
         }
