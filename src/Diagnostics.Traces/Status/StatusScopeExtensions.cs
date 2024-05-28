@@ -44,7 +44,7 @@
             return scope.SetAsync(string.Format(format, args));
         }
 
-        public static bool ComplateIf(this IStatusScope scope, bool condition, StatusTypes @true, StatusTypes @false)
+        public static bool ComplateIf(this IStatusScope scope, bool condition, StatusTypes @true= StatusTypes.Succeed, StatusTypes @false= StatusTypes.Fail)
         {
             if (condition)
             {
@@ -52,13 +52,13 @@
             }
             return scope.Complate(@false);
         }
-        public static Task<bool> ComplateIfAsync(this IStatusScope scope, bool condition, StatusTypes @true, StatusTypes @false)
+        public static Task<bool> ComplateIfAsync(this IStatusScope scope, bool condition, StatusTypes @true = StatusTypes.Succeed, StatusTypes @false = StatusTypes.Fail,CancellationToken token=default)
         {
             if (condition)
             {
-                return scope.ComplateAsync(@true);
+                return scope.ComplateAsync(@true,token);
             }
-            return scope.ComplateAsync(@false);
+            return scope.ComplateAsync(@false, token);
         }
     }
 }

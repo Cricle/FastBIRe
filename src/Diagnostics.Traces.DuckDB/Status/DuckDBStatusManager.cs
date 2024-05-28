@@ -12,6 +12,17 @@ namespace Diagnostics.Traces.DuckDB.Status
     {
         public static readonly TimeSpan DefaultVacuumTime = TimeSpan.FromMinutes(1);
 
+        public static DuckDBStatusManager FromDefault(DuckDBConnection connection, StatusRemoveMode removeMode = StatusRemoveMode.DropSucceed)
+        {
+            return new DuckDBStatusManager(connection,DefaultVacuumTime,removeMode);
+        }
+        public static DuckDBStatusManager FromDefault(string connectionString, StatusRemoveMode removeMode = StatusRemoveMode.DropSucceed)
+        {
+            var duck = new DuckDBConnection(connectionString);
+            duck.Open();
+            return new DuckDBStatusManager(duck, DefaultVacuumTime, removeMode);
+        }
+
         private readonly ConcurrentDictionary<string, DuckDBPrepare> prepares = new ConcurrentDictionary<string, DuckDBPrepare>();
         private readonly BufferOperator<string> bufferOperator;
         private readonly DuckDBNativeConnection nativeConnection;
