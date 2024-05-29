@@ -161,16 +161,7 @@ AND(
             {
                 string GetConvertMethod(ToRawMethod method)
                 {
-                    switch (method)
-                    {
-                        case ToRawMethod.Count:
-                        case ToRawMethod.DistinctCount:
-                        case ToRawMethod.Sum:
-                        case ToRawMethod.Avg:
-                            return "::bigint";
-                        default:
-                            return string.Empty;
-                    }
+                    return "::VARCHAR";
                 }
                 return $@"
 	FROM (
