@@ -9,7 +9,7 @@ namespace Diagnostics.Traces.DuckDB
         private const string InitSqlLogs = @"
 CREATE TABLE IF NOT EXISTS ""logs""(
     timestamp DATETIME,
-    logLevel INTEGER,
+    logLevel TINYINT,
     categoryName VARCHAR,
     traceId VARCHAR,
     spanId VARCHAR,
@@ -18,14 +18,13 @@ CREATE TABLE IF NOT EXISTS ""logs""(
     body VARCHAR
 );
 ";
-
         private const string InitSqlActivities = @"
 CREATE TABLE IF NOT EXISTS ""activities""(
     id VARCHAR,
-    status INTEGER,
+    status TINYINT,
     statusDescription VARCHAR,
     hasRemoteParent BOOLEAN,
-    Kind INTEGER,
+    kind TINYINT,
     operationName VARCHAR,
     displayName VARCHAR,
     sourceName VARCHAR,
@@ -43,7 +42,7 @@ CREATE TABLE IF NOT EXISTS ""activities""(
     spanId VARCHAR,
     traceId VARCHAR,
     recorded BOOLEAN,
-    activityTraceFlags INTEGER,
+    activityTraceFlags TINYINT,
     parentSpanId VARCHAR
 );
 ";

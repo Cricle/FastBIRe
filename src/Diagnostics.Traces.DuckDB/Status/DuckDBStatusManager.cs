@@ -80,7 +80,6 @@ namespace Diagnostics.Traces.DuckDB.Status
                 complatedTime TIMESTAMP,
                 complateStatus TINYINT
                 );
-                CREATE INDEX IF NOT EXISTS "IX_{tableName}_TIME" ON "{tableName}" ("time") ;
                 """;
         }
         // $"INSERT INTO \"{name}\" VALUES('{scopeName}',NULL,MAP {{}},MAP {{}},NULL,NULL);";

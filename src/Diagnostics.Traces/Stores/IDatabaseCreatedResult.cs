@@ -2,8 +2,10 @@
 {
     public interface IDatabaseCreatedResult : IDisposable
     {
-        public object Root { get; }
+        object Root { get; }
 
-        public string? FilePath { get; }
+        string? FilePath { get; }
+
+        string Key { get; }
     }
 }

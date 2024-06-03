@@ -1,17 +1,16 @@
-﻿using Diagnostics.Traces;
-using System.Text;
+﻿using System.Text;
 
-namespace System.IO
+namespace Diagnostics.Traces
 {
     internal static class StreamWriteStringExtensions
     {
-        public static ValueTask WriteStringAsync(this Stream stream, string value,CancellationToken token = default)
+        public static ValueTask WriteStringAsync(this Stream stream, string value, CancellationToken token = default)
         {
-            return WriteStringAsync(stream, value, Encoding.UTF8, token);
+            return stream.WriteStringAsync(value, Encoding.UTF8, token);
         }
         public static void WriteString(this Stream stream, string value)
         {
-            WriteString(stream, value, Encoding.UTF8);
+            stream.WriteString(value, Encoding.UTF8);
         }
         public static async ValueTask WriteStringAsync(this Stream stream, string value, Encoding encoding, CancellationToken token = default)
         {
