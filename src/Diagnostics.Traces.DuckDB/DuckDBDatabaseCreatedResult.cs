@@ -28,6 +28,8 @@ namespace Diagnostics.Traces.DuckDB
             Key = key;
         }
 
+        private int disposedCount;
+
         private DuckDBNativeConnection? nativeConnection;
 
         public object Root { get; }
@@ -52,7 +54,10 @@ namespace Diagnostics.Traces.DuckDB
 
         public void Dispose()
         {
-            Connection.Dispose();
+            if (Interlocked.Increment(ref disposedCount) == 1)
+            {
+                Connection.Dispose();
+            }
         }
     }
 }

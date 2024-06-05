@@ -113,11 +113,11 @@ namespace Diagnostics.Traces.DuckDB
 
         Task IOpetatorHandler<string>.HandleAsync(string input, CancellationToken token)
         {
-            DatabaseSelector.UnsafeUsingDatabaseResult(input, static (res, sql) =>
+            DatabaseSelector.UsingDatabaseResult(input, static (res, sql) =>
             {
                 DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, sql);
             });
-            DatabaseSelector.UnsafeReportInserted(1);
+            DatabaseSelector.ReportInserted(1);
             return Task.CompletedTask;
         }
 
