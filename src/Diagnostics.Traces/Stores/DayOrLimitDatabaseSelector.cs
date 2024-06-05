@@ -7,7 +7,7 @@ namespace Diagnostics.Traces.Stores
     {
         public const long DefaultLimitCount = 500_000;
 
-        class DatabaseManager
+        class DatabaseManager : IDisposable
         {
             private SpinLock locker;
             private long inserted;
@@ -45,9 +45,12 @@ namespace Diagnostics.Traces.Stores
                 locker.Exit();
             }
 
-            public void Switch(bool checkNeeds = true)
+            public void Switch(bool checkNeeds = true,bool useLocker=true)
             {
-                GetLocker();
+                if (useLocker)
+                {
+                    GetLocker();
+                }
                 try
                 {
                     if (!checkNeeds || (result == null || DateTime.Now.Date != lastCreateTime.Date || inserted > LimitCount))
@@ -72,18 +75,21 @@ namespace Diagnostics.Traces.Stores
                 }
                 finally
                 {
-                    ReleaseLocker();
+                    if (useLocker)
+                    {
+                        ReleaseLocker();
+                    }
                 }
             }
-            private void BeforeUsingDatabaseResult()
+            private void BeforeUsingDatabaseResult(bool checkNeeds = true, bool useLocker = true)
             {
                 if (result == null)
                 {
-                    Switch();
+                    Switch(checkNeeds,useLocker);
                 }
                 if (DateTime.Now.Date != lastCreateTime.Date)
                 {
-                    Switch();
+                    Switch(checkNeeds, useLocker);
                 }
             }
             public void UsingDatabaseResult<TState>(TState state, Action<TResult, TState> @using)
@@ -122,6 +128,78 @@ namespace Diagnostics.Traces.Stores
                 {
                     Switch();
                 }
+            }
+            public void UnsafeUsingDatabaseResult(Action<TResult> @using)
+            {
+                BeforeUsingDatabaseResult(useLocker:false);
+                @using(result!);
+            }
+
+            public void UnsafeUsingDatabaseResult<TState>(TState state, Action<TResult, TState> @using)
+            {
+                BeforeUsingDatabaseResult(useLocker:false);
+                @using(result!, state);
+            }
+
+            public void UnsafeReportInserted(int count)
+            {
+                inserted += count;
+                if (inserted > LimitCount)
+                {
+                    Switch(useLocker:false);
+                }
+            }
+
+            public TReturn UsingDatabaseResult<TReturn>(Func<TResult, TReturn> @using)
+            {
+                BeforeUsingDatabaseResult();
+                GetLocker();
+                try
+                {
+                    return @using(result!);
+
+                }
+                finally
+                {
+                    ReleaseLocker();
+                }
+            }
+
+            public TReturn UnsafeUsingDatabaseResult<TReturn>(Func<TResult, TReturn> @using)
+            {
+                BeforeUsingDatabaseResult(useLocker: false);
+                return @using(result!);
+            }
+
+            public TReturn UsingDatabaseResult<TState, TReturn>(TState state, Func<TResult, TState, TReturn> @using)
+            {
+                BeforeUsingDatabaseResult();
+                GetLocker();
+                try
+                {
+                    return @using(result!,state);
+
+                }
+                finally
+                {
+                    ReleaseLocker();
+                }
+            }
+
+            public TReturn UnsafeUsingDatabaseResult<TState, TReturn>(TState state, Func<TResult, TState, TReturn> @using)
+            {
+                BeforeUsingDatabaseResult(useLocker: false);
+                return @using(result!,state);
+            }
+            public void Dispose()
+            {
+                UsingDatabaseResult(r =>
+                {
+                    if (r is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                });
             }
         }
 
@@ -166,6 +244,46 @@ namespace Diagnostics.Traces.Stores
         public TResult? DangerousGetResult()
         {
             return manager.result;
+        }
+
+        public void UnsafeUsingDatabaseResult(Action<TResult> @using)
+        {
+            manager.UnsafeUsingDatabaseResult(@using);
+        }
+
+        public void UnsafeUsingDatabaseResult<TState>(TState state, Action<TResult, TState> @using)
+        {
+            manager.UnsafeUsingDatabaseResult(state, @using);
+        }
+
+        public void UnsafeReportInserted(int count)
+        {
+            manager.UnsafeReportInserted(count);
+        }
+
+        public void Dispose()
+        {
+            manager.Dispose();
+        }
+
+        public TReturn UsingDatabaseResult<TReturn>(Func<TResult, TReturn> @using)
+        {
+            throw new NotImplementedException();
+        }
+
+        public TReturn UnsafeUsingDatabaseResult<TReturn>(Func<TResult, TReturn> @using)
+        {
+            throw new NotImplementedException();
+        }
+
+        public TReturn UsingDatabaseResult<TState, TReturn>(TState state, Func<TResult, TState, TReturn> @using)
+        {
+            throw new NotImplementedException();
+        }
+
+        public TReturn UnsafeUsingDatabaseResult<TState, TReturn>(TState state, Func<TResult, TState, TReturn> @using)
+        {
+            throw new NotImplementedException();
         }
     }
 }

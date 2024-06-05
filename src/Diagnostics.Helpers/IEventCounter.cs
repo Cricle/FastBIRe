@@ -10,6 +10,8 @@ namespace Diagnostics.Helpers
     {
         IEnumerable<string> EventNames { get; }
 
+        int EventNameCount { get; }
+
         bool AllNotNull { get; }
 
         event EventHandler? Changed;
@@ -27,6 +29,26 @@ namespace Diagnostics.Helpers
     }
     public static class EventCounterOnceExtensions
     {
+        public static void CopyValueTo(this IEventCounterProvider provider, Span<double?> buffer)
+        {
+            var eventNameCount = provider.EventNameCount;
+            if (buffer.Length < eventNameCount)
+            {
+                throw new ArgumentOutOfRangeException($"The buffer size is {buffer.Length} but the data size is {eventNameCount}");
+            }
+            var index = 0;
+            foreach (var item in provider.EventNames)
+            {
+                if (provider.TryGetCounterPayload(item,out var payload))
+                {
+                    buffer[index++] = payload?.Value;
+                }
+                else
+                {
+                    buffer[index++] = null;
+                }
+            }
+        }
         public static IEnumerable<KeyValuePair<string,ICounterPayload?>> EnumerablePlayload(this IEventCounterProvider counter,bool includeEmpty=true)
         {
             foreach (var item in counter.EventNames)

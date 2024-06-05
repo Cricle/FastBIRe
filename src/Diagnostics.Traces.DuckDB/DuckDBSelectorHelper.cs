@@ -13,6 +13,11 @@ namespace Diagnostics.Traces.DuckDB
             int keepFileCount = 10,
             long preLimitCount = DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>.DefaultLimitCount)
         {
+            var dir = new DirectoryInfo(path);
+            if (!dir.Exists)
+            {
+                dir.Create();
+            }
             var selector = new DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>(() =>
             {
                 var fileName = fileNameProvider?.Invoke() ?? $"{DateTime.Now:yyyyMMddHHmmss}.ducktraces";

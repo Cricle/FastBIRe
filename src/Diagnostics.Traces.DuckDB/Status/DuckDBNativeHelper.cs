@@ -1,6 +1,8 @@
-﻿using DuckDB.NET.Data;
+﻿using Diagnostics.Traces.DuckDB.Exceptions;
+using DuckDB.NET.Data;
 using DuckDB.NET.Native;
 using System.Data;
+using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -23,17 +25,28 @@ namespace Diagnostics.Traces.DuckDB.Status
 
         public static DuckDBNativeConnection GetNativeConnection(DuckDBConnection conn)
         {
-            if (conn.State!= ConnectionState.Open)
+            if (conn.State != ConnectionState.Open)
             {
                 throw new InvalidOperationException("The connection must be opened");
             }
             return connectionGetter(conn);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DuckDBQuery(DuckDBNativeConnection connection,string input)
+        public static void DuckDBQuery(DuckDBNativeConnection connection, string input)
         {
-            NativeMethods.Query.DuckDBQuery(connection, input, out var res);
-            NativeMethods.Query.DuckDBDestroyResult(ref res);
+            var state = NativeMethods.Query.DuckDBQuery(connection, input, out var res);
+            try
+            {
+                if (state == DuckDBState.Error)
+                {
+                    var str = NativeMethods.Query.DuckDBResultError(ref res).ToManagedString(false);
+                    throw new DuckTraceDBException(str, state);
+                }
+            }
+            finally
+            {
+                NativeMethods.Query.DuckDBDestroyResult(ref res);
+            }
         }
 
     }

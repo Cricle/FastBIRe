@@ -1,7 +1,6 @@
 ﻿using Diagnostics.Generator.Core;
 using Diagnostics.Traces.DuckDB.Status;
-using DuckDB.NET.Data;
-using DuckDB.NET.Native;
+using Diagnostics.Traces.Stores;
 using FastBIRe;
 using ValueBuffer;
 
@@ -9,20 +8,28 @@ namespace Diagnostics.Traces.DuckDB
 {
     public class DuckDBCounterStoreProvider : ICounterStoreProvider, IOpetatorHandler<string>, IDisposable
     {
-        public DuckDBCounterStoreProvider(DuckDBConnection connection, bool createDropSQL = true, Func<string, string>? nameCreator = null)
+        public DuckDBCounterStoreProvider(IUndefinedDatabaseSelector<DuckDBDatabaseCreatedResult> databaseSelector, bool createDropSQL = false, Func<string, string>? nameCreator = null)
         {
-            Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            DatabaseSelector = databaseSelector ?? throw new ArgumentNullException(nameof(databaseSelector));
             CreateDropSQL = createDropSQL;
             NameCreator = nameCreator ?? DefaultNameCreator;
-            nativeConnection= DuckDBNativeHelper.GetNativeConnection(connection);
-
+            initializeSqls = new List<string>();
+            DatabaseSelector.Initializers.Add(new DelegateResultInitializer<DuckDBDatabaseCreatedResult>(r =>
+            {
+                lock (initializeSqls)
+                {
+                    foreach (var item in initializeSqls)
+                    {
+                        DuckDBNativeHelper.DuckDBQuery(r.NativeConnection, item);
+                    }
+                }
+            }));
             executeBuffer = new BufferOperator<string>(this, false, false);
         }
-
-        private readonly DuckDBNativeConnection nativeConnection;
+        private readonly List<string> initializeSqls;
         private readonly BufferOperator<string> executeBuffer;
 
-        public DuckDBConnection Connection { get; }
+        public IUndefinedDatabaseSelector<DuckDBDatabaseCreatedResult> DatabaseSelector { get; }
 
         public bool CreateDropSQL { get; }
 
@@ -44,7 +51,15 @@ namespace Diagnostics.Traces.DuckDB
         public Task InitializeAsync(string name, IEnumerable<CounterStoreColumn> columns)
         {
             var sql = GetCreateTableSql(name, CreateDropSQL, columns);
-            Connection.ExecuteNoQuery(sql);
+
+            lock (initializeSqls)
+            {
+                initializeSqls.Add(sql);
+            }
+            DatabaseSelector.UsingDatabaseResult(sql,static (res,ql) =>
+            {
+                DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, ql);
+            });
             return Task.CompletedTask;
         }
 
@@ -60,31 +75,16 @@ namespace Diagnostics.Traces.DuckDB
             s.Append("INSERT INTO \"");
             s.Append(tableName);
             s.Append("\" VALUES ");
-
-            var isFirst = true;
+            var nowStr = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.ffff");
             foreach (var item in values)
             {
-                if (isFirst)
-                {
-                    isFirst = false;
-                }
-                else
-                {
-                    s.Append(',');
-                }
-                var isInnerFirst = true;
-                s.Append('(');
+                s.Append("('");
+                s.Append(nowStr);
+                s.Append('\'');
                 foreach (var val in item)
                 {
-                    if (isInnerFirst)
-                    {
-                        isInnerFirst = false;
-                    }
-                    else
-                    {
-                        s.Append(',');
-                    }
-                    s.Append(DuckHelper.WrapValue(item));
+                    s.Append(',');
+                    s.Append(DuckHelper.WrapValue(val));
                 }
 
                 s.Append(')');
@@ -102,19 +102,10 @@ namespace Diagnostics.Traces.DuckDB
             {
                 s.Append($"DROP TABLE IF EXISTS \"{tableName}\";");
             }
-            s.Append($"CREATE TABLE IF NOT EXISTS \"{tableName}\"(");
-            var isFirst = true;
+            s.Append($"CREATE TABLE IF NOT EXISTS \"{tableName}\"(ts DATETIME");
             foreach (var item in columns)
             {
-                if (isFirst)
-                {
-                    isFirst = false;
-                }
-                else
-                {
-                    s.Append(',');
-                }
-                s.Append($"\"{item.Name}\" DOUBLE\n");
+                s.Append($",\"{item.Name}\" DOUBLE\n");
             }
             s.Append(");");
             return s.ToString();
@@ -122,7 +113,11 @@ namespace Diagnostics.Traces.DuckDB
 
         Task IOpetatorHandler<string>.HandleAsync(string input, CancellationToken token)
         {
-            DuckDBNativeHelper.DuckDBQuery(nativeConnection, input);
+            DatabaseSelector.UnsafeUsingDatabaseResult(input, static (res, sql) =>
+            {
+                DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, sql);
+            });
+            DatabaseSelector.UnsafeReportInserted(1);
             return Task.CompletedTask;
         }
 

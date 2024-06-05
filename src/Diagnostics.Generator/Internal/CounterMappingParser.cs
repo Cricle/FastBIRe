@@ -263,6 +263,8 @@ yield return {builderName}.Build();
             
         public static global::System.Collections.Generic.IEnumerable<global::System.String> SupportEventNames => valueSetter.Keys;
 
+        public static global::System.Int32 SupportEventNameCount => valueSetter.Count;
+
         public static global::System.Boolean IsSupportEventName(global::System.String name)
         {{
             return valueSetter.ContainsKey(name);
@@ -289,6 +291,8 @@ yield return {builderName}.Build();
         public global::System.Boolean AllNotNull => {string.Join("&&\n", fields.Select(x => $"{specialNames[x.Name]} != null"))};
 
         public global::System.Collections.Generic.IEnumerable<global::System.String> EventNames => valueSetter.Keys;
+
+        public global::System.Int32 EventNameCount => valueSetter.Count;
 
         public void Reset()
         {{

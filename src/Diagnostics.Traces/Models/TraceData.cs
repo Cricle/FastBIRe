@@ -9,7 +9,7 @@
             Exceptions = exceptions;
         }
 
-        public static TraceData Create(IEnumerable<LogEntity> logs,IEnumerable<AcvtityEntity> acvtities,IEnumerable<ExceptionEntity> exceptions)
+        public static TraceData Create(IEnumerable<LogEntity> logs, IEnumerable<AcvtityEntity> acvtities, IEnumerable<ExceptionEntity> exceptions)
         {
             var tlogs = logs.GroupBy(static x => x.GetTraceKey()).ToDictionary(static x => x.Key, static x => x.ToList());
             var tactivities = acvtities.GroupBy(static x => x.GetParentTraceKey()).ToDictionary(static x => x.Key, static x => x.ToList());
@@ -17,9 +17,9 @@
             return new TraceData(tlogs, tactivities, texceptions);
         }
 
-        public Dictionary<TraceKey,List<LogEntity>> Logs { get; }
+        public Dictionary<TraceKey, List<LogEntity>> Logs { get; }
 
-        public Dictionary<TraceKey,List<AcvtityEntity>> Acvtities { get; }
+        public Dictionary<TraceKey, List<AcvtityEntity>> Acvtities { get; }
 
         public Dictionary<TraceKey, List<ExceptionEntity>> Exceptions { get; }
 
@@ -27,9 +27,9 @@
         {
             var trees = new List<TraceTree>();
             var allRootActivities = Acvtities.Values.SelectMany(x => x.Where(y => y.IsRootSpan()));
-            foreach (var activity in allRootActivities) 
+            foreach (var activity in allRootActivities)
             {
-                var tree=new TraceTree(activity);
+                var tree = new TraceTree(activity);
                 BuildTree(tree);
                 trees.Add(tree);
             }

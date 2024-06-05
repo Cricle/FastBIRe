@@ -46,6 +46,8 @@ namespace Diagnostics.Helpers
 
         public IEnumerable<string> EventNames => this.SelectMany(x => x.EventNames).Distinct();
 
+        public int EventNameCount => EventNames.Count();
+
         public event EventHandler? Changed;
 
         public IEnumerator<IEventCounterProvider> GetEnumerator()

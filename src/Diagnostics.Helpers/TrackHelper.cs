@@ -9,7 +9,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -112,7 +111,7 @@ namespace Tracker
                 await writer.WriteLineAsync($"\t TotalFreeSpace:       {driverInfo.TotalFreeSpace}({FormatBytes(driverInfo.TotalFreeSpace)})");
             }
         }
-        public static async Task WriteGcDumpAsync(TextWriter writer,int processId)
+        public static async Task WriteGcDumpAsync(TextWriter writer, int processId)
         {
             GcDumpHelper.TryCollectMemoryGraph(processId, 10_000, null, out var mg, default);
             await GcDumpHelper.WriteAsync(mg, writer);
@@ -122,7 +121,7 @@ namespace Tracker
             var ss = StackHelper.GetStackSnapshots(processId);
             return writer.WriteAsync(ss.ToString());
         }
-        public static async Task<IList<MetersResult>> WriteMetersAsync(int processId,IEnumerable<MetersIdentity> meters,TimeSpan delayTime)
+        public static async Task<IList<MetersResult>> WriteMetersAsync(int processId, IEnumerable<MetersIdentity> meters, TimeSpan delayTime)
         {
             var results = new List<MetersResult>();
             foreach (var item in meters)
@@ -131,11 +130,11 @@ namespace Tracker
             }
             return results;
         }
-        public static void Dump(int processId,string path)
+        public static void Dump(int processId, string path)
         {
             DumpHelper.Dump(processId, path);
         }
-        public static async Task WriteTraceAsync(Stream stream, int processId,TimeSpan timeout)
+        public static async Task WriteTraceAsync(Stream stream, int processId, TimeSpan timeout)
         {
             var token = new CancellationTokenSource(timeout);
             var providers = new List<EventPipeProvider>();
@@ -156,13 +155,13 @@ namespace Tracker
         {
             var meters = EventSampleCreatorCreateHelper.GetIntervalSample(identity.EventSampleCreator, processId, TimeSpan.FromSeconds(1));
             await Task.Delay(delayTime);
-            return new MetersResult(identity, meters.Counter.ToString()??string.Empty);
+            return new MetersResult(identity, meters.Counter.ToString() ?? string.Empty);
         }
         public static unsafe string GetSystemInfo()
         {
             try
             {
-                
+
                 if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                 {
                     Windows.Win32.System.SystemInformation.MEMORYSTATUSEX mem = default;
