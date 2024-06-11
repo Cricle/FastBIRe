@@ -11,6 +11,12 @@ namespace Diagnostics.Helpers
         public const string AspNetCoreHosting = "Microsoft.AspNetCore.Hosting";
         public const string Kestrel = "Microsoft-AspNetCore-Server-Kestrel";
         public const string DotNetRuntimePrivate = "Microsoft-Windows-DotNETRuntimePrivate";
+        public const string EFCorePrivate = "Microsoft.EntityFrameworkCore";
+        public const string AspNetCoreHttpConnection = "Microsoft.AspNetCore.Http.Connections";
+        public const string NetHttp= "System.Net.Http";
+        public const string NetNameResolution = "System.Net.NameResolution";
+        public const string NetSecurity = "System.Net.Security";
+        public const string NetSockets = "System.Net.Sockets";
 
         public const string Runtime = "System.Runtime";
         public const string Database = "database";
