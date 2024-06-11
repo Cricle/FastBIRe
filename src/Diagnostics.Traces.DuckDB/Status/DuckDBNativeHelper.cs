@@ -2,7 +2,6 @@
 using DuckDB.NET.Data;
 using DuckDB.NET.Native;
 using System.Data;
-using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -17,9 +16,9 @@ namespace Diagnostics.Traces.DuckDB.Status
         {
             var par = Expression.Parameter(typeof(DuckDBConnection));
             var connRef = typeof(DuckDBConnection).GetField("connectionReference", BindingFlags.NonPublic | BindingFlags.Instance);
-            var connProp = connRef.FieldType.GetProperty("NativeConnection", BindingFlags.Public | BindingFlags.Instance);
+            var connProp = connRef!.FieldType.GetProperty("NativeConnection", BindingFlags.Public | BindingFlags.Instance);
             var getRef = Expression.Field(par, connRef);
-            var body = Expression.Call(Expression.Convert(getRef, connRef.FieldType), connProp.GetMethod);
+            var body = Expression.Call(Expression.Convert(getRef, connRef.FieldType), connProp!.GetMethod!);
             connectionGetter = Expression.Lambda<Func<DuckDBConnection, DuckDBNativeConnection>>(body, par).Compile();
         }
 

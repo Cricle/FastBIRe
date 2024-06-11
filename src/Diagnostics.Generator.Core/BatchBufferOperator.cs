@@ -38,7 +38,7 @@ namespace Diagnostics.Generator.Core
 
         public event EventHandler<Exception>? ExceptionRaised;
 
-        private async Task HandleTimeLoopAsync(object state)
+        private async Task HandleTimeLoopAsync(object? state)
         {
             var opetator = (BatchBufferOperator<T>)state!;
             var tk = opetator.tokenSource;
@@ -58,7 +58,7 @@ namespace Diagnostics.Generator.Core
             }
         }
 
-        private async Task HandleAsync(object state)
+        private async Task HandleAsync(object? state)
         {
             var opetator = (BatchBufferOperator<T>)state!;
             var tk = opetator.tokenSource;

@@ -6,6 +6,7 @@
 		<Description>Event source generator</Description>
 		<PackageId>Fast.Diagnostics.Generator</PackageId>
 		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<PropertyGroup Condition="$(PublishAot)!='' or $(PublishSingleFile)!=''">
 		<TargetFrameworks>net8.0</TargetFrameworks>

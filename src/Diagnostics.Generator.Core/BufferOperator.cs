@@ -42,7 +42,7 @@ namespace Diagnostics.Generator.Core
 
         public event EventHandler<BufferOperatorExceptionEventArgs<T>>? ExceptionRaised;
 
-        private async Task HandleAsync(object state)
+        private async Task HandleAsync(object? state)
         {
             var channel = (BufferOperator<T>)state!;
             var tokenSource = channel.tokenSource;

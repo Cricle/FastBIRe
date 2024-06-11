@@ -33,17 +33,19 @@ namespace Diagnostics.Generator.Core
     public class SumCalculator<T> : SynchronousCalculator<T>
         where T : IAdditionOperators<T, T, T>
     {
-        private T sum = default;
+        private T? sum = default;
 
         public override T GetValue()
         {
             Thread.MemoryBarrier();
-            return sum;
+            return sum!;
         }
 
         protected override Task OnProcessAsync(T value, CancellationToken token)
         {
-            sum = sum + value;
+#nullable disable
+            sum += value;
+#nullable enable
             RaiseUpdated(new SynchronousCalculatorResult<T>(value, sum));
             return Task.CompletedTask;
         }

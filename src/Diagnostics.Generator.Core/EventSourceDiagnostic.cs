@@ -9,7 +9,7 @@ namespace Diagnostics.Generator.Core
 
     public static class EventSourceDiagnostic
     {
-        public static Task<EventWrittenEventArgs> GetOnceAsync<TEventSource>(TEventSource eventSource, EventLevel eventLevel = EventLevel.LogAlways, EventKeywords matchAnyKeyword = EventKeywords.None, IDictionary<string, string> arguments = null, CancellationToken token = default)
+        public static Task<EventWrittenEventArgs> GetOnceAsync<TEventSource>(TEventSource eventSource, EventLevel eventLevel = EventLevel.LogAlways, EventKeywords matchAnyKeyword = EventKeywords.None, IDictionary<string, string?>? arguments = null, CancellationToken token = default)
             where TEventSource : EventSource
         {
             var taskSource = new TaskCompletionSource<EventWrittenEventArgs>();

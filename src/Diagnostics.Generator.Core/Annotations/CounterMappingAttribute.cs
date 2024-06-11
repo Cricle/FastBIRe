@@ -7,7 +7,7 @@ namespace Diagnostics.Generator.Core.Annotations
     {
         public bool ForAnysProviders { get; set; }
 
-        public string[] ForProviders { get; set; }
+        public string[]? ForProviders { get; set; }
 
         public bool WithInterval { get; set; }
 

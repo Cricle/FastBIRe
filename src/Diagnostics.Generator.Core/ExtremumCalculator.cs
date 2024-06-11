@@ -11,7 +11,7 @@ namespace Diagnostics.Generator.Core
 
         public ExtremumTypes Extremum { get; }
 
-        public ExtremumCalculator(ExtremumTypes extremum, IComparer<T> comparer = null)
+        public ExtremumCalculator(ExtremumTypes extremum, IComparer<T>? comparer = null)
         {
             Comparer = comparer ?? Comparer<T>.Default;
             Extremum = extremum;

@@ -17,7 +17,7 @@ namespace Diagnostics.Generator.Core
 
         public CancellationTokenSource TokenSource { get; }
 
-        public event EventHandler<CalculatorErrorEventArgs<T>> ErrorRaised;
+        public event EventHandler<CalculatorErrorEventArgs<T>>? ErrorRaised;
 
         public ChannelWriter<T> ChannelWriter { get; }
 
@@ -76,7 +76,7 @@ namespace Diagnostics.Generator.Core
         {
             while (await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
             {
-                while (reader.TryRead(out T item))
+                while (reader.TryRead(out T? item))
                 {
                     yield return item;
                 }

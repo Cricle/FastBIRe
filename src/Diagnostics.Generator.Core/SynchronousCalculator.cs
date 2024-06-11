@@ -4,7 +4,7 @@ namespace Diagnostics.Generator.Core
 {
     public abstract class SynchronousCalculator<T> : SynchronousExecuter<T>
     {
-        public event EventHandler<SynchronousCalculatorResult<T>> Updated;
+        public event EventHandler<SynchronousCalculatorResult<T>>? Updated;
 
         public abstract T GetValue();
 

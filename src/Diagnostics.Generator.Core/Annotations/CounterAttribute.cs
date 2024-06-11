@@ -22,8 +22,8 @@ namespace Diagnostics.Generator.Core.Annotations
 
         public double DisplayRateTimeScaleMs { get; set; }
 
-        public string DisplayName { get; set; }
+        public string? DisplayName { get; set; }
 
-        public string DisplayUnits { get; set; }
+        public string? DisplayUnits { get; set; }
     }
 }
