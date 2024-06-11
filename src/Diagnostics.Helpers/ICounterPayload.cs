@@ -1,6 +1,7 @@
 ﻿using Microsoft.Diagnostics.Monitoring.EventPipe;
 using Microsoft.Diagnostics.Tracing;
 using System;
+using System.Diagnostics.Tracing;
 
 namespace Diagnostics.Helpers
 {
@@ -37,6 +38,10 @@ namespace Diagnostics.Helpers
 
         int Series { get; }
 
-        TraceEvent TraceEvent { get; }
+        TraceEvent? TraceEvent { get; }
+
+        EventSource? EventSource { get; }
+
+        EventWrittenEventArgs? WrittenEventArgs { get; }
     }
 }

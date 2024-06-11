@@ -63,7 +63,7 @@ namespace Diagnostics.Generator.Internal
             var supportProviderCount = forAnyProviders ? "null" : (forProviders?.Length ?? 0).ToString();
             if (forProviders != null && forProviders.Length != 0)
             {
-                forProviderChecks = $"(payload.TraceEvent!=null&&forProviderNames.Contains(payload.TraceEvent.ProviderName))&&" + forProviderChecks;
+                forProviderChecks = $"((payload.TraceEvent!=null||payload.WrittenEventArgs!=null)&&forProviderNames.Contains(payload.TraceEvent?.ProviderName??payload.EventSource!.Name))&&" + forProviderChecks;
                 forProviderInits = string.Join(",", forProviders.Select(x => $"\"{x}\""));
             }
             var nullableDeclareStart = string.Empty;
@@ -228,7 +228,7 @@ yield return {builderName}.Build();
 
         public global::Diagnostics.Helpers.ISampleProvider GetIntervalSample(global::Diagnostics.Helpers.ICounterResult counterResult, global::System.TimeSpan interval)
         {{
-            return new global::Diagnostics.Helpers.SampleResult<{symbol.Name}>(counterResult, (Interval{symbol.Name})CreateCounterProvider());
+            return new global::Diagnostics.Helpers.SampleResult<{symbol.Name}>(counterResult, (Interval{symbol.Name})CreateIntervalCounterProvider(interval));
         }}
 
         public global::System.Collections.Generic.IEnumerable<global::Microsoft.Diagnostics.NETCore.Client.EventPipeProvider> GetProviders(global::System.Action<global::Diagnostics.Helpers.IEventPipeProviderBuilder>? builderConfig = null)

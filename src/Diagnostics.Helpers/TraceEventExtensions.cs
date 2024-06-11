@@ -56,6 +56,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
                     -1,
                     -1,
                     MakeTagString(instrument.Tags,tags),
+                    null,
                     null);
 
             return true;
@@ -163,7 +164,8 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
                     intervalSec,
                     seriesValue / 1000,
                     metadata,
-                    null);
+                    null,
+                    eventArgs);
 
                 return true;
             }
@@ -249,7 +251,8 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
                     intervalSec,
                     seriesValue / 1000,
                     metadata,
-                    traceEvent);
+                    traceEvent,
+                    null);
 
                 return true;
             }
@@ -333,13 +336,13 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             // the value might be an empty string indicating no measurement was provided this collection interval
             if (double.TryParse(lastValueText, NumberStyles.Number | NumberStyles.Float, CultureInfo.InvariantCulture, out double lastValue))
             {
-                payload = new GaugePayload(GetCounterMetadata(meterName, instrumentName), null, unit, tags, lastValue, obj.TimeStamp, obj);
+                payload = new GaugePayload(GetCounterMetadata(meterName, instrumentName), null, unit, tags, lastValue, obj.TimeStamp, obj,null);
             }
             else
             {
                 // for observable instruments we assume the lack of data is meaningful and remove it from the UI
                 // this happens when the Gauge callback function throws an exception.
-                payload = new CounterEndedPayload(GetCounterMetadata(meterName, instrumentName), obj.TimeStamp, obj);
+                payload = new CounterEndedPayload(GetCounterMetadata(meterName, instrumentName), obj.TimeStamp, obj, null);
             }
         }
 
@@ -364,7 +367,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
 
             if (traceEvent.Version < 1)
             {
-                payload = new BeginInstrumentReportingPayload(GetCounterMetadata(meterName, instrumentName), traceEvent.TimeStamp, traceEvent);
+                payload = new BeginInstrumentReportingPayload(GetCounterMetadata(meterName, instrumentName), traceEvent.TimeStamp, traceEvent, null);
             }
             else
             {
@@ -372,7 +375,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
                 string meterTags = (string)traceEvent.PayloadValue(8);
                 string meterScopeHash = (string)traceEvent.PayloadValue(9);
 
-                payload = new BeginInstrumentReportingPayload(GetCounterMetadata(meterName, instrumentName, meterTags, instrumentTags, meterScopeHash), traceEvent.TimeStamp,traceEvent);
+                payload = new BeginInstrumentReportingPayload(GetCounterMetadata(meterName, instrumentName, meterTags, instrumentTags, meterScopeHash), traceEvent.TimeStamp,traceEvent, null);
             }
         }
 
@@ -401,14 +404,14 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
 
             if (double.TryParse(rateText, NumberStyles.Number | NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
             {
-                payload = new RatePayload(GetCounterMetadata(meterName, instrumentName), null, unit, tags, value, counterConfiguration.CounterFilter.DefaultIntervalSeconds, traceEvent.TimeStamp, traceEvent);
+                payload = new RatePayload(GetCounterMetadata(meterName, instrumentName), null, unit, tags, value, counterConfiguration.CounterFilter.DefaultIntervalSeconds, traceEvent.TimeStamp, traceEvent, null);
             }
             else
             {
                 // for observable instruments we assume the lack of data is meaningful and remove it from the UI
                 // this happens when the ObservableCounter callback function throws an exception
                 // or when the ObservableCounter doesn't include a measurement for a particular set of tag values.
-                payload = new CounterEndedPayload(GetCounterMetadata(meterName, instrumentName), traceEvent.TimeStamp, traceEvent);
+                payload = new CounterEndedPayload(GetCounterMetadata(meterName, instrumentName), traceEvent.TimeStamp, traceEvent, null);
             }
         }
 
@@ -439,7 +442,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             if (double.TryParse(valueText, NumberStyles.Number | NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
             {
                 // UpDownCounter reports the value, not the rate - this is different than how Counter behaves.
-                payload = new UpDownCounterPayload(GetCounterMetadata(meterName, instrumentName), null, unit, tags, value, traceEvent.TimeStamp, traceEvent);
+                payload = new UpDownCounterPayload(GetCounterMetadata(meterName, instrumentName), null, unit, tags, value, traceEvent.TimeStamp, traceEvent, null);
 
             }
             else
@@ -447,7 +450,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
                 // for observable instruments we assume the lack of data is meaningful and remove it from the UI
                 // this happens when the ObservableUpDownCounter callback function throws an exception
                 // or when the ObservableUpDownCounter doesn't include a measurement for a particular set of tag values.
-                payload = new CounterEndedPayload(GetCounterMetadata(meterName, instrumentName), traceEvent.TimeStamp, traceEvent);
+                payload = new CounterEndedPayload(GetCounterMetadata(meterName, instrumentName), traceEvent.TimeStamp, traceEvent, null);
             }
         }
 
@@ -477,7 +480,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             //Note quantiles can be empty.
             IList<Quantile> quantiles = ParseQuantiles(quantilesText);
 
-            payload = new AggregatePercentilePayload(GetCounterMetadata(meterName, instrumentName), null, unit, tags, quantiles, obj.TimeStamp, obj);
+            payload = new AggregatePercentilePayload(GetCounterMetadata(meterName, instrumentName), null, unit, tags, quantiles, obj.TimeStamp, obj, null);
         }
 
         private static void HandleHistogramLimitReached(TraceEvent obj, CounterConfiguration configuration, out ICounterPayload payload)
@@ -493,7 +496,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
 
             string errorMessage = $"Warning: Histogram tracking limit ({configuration.MaxHistograms}) reached. Not all data is being shown. The limit can be changed but will use more memory in the target process.";
 
-            payload = new ErrorPayload(errorMessage, obj.TimeStamp, EventType.HistogramLimitError, obj);
+            payload = new ErrorPayload(errorMessage, obj.TimeStamp, EventType.HistogramLimitError, obj, null);
         }
 
         private static void HandleTimeSeriesLimitReached(TraceEvent obj, CounterConfiguration configuration, out ICounterPayload payload)
@@ -509,7 +512,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
 
             string errorMessage = $"Warning: Time series tracking limit ({configuration.MaxTimeseries}) reached. Not all data is being shown. The limit can be changed but will use more memory in the target process.";
 
-            payload = new ErrorPayload(errorMessage, obj.TimeStamp, EventType.TimeSeriesLimitError, obj);
+            payload = new ErrorPayload(errorMessage, obj.TimeStamp, EventType.TimeSeriesLimitError, obj, null);
         }
 
         private static void HandleError(TraceEvent obj, CounterConfiguration configuration, out ICounterPayload payload)
@@ -525,7 +528,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
 
             string errorMessage = "Error reported from target process:" + Environment.NewLine + error;
 
-            payload = new ErrorPayload(errorMessage, obj.TimeStamp, EventType.ErrorTargetProcess, obj);
+            payload = new ErrorPayload(errorMessage, obj.TimeStamp, EventType.ErrorTargetProcess, obj, null);
         }
 
         private static void HandleMultipleSessionsNotSupportedError(TraceEvent obj, CounterConfiguration configuration, out ICounterPayload payload)
@@ -544,7 +547,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
                 string errorMessage = "Error: Another metrics collection session is already in progress for the target process." + Environment.NewLine +
                 "Concurrent sessions are not supported.";
 
-                payload = new ErrorPayload(errorMessage, obj.TimeStamp, EventType.MultipleSessionsNotSupportedError, obj);
+                payload = new ErrorPayload(errorMessage, obj.TimeStamp, EventType.MultipleSessionsNotSupportedError, obj, null);
             }
         }
 
@@ -595,7 +598,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
 
             if (TryCreateSharedSessionConfiguredIncorrectlyMessage(obj, clientId, out string message))
             {
-                payload = new ErrorPayload(message.ToString(), obj.TimeStamp, EventType.MultipleSessionsConfiguredIncorrectlyError,obj);
+                payload = new ErrorPayload(message.ToString(), obj.TimeStamp, EventType.MultipleSessionsConfiguredIncorrectlyError,obj, null);
 
                 inactiveSharedSessions.Add(clientId);
             }
@@ -616,7 +619,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             string errorMessage = "Exception thrown from an observable instrument callback in the target process:" + Environment.NewLine +
                 error;
 
-            payload = new ErrorPayload(errorMessage, obj.TimeStamp, EventType.ObservableInstrumentCallbackError, obj);
+            payload = new ErrorPayload(errorMessage, obj.TimeStamp, EventType.ObservableInstrumentCallbackError, obj, null);
         }
         private static List<Quantile> ParseQuantiles(string quantileList)
         {

@@ -16,7 +16,7 @@ namespace Diagnostics.Helpers
         {
             if (interval.TotalMilliseconds <= 0)
             {
-                throw new ArgumentOutOfRangeException($"The interval must more than 1s");
+                throw new ArgumentOutOfRangeException($"The interval must more than 1ms");
             }
             Interval = interval;
             Executer = executer;
