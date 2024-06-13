@@ -4,6 +4,8 @@ namespace Diagnostics.Traces.Status
 {
     public abstract class StatusManagerBase : IStatusManager
     {
+        public abstract IStatusStorageManager StatusStorageManager { get; }
+
         public abstract Task<long> CleanAsync(string name, CancellationToken token = default);
         public abstract Task<long> CleanBeforeAsync(string name, DateTime time, CancellationToken token = default);
 

@@ -268,22 +268,22 @@ namespace Diagnostics.Traces.Stores
 
         public TReturn UsingDatabaseResult<TReturn>(Func<TResult, TReturn> @using)
         {
-            throw new NotImplementedException();
+            return manager.UsingDatabaseResult(@using);
         }
 
         public TReturn UnsafeUsingDatabaseResult<TReturn>(Func<TResult, TReturn> @using)
         {
-            throw new NotImplementedException();
+            return manager.UsingDatabaseResult(@using);
         }
 
         public TReturn UsingDatabaseResult<TState, TReturn>(TState state, Func<TResult, TState, TReturn> @using)
         {
-            throw new NotImplementedException();
+            return manager.UsingDatabaseResult(state,@using);
         }
 
         public TReturn UnsafeUsingDatabaseResult<TState, TReturn>(TState state, Func<TResult, TState, TReturn> @using)
         {
-            throw new NotImplementedException();
+            return manager.UsingDatabaseResult(state, @using);
         }
     }
 }

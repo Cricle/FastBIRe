@@ -1,8 +1,6 @@
 ﻿using Diagnostics.Generator.Core;
 using Diagnostics.Traces.Status;
-using DuckDB.NET.Data;
-using DuckDB.NET.Native;
-using System.Collections.Concurrent;
+using Diagnostics.Traces.Stores;
 using System.Data;
 using System.Runtime.CompilerServices;
 
@@ -10,43 +8,18 @@ namespace Diagnostics.Traces.DuckDB.Status
 {
     public class DuckDBStatusManager : StatusManagerBase, IOpetatorHandler<string>, IBatchOperatorHandler<string>
     {
-        public static readonly TimeSpan DefaultVacuumTime = TimeSpan.FromMinutes(1);
-
-        public static DuckDBStatusManager FromDefault(DuckDBConnection connection, StatusRemoveMode removeMode = StatusRemoveMode.DropSucceed)
-        {
-            return new DuckDBStatusManager(connection,DefaultVacuumTime,removeMode);
-        }
-        public static DuckDBStatusManager FromDefault(string connectionString, StatusRemoveMode removeMode = StatusRemoveMode.DropSucceed)
-        {
-            var duck = new DuckDBConnection(connectionString);
-            duck.Open();
-            return new DuckDBStatusManager(duck, DefaultVacuumTime, removeMode);
-        }
-
-        private readonly ConcurrentDictionary<string, DuckDBPrepare> prepares = new ConcurrentDictionary<string, DuckDBPrepare>();
+        private static readonly Random random = new Random();
         private readonly BufferOperator<string> bufferOperator;
-        private readonly DuckDBNativeConnection nativeConnection;
-        private readonly TimerHandler? vacuumTimerHandler;
 
-        public DuckDBStatusManager(DuckDBConnection connection, TimeSpan? vacuumDelayTime, StatusRemoveMode removeMode= StatusRemoveMode.DropSucceed)
+        public DuckDBStatusManager(IUndefinedDatabaseSelector<DuckDBDatabaseCreatedResult> databaseSelector, StatusRemoveMode removeMode = StatusRemoveMode.DropSucceed)
         {
-            if (connection.State != ConnectionState.Open)
-            {
-                connection.Open();
-            }
-            Connection = connection ?? throw new ArgumentNullException(nameof(connection));
+            DatabaseSelector = databaseSelector ?? throw new ArgumentNullException(nameof(databaseSelector));
+            StatusStorageManager = new DefaultStatusStorageManager();
             bufferOperator = new BufferOperator<string>(this, false, false);
-            nativeConnection = DuckDBNativeHelper.GetNativeConnection(connection);
             RemoveMode = removeMode;
-            if (vacuumDelayTime != null)
-            {
-                vacuumTimerHandler = new TimerHandler(vacuumDelayTime.Value, VacuumHandle);
-            }
         }
 
-        public TimeSpan? VacuumDelayTime { get; }
-
-        public DuckDBConnection Connection { get; }
+        public IUndefinedDatabaseSelector<DuckDBDatabaseCreatedResult> DatabaseSelector { get; }
 
         public int UnComplateSqlCount => bufferOperator.UnComplatedCount;
 
@@ -54,19 +27,12 @@ namespace Diagnostics.Traces.DuckDB.Status
 
         public bool WithCheckpoint { get; set; }
 
+        public override IStatusStorageManager StatusStorageManager { get; }
+
         public event EventHandler<BufferOperatorExceptionEventArgs<string>>? ExceptionRaised
         {
             add { bufferOperator.ExceptionRaised += value; }
             remove { bufferOperator.ExceptionRaised -= value; }
-        }
-
-        private void VacuumHandle()
-        {
-            if (WithCheckpoint)
-            {
-                bufferOperator.Add("CHECKPOINT;");
-            }
-            bufferOperator.Add("VACUUM;");
         }
 
         private string CreateTableSql(string tableName)
@@ -74,7 +40,6 @@ namespace Diagnostics.Traces.DuckDB.Status
             return $"""
                 CREATE TABLE IF NOT EXISTS "{tableName}"(
                 time DATETIME NOT NULL,
-                nowStatus VARCHAR,
                 logs MAP(TIMESTAMP,VARCHAR),
                 status MAP(TIMESTAMP,VARCHAR),
                 complatedTime TIMESTAMP,
@@ -82,12 +47,9 @@ namespace Diagnostics.Traces.DuckDB.Status
                 );
                 """;
         }
-        // $"INSERT INTO \"{name}\" VALUES('{scopeName}',NULL,MAP {{}},MAP {{}},NULL,NULL);";
-        //        CREATE INDEX IF NOT EXISTS "IX_{tableName}_TIME" ON "{tableName}" ("time") ;
         private static StatusInfo ReadStautsInfo(IDataRecord record)
         {
             return new StatusInfo(record.GetDateTime(0),
-                record.IsDBNull(1) ? null : record.GetString(1),
                 ReadTimePairs(record[2]),
                 ReadTimePairs(record[3]),
                 record.IsDBNull(4) ? null : record.GetDateTime(4),
@@ -95,7 +57,7 @@ namespace Diagnostics.Traces.DuckDB.Status
         }
         private static List<TimePairValue> ReadTimePairs(object? value)
         {
-            if (value is Dictionary<DateTime,string> map)
+            if (value is Dictionary<DateTime, string> map)
             {
                 var lst = new List<TimePairValue>();
                 foreach (var item in map)
@@ -108,50 +70,50 @@ namespace Diagnostics.Traces.DuckDB.Status
         }
         public override long? Count(string name)
         {
-            using (var comm = Connection.CreateCommand())
+            return DatabaseSelector.UsingDatabaseResult<string,long?>(name, static (res, ql) =>
             {
-                comm.CommandText = $"SELECT COUNT(*) FROM \"{name}\";";
-                using (var reader = comm.ExecuteReader())
+                var tables = new List<string>();
+                using (var comm = res.Connection.CreateCommand())
                 {
-                    var tables = new List<string>();
-                    if (reader.Read())
+                    comm.CommandText = $"SELECT COUNT(*) FROM \"{ql}\";";
+                    using (var reader = comm.ExecuteReader())
                     {
-                        return reader.GetInt64(0);
+                        if (reader.Read())
+                        {
+                            return reader.GetInt64(0);
+                        }
                     }
                 }
-            }
-            return null;
+                return null;
+            });
         }
 
         public override IReadOnlyList<string> GetNames()
         {
-            using (var comm = Connection.CreateCommand())
+            return DatabaseSelector.UsingDatabaseResult(string.Empty, static (res, ql) =>
             {
-                comm.CommandText = "SHOW TABLES;";
-                using (var reader = comm.ExecuteReader())
+                var tables = new List<string>();
+                using (var comm = res.Connection.CreateCommand())
                 {
-                    var tables = new List<string>();
-                    while (reader.Read())
+                    comm.CommandText = "SHOW TABLES;";
+                    using (var reader = comm.ExecuteReader())
                     {
-                        tables.Add(reader.GetString(0));
+                        while (reader.Read())
+                        {
+                            tables.Add(reader.GetString(0));
+                        }
                     }
-                    return tables;
                 }
-            }
+                return tables;
+            });
         }
         public override void Dispose()
         {
             try
             {
-                foreach (var item in prepares)
-                {
-                    item.Value.Dispose();
-                }
-                vacuumTimerHandler?.Dispose();
-                prepares.Clear();
                 bufferOperator.Dispose();
 
-                Connection.Dispose();
+                DatabaseSelector.Dispose();
             }
             catch (Exception ex)
             {
@@ -200,108 +162,122 @@ namespace Diagnostics.Traces.DuckDB.Status
             return $"SELECT * FROM \"{name}\" WHERE \"time\" = '{key}';";
         }
 
-        public override async IAsyncEnumerable<StatusInfo> FindAsync(string name, DateTime? leftTime = null, DateTime? rightTime = null,[EnumeratorCancellation] CancellationToken token = default)
+        public override async IAsyncEnumerable<StatusInfo> FindAsync(string name, DateTime? leftTime = null, DateTime? rightTime = null, [EnumeratorCancellation] CancellationToken token = default)
         {
             var sql = CreateQuerySql(name, leftTime, rightTime);
 
-            using (var comm=Connection.CreateCommand())
+            var res = DatabaseSelector.UsingDatabaseResult(sql,static (res, ql) =>
             {
-                comm.CommandText = sql;
-                using (var reader=await comm.ExecuteReaderAsync())
+                var r = new List<StatusInfo>();
+                using (var comm = res.Connection.CreateCommand())
                 {
-                    while (await reader.ReadAsync())
+                    comm.CommandText = ql;
+                    using (var reader = comm.ExecuteReader())
                     {
-                        yield return ReadStautsInfo(reader);
+                        while (reader.Read())
+                        {
+                            r.Add(ReadStautsInfo(reader));
+                        }
                     }
                 }
+                return r;
+            });
+
+            foreach (var item in res)
+            {
+                yield return item;
             }
         }
 
-        public override async Task<StatusInfo?> FindAsync(string name, string key, CancellationToken token = default)
+        public override Task<StatusInfo?> FindAsync(string name, string key, CancellationToken token = default)
         {
             var sql = CreateQuerySql(name, key);
-
-            using (var comm = Connection.CreateCommand())
+            return Task.FromResult(DatabaseSelector.UsingDatabaseResult<string, StatusInfo?>(sql, static (res, ql) =>
             {
-                comm.CommandText = sql;
-                using (var reader = await comm.ExecuteReaderAsync())
+                using (var comm = res.Connection.CreateCommand())
                 {
-                    if (await reader.ReadAsync())
+                    comm.CommandText = ql;
+                    using (var reader = comm.ExecuteReader())
                     {
-                        return ReadStautsInfo(reader);
+                        if (reader.Read())
+                        {
+                            return ReadStautsInfo(reader);
+                        }
                     }
                 }
-            }
-            return null;
+                return null;
+            }));
         }
 
-        public override IEnumerable<StatusInfo> Find(string name, DateTime? leftTime=null, DateTime? rightTime = null)
+        public override IEnumerable<StatusInfo> Find(string name, DateTime? leftTime = null, DateTime? rightTime = null)
         {
             var sql = CreateQuerySql(name, leftTime, rightTime);
 
-            using (var comm = Connection.CreateCommand())
+            var res = DatabaseSelector.UsingDatabaseResult(sql, static (res, ql) =>
             {
-                comm.CommandText = sql;
-                using (var reader = comm.ExecuteReader())
+                var r = new List<StatusInfo>();
+                using (var comm = res.Connection.CreateCommand())
                 {
-                    while (reader.Read())
+                    comm.CommandText = ql;
+                    using (var reader = comm.ExecuteReader())
                     {
-                        yield return ReadStautsInfo(reader);
+                        while (reader.Read())
+                        {
+                            r.Add(ReadStautsInfo(reader));
+                        }
                     }
                 }
-            }
+                return r;
+            });
+            return res;
         }
 
         public override StatusInfo? Find(string name, string key)
         {
             var sql = CreateQuerySql(name, key);
 
-            using (var comm = Connection.CreateCommand())
+            return DatabaseSelector.UsingDatabaseResult<string, StatusInfo?>(sql, static (res, ql) =>
             {
-                comm.CommandText = sql;
-                using (var reader = comm.ExecuteReader())
+                using (var comm = res.Connection.CreateCommand())
                 {
-                    if (reader.Read())
+                    comm.CommandText = ql;
+                    using (var reader = comm.ExecuteReader())
                     {
-                        return ReadStautsInfo(reader);
+                        if (reader.Read())
+                        {
+                            return ReadStautsInfo(reader);
+                        }
                     }
                 }
-            }
-            return null;
-        }
-
-        private DuckDBPrepare GetPrepare(string name)
-        {
-            return prepares.GetOrAdd(name, (k) =>
-            {
-                var pre = new DuckDBPrepare(Connection, k, bufferOperator, RemoveMode);
-                pre.Prepare();
-                return pre;
-            });
+                return null;
+            });    
         }
 
         public override IStatusScope CreateScope(string name)
         {
             var time = DateTime.Now;
-            var scopeName = time.ToString("yyyy-MM-dd HH:mm:ss.ffff");
-            var prepare = GetPrepare(name);
+            var scopeName = time.ToString("yyyy-MM-dd HH:mm:ss.ffff")+ random.Next(1000,9999);
 
-            prepare.Insert(scopeName);
-
-            return new DuckDBStatusScope(Connection, scopeName, name, prepare);
+            return new DuckDBStatusScope(scopeName, name,time, RemoveMode, bufferOperator, StatusStorageManager);
         }
 
         public override bool Initialize(string name)
         {
             var sql = CreateTableSql(name);
-            var res = Connection.ExecuteNoQuery(sql);
-            _ = GetPrepare(name);
+
+            var res = ExecuteSql(sql);
+            StatusStorageManager.Add(new InMemoryStatusStorage(name));
+
+            DatabaseSelector.Initializers.Add(new DelegateResultInitializer<DuckDBDatabaseCreatedResult>(r =>
+            {
+                DuckDBNativeHelper.DuckDBQuery(r.NativeConnection, sql);
+            }));
             return res != 0;
         }
 
         Task IOpetatorHandler<string>.HandleAsync(string input, CancellationToken token)
         {
-            DuckDBNativeHelper.DuckDBQuery(nativeConnection,input);
+            ExecuteSql(input); 
             return Task.CompletedTask;
         }
 
@@ -309,9 +285,17 @@ namespace Diagnostics.Traces.DuckDB.Status
         {
             foreach (var item in inputs)
             {
-                DuckDBNativeHelper.DuckDBQuery(nativeConnection, item);
+                ExecuteSql(item);
             }
             return Task.CompletedTask;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private long ExecuteSql(string sql)
+        {
+            return DatabaseSelector.UsingDatabaseResult(sql, static (result, ql) =>
+            {
+                return DuckDBNativeHelper.DuckDBQuery(result.NativeConnection, ql);
+            });
         }
     }
 }

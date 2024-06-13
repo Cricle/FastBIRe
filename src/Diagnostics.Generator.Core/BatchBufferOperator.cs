@@ -36,6 +36,8 @@ namespace Diagnostics.Generator.Core
 
         public IBatchOperatorHandler<T> Handler { get; }
 
+        public int UnComplatedCount => channel.Reader.Count;
+
         public event EventHandler<Exception>? ExceptionRaised;
 
         private async Task HandleTimeLoopAsync(object? state)

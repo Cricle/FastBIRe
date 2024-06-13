@@ -31,7 +31,7 @@ namespace Diagnostics.Traces.DuckDB.Status
             return connectionGetter(conn);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void DuckDBQuery(DuckDBNativeConnection connection, string input)
+        public static long DuckDBQuery(DuckDBNativeConnection connection, string input)
         {
             var state = NativeMethods.Query.DuckDBQuery(connection, input, out var res);
             try
@@ -41,6 +41,7 @@ namespace Diagnostics.Traces.DuckDB.Status
                     var str = NativeMethods.Query.DuckDBResultError(ref res).ToManagedString(false);
                     throw new DuckTraceDBException(str, state);
                 }
+                return NativeMethods.Query.DuckDBRowsChanged(ref res);
             }
             finally
             {

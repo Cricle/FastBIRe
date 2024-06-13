@@ -1,6 +1,6 @@
 ﻿namespace Diagnostics.Traces.Status
 {
-    public interface IStatusScope : IAsyncDisposable,IDisposable
+    public interface IStatusScope : IDisposable
     {
         string Name { get; }
 
@@ -8,13 +8,11 @@
 
         bool IsComplated { get; }
 
+        DateTime StartTime { get; }
+
         bool Set(string status);
 
-        Task<bool> SetAsync(string status, CancellationToken token = default);
-
         bool Log(string message);
-
-        Task<bool> LogAsync(string message, CancellationToken token = default);
 
         bool Complate(StatusTypes types = StatusTypes.Unset);
 

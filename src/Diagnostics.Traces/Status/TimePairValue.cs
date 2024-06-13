@@ -2,6 +2,12 @@
 {
     public readonly record struct TimePairValue
     {
+        public TimePairValue(string value)
+        {
+            Time=DateTime.Now;
+            Value = value;
+        }
+
         public TimePairValue(DateTime time, string value)
         {
             Time = time;

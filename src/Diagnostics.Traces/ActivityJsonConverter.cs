@@ -1,5 +1,4 @@
-﻿using Diagnostics.Traces.Models;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 

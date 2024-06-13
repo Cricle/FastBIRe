@@ -2,6 +2,8 @@
 {
     public interface IStatusManager : IDisposable
     {
+        IStatusStorageManager StatusStorageManager { get; }
+
         IAsyncEnumerable<StatusInfo> FindAsync(string name, DateTime? leftTime = null, DateTime? rightTime = null, CancellationToken token = default);
 
         IEnumerable<StatusInfo> Find(string name, DateTime? leftTime = null, DateTime? rightTime = null);

@@ -1,13 +1,4 @@
-﻿/* 项目“Diagnostics.Traces (netstandard2.0)”的未合并的更改
-在此之前:
-namespace Diagnostics.Traces.Zips
-在此之后:
-using Diagnostics;
-using Diagnostics.Traces;
-using Diagnostics.Traces;
-using Diagnostics.Traces.Zips
-*/
-namespace Diagnostics.Traces
+﻿namespace Diagnostics.Traces
 {
     public sealed class Node<TKey, TValue>
     {

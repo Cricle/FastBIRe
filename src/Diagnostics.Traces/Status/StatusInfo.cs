@@ -2,10 +2,9 @@
 {
     public readonly record struct StatusInfo
     {
-        public StatusInfo(DateTime time, string? nowStatus, IReadOnlyList<TimePairValue> logs, IReadOnlyList<TimePairValue> status, DateTime? comapltedTime, StatusTypes? complatedStatus)
+        public StatusInfo(DateTime time, IReadOnlyList<TimePairValue> logs, IReadOnlyList<TimePairValue> status, DateTime? comapltedTime, StatusTypes? complatedStatus)
         {
             Time = time;
-            NowStatus = nowStatus;
             Logs = logs;
             Status = status;
             ComapltedTime = comapltedTime;
@@ -13,8 +12,6 @@
         }
 
         public DateTime Time { get; }
-
-        public string? NowStatus { get; }
 
         public IReadOnlyList<TimePairValue> Logs { get; }
 

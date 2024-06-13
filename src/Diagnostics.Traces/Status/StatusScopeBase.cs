@@ -4,15 +4,27 @@
     {
         private long isComplated;
 
+        protected readonly IList<TimePairValue> logs;
+        protected readonly IList<TimePairValue> status;
+
+        protected StatusScopeBase(DateTime time)
+        {
+            logs = new List<TimePairValue>();
+            status = new List<TimePairValue>();
+            StartTime = time;
+        }
+
         public abstract string Key { get; }
 
-        public bool IsComplated => Interlocked.Read(ref isComplated)!=0;
+        public bool IsComplated => Interlocked.Read(ref isComplated) != 0;
 
         public abstract string Name { get; }
 
+        public virtual DateTime StartTime { get; }
+
         public bool Complate(StatusTypes types = StatusTypes.Unset)
         {
-            if (Interlocked.CompareExchange(ref isComplated,1,0)==0)
+            if (Interlocked.CompareExchange(ref isComplated, 1, 0) == 0)
             {
                 OnComplate(types);
                 return true;
@@ -42,20 +54,24 @@
             return new ValueTask();
         }
 
-        public abstract bool Log(string message);
-
-        public Task<bool> LogAsync(string message, CancellationToken token = default)
+        public virtual bool Log(string message)
         {
-            token.ThrowIfCancellationRequested();
-            return Task.FromResult(Log(message));
+            if (Interlocked.Read(ref isComplated) != 0)
+            {
+                return false;
+            }
+            logs.Add(new TimePairValue(message));
+            return true;
         }
 
-        public abstract bool Set(string status);
-
-        public Task<bool> SetAsync(string status, CancellationToken token = default)
+        public virtual bool Set(string status)
         {
-            token.ThrowIfCancellationRequested();
-            return Task.FromResult(Set(status));
+            if (Interlocked.Read(ref isComplated) != 0)
+            {
+                return false;
+            }
+            this.status.Add(new TimePairValue(status));
+            return true;
         }
     }
 }
