@@ -311,7 +311,6 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append("}");
             }
 
-            //s.Remove(s.Length - 1, 1);
             s.Append(']');
             return s.ToString();
 
@@ -357,9 +356,14 @@ namespace Diagnostics.Traces.DuckDB
             }
             var isFirst = true;
             using var s = new ValueStringBuilder();
+            var addedSet = new HashSet<string>();
             s.Append("MAP {");
             foreach (var item in tags)
             {
+                if (!addedSet.Add(item.Key))
+                {
+                    continue;
+                }
                 if (isFirst)
                 {
                     isFirst = false;
@@ -384,9 +388,14 @@ namespace Diagnostics.Traces.DuckDB
             }
             var isFirst = true;
             using var s = new ValueStringBuilder();
+            var addedSet = new HashSet<string>();
             s.Append("MAP {");
             foreach (var item in arrayObject)
             {
+                if (!addedSet.Add(item.Key))
+                {
+                    continue;
+                }
                 if (isFirst)
                 {
                     isFirst = false;
@@ -411,10 +420,16 @@ namespace Diagnostics.Traces.DuckDB
             }
             var isFirst = true;
             using var s = new ValueStringBuilder();
+            var addedSet=new HashSet<string>();
             s.Append("MAP {");
             foreach (KeyValuePair<object, object?> item in arrayObject)
             {
                 if (item.Key == null)
+                {
+                    continue;
+                }
+                var key = item.Key.ToString();
+                if (key != null && !addedSet.Add(key))
                 {
                     continue;
                 }
@@ -426,7 +441,7 @@ namespace Diagnostics.Traces.DuckDB
                 {
                     s.Append(',');
                 }
-                s.Append(WrapValue(item.Key.ToString()));
+                s.Append(WrapValue(key));
                 s.Append(':');
                 s.Append(WrapValue(item.Value?.ToString()));
             }

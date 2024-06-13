@@ -12,10 +12,20 @@ namespace Diagnostics.Traces
 
         public IBatchInputHandlerSync<T> Handler { get; }
 
+        public event EventHandler<Exception>? ExceptionRaised;
+
         public override ExportResult Export(in Batch<T> batch)
         {
-            Handler.Handle(batch);
-            return ExportResult.Success;
+            try
+            {
+                Handler.Handle(batch);
+                return ExportResult.Success;
+            }
+            catch (Exception ex)
+            {
+                ExceptionRaised?.Invoke(this, ex);
+                return ExportResult.Failure;
+            }
         }
     }
 }
