@@ -23,11 +23,11 @@ namespace Diagnostics.Generator.Core
             locker = new object();
             channel = Channel.CreateUnbounded<BatchData<T>>();
             tokenSource = new CancellationTokenSource();
-            Swap();
-            Handler = handler;
+            Handler = handler ?? throw new ArgumentNullException(nameof(handler));
             task = Task.Factory.StartNew(HandleAsync, this);
             taskTimeLoop = Task.Factory.StartNew(HandleTimeLoopAsync, this);
             SwapDelayTimeMs = swapDelayTimeMs;
+            Swap();
         }
 
         public int BufferSize { get; }
@@ -37,6 +37,8 @@ namespace Diagnostics.Generator.Core
         public IBatchOperatorHandler<T> Handler { get; }
 
         public int UnComplatedCount => channel.Reader.Count;
+
+        public int Capacity => currentBuffer.Length;
 
         public event EventHandler<Exception>? ExceptionRaised;
 

@@ -277,7 +277,8 @@ namespace Diagnostics.Traces.DuckDB.Status
 
         Task IOpetatorHandler<string>.HandleAsync(string input, CancellationToken token)
         {
-            ExecuteSql(input); 
+            ExecuteSql(input);
+            DatabaseSelector.ReportInserted(1);
             return Task.CompletedTask;
         }
 
@@ -287,6 +288,7 @@ namespace Diagnostics.Traces.DuckDB.Status
             {
                 ExecuteSql(item);
             }
+            DatabaseSelector.ReportInserted(inputs.Count);
             return Task.CompletedTask;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace Diagnostics.Generator.Core
 {
-
     public static class EventSourceDiagnostic
     {
         public static Task<EventWrittenEventArgs> GetOnceAsync<TEventSource>(TEventSource eventSource, EventLevel eventLevel = EventLevel.LogAlways, EventKeywords matchAnyKeyword = EventKeywords.None, IDictionary<string, string?>? arguments = null, CancellationToken token = default)

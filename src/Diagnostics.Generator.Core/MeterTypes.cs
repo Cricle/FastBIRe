@@ -2,10 +2,10 @@
 {
     public enum MeterTypes
     {
-        Counter,
-        Histogram,
-        ObservableGauge,
-        ObservableUpDownCounter,
-        UpDownCounter
+        Counter = 0,
+        Histogram = 1,
+        ObservableGauge = 2,
+        ObservableUpDownCounter = 3,
+        UpDownCounter = 4
     }
 }

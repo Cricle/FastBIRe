@@ -2,9 +2,9 @@
 {
     public enum CounterTypes
     {
-        EventCounter,
-        IncrementingEventCounter,
-        PollingCounter,
-        IncrementingPollingCounter
+        EventCounter = 0,
+        IncrementingEventCounter = 1,
+        PollingCounter = 2,
+        IncrementingPollingCounter = 3
     }
 }
