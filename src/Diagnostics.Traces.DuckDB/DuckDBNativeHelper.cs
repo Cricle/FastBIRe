@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace Diagnostics.Traces.DuckDB.Status
+namespace Diagnostics.Traces.DuckDB
 {
     internal static class DuckDBNativeHelper
     {

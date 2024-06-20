@@ -1,5 +1,4 @@
-﻿using Diagnostics.Traces.DuckDB.Status;
-using Diagnostics.Traces.Stores;
+﻿using Diagnostics.Traces.Stores;
 using DuckDB.NET.Data;
 using DuckDB.NET.Native;
 using System.Data.Common;

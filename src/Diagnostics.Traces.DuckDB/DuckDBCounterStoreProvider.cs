@@ -1,5 +1,4 @@
 ﻿using Diagnostics.Generator.Core;
-using Diagnostics.Traces.DuckDB.Status;
 using Diagnostics.Traces.Stores;
 using FastBIRe;
 using ValueBuffer;
