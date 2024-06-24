@@ -38,8 +38,8 @@ namespace Diagnostics.Traces.DuckDB
             {
                 if (state == DuckDBState.Error)
                 {
-                    var str = NativeMethods.Query.DuckDBResultError(ref res).ToManagedString(false);
-                    throw new DuckTraceDBException(str, state);
+                    var str = NativeMethods.Query.DuckDBResultError(ref res).ToManagedString();
+                    throw new DuckTraceDBException($"When exeuct sql \"{input}\", error {str}", state);
                 }
                 return NativeMethods.Query.DuckDBRowsChanged(ref res);
             }
