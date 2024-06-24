@@ -1,7 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<Version>1.2.0-preview.48</Version>
+		<Version>1.2.0-preview.49</Version>
 		<Authors>HCricle</Authors>
 		<Description>A fast agger</Description>
 		<RepositoryUrl>https://github.com/Cricle/FastBIRe.git</RepositoryUrl>

@@ -198,7 +198,12 @@ if(additionTags != null)
             var callEventSourceCodes = string.Empty;
             if (withCallTog)
             {
-                callEventSourceCodes = $"{eventSource}.{method.Name}({eventSourceParInvokeJoined});";
+                callEventSourceCodes = @$"
+if({eventSource}.IsEnabled())
+{{
+    {eventSource}.{method.Name}({eventSourceParInvokeJoined});
+}}
+";
             }
             var beginCallEventSourceCodes = string.Empty;
             var endCallEventSourceCodes = string.Empty;
