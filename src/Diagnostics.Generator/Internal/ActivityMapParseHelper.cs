@@ -78,7 +78,7 @@ namespace Diagnostics.Generator.Internal
                 [global::Diagnostics.Generator.Core.Annotations.ActivityMapToEventSourceAttribute(typeof(global::{source.ToString().TrimEnd('?')}),{eventSourceEvents.Count()})]
                 {visibility} partial class {symbol.Name}
                 {{
-                    {string.Join("\n", eventSourceEvents.Select(x => WriteMethodMap(symbol.IsStatic, x, ctxNullableEnd, withCallTog, instanceAccesstCode, callEventAtEnd, logMode, generateWithLog)))}
+                    {string.Join("\n", eventSourceEvents.Select(x => WriteMethodMap(symbol.IsStatic, x,model, ctxNullableEnd, withCallTog, instanceAccesstCode, callEventAtEnd, logMode, generateWithLog)))}
                 }}
             }}
 #nullable restore
@@ -89,7 +89,7 @@ namespace Diagnostics.Generator.Internal
             return true;
         }
 
-        private static string WriteMethodMap(bool isStatic, IMethodSymbol method, string nullableEnd, bool withCallTog, string eventSource, bool callEventAtEnd,bool logMode,bool generateWithLog)
+        private static string WriteMethodMap(bool isStatic, IMethodSymbol method,SemanticModel model, string nullableEnd, bool withCallTog, string eventSource, bool callEventAtEnd,bool logMode,bool generateWithLog)
         {
             var visibility = GeneratorTransformResult<ISymbol>.GetAccessibilityString(method.DeclaredAccessibility);
             var staticKeyword = isStatic ? "static" : string.Empty;
@@ -171,12 +171,22 @@ if(additionTags != null)
 
             var endsArgs = $"{additionArgs} global::System.DateTimeOffset timestamp = default, global::System.Collections.Generic.IEnumerable<global::System.Collections.Generic.KeyValuePair<global::System.String, global::System.Object{nullableEnd}>>{nullableEnd} additionTags = null,[global::System.Runtime.CompilerServices.CallerFilePathAttribute] string? filePath = null,[global::System.Runtime.CompilerServices.CallerMemberNameAttribute] string? memberName = null,[global::System.Runtime.CompilerServices.CallerLineNumberAttribute] int lineNumber = 0";
 
-            var eventSourceParInvokeJoined = string.Join(",", pars.Select(x => x.Name));
+            var eventSourceParInvokeJoinedNoConvert = string.Join(",", pars.Select(x => x.Name));
+            var eventSourceParInvokeJoined = string.Join(",", pars.Select(x =>
+            {
+                if (EventSourceHelper.IsExceptionType(model,x.Type))
+                {
+                    return $"{x.Name}?.ToString()";
+                }
+                return x.Name;
+            }));
 
-            var invokeCodes = "timestamp,additionTags";
+            var invokeCodesNoConvert = "timestamp,additionTags";
+            var invokeCodes = invokeCodesNoConvert;
             if (pars.Length != 0)
             {
                 invokeCodes = eventSourceParInvokeJoined + "," + invokeCodes;
+                invokeCodesNoConvert= eventSourceParInvokeJoinedNoConvert + "," + invokeCodesNoConvert;
             }
             //Debugger.Launch();
             var loggerMessageAttr = method.GetAttribute(Consts.LoggerMessageAttribute.FullName);
@@ -218,13 +228,13 @@ if(additionTags != null)
 {visibility} {staticKeyword} {method.ReturnType} {method.Name}(global::Microsoft.Extensions.Logging.ILogger logger,{noActivityArgs})
 {{
     {invokeLog}
-    {method.Name}(global::System.Diagnostics.Activity.Current,{invokeCodes});
+    {method.Name}(global::System.Diagnostics.Activity.Current,{invokeCodesNoConvert});
 }}
 {activityMapToEventAttr}
 {visibility} {staticKeyword} {method.ReturnType} {method.Name}(global::Microsoft.Extensions.Logging.ILogger logger,{argCode})
 {{
     {invokeLog}
-    {method.Name}(activity,{invokeCodes});
+    {method.Name}(activity,{invokeCodesNoConvert});
 }}
 ";
             }
@@ -265,7 +275,7 @@ if(tags == null)
 {activityMapToEventAttr}
 {visibility} {staticKeyword} {method.ReturnType} {method.Name}({endsArgs})
 {{
-    {method.Name}(global::System.Diagnostics.Activity.Current,{invokeCodes});
+    {method.Name}(global::System.Diagnostics.Activity.Current,{invokeCodesNoConvert});
 }}
 {activityMapToEventAttr}
 {visibility} {staticKeyword} {method.ReturnType} {method.Name}({argCode})

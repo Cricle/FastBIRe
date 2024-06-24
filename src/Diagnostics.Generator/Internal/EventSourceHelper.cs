@@ -1,11 +1,9 @@
 ﻿using Diagnostics.Generator.Core;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -13,6 +11,11 @@ namespace Diagnostics.Generator.Internal
 {
     internal static class EventSourceHelper
     {
+        public static bool IsExceptionType(SemanticModel model, ITypeSymbol type)
+        {
+            var exceptionType = model.Compilation.GetTypeByMetadataName("System.Exception");
+            return SymbolEqualityComparer.Default.Equals(type, exceptionType);
+        }
         public static string GetVisiblity(ISymbol symbol)
         {
             return GeneratorTransformResult<ISymbol>.GetAccessibilityString(symbol.DeclaredAccessibility);
@@ -56,7 +59,7 @@ namespace Diagnostics.Generator.Internal
                 .GetByNamed<bool>(Consts.EventSourceGenerateAttribute.UseIsEnable) ?? true;
             foreach (var item in methods)
             {
-                var str = GenerateMethod(item, isEnable, logMode, out var diag);
+                var str = GenerateMethod(model,item, isEnable, logMode, out var diag);
                 if (diag != null)
                 {
                     context.ReportDiagnostic(diag);
@@ -419,7 +422,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             }
             return false;
         }
-        private static string GenerateMethod(IMethodSymbol method, bool useIsEnable, bool logMode, out Diagnostic? diagnostic)
+        private static string GenerateMethod(SemanticModel model,IMethodSymbol method, bool useIsEnable, bool logMode, out Diagnostic? diagnostic)
         {
             var pars = method.Parameters;
             if (logMode)
@@ -429,11 +432,22 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             for (int i = 0; i < pars.Length; i++)
             {
                 var par = pars[i];
+
+                var parType = par.Type;
+
                 var isSupportType = IsSupportType(par.Type);
                 if (!isSupportType)
                 {
-                    diagnostic = Diagnostic.Create(Messages.NotSupportType, par.Locations[0]);
-                    return string.Empty;
+                    //If logMode, can be exception as string
+                    if (logMode && IsExceptionType(model, par.Type))
+                    {
+                        parType = model.Compilation.GetTypeByMetadataName("System.String");
+                    }
+                    else
+                    {
+                        diagnostic = Diagnostic.Create(Messages.NotSupportType, par.Locations[0]);
+                        return string.Empty;
+                    }
                 }
             }
             //relatedActivityId
@@ -483,7 +497,14 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             {
                 invokeMethod = $"WriteEvent({eventId});";
             }
-            var argList = string.Join(",", pars.Select(x => x.ToString()));
+            var argList = string.Join(",", pars.Select(x =>
+            {
+                if (IsExceptionType(model,x.Type))
+                {
+                    return $"global::System.String? {x.Name}";
+                }
+                return x.ToString();
+            }));
             var parExecuteDeclare = string.Empty;
             var invokeParDeclare = string.Empty;
             if (method.ReturnsVoid)
@@ -513,7 +534,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
     {isEnableTop}
     {isEnableBegin}
         {datasDeclare}
-        {string.Join("\n", pars.Except(relatedActivityIds).Select(GenerateWrite))}
+        {string.Join("\n", pars.Except(relatedActivityIds).Select((x, index)=>GenerateWrite(x,index,model)))}
         {invokeMethod}
         {invokeParDeclare}
     {isEnableEnd}
@@ -523,9 +544,9 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             diagnostic = null;
             return s;
         }
-        private static string GenerateWrite(IParameterSymbol parameter, int index)
+        private static string GenerateWrite(IParameterSymbol parameter, int index,SemanticModel model)
         {
-            if (parameter.Type.SpecialType == SpecialType.System_String)
+            if (parameter.Type.SpecialType == SpecialType.System_String||IsExceptionType(model, parameter.Type))
             {
                 return $@"
 datas[{index}] = new global::System.Diagnostics.Tracing.EventSource.EventData
