@@ -41,6 +41,10 @@ namespace Diagnostics.Traces.DuckDB
                 {
                     while (logs.MoveNext())
                     {
+                        if (LogIdentityProvider!= null&& !LogIdentityProvider.GetIdentity(logs.Current).Succeed)
+                        {
+                            return;
+                        }
                         var row = appender.CreateRow();
                         if (mode.HasFlag(SaveLogModes.Timestamp))
                         {

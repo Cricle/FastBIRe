@@ -1,6 +1,7 @@
 ﻿using Microsoft.Diagnostics.Runtime;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Diagnostics.Helpers
@@ -21,6 +22,17 @@ namespace Diagnostics.Helpers
         {
             DataTarget.Dispose();
         }
+        public IEnumerable<RuntimeSnapshot> GetSnapshots()
+        {
+            foreach (var item in Stacks)
+            {
+                using (var runtime = item.ClrInfo.CreateRuntime())
+                {
+                    yield return RuntimeSnapshot.Create(runtime);
+                }
+            }
+        }
+
         public override string ToString()
         {
             var s = new StringBuilder();

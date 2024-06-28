@@ -1,4 +1,6 @@
 ﻿using Microsoft.Diagnostics.Runtime;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Diagnostics.Helpers
@@ -23,6 +25,7 @@ namespace Diagnostics.Helpers
                 }
             }
         }
+
         public override string ToString()
         {
             using (var runtime = ClrInfo.CreateRuntime())

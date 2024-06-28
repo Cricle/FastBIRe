@@ -9,7 +9,14 @@ namespace Diagnostics.Traces.Models
         TraceKey GetTraceKey();
     }
     [JsonSerializable(typeof(LogEntity))]
+    [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
     public partial class LogEntityJsonSerializerContext : JsonSerializerContext
+    {
+
+    }
+    [JsonSerializable(typeof(LogEntity))]
+    [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    public partial class LogEntityIgnoreNullJsonSerializerContext : JsonSerializerContext
     {
 
     }

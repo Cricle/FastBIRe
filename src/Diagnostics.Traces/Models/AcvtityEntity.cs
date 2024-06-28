@@ -5,11 +5,17 @@ using System.Text.Json.Serialization;
 namespace Diagnostics.Traces.Models
 {
     [JsonSerializable(typeof(AcvtityEntity))]
+    [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
     public partial class AcvtityEntityJsonSerializerContext : JsonSerializerContext
     {
 
     }
+    [JsonSerializable(typeof(AcvtityEntity))]
+    [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    public partial class AcvtityEntityIgnoreNullJsonSerializerContext : JsonSerializerContext
+    {
 
+    }
     public record class AcvtityEntity : ITraceKeyProvider
     {
         public string? Id { get; set; }

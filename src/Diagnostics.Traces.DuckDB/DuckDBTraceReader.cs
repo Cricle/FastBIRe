@@ -10,10 +10,10 @@ namespace Diagnostics.Traces.DuckDB
 {
     public class DuckDBTraceReader : ITraceReader
     {
-        private const string SelectLogs = "SELECT timestamp,logLevel,categoryName,traceId,spanId,attributes,formattedMessage,body FROM \"logs\"";
-        private const string SelectExceptions = "SELECT traceId,spanId,createTime,typeName,message,helpLink,data,stackTrace,innerException FROM \"exceptions\"";
-        private const string SelectMetrics = "SELECT name,unit,metricType,temporality,description,meterName,meterVersion,meterTags,createTime,points FROM \"metrics\"";
-        private const string SelectActivities = "SELECT id,status,statusDescription,hasRemoteParent,kind,operationName,displayName,sourceName,sourceVersion,duration,startTimeUtc,parentId,rootId,tags,events,links,baggage,context,traceStateString,spanId,traceId,recorded,activityTraceFlags,parentSpanId FROM \"activities\"";
+        private const string SelectLogs = "SELECT * FROM \"logs\"";
+        private const string SelectExceptions = "SELECT * FROM \"exceptions\"";
+        private const string SelectMetrics = "SELECT * FROM \"metrics\"";
+        private const string SelectActivities = "SELECT * FROM \"activities\"";
 
         public DuckDBTraceReader(DuckDBConnection connection)
         {
@@ -27,31 +27,39 @@ namespace Diagnostics.Traces.DuckDB
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private MetricEntity ReadMetric(IDataRecord record)
         {
-            var res = new MetricEntity
+            var entity = new MetricEntity { Points=new List<MetricPointEntity>() };
+            for (int i = 0; i < record.FieldCount; i++)
             {
-                Name = record.IsDBNull(0) ? null : record.GetString(0),
-                Unit = record.IsDBNull(1) ? null : record.GetString(1),
-                MetricType = (MetricType)record.GetInt32(2),
-                Temporality = (AggregationTemporality)record.GetInt32(3),
-                Description = record.IsDBNull(4) ? null : record.GetString(4),
-                MeterName = record.IsDBNull(5) ? null : record.GetString(5),
-                MeterVersion = record.IsDBNull(6) ? null : record.GetString(6),
-                MeterTags = record.IsDBNull(7) ? null : (Dictionary<string, string>)record[7],
-                CreateTime = record.GetDateTime(8),
-                Points = new List<MetricPointEntity>(0)
-            };
-
-            var point = record[9] as List<Dictionary<string, object>>;
-
-            if (point != null)
-            {
-                foreach (var item in point)
+                var name = record.GetName(i);
+                switch (name)
                 {
-                    res.Points.Add(ReadEntity(item));
+                    case "name": entity.Name = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "unit": entity.Unit = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "metricType": entity.MetricType = (MetricType)record.GetInt32(i); break;
+                    case "temporality": entity.Temporality = (AggregationTemporality)record.GetInt32(i); break;
+                    case "description": entity.Description = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "meterName": entity.MeterName = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "meterVersion": entity.MeterVersion = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "meterTags":entity.MeterTags= record.IsDBNull(i) ? null : (Dictionary<string, string>)record[i]; break;
+                    case "createTime": entity.CreateTime = record.GetDateTime(i); break;
+                    case "points":
+                        {
+                            var points = record[i] as List<Dictionary<string, object>>;
+                            if (points!=null)
+                            {
+                                foreach (var item in points)
+                                {
+                                    entity.Points.Add(ReadEntity(item));
+                                }
+                            }
+                            break;
+                        }
+                    default:
+                        break;
                 }
             }
 
-            return res;
+            return entity;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -158,12 +166,11 @@ namespace Diagnostics.Traces.DuckDB
             }
             return entity;
         }
-
-        public IEnumerable<MetricEntity> ReadMetrics()
+        public IEnumerable<MetricEntity> ReadMetrics(string sql)
         {
             using (var comm = Connection.CreateCommand())
             {
-                comm.CommandText = SelectMetrics;
+                comm.CommandText = sql;
                 using (var reader = comm.ExecuteReader())
                 {
                     while (reader.Read())
@@ -173,24 +180,36 @@ namespace Diagnostics.Traces.DuckDB
                 }
             }
         }
+        public IEnumerable<MetricEntity> ReadMetrics()
+        {
+            return ReadMetrics(SelectMetrics);
+        }
         #endregion
         #region Exceptions
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ExceptionEntity ReadException(IDataRecord record)
         {
-            return new ExceptionEntity
+            var ex = new ExceptionEntity();
+            for (int i = 0; i < record.FieldCount; i++)
             {
-                TraceId = record.IsDBNull(0) ? null : record.GetString(0),
-                SpanId = record.IsDBNull(1) ? null : record.GetString(1),
-                CreateTime = record.GetDateTime(2),
-                TypeName = record.IsDBNull(3) ? null : record.GetString(3),
-                Message = record.IsDBNull(4) ? null : record.GetString(4),
-                HelpLink = record.IsDBNull(5) ? null : record.GetString(5),
-                Data = record.IsDBNull(6) ? null : (Dictionary<string, string>)record[6],
-                StackTrace = record.IsDBNull(7) ? null : record.GetString(7),
-                InnerException = record.IsDBNull(8) ? null : record.GetString(8),
-            };
+                switch (record.GetName(i))
+                {
+                    case "traceId":ex.TraceId=record.IsDBNull(i) ? null : record.GetString(i);break;
+                    case "spanId":ex.SpanId=record.IsDBNull(i) ? null : record.GetString(i);break;
+                    case "createTime":ex.CreateTime=record.GetDateTime(i);break;
+                    case "typeName":ex.TypeName=record.IsDBNull(i) ? null : record.GetString(i);break;
+                    case "message":ex.Message=record.IsDBNull(i) ? null : record.GetString(i);break;
+                    case "helpLink":ex.HelpLink=record.IsDBNull(i) ? null : record.GetString(i);break;
+                    case "data":ex.Data = record.IsDBNull(i) ? null : (Dictionary<string, string>)record[i];break;
+                    case "stackTrace":ex.StackTrace=record.IsDBNull(i) ? null : record.GetString(i);break;
+                    case "innerException":ex.InnerException=record.IsDBNull(i) ? null : record.GetString(i);break;
+                    default:
+                        break;
+                }
+            }
+
+            return ex;
         }
 
         private string BuildWhereTraceSql(string sql,IEnumerable<string>? traceIds)
@@ -201,12 +220,11 @@ namespace Diagnostics.Traces.DuckDB
             }
             return sql;
         }
-
-        public IEnumerable<ExceptionEntity> ReadExceptions(IEnumerable<string>? traceIds = null)
+        public IEnumerable<ExceptionEntity> ReadExceptions(string sql,IEnumerable<string>? traceIds = null)
         {
             using (var comm = Connection.CreateCommand())
             {
-                comm.CommandText = BuildWhereTraceSql(SelectExceptions,traceIds);
+                comm.CommandText = BuildWhereTraceSql(sql, traceIds);
                 using (var reader = comm.ExecuteReader())
                 {
                     while (reader.Read())
@@ -216,29 +234,40 @@ namespace Diagnostics.Traces.DuckDB
                 }
             }
         }
+        public IEnumerable<ExceptionEntity> ReadExceptions(IEnumerable<string>? traceIds = null)
+        {
+            return ReadExceptions(SelectExceptions, traceIds);
+        }
         #endregion
         #region Logs
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private LogEntity ReadEntity(IDataRecord record)
         {
-            return new LogEntity
+            var log = new LogEntity();
+            for (int i = 0; i < record.FieldCount; i++)
             {
-                Timestamp = record.GetDateTime(0),
-                LogLevel = (LogLevel)record.GetInt32(1),
-                CategoryName = record.IsDBNull(2) ? null : record.GetString(2),
-                TraceId = record.IsDBNull(3) ? null : record.GetString(3),
-                SpanId = record.IsDBNull(4) ? null : record.GetString(4),
-                Attributes = record.IsDBNull(5) ? null : (Dictionary<string, string>)record[5],
-                FormattedMessage = record.IsDBNull(6) ? null : record.GetString(6),
-                Body = record.IsDBNull(7) ? null : record.GetString(7),
-            };
+                switch (record.GetName(i))
+                {
+                    case "timestamp":log.Timestamp= record.GetDateTime(i);break;
+                    case "logLevel":log.LogLevel = (LogLevel)record.GetInt32(i);break;
+                    case "categoryName":log.CategoryName = record.IsDBNull(i) ? null : record.GetString(i);break;
+                    case "traceId":log.TraceId = record.IsDBNull(i) ? null : record.GetString(i);break;
+                    case "spanId":log.SpanId = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "attributes":log.Attributes = record.IsDBNull(i) ? null : (Dictionary<string, string>)record[i]; break;
+                    case "formattedMessage":log.FormattedMessage = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "body":log.Body = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    default:
+                        break;
+                }
+            }
+            return log;
         }
-        public IEnumerable<LogEntity> ReadLogs(IEnumerable<string>? traceIds = null)
+        public IEnumerable<LogEntity> ReadLogs(string sql,IEnumerable<string>? traceIds = null)
         {
             using (var comm = Connection.CreateCommand())
             {
-                comm.CommandText = BuildWhereTraceSql(SelectLogs, traceIds);
+                comm.CommandText = BuildWhereTraceSql(sql, traceIds);
                 using (var reader = comm.ExecuteReader())
                 {
                     while (reader.Read())
@@ -247,6 +276,10 @@ namespace Diagnostics.Traces.DuckDB
                     }
                 }
             }
+        }
+        public IEnumerable<LogEntity> ReadLogs(IEnumerable<string>? traceIds = null)
+        {
+            return ReadLogs(SelectLogs, traceIds);
         }
         #endregion
 
@@ -257,51 +290,63 @@ namespace Diagnostics.Traces.DuckDB
         {
             var activity = new AcvtityEntity
             {
-                Id = record.GetString(0),
-                Status = (ActivityStatusCode)record.GetInt32(1),
-                StatusDescription = record.IsDBNull(2) ? null : record.GetString(2),
-                HasRemoteParent = record.GetBoolean(3),
-                Kind = (ActivityKind)record.GetInt32(4),
-                OperationName = record.IsDBNull(5) ? null : record.GetString(5),
-                DisplayName = record.IsDBNull(6) ? null : record.GetString(6),
-                SourceName = record.IsDBNull(7) ? null : record.GetString(7),
-                SourceVersion = record.IsDBNull(8) ? null : record.GetString(8),
-                Duration = record.GetDouble(9),
-                StartTimeUtc = record.GetDateTime(10),
-                ParentId = record.IsDBNull(11) ? null : record.GetString(11),
-                RootId = record.IsDBNull(12) ? null : record.GetString(12),
-                Tags = record.IsDBNull(13) ? null : (Dictionary<string, string>)record[13],
-                Events = new List<ActivityEventEntity>(),
                 Links = new List<ActivityLinkEntity>(),
-                Baggage = record.IsDBNull(16) ? null : (Dictionary<string, string>)record[16],
-                TraceStateString = record.IsDBNull(18) ? null : record.GetString(18),
-                SpanId = record.IsDBNull(19) ? null : record.GetString(19),
-                TraceId = record.IsDBNull(20) ? null : record.GetString(20),
-                Recorded = record.GetBoolean(21),
-                ActivityTraceFlags = (ActivityTraceFlags)record.GetInt32(22),
-                ParentSpanId = record.IsDBNull(23) ? null : record.GetString(23),
+                Events = new List<ActivityEventEntity>()
             };
-
-            var events = record.IsDBNull(14) ? null : (List<Dictionary<string, object>>)record[14];
-            var links = record.IsDBNull(15) ? null : (List<Dictionary<string, object>>)record[15];
-            var context = record.IsDBNull(17) ? null : (Dictionary<string, object>)record[17];
-
-            activity.Context = ReadContextEntity(context);
-
-            if (events != null)
+            for (int i = 0; i < record.FieldCount; i++)
             {
-                foreach (var item in events)
+                switch (record.GetName(i))
                 {
-                    activity.Events.Add(ReadEventEntity(item));
+                    case "id":activity.Id = record.GetString(i); break;
+                    case "status":activity.Status = (ActivityStatusCode)record.GetInt32(i); break;
+                    case "statusDescription":activity.StatusDescription = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "hasRemoteParent":activity.HasRemoteParent = record.GetBoolean(i); break;
+                    case "kind":activity.Kind = (ActivityKind)record.GetInt32(i); break;
+                    case "operationName":activity.OperationName = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "displayName":activity.DisplayName = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "sourceName":activity.SourceName = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "sourceVersion":activity.SourceVersion = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "duration":activity.Duration = record.GetDouble(i); break;
+                    case "startTimeUtc":activity.StartTimeUtc = record.GetDateTime(i); break;
+                    case "parentId":activity.ParentId = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "rootId":activity.RootId = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "tags":activity.Tags = record.IsDBNull(i) ? null : (Dictionary<string, string>)record[i]; break;
+                    case "baggage":activity.Baggage = record.IsDBNull(i) ? null : (Dictionary<string, string>)record[i]; break;
+                    case "traceStateString":activity.TraceStateString = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "spanId":activity.SpanId = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "traceId":activity.TraceId = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "recorded":activity.Recorded = record.GetBoolean(i); break;
+                    case "activityTraceFlags":activity.ActivityTraceFlags = (ActivityTraceFlags)record.GetInt32(i); break;
+                    case "parentSpanId":activity.ParentSpanId = record.IsDBNull(i) ? null : record.GetString(i); break;
+                    case "links":
+                        {
+                            var links = record.IsDBNull(i) ? null : (List<Dictionary<string, object>>)record[i];
+                            if (links != null)
+                            {
+                                foreach (var item in links)
+                                {
+                                    activity.Links.Add(ReadLinkEntity(item));
+                                }
+                            }
+                            break;
+                        }
+                    case "events":
+                        {
+                            var events = record.IsDBNull(i) ? null : (List<Dictionary<string, object>>)record[i];
+                            if (events != null)
+                            {
+                                foreach (var item in events)
+                                {
+                                    activity.Events.Add(ReadEventEntity(item));
+                                }
+                            }
+                            break;
+                        }
+                    case "context":activity.Context= record.IsDBNull(i) ? null : ReadContextEntity((Dictionary<string, object>)record[i]);break;
+                    default:break;
                 }
             }
-            if (links != null)
-            {
-                foreach (var item in links)
-                {
-                    activity.Links.Add(ReadLinkEntity(item));
-                }
-            }
+
             return activity;
         }
         private ActivityLinkEntity ReadLinkEntity(Dictionary<string, object> map)
@@ -408,11 +453,11 @@ namespace Diagnostics.Traces.DuckDB
 
             return entity;
         }
-        public IEnumerable<AcvtityEntity> ReadActivities(IEnumerable<string>? traceIds = null)
+        public IEnumerable<AcvtityEntity> ReadActivities(string sql,IEnumerable<string>? traceIds = null)
         {
             using (var comm = Connection.CreateCommand())
             {
-                comm.CommandText =BuildWhereTraceSql(SelectActivities, traceIds);
+                comm.CommandText = BuildWhereTraceSql(sql, traceIds);
                 using (var reader = comm.ExecuteReader())
                 {
                     while (reader.Read())
@@ -421,6 +466,10 @@ namespace Diagnostics.Traces.DuckDB
                     }
                 }
             }
+        }
+        public IEnumerable<AcvtityEntity> ReadActivities(IEnumerable<string>? traceIds = null)
+        {
+            return ReadActivities(SelectActivities, traceIds);
         }
         #endregion
     }

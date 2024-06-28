@@ -5,7 +5,14 @@ using System.Text.Json.Serialization;
 namespace Diagnostics.Traces.Models
 {
     [JsonSerializable(typeof(MetricEntity))]
+    [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
     public partial class MetricEntityJsonSerializerContext : JsonSerializerContext
+    {
+
+    }
+    [JsonSerializable(typeof(MetricEntity))]
+    [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    public partial class MetricEntityIgnoreNullJsonSerializerContext : JsonSerializerContext
     {
 
     }
