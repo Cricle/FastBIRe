@@ -1,7 +1,14 @@
 ﻿using OpenTelemetry.Metrics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Diagnostics.Traces.Models
 {
+    [JsonSerializable(typeof(MetricEntity))]
+    public partial class MetricEntityJsonSerializerContext : JsonSerializerContext
+    {
+
+    }
     public class MetricEntity
     {
         public string? Name { get; set; }
@@ -24,5 +31,9 @@ namespace Diagnostics.Traces.Models
 
         public List<MetricPointEntity>? Points { get; set; }
 
+        public string ToJson()
+        {
+            return JsonSerializer.Serialize(this, MetricEntityJsonSerializerContext.Default.MetricType);
+        }
     }
 }

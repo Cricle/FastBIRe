@@ -4,9 +4,9 @@ namespace Diagnostics.Traces.DuckDB
 {
     public class DuckDBResultInitializer : IUndefinedResultInitializer<DuckDBDatabaseCreatedResult>
     {
-        public static readonly DuckDBResultInitializer Instance = new DuckDBResultInitializer();
+        #region FULL
 
-        private const string InitSqlLogs = @"
+        private const string InitFullSqlLogs = @"
 CREATE TABLE IF NOT EXISTS ""logs""(
     timestamp DATETIME,
     logLevel TINYINT,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS ""logs""(
     body VARCHAR
 );
 ";
-        private const string InitSqlActivities = @"
+        private const string InitFullSqlActivities = @"
 CREATE TABLE IF NOT EXISTS ""activities""(
     id VARCHAR,
     status TINYINT,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS ""activities""(
     parentSpanId VARCHAR
 );
 ";
-        private const string InitSqlMetrics = @"
+        private const string InitFullSqlMetrics = @"
 CREATE TABLE IF NOT EXISTS ""metrics""(
     name VARCHAR,
     unit VARCHAR,
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS ""metrics""(
     )[]
 );
 ";
-        private const string InitSqlException = @"
+        private const string InitFullSqlException = @"
 CREATE TABLE IF NOT EXISTS ""exceptions""(
     traceId VARCHAR,
     spanId VARCHAR,
@@ -94,12 +94,62 @@ CREATE TABLE IF NOT EXISTS ""exceptions""(
     innerException VARCHAR
 );
 ";
+        #endregion
+
+        public static readonly DuckDBResultInitializer Instance = new DuckDBResultInitializer();
+
+        private string createLogSql = InitFullSqlLogs;
+        private SaveLogModes saveLogModes = SaveLogModes.All;
+        public SaveLogModes SaveLogModes
+        {
+            get => saveLogModes;
+            set
+            {
+                createLogSql = CreateCreateSql("logs", value, InitLogFields);
+                saveLogModes = value;
+            }
+        }
+
+
+        internal readonly static DataField<SaveLogModes>[] InitLogFields =
+        [
+            new DataField<SaveLogModes>("timestamp", "DATETIME", SaveLogModes.Timestamp),
+            new DataField<SaveLogModes>("logLevel", "TINYINT", SaveLogModes.LogLevel),
+            new DataField<SaveLogModes>("categoryName", "VARCHAR", SaveLogModes.CategoryName),
+            new DataField<SaveLogModes>("traceId", "VARCHAR", SaveLogModes.TraceId),
+            new DataField<SaveLogModes>("spanId", "VARCHAR", SaveLogModes.SpanId),
+            new DataField<SaveLogModes>("attributes", "MAP(VARCHAR,VARCHAR)", SaveLogModes.Attributes),
+            new DataField<SaveLogModes>("formattedMessage", "VARCHAR", SaveLogModes.FormattedMessage),
+            new DataField<SaveLogModes>("body", "VARCHAR", SaveLogModes.Body)
+        ];
+
+
+        private static string CreateCreateSql<T>(string tableName, T value, DataField<SaveLogModes>[] fields)
+            where T : struct, Enum
+        {
+            var acceptLogFields = new List<DataField<SaveLogModes>>(fields.Length);
+            foreach (var item in fields)
+            {
+                if (value.HasFlag(item.Mode))
+                {
+                    acceptLogFields.Add(item);
+                }
+            }
+            if (acceptLogFields.Count == 0)
+            {
+                throw new InvalidOperationException("The field must at less one");
+            }
+            return $@"CREATE TABLE IF NOT EXISTS ""{tableName}""(
+    {string.Join($",{Environment.NewLine}", acceptLogFields)}
+);";
+        }
+
         public void InitializeResult(DuckDBDatabaseCreatedResult result)
         {
-            result.Connection.ExecuteNoQuery(InitSqlLogs);
-            result.Connection.ExecuteNoQuery(InitSqlMetrics);
-            result.Connection.ExecuteNoQuery(InitSqlActivities);
-            result.Connection.ExecuteNoQuery(InitSqlException);
+            result.Connection.ExecuteNoQuery(createLogSql);
+            result.Connection.ExecuteNoQuery(InitFullSqlMetrics);
+            result.Connection.ExecuteNoQuery(InitFullSqlActivities);
+            result.Connection.ExecuteNoQuery(InitFullSqlException);
             AfterInitializeResult(result);
         }
         protected virtual void AfterInitializeResult(DuckDBDatabaseCreatedResult result)

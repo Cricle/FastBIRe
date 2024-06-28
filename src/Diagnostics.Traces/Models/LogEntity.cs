@@ -1,10 +1,17 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Diagnostics.Traces.Models
 {
     public interface ITraceKeyProvider
     {
         TraceKey GetTraceKey();
+    }
+    [JsonSerializable(typeof(LogEntity))]
+    public partial class LogEntityJsonSerializerContext : JsonSerializerContext
+    {
+
     }
     public class LogEntity: ITraceKeyProvider
     {
@@ -27,6 +34,10 @@ namespace Diagnostics.Traces.Models
         public TraceKey GetTraceKey()
         {
             return new TraceKey(TraceId, SpanId);
+        }
+        public string ToJson()
+        {
+            return JsonSerializer.Serialize(this, LogEntityJsonSerializerContext.Default.LogEntity);
         }
     }
 }

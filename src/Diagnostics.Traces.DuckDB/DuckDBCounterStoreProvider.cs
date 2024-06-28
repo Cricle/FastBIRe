@@ -23,24 +23,14 @@ namespace Diagnostics.Traces.DuckDB
                     }
                 }
             }));
-            executeBuffer = new BufferOperator<string>(this, false, false);
         }
         private readonly List<string> initializeSqls;
-        private readonly BufferOperator<string> executeBuffer;
 
         public IUndefinedDatabaseSelector<DuckDBDatabaseCreatedResult> DatabaseSelector { get; }
 
         public bool CreateDropSQL { get; }
 
         public Func<string, string> NameCreator { get; }
-
-        public int UnComplateSqlCount => executeBuffer.UnComplatedCount;
-
-        public event EventHandler<BufferOperatorExceptionEventArgs<string>>? ExceptionRaised
-        {
-            add { executeBuffer.ExceptionRaised += value; }
-            remove { executeBuffer.ExceptionRaised -= value; }
-        }
 
         private static string DefaultNameCreator(string name)
         {
@@ -70,26 +60,21 @@ namespace Diagnostics.Traces.DuckDB
         public Task InsertManyAsync(string name, IEnumerable<IEnumerable<double?>> values)
         {
             var tableName = NameCreator(name);
-            using var s = new ValueStringBuilder();
-            s.Append("INSERT INTO \"");
-            s.Append(tableName);
-            s.Append("\" VALUES ");
-            var nowStr = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.ffff");
-            foreach (var item in values)
+            var now = DateTime.Now;
+            DatabaseSelector.UnsafeUsingDatabaseResult(values, (res, values) =>
             {
-                s.Append("('");
-                s.Append(nowStr);
-                s.Append('\'');
-                foreach (var val in item)
+                using var appender = res.Connection.CreateAppender(tableName);
+                foreach (var item in values)
                 {
-                    s.Append(',');
-                    s.Append(DuckHelper.WrapValue(val));
+                    var row = appender.CreateRow();
+                    row.AppendValue(now);
+                    foreach (var val in item)
+                    {
+                        row.AppendValue(val);
+                    }
+                    row.EndRow();
                 }
-
-                s.Append(')');
-            }
-            var sql = s.ToString();
-            executeBuffer.Add(sql);
+            });
             return Task.CompletedTask;
         }
         private string GetCreateTableSql(string name, bool createDropSQL, IEnumerable<CounterStoreColumn> columns)
@@ -122,7 +107,6 @@ namespace Diagnostics.Traces.DuckDB
 
         public void Dispose()
         {
-            executeBuffer.Dispose();
         }
     }
 }

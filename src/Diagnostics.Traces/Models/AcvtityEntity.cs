@@ -1,8 +1,16 @@
 ﻿using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Diagnostics.Traces.Models
 {
-    public record class AcvtityEntity:ITraceKeyProvider
+    [JsonSerializable(typeof(AcvtityEntity))]
+    public partial class AcvtityEntityJsonSerializerContext : JsonSerializerContext
+    {
+
+    }
+
+    public record class AcvtityEntity : ITraceKeyProvider
     {
         public string? Id { get; set; }
 
@@ -52,7 +60,7 @@ namespace Diagnostics.Traces.Models
 
         public string? ParentSpanId { get; set; }
 
-        public bool IsRootSpan() 
+        public bool IsRootSpan()
         {
             return ParentSpanId == null || ParentSpanId == "0000000000000000";
         }
@@ -63,6 +71,10 @@ namespace Diagnostics.Traces.Models
         public TraceKey GetParentTraceKey()
         {
             return new TraceKey(TraceId, ParentSpanId);
+        }
+        public string ToJson()
+        {
+            return JsonSerializer.Serialize(this, AcvtityEntityJsonSerializerContext.Default.AcvtityEntity);
         }
     }
 }

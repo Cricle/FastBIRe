@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
@@ -7,26 +8,30 @@ namespace FastBIRe
         private readonly T value;
         private bool isFirst;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public OneEnumerable(T value)
         {
             this.value = value;
             Reset();
         }
 
-        public T Current => value;
+        public readonly T Current => value;
 
-        object? IEnumerator.Current => Current;
+        readonly object? IEnumerator.Current => Current;
 
-        public void Dispose()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly void Dispose()
         {
 
         }
 
-        public IEnumerator<T> GetEnumerator()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly IEnumerator<T> GetEnumerator()
         {
             return this;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
             if (isFirst)
@@ -37,12 +42,13 @@ namespace FastBIRe
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Reset()
         {
             isFirst = true;
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        readonly IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }

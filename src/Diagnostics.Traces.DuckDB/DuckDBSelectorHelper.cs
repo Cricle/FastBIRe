@@ -11,7 +11,8 @@ namespace Diagnostics.Traces.DuckDB
             Action<DuckDBDatabaseCreatedResult>? databaseIniter = null,
             CompressionLevel gzipLevel = CompressionLevel.Fastest,
             int keepFileCount = 10,
-            long preLimitCount = DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>.DefaultLimitCount)
+            long preLimitCount = DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>.DefaultLimitCount,
+            SaveLogModes saveLogMode = SaveLogModes.Mini)
         {
             var dir = new DirectoryInfo(path);
             if (!dir.Exists)
@@ -24,12 +25,18 @@ namespace Diagnostics.Traces.DuckDB
                 var full = Path.Combine(path, fileName);
                 var database = new DuckDBConnection($"Data source={full}");
                 database.Open();
-                var result = new DuckDBDatabaseCreatedResult(database, full, fileName);
+                var result = new DuckDBDatabaseCreatedResult(database, full, fileName)
+                {
+                     SaveLogModes=saveLogMode
+                };
                 databaseIniter?.Invoke(result);
                 return result;
             }, limitCount: preLimitCount);
             selector.AfterSwitcheds.Add(new GzipDatabaseAfterSwitched<DuckDBDatabaseCreatedResult>(gzipLevel, new StartWithLastWriteFileDeleteRules(path, keepFileCount, "*.gz")));
-            selector.Initializers.Add(DuckDBResultInitializer.Instance);
+            selector.Initializers.Add(new DuckDBResultInitializer
+            {
+                SaveLogModes = saveLogMode
+            });
             return selector;
         }
     }
