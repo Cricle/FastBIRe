@@ -1,7 +1,7 @@
-﻿using Microsoft.Diagnostics.Runtime;
+﻿using Diagnostics.Helpers.Models;
+using Microsoft.Diagnostics.Runtime;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace Diagnostics.Helpers

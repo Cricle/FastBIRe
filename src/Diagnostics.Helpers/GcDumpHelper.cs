@@ -12,26 +12,26 @@ namespace Diagnostics.Helpers
 
     public static class GcDumpHelper
     {
-        public static void WriteGcDump(int processId, string filePath, int timeout = 30, TextWriter? log = null, bool isVeryLargeGraph = false, CancellationToken token = default)
+        public static void WriteGcDump(int processId, string filePath, int timeout = 30, TextWriter? log = null, bool isVeryLargeGraph = false, int expectedSize = 50_000, CancellationToken token = default)
         {
             using (var fs = File.Open(filePath, FileMode.Create))
             {
-                WriteGcDump(processId, fs, timeout, log, false, isVeryLargeGraph, token);
+                WriteGcDump(processId, fs, timeout, log, false, isVeryLargeGraph,expectedSize, token);
             }
         }
-        public static void WriteGcDump(int processId, Stream outputStream, int timeout = 30, TextWriter? log = null,bool leaveOpen=false, bool isVeryLargeGraph=false, CancellationToken token = default)
+        public static void WriteGcDump(int processId, Stream outputStream, int timeout = 30, TextWriter? log = null,bool leaveOpen=false, bool isVeryLargeGraph=false, int expectedSize = 50_000, CancellationToken token = default)
         {
-            if (TryCollectMemoryGraph(processId, timeout, log, out MemoryGraph memoryGraph, isVeryLargeGraph, token))
+            if (TryCollectMemoryGraph(processId, timeout, log, out MemoryGraph memoryGraph, isVeryLargeGraph,expectedSize, token))
             {
                 GCHeapDump.WriteMemoryGraph(memoryGraph, outputStream, leaveOpen: leaveOpen);
             }
         }
-        public static bool TryCollectMemoryGraph(int processId, int timeout, TextWriter? log, out MemoryGraph memoryGraph,bool isVeryLargeGraph = false, CancellationToken ct=default)
+        public static bool TryCollectMemoryGraph(int processId, int timeout, TextWriter? log, out MemoryGraph memoryGraph,bool isVeryLargeGraph = false,int expectedSize=50_000, CancellationToken ct=default)
         {
             DotNetHeapInfo heapInfo = new();
             log ??= TextWriter.Null;
 
-            memoryGraph = new MemoryGraph(50_000,isVeryLargeGraph);
+            memoryGraph = new MemoryGraph(expectedSize, isVeryLargeGraph);
 
             if (!EventPipeDotNetHeapDumper.DumpFromEventPipe(ct, processId, memoryGraph, log, timeout, heapInfo))
             {

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Diagnostics.Runtime;
 using System;
-using System.Collections.Generic;
 
 namespace Diagnostics.Helpers
 {
@@ -24,10 +23,11 @@ namespace Diagnostics.Helpers
             {
                 throw new Exception(string.Format("Architecture mismatch:  Process is {0} but target is {1}", PlatformHelper.Is64Bit ? "64 bit" : "32 bit", isTarget64Bit ? "64 bit" : "32 bit"));
             }
-            var stacks = new List<StackSnapshot>();
-            foreach (var version in dataTarget.ClrVersions)
+            var clrVersions = dataTarget.ClrVersions;
+            var stacks = new StackSnapshot[clrVersions.Length];
+            for (int i = 0; i < clrVersions.Length; i++)
             {
-                stacks.Add(new StackSnapshot(version));
+                stacks[i] = new StackSnapshot(clrVersions[i]);
             }
             return new StackSnapshotCollection(dataTarget, stacks);
         }

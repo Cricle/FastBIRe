@@ -115,7 +115,7 @@ namespace Microsoft.Diagnostics.Tools.GCDump
         /// <param name="timeout"></param>
         /// <param name="dotNetInfo"></param>
         /// <returns></returns>
-        public static bool DumpFromEventPipe(CancellationToken ct, int processId, MemoryGraph memoryGraph, TextWriter log, int timeout, DotNetHeapInfo dotNetInfo)
+        public static bool DumpFromEventPipe(CancellationToken ct, int processId, MemoryGraph memoryGraph, TextWriter? log, int timeout, DotNetHeapInfo dotNetInfo)
         {
             DateTime start = DateTime.Now;
             Func<TimeSpan> getElapsed = () => DateTime.Now - start;

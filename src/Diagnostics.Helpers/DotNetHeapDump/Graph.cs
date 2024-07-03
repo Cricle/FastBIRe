@@ -187,7 +187,7 @@ namespace Graphs
         ///
         /// By default the size = -1 which indicates we will set the type size to the first 'SetNode' for this type.
         /// </summary>
-        public virtual NodeTypeIndex CreateType(string name, string moduleName = null, int size = -1)
+        public virtual NodeTypeIndex CreateType(string name, string? moduleName = null, int size = -1)
         {
             NodeTypeIndex ret = (NodeTypeIndex)m_types.Count;
             TypeInfo typeInfo = default(TypeInfo);
