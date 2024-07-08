@@ -5,6 +5,7 @@ using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using ValueBuffer;
 
 namespace Diagnostics.Traces.DuckDB
@@ -41,36 +42,36 @@ namespace Diagnostics.Traces.DuckDB
                 {
                     while (logs.MoveNext())
                     {
-                        if (LogIdentityProvider!= null&& !LogIdentityProvider.GetIdentity(logs.Current).Succeed)
+                        if (LogIdentityProvider != null && !LogIdentityProvider.GetIdentity(logs.Current).Succeed)
                         {
-                            return;
+                            continue;
                         }
                         var row = appender.CreateRow();
-                        if (mode.HasFlag(SaveLogModes.Timestamp))
+                        if ((mode & SaveLogModes.Timestamp) != 0)
                         {
                             row.AppendValue(logs.Current.Timestamp);
                         }
-                        if (mode.HasFlag(SaveLogModes.LogLevel))
+                        if ((mode & SaveLogModes.LogLevel) != 0)
                         {
                             row.AppendValue((short)logs.Current.LogLevel);
                         }
-                        if (mode.HasFlag(SaveLogModes.CategoryName))
+                        if ((mode & SaveLogModes.CategoryName) != 0)
                         {
                             row.AppendValue(logs.Current.CategoryName);
                         }
-                        if (mode.HasFlag(SaveLogModes.TraceId))
+                        if ((mode & SaveLogModes.TraceId) != 0)
                         {
                             row.AppendValue(logs.Current.TraceId.ToString());
                         }
-                        if (mode.HasFlag(SaveLogModes.SpanId))
+                        if ((mode & SaveLogModes.SpanId) != 0)
                         {
                             row.AppendValue(logs.Current.SpanId.ToString());
                         }
-                        if (mode.HasFlag(SaveLogModes.FormattedMessage))
+                        if ((mode & SaveLogModes.FormattedMessage) != 0)
                         {
                             row.AppendValue(logs.Current.FormattedMessage);
                         }
-                        if (mode.HasFlag(SaveLogModes.Body))
+                        if ((mode & SaveLogModes.Body) != 0)
                         {
                             row.AppendValue(logs.Current.Body);
                         }
@@ -82,10 +83,10 @@ namespace Diagnostics.Traces.DuckDB
             DatabaseSelector.ReportInserted(count);
         }
 
-        private string BuildSql(IEnumerator<LogRecord> logs)
+        private ValueStringBuilder? BuildSql(IEnumerator<LogRecord> logs)
         {
             var mode = DatabaseSelector.UnsafeUsingDatabaseResult(static x => x.SaveLogModes);
-            using var s = new ValueStringBuilder();
+            var s = new ValueStringBuilder();
             s.Append("INSERT INTO \"logs\" VALUES ");
             var any = false;
             while (logs.MoveNext())
@@ -98,42 +99,42 @@ namespace Diagnostics.Traces.DuckDB
                 }
                 any = true;
                 s.Append('(');
-                if (mode.HasFlag(SaveLogModes.Timestamp))
+                if ((mode & SaveLogModes.Timestamp) != 0)
                 {
                     s.Append(DuckHelper.WrapValue(item.Timestamp));
                     s.Append(',');
                 }
-                if (mode.HasFlag(SaveLogModes.LogLevel))
+                if ((mode & SaveLogModes.LogLevel) != 0)
                 {
                     s.Append(DuckHelper.WrapValue(item.LogLevel));
                     s.Append(',');
                 }
-                if (mode.HasFlag(SaveLogModes.CategoryName))
+                if ((mode & SaveLogModes.CategoryName) != 0)
                 {
                     s.Append(DuckHelper.WrapValue(item.CategoryName));
                     s.Append(',');
                 }
-                if (mode.HasFlag(SaveLogModes.TraceId))
+                if ((mode & SaveLogModes.TraceId) != 0)
                 {
                     s.Append(DuckHelper.WrapValue(item.TraceId.ToString()));
                     s.Append(',');
                 }
-                if (mode.HasFlag(SaveLogModes.SpanId))
+                if ((mode & SaveLogModes.SpanId) != 0)
                 {
                     s.Append(DuckHelper.WrapValue(item.SpanId.ToString()));
                     s.Append(',');
                 }
-                if (mode.HasFlag(SaveLogModes.Attributes))
+                if ((mode & SaveLogModes.Attributes) != 0)
                 {
                     s.Append(DuckHelper.WrapValue(item.Attributes));
                     s.Append(',');
                 }
-                if (mode.HasFlag(SaveLogModes.FormattedMessage))
+                if ((mode & SaveLogModes.FormattedMessage) != 0)
                 {
                     s.Append(DuckHelper.WrapValue(item.FormattedMessage));
                     s.Append(',');
                 }
-                if (mode.HasFlag(SaveLogModes.Body))
+                if ((mode & SaveLogModes.Body) != 0)
                 {
                     s.Append(DuckHelper.WrapValue(item.Body));
                     s.Append(',');
@@ -143,15 +144,15 @@ namespace Diagnostics.Traces.DuckDB
             }
             if (!any)
             {
-                return string.Empty;
+                return null;
             }
             s._chars.RemoveLast(1);
             //s.Remove(s.Length - 1, 1);
-            return s.ToString();
+            return s;
         }
-        private string BuildSql(IEnumerator<Activity> activities)
+        private ValueStringBuilder? BuildSql(IEnumerator<Activity> activities)
         {
-            using var s = new ValueStringBuilder();
+            var s = new ValueStringBuilder();
             s.Append("INSERT INTO \"activities\" VALUES ");
             var any = false;
             while (activities.MoveNext())
@@ -215,15 +216,70 @@ namespace Diagnostics.Traces.DuckDB
             }
             if (!any)
             {
-                return string.Empty;
+                return null;
             }
             s._chars.RemoveLast(1);
             //s.Remove(s.Length - 1, 1);
-            return s.ToString();
+            return s;
         }
-        private string BuildSql(in BatchData<TraceExceptionInfo> exceptions)
+        private void AppendExceptionRecord(IEnumerator<TraceExceptionInfo> ex)
         {
-            using var s = new ValueStringBuilder();
+            var count = 0;
+            DatabaseSelector.UsingDatabaseResult(res =>
+            {
+                var mode = res.SaveExceptionModes;
+                using (var appender = res.Connection.CreateAppender("exceptions"))
+                {
+                    while (ex.MoveNext())
+                    {
+                        var row = appender.CreateRow();
+                        if (mode.HasFlag(SaveExceptionModes.TraceId))
+                        {
+                            row.AppendValue(ex.Current.TraceId.ToString());
+                        }
+                        if (mode.HasFlag(SaveExceptionModes.SpanId))
+                        {
+                            row.AppendValue(ex.Current.SpanId.ToString());
+                        }
+                        if (mode.HasFlag(SaveExceptionModes.CreateTime))
+                        {
+                            row.AppendValue(ex.Current.CreateTime);
+                        }
+                        if (mode.HasFlag(SaveExceptionModes.TypeName))
+                        {
+                            row.AppendValue(ex.Current.Exception.GetType().FullName);
+                        }
+                        if (mode.HasFlag(SaveExceptionModes.Message))
+                        {
+                            row.AppendValue(ex.Current.Exception.Message);
+                        }
+                        if (mode.HasFlag(SaveExceptionModes.HelpLink))
+                        {
+                            row.AppendValue(ex.Current.Exception.HelpLink);
+                        }
+                        if (mode.HasFlag(SaveExceptionModes.HResult))
+                        {
+                            row.AppendValue(ex.Current.Exception.HResult);
+                        }
+                        if (mode.HasFlag(SaveExceptionModes.StackTrace))
+                        {
+                            row.AppendValue(ex.Current.Exception.StackTrace);
+                        }
+                        if (mode.HasFlag(SaveExceptionModes.InnerException))
+                        {
+                            row.AppendValue(ex.Current.Exception.InnerException?.ToString());
+                        }
+                        row.EndRow();
+                        count++;
+                    }
+                }
+            });
+            DatabaseSelector.ReportInserted(count);
+        }
+        private ValueStringBuilder? BuildSql(in BatchData<TraceExceptionInfo> exceptions)
+        {
+            var s = new ValueStringBuilder();
+            var mode = DatabaseSelector.UnsafeUsingDatabaseResult(static x => x.SaveExceptionModes);
             s.Append("INSERT INTO \"exceptions\" VALUES ");
             var datas = exceptions.Datas;
             var isFirst = true;
@@ -239,31 +295,72 @@ namespace Diagnostics.Traces.DuckDB
                     s.Append(',');
                 }
                 s.Append('(');
-                s.Append(DuckHelper.WrapValue(item.TraceId?.ToString()));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.SpanId?.ToString()));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.CreateTime));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Exception.GetType().FullName));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Exception.Message));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Exception.HelpLink));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Exception.HResult));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Exception.Data));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Exception.StackTrace));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Exception.InnerException?.ToString()));
+                if (mode.HasFlag(SaveExceptionModes.TraceId))
+                {
+                    s.Append(DuckHelper.WrapValue(item.TraceId?.ToString()));
+                    s.Append(',');
+                }
+                if (mode.HasFlag(SaveExceptionModes.SpanId))
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.SpanId?.ToString()));
+                    s.Append(',');
+                }
+                if (mode.HasFlag(SaveExceptionModes.CreateTime))
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.CreateTime));
+                    s.Append(',');
+                }
+                if (mode.HasFlag(SaveExceptionModes.TypeName))
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Exception.GetType().FullName));
+                    s.Append(',');
+                }
+                if (mode.HasFlag(SaveExceptionModes.Message))
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Exception.Message));
+                    s.Append(',');
+                }
+                if (mode.HasFlag(SaveExceptionModes.HelpLink))
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Exception.HelpLink));
+                    s.Append(',');
+                }
+                if (mode.HasFlag(SaveExceptionModes.HResult))
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Exception.HResult));
+                    s.Append(',');
+                }
+                if (mode.HasFlag(SaveExceptionModes.Data))
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Exception.Data));
+                    s.Append(',');
+                }
+                if (mode.HasFlag(SaveExceptionModes.StackTrace))
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Exception.StackTrace));
+                    s.Append(',');
+                }
+                if (mode.HasFlag(SaveExceptionModes.InnerException))
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Exception.InnerException?.ToString()));
+                    s.Append(',');
+                }
+                s._chars.RemoveLast(1);
                 s.Append(')');
             }
 
-            return s.ToString();
+            return s;
         }
-        private string BuildSql(IEnumerator<Metric> metrics)
+        private ValueStringBuilder? BuildSql(IEnumerator<Metric> metrics)
         {
             var s = new ValueStringBuilder();
             try
@@ -313,10 +410,10 @@ namespace Diagnostics.Traces.DuckDB
                 }
                 if (!any)
                 {
-                    return string.Empty;
+                    return null;
                 }
                 //s.Remove(s.Length - 1, 1);
-                return s.ToString();
+                return s;
             }
             finally
             {
@@ -330,12 +427,15 @@ namespace Diagnostics.Traces.DuckDB
             {
                 return;
             }
-            var sql = BuildSql(new OneEnumerable<Activity>(input));
-            DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
+            using var sql = BuildSql(new OneEnumerable<Activity>(input));
+            if (sql != null)
             {
-                res.Connection.ExecuteNoQuery(sql);
-            });
-            DatabaseSelector.ReportInserted(1);
+                DatabaseSelector.UsingDatabaseResult(sql.Value, static (res, sql) =>
+                {
+                    DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, sql);
+                });
+                DatabaseSelector.ReportInserted(1);
+            }
         }
 
         public override void Handle(LogRecord input)
@@ -347,12 +447,15 @@ namespace Diagnostics.Traces.DuckDB
             var mode = DatabaseSelector.UnsafeUsingDatabaseResult(static x => x.SaveLogModes);
             if (mode.HasFlag(SaveLogModes.Attributes))
             {
-                var sql = BuildSql(new OneEnumerable<LogRecord>(input));
-                DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
+                using var sql = BuildSql(new OneEnumerable<LogRecord>(input));
+                if (sql != null)
                 {
-                    res.Connection.ExecuteNoQuery(sql);
-                });
-                DatabaseSelector.ReportInserted(1);
+                    DatabaseSelector.UsingDatabaseResult(sql.Value, static (res, sql) =>
+                    {
+                        DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, sql);
+                    });
+                    DatabaseSelector.ReportInserted(1);
+                }
             }
             else
             {
@@ -366,12 +469,15 @@ namespace Diagnostics.Traces.DuckDB
             {
                 return;
             }
-            var sql = BuildSql(new OneEnumerable<Metric>(input));
-            DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
+            using var sql = BuildSql(new OneEnumerable<Metric>(input));
+            if (sql != null)
             {
-                res.Connection.ExecuteNoQuery(sql);
-            });
-            DatabaseSelector.ReportInserted(1);
+                DatabaseSelector.UsingDatabaseResult(sql.Value, static (res, sql) =>
+                {
+                    DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, sql);
+                });
+                DatabaseSelector.ReportInserted(1);
+            }
         }
 
         public override void Handle(in Batch<Activity> inputs)
@@ -382,12 +488,15 @@ namespace Diagnostics.Traces.DuckDB
             }
             using (var enu = inputs.GetEnumerator())
             {
-                var sql = BuildSql(enu);
-                DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
+                using var sql = BuildSql(enu);
+                if (sql != null)
                 {
-                    res.Connection.ExecuteNoQuery(sql);
-                });
-                DatabaseSelector.ReportInserted((int)inputs.Count);
+                    DatabaseSelector.UsingDatabaseResult(sql.Value, static (res, sql) =>
+                    {
+                        DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, sql);
+                    });
+                    DatabaseSelector.ReportInserted((int)inputs.Count);
+                }
             }
         }
 
@@ -403,9 +512,12 @@ namespace Diagnostics.Traces.DuckDB
             {
                 if (mode.HasFlag(SaveLogModes.Attributes))
                 {
-                    var sql = BuildSql(enu);
-                    DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) => res.Connection.ExecuteNoQuery(sql));
-                    DatabaseSelector.ReportInserted((int)inputs.Count);
+                    using var sql = BuildSql(enu);
+                    if (sql != null)
+                    {
+                        DatabaseSelector.UsingDatabaseResult(sql.Value, static (res, sql) => DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, sql));
+                        DatabaseSelector.ReportInserted((int)inputs.Count);
+                    }
                 }
                 else
                 {
@@ -422,12 +534,15 @@ namespace Diagnostics.Traces.DuckDB
             }
             using (var enu = inputs.GetEnumerator())
             {
-                var sql = BuildSql(enu);
-                DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
+                using var sql = BuildSql(enu);
+                if (sql != null)
                 {
-                    res.Connection.ExecuteNoQuery(sql);
-                });
-                DatabaseSelector.ReportInserted((int)inputs.Count);
+                    DatabaseSelector.UsingDatabaseResult(sql.Value, static (res, sql) =>
+                    {
+                        DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, sql);
+                    });
+                    DatabaseSelector.ReportInserted((int)inputs.Count);
+                }
             }
         }
 
@@ -437,15 +552,24 @@ namespace Diagnostics.Traces.DuckDB
             {
                 return Task.CompletedTask;
             }
-            return Task.Factory.StartNew(() =>
+            var mode = DatabaseSelector.UnsafeUsingDatabaseResult(static x => x.SaveExceptionModes);
+            if (!mode.HasFlag(SaveExceptionModes.Data))
             {
-                var sql = BuildSql(inputs);
-                DatabaseSelector.UsingDatabaseResult(sql, static (res, sql) =>
+                using (var enu = inputs.GetEnumerator())
                 {
-                    res.Connection.ExecuteNoQuery(sql);
+                    AppendExceptionRecord(enu);
+                }
+            }
+            using var sql = BuildSql(inputs);
+            if (sql != null)
+            {
+                DatabaseSelector.UsingDatabaseResult(sql.Value, static (res, sql) =>
+                {
+                    DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, sql);
                 });
                 DatabaseSelector.ReportInserted(inputs.Count);
-            }, token);
+            }
+            return Task.CompletedTask;
         }
     }
 }

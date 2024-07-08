@@ -34,7 +34,9 @@ namespace Diagnostics.Traces.DuckDB
             }
         }
 
-        public SaveLogModes SaveLogModes { get; set; }
+        public SaveLogModes SaveLogModes { get; set; } = SaveLogModes.All;
+
+        public SaveExceptionModes SaveExceptionModes { get; set; } = SaveExceptionModes.All;
 
         public string? FilePath { get; }
 

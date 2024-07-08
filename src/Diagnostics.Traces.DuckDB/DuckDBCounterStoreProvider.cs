@@ -60,9 +60,9 @@ namespace Diagnostics.Traces.DuckDB
         public Task InsertManyAsync(string name, IEnumerable<IEnumerable<double?>> values)
         {
             var tableName = NameCreator(name);
-            var now = DateTime.Now;
             DatabaseSelector.UnsafeUsingDatabaseResult(values, (res, values) =>
             {
+                var now = DateTime.Now;
                 using var appender = res.Connection.CreateAppender(tableName);
                 foreach (var item in values)
                 {

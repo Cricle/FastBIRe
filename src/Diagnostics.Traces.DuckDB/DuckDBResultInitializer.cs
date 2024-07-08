@@ -96,10 +96,37 @@ CREATE TABLE IF NOT EXISTS ""exceptions""(
 ";
         #endregion
 
+        internal readonly static DataField<SaveExceptionModes>[] InitExceptionFields =
+        [
+            new DataField<SaveExceptionModes>("traceId", "VARCHAR", SaveExceptionModes.TraceId),
+            new DataField<SaveExceptionModes>("spanId", "VARCHAR", SaveExceptionModes.SpanId),
+            new DataField<SaveExceptionModes>("createTime", "DATETIME", SaveExceptionModes.CreateTime),
+            new DataField<SaveExceptionModes>("typeName", "VARCHAR", SaveExceptionModes.TypeName),
+            new DataField<SaveExceptionModes>("message", "VARCHAR", SaveExceptionModes.Message),
+            new DataField<SaveExceptionModes>("helpLink", "VARCHAR", SaveExceptionModes.HelpLink),
+            new DataField<SaveExceptionModes>("data", "MAP(VARCHAR,VARCHAR)", SaveExceptionModes.Data),
+            new DataField<SaveExceptionModes>("stackTrace", "VARCHAR", SaveExceptionModes.StackTrace),
+            new DataField<SaveExceptionModes>("innerException", "VARCHAR", SaveExceptionModes.InnerException)
+        ];
+
         public static readonly DuckDBResultInitializer Instance = new DuckDBResultInitializer();
 
         private string createLogSql = InitFullSqlLogs;
+        private string createExceptionSql = InitFullSqlException;
+
         private SaveLogModes saveLogModes = SaveLogModes.All;
+        private SaveExceptionModes saveExceptionModes = SaveExceptionModes.All;
+
+        public SaveExceptionModes SaveExceptionModes
+        {
+            get => saveExceptionModes;
+            set
+            {
+                createExceptionSql = CreateCreateSql("exceptions", value, InitExceptionFields);
+                saveExceptionModes = value;
+            }
+        }
+
         public SaveLogModes SaveLogModes
         {
             get => saveLogModes;
@@ -124,10 +151,10 @@ CREATE TABLE IF NOT EXISTS ""exceptions""(
         ];
 
 
-        private static string CreateCreateSql<T>(string tableName, T value, DataField<SaveLogModes>[] fields)
+        private static string CreateCreateSql<T>(string tableName, T value, DataField<T>[] fields)
             where T : struct, Enum
         {
-            var acceptLogFields = new List<DataField<SaveLogModes>>(fields.Length);
+            var acceptLogFields = new List<DataField<T>>(fields.Length);
             foreach (var item in fields)
             {
                 if (value.HasFlag(item.Mode))
@@ -149,7 +176,7 @@ CREATE TABLE IF NOT EXISTS ""exceptions""(
             result.Connection.ExecuteNoQuery(createLogSql);
             result.Connection.ExecuteNoQuery(InitFullSqlMetrics);
             result.Connection.ExecuteNoQuery(InitFullSqlActivities);
-            result.Connection.ExecuteNoQuery(InitFullSqlException);
+            result.Connection.ExecuteNoQuery(createExceptionSql);
             AfterInitializeResult(result);
         }
         protected virtual void AfterInitializeResult(DuckDBDatabaseCreatedResult result)
