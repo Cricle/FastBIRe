@@ -96,6 +96,33 @@ CREATE TABLE IF NOT EXISTS ""exceptions""(
 ";
         #endregion
 
+        internal readonly static DataField<SaveActivityModes>[] InitActivityFields =
+        [
+            new DataField<SaveActivityModes>("id", "VARCHAR", SaveActivityModes.Id),
+            new DataField<SaveActivityModes>("status", "TINYINT", SaveActivityModes.Status),
+            new DataField<SaveActivityModes>("statusDescription", "DATETIME", SaveActivityModes.StatusDescription),
+            new DataField<SaveActivityModes>("hasRemoteParent", "BOOLEAN", SaveActivityModes.HasRemoteParent),
+            new DataField<SaveActivityModes>("kind", "TINYINT", SaveActivityModes.Kind),
+            new DataField<SaveActivityModes>("operationName", "VARCHAR", SaveActivityModes.OperationName),
+            new DataField<SaveActivityModes>("displayName", "VARCHAR", SaveActivityModes.DisplayName),
+            new DataField<SaveActivityModes>("sourceName", "VARCHAR", SaveActivityModes.SourceName),
+            new DataField<SaveActivityModes>("sourceVersion", "VARCHAR", SaveActivityModes.SourceVersion),
+            new DataField<SaveActivityModes>("duration", "DOUBLE", SaveActivityModes.Duration),
+            new DataField<SaveActivityModes>("startTimeUtc", "DATETIME", SaveActivityModes.StartTimeUtc),
+            new DataField<SaveActivityModes>("parentId", "VARCHAR", SaveActivityModes.ParentId),
+            new DataField<SaveActivityModes>("rootId", "VARCHAR", SaveActivityModes.RootId),
+            new DataField<SaveActivityModes>("tags", "MAP(VARCHAR,VARCHAR)", SaveActivityModes.Tags),
+            new DataField<SaveActivityModes>("events", "STRUCT(name VARCHAR,timestamp DATETIME, tags MAP(VARCHAR,VARCHAR))[]", SaveActivityModes.Events),
+            new DataField<SaveActivityModes>("links", "STRUCT(context STRUCT(traceId VARCHAR,traceState VARCHAR, traceFlags INTEGER, isRemote BOOLEAN, spanId VARCHAR),tags MAP(VARCHAR,VARCHAR))[]", SaveActivityModes.Links),
+            new DataField<SaveActivityModes>("baggage", "MAP(VARCHAR,VARCHAR)", SaveActivityModes.Baggage),
+            new DataField<SaveActivityModes>("context", "STRUCT(traceId VARCHAR,traceState VARCHAR, traceFlags INTEGER, isRemote BOOLEAN, spanId VARCHAR)", SaveActivityModes.Context),
+            new DataField<SaveActivityModes>("traceStateString", "VARCHAR", SaveActivityModes.TraceStateString),
+            new DataField<SaveActivityModes>("spanId", "VARCHAR", SaveActivityModes.SpanId),
+            new DataField<SaveActivityModes>("traceId", "VARCHAR", SaveActivityModes.TraceId),
+            new DataField<SaveActivityModes>("recorded", "BOOLEAN", SaveActivityModes.Recorded),
+            new DataField<SaveActivityModes>("activityTraceFlags", "TINYINT", SaveActivityModes.ActivityTraceFlags),
+            new DataField<SaveActivityModes>("parentSpanId", "VARCHAR", SaveActivityModes.ParentSpanId),
+        ];
         internal readonly static DataField<SaveExceptionModes>[] InitExceptionFields =
         [
             new DataField<SaveExceptionModes>("traceId", "VARCHAR", SaveExceptionModes.TraceId),
@@ -113,10 +140,21 @@ CREATE TABLE IF NOT EXISTS ""exceptions""(
 
         private string createLogSql = InitFullSqlLogs;
         private string createExceptionSql = InitFullSqlException;
+        private string createActivitySql = InitFullSqlActivities;
 
         private SaveLogModes saveLogModes = SaveLogModes.All;
         private SaveExceptionModes saveExceptionModes = SaveExceptionModes.All;
-
+        private SaveActivityModes saveActivityModes = SaveActivityModes.All;
+        
+        public SaveActivityModes SaveActivityModes
+        {
+            get => saveActivityModes;
+            set
+            {
+                createActivitySql = CreateCreateSql("activities", value, InitActivityFields);
+                saveActivityModes = value;
+            }
+        }
         public SaveExceptionModes SaveExceptionModes
         {
             get => saveExceptionModes;
@@ -175,7 +213,7 @@ CREATE TABLE IF NOT EXISTS ""exceptions""(
         {
             result.Connection.ExecuteNoQuery(createLogSql);
             result.Connection.ExecuteNoQuery(InitFullSqlMetrics);
-            result.Connection.ExecuteNoQuery(InitFullSqlActivities);
+            result.Connection.ExecuteNoQuery(createActivitySql);
             result.Connection.ExecuteNoQuery(createExceptionSql);
             AfterInitializeResult(result);
         }

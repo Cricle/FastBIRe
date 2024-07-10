@@ -38,6 +38,8 @@ namespace Diagnostics.Traces.DuckDB
 
         public SaveExceptionModes SaveExceptionModes { get; set; } = SaveExceptionModes.All;
 
+        public SaveActivityModes SaveActivityModes { get; set; } = SaveActivityModes.All;
+
         public string? FilePath { get; }
 
         public string Key { get; }

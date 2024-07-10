@@ -13,7 +13,8 @@ namespace Diagnostics.Traces.DuckDB
             int keepFileCount = 10,
             long preLimitCount = DayOrLimitDatabaseSelector<DuckDBDatabaseCreatedResult>.DefaultLimitCount,
             SaveLogModes saveLogMode = SaveLogModes.Mini,
-            SaveExceptionModes saveExceptionModes= SaveExceptionModes.Mini)
+            SaveExceptionModes saveExceptionModes= SaveExceptionModes.Mini,
+            SaveActivityModes saveActivityModes= SaveActivityModes.Mini)
         {
             var dir = new DirectoryInfo(path);
             if (!dir.Exists)
@@ -28,8 +29,9 @@ namespace Diagnostics.Traces.DuckDB
                 database.Open();
                 var result = new DuckDBDatabaseCreatedResult(database, full, fileName)
                 {
-                     SaveLogModes=saveLogMode,
-                     SaveExceptionModes= saveExceptionModes
+                    SaveLogModes = saveLogMode,
+                    SaveExceptionModes = saveExceptionModes,
+                    SaveActivityModes = saveActivityModes
                 };
                 databaseIniter?.Invoke(result);
                 return result;
@@ -38,7 +40,8 @@ namespace Diagnostics.Traces.DuckDB
             selector.Initializers.Add(new DuckDBResultInitializer
             {
                 SaveLogModes = saveLogMode,
-                SaveExceptionModes= saveExceptionModes
+                SaveExceptionModes = saveExceptionModes,
+                SaveActivityModes = saveActivityModes
             });
             return selector;
         }

@@ -152,6 +152,7 @@ namespace Diagnostics.Traces.DuckDB
         }
         private ValueStringBuilder? BuildSql(IEnumerator<Activity> activities)
         {
+            var mode = DatabaseSelector.UnsafeUsingDatabaseResult(static x => x.SaveActivityModes);
             var s = new ValueStringBuilder();
             s.Append("INSERT INTO \"activities\" VALUES ");
             var any = false;
@@ -165,53 +166,157 @@ namespace Diagnostics.Traces.DuckDB
                 }
                 any = true;
                 s.Append('(');
-                s.Append(DuckHelper.WrapValue(item.Id));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Status));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.StatusDescription));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.HasRemoteParent));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Kind));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.OperationName));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.DisplayName));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Source.Name));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Source.Version));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Duration.TotalMilliseconds));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.StartTimeUtc));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.ParentId));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.RootId));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Tags));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Events));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Links));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Baggage));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Context));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.TraceStateString));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.SpanId.ToString()));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.TraceId.ToString()));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.Recorded));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.ActivityTraceFlags));
-                s.Append(',');
-                s.Append(DuckHelper.WrapValue(item.ParentSpanId.ToString()));
+                if ((mode & SaveActivityModes.Id) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Id));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.Status) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Status));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.StatusDescription) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.StatusDescription));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.HasRemoteParent) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.HasRemoteParent));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.Kind) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Kind));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.OperationName) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.OperationName));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.DisplayName) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.DisplayName));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.SourceName) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Source.Name));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.SourceVersion) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Source.Version));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.Duration) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Duration.TotalMilliseconds));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.StartTimeUtc) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.StartTimeUtc));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.ParentId) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.ParentId));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.RootId) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.RootId));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.Tags) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Tags));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.Events) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Events));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.Links) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Links));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.Baggage) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Baggage));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.Context) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Context));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.TraceStateString) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.TraceStateString));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.SpanId) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.SpanId.ToString()));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.TraceId) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.TraceId.ToString()));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.Recorded) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.Recorded));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.ActivityTraceFlags) != 0)
+                {
+
+                    s.Append(DuckHelper.WrapValue(item.ActivityTraceFlags));
+                    s.Append(',');
+                }
+                if ((mode & SaveActivityModes.ParentSpanId) != 0)
+                {
+                    if (item.ParentSpanId.Equals(default))
+                    {
+                        s.Append("NULL");
+                    }
+                    else
+                    {
+                        s.Append(DuckHelper.WrapValue(item.ParentSpanId.ToString()));
+                    }
+                    s.Append(',');
+                }
+                s._chars.RemoveLast(1);
                 s.Append("),");
             }
             if (!any)

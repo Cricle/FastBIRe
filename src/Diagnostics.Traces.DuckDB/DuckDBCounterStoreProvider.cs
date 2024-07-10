@@ -5,7 +5,7 @@ using ValueBuffer;
 
 namespace Diagnostics.Traces.DuckDB
 {
-    public class DuckDBCounterStoreProvider : ICounterStoreProvider, IOpetatorHandler<string>, IDisposable
+    public class DuckDBCounterStoreProvider : ICounterStoreProvider
     {
         public DuckDBCounterStoreProvider(IUndefinedDatabaseSelector<DuckDBDatabaseCreatedResult> databaseSelector, bool createDropSQL = false, Func<string, string>? nameCreator = null)
         {
@@ -93,20 +93,6 @@ namespace Diagnostics.Traces.DuckDB
             }
             s.Append(");");
             return s.ToString();
-        }
-
-        Task IOpetatorHandler<string>.HandleAsync(string input, CancellationToken token)
-        {
-            DatabaseSelector.UsingDatabaseResult(input, static (res, sql) =>
-            {
-                DuckDBNativeHelper.DuckDBQuery(res.NativeConnection, sql);
-            });
-            DatabaseSelector.ReportInserted(1);
-            return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
         }
     }
 }
