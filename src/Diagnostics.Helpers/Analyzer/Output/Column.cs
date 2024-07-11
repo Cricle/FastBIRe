@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Microsoft.Diagnostics.ExtensionCommands.Output
+namespace Diagnostics.Helpers.Analyzer.Output
 {
     internal readonly struct Column
     {

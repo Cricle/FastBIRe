@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace Microsoft.Diagnostics.ExtensionCommands.Output
+namespace Diagnostics.Helpers.Analyzer.Output
 {
     internal sealed class BorderedTable : Table, IDisposable
     {

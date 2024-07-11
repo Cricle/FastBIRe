@@ -8,8 +8,8 @@ using System.IO;
 using System.Security;
 using System.Text.RegularExpressions;
 using System.Xml;
+using Diagnostics.Helpers.DotNetHeapDump;
 using FastSerialization;
-using Graphs;
 using Address = System.UInt64;
 
 /// <summary>

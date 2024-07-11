@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using Microsoft.Diagnostics.NETCore.Client;
 
-namespace Microsoft.Diagnostics.Monitoring.EventPipe
+namespace Diagnostics.Helpers
 {
     public abstract class MonitoringSourceConfiguration
     {

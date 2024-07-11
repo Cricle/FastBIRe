@@ -1,5 +1,4 @@
-﻿using Graphs;
-using Microsoft.Diagnostics.Tools.GCDump;
+﻿using Diagnostics.Helpers.DotNetHeapDump;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;

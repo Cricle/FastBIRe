@@ -1,5 +1,4 @@
-﻿using Microsoft.Diagnostics.Monitoring.EventPipe;
-using Microsoft.Diagnostics.Tracing;
+﻿using Microsoft.Diagnostics.Tracing;
 using System;
 using System.Diagnostics.Tracing;
 

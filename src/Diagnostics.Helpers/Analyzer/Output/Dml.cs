@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Text;
 using Microsoft.Diagnostics.Runtime;
 
-namespace Microsoft.Diagnostics.ExtensionCommands.Output
+namespace Diagnostics.Helpers.Analyzer.Output
 {
     internal static class Dml
     {

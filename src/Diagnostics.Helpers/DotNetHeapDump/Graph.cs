@@ -8,14 +8,14 @@ using System.IO;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
+using Diagnostics.Helpers.DotNetHeapDump;
 using FastSerialization;    // For IStreamReader
-using Graphs;
 using Address = System.UInt64;
 
 // Copy of version in Microsoft/PerfView
 
 // Graph contains generic Graph-Node traversal algorithms (spanning tree etc).
-namespace Graphs
+namespace Diagnostics.Helpers.DotNetHeapDump
 {
     /// <summary>
     /// A graph is representation of a node-arc graph.    It tries to be very space efficient.   It is a little
@@ -190,7 +190,7 @@ namespace Graphs
         public virtual NodeTypeIndex CreateType(string name, string? moduleName = null, int size = -1)
         {
             NodeTypeIndex ret = (NodeTypeIndex)m_types.Count;
-            TypeInfo typeInfo = default(TypeInfo);
+            TypeInfo typeInfo = default;
             typeInfo.Name = name;
             typeInfo.ModuleName = moduleName;
             typeInfo.Size = size;
@@ -309,7 +309,7 @@ namespace Graphs
             // make sure the m_types and m_deferedTypes arrays are in sync.
             while (m_deferedTypes.Count < m_types.Count)
             {
-                m_deferedTypes.Add(default(DeferedTypeInfo));
+                m_deferedTypes.Add(default);
             }
 
             NodeTypeIndex ret = (NodeTypeIndex)m_types.Count;
@@ -481,7 +481,7 @@ namespace Graphs
             // in the m_nodes table, so we make a fake one and then remove it.
             m_undefinedObjDef = m_writer.GetLabel();
             m_nodes.Add(m_undefinedObjDef);
-            SetNode(0, CreateType("UNDEFINED"), 0, default(GrowableArray<NodeIndex>));
+            SetNode(0, CreateType("UNDEFINED"), 0, default);
             Debug.Assert(m_nodes[0] == m_undefinedObjDef);
             m_nodes.Count = 0;
         }
@@ -534,7 +534,7 @@ namespace Graphs
             // TODO this is inefficient.  Also think about very large files.
             int readerLen = (int)m_reader.Length;
             serializer.Write(readerLen);
-            m_reader.Goto((StreamLabel)0);
+            m_reader.Goto(0);
             for (uint i = 0; i < readerLen; i++)
             {
                 serializer.Write(m_reader.ReadByte());
@@ -548,7 +548,7 @@ namespace Graphs
                 // which is a problem if we want to add new fields.  We could have had a worker object but another way of doing
                 // it is create a deferred (lazy region).   The key is that ALL readers know how to skip this region, which allows
                 // you to add new fields 'at the end' of the region (just like for sealed objects).
-                DeferedRegion expansion = default(DeferedRegion);
+                DeferedRegion expansion = default;
                 expansion.Write(serializer, delegate
                 {
                     // I don't need to use Tagged types for my 'first' version of this new region
@@ -573,7 +573,7 @@ namespace Graphs
             RootIndex = (NodeIndex)deserializer.ReadInt();
 
             // Read in the Types
-            TypeInfo info = default(TypeInfo);
+            TypeInfo info = default;
             int typeCount = deserializer.ReadInt();
             m_types = new GrowableArray<TypeInfo>(typeCount);
             for (int i = 0; i < typeCount; i++)
@@ -619,7 +619,7 @@ namespace Graphs
                 // which is a problem if we want to add new fields.  We could have had a worker object but another way of doing
                 // it is create a deferred (lazy region).   The key is that ALL readers know how to skip this region, which allows
                 // you to add new fields 'at the end' of the region (just like for sealed objects).
-                DeferedRegion expansion = default(DeferedRegion);
+                DeferedRegion expansion = default;
                 expansion.Read(deserializer, delegate
                 {
                     // I don't need to use Tagged types for my 'first' version of this new region
@@ -861,7 +861,7 @@ namespace Graphs
 
             ret <<= 7;
             b = reader.ReadByte();
-            ret += (b & 0x7f);
+            ret += b & 0x7f;
             if ((b & 0x80) == 0)
             {
                 return ret;
@@ -869,7 +869,7 @@ namespace Graphs
 
             ret <<= 7;
             b = reader.ReadByte();
-            ret += (b & 0x7f);
+            ret += b & 0x7f;
             if ((b & 0x80) == 0)
             {
                 return ret;
@@ -877,7 +877,7 @@ namespace Graphs
 
             ret <<= 7;
             b = reader.ReadByte();
-            ret += (b & 0x7f);
+            ret += b & 0x7f;
             if ((b & 0x80) == 0)
             {
                 return ret;
@@ -914,13 +914,13 @@ namespace Graphs
                     goto fourBytes;
                 }
 
-                writer.Write((byte)((value >> 28) | 0x80));
+                writer.Write((byte)(value >> 28 | 0x80));
             fourBytes:
-                writer.Write((byte)((value >> 21) | 0x80));
+                writer.Write((byte)(value >> 21 | 0x80));
             threeBytes:
-                writer.Write((byte)((value >> 14) | 0x80));
+                writer.Write((byte)(value >> 14 | 0x80));
             twoBytes:
-                writer.Write((byte)((value >> 7) | 0x80));
+                writer.Write((byte)(value >> 7 | 0x80));
             oneByte:
                 writer.Write((byte)(value & 0x7F));
             }
@@ -2202,7 +2202,7 @@ public class GraphSampler
             {
                 Node node = m_graph.GetNode(nodeIdx, m_nodeStorage);
                 SampleStats stats = m_statsByType[(int)node.TypeIndex];
-                int quota = (int)((stats.TotalCount / m_filteringRatio) + .5);
+                int quota = (int)(stats.TotalCount / m_filteringRatio + .5);
                 int needed = quota - stats.SampleCount;
                 if (needed > 0)
                 {
@@ -2297,8 +2297,8 @@ public class GraphSampler
             SampleStats stats = m_statsByType[typeIdx];
 
             m_log.WriteLine("{0,12:n6} {1,11:n6}  {2,9:f2} | {3,10:n0} {4,9:n0}  {5,9:f2} | {6,8:f0} | {7}",
-                stats.TotalMetric / 1000000.0, stats.SampleMetric / 1000000.0, (stats.SampleMetric == 0 ? 0.0 : (double)stats.TotalMetric / stats.SampleMetric),
-                stats.TotalCount, stats.SampleCount, (stats.SampleCount == 0 ? 0.0 : (double)stats.TotalCount / stats.SampleCount),
+                stats.TotalMetric / 1000000.0, stats.SampleMetric / 1000000.0, stats.SampleMetric == 0 ? 0.0 : (double)stats.TotalMetric / stats.SampleMetric,
+                stats.TotalCount, stats.SampleCount, stats.SampleCount == 0 ? 0.0 : (double)stats.TotalCount / stats.SampleCount,
                 (double)stats.TotalMetric / stats.TotalCount, type.Name);
         }
 
@@ -2382,7 +2382,7 @@ public class GraphSampler
             return;
         }
 
-        Debug.Assert(newNodeIdx == NodeIndex.Invalid || newNodeIdx == PotentialNode || (newNodeIdx == RejectedNode && mustAdd));
+        Debug.Assert(newNodeIdx == NodeIndex.Invalid || newNodeIdx == PotentialNode || newNodeIdx == RejectedNode && mustAdd);
 
         Node node = m_graph.GetNode(nodeIdx, m_nodeStorage);
         SampleStats stats = m_statsByType[(int)node.TypeIndex];

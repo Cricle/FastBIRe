@@ -1,5 +1,4 @@
-﻿using Microsoft.Diagnostics.Monitoring.EventPipe;
-using Microsoft.Diagnostics.NETCore.Client;
+﻿using Microsoft.Diagnostics.NETCore.Client;
 using System;
 using System.Collections.Generic;
 

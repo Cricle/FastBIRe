@@ -56,7 +56,11 @@ namespace Diagnostics.Helpers.Models
 
         public static ThreadSnapshot Create(ClrThread thread)
         {
-            var frames = thread.EnumerateStackTrace().Select(x => ThreadStackFrame.Create(x)).ToList();
+            var frames = new List<ThreadStackFrame>();
+            foreach (var item in thread.EnumerateStackTrace())
+            {
+                frames.Add(ThreadStackFrame.Create(item));
+            }
             return new ThreadSnapshot(
                 thread.OSThreadId,
                 thread.LockCount,
@@ -65,7 +69,7 @@ namespace Diagnostics.Helpers.Models
                 thread.IsFinalizer,
                 thread.StackBase,
                 thread.StackLimit,
-                false,
+                thread.State== ClrThreadState.TS_TPWorkerThread,
                 frames);
         }
     }

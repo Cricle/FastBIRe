@@ -1,5 +1,5 @@
 ﻿#pragma warning disable CA1416
-namespace Tracker
+namespace Diagnostics.Helpers
 {
     public readonly struct MetersResult
     {

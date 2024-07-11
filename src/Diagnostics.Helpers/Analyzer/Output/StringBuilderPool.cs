@@ -3,7 +3,7 @@
 
 using System.Text;
 
-namespace Microsoft.Diagnostics.ExtensionCommands.Output
+namespace Diagnostics.Helpers.Analyzer.Output
 {
     internal sealed class StringBuilderPool
     {

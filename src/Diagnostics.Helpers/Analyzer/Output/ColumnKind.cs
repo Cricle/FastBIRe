@@ -3,7 +3,7 @@
 
 using System;
 
-namespace Microsoft.Diagnostics.ExtensionCommands.Output
+namespace Diagnostics.Helpers.Analyzer.Output
 {
     internal static class ColumnKind
     {

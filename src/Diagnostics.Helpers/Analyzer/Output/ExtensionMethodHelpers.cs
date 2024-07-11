@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Diagnostics.ExtensionCommands.Output
+namespace Diagnostics.Helpers.Analyzer.Output
 {
     internal static class ExtensionMethodHelpers
     {
-        public static string ConvertToHumanReadable(this ulong totalBytes) => ConvertToHumanReadable((double)totalBytes);
+        public static string ConvertToHumanReadable(this ulong totalBytes) => ((double)totalBytes).ConvertToHumanReadable();
 
-        public static string ConvertToHumanReadable(this long totalBytes) => ConvertToHumanReadable((double)totalBytes);
+        public static string ConvertToHumanReadable(this long totalBytes) => ((double)totalBytes).ConvertToHumanReadable();
 
         public static string ConvertToHumanReadable(this double totalBytes)
         {

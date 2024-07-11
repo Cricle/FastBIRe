@@ -1,4 +1,4 @@
-﻿using Microsoft.Diagnostics.ExtensionCommands.Output;
+﻿using Diagnostics.Helpers.Analyzer.Output;
 using Microsoft.Diagnostics.Runtime;
 using System.Collections.Generic;
 using System.Collections.Immutable;

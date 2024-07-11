@@ -1,7 +1,6 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using Diagnostics.Helpers;
 using Microsoft.Diagnostics.Tracing;
 using System;
 using System.Collections.Generic;
@@ -9,7 +8,7 @@ using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.Diagnostics.Monitoring.EventPipe
+namespace Diagnostics.Helpers
 {
     internal abstract class CounterPayload : ICounterPayload
     {
@@ -94,7 +93,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             int series,
             string valueTags,
             TraceEvent? traceEvent,
-            EventWrittenEventArgs? writtenEventArgs) : base(timestamp, new(providerName, name, null, null, null), displayName, unit, value, counterType, interval, series, valueTags, EventType.Gauge,traceEvent,writtenEventArgs)
+            EventWrittenEventArgs? writtenEventArgs) : base(timestamp, new(providerName, name, null, null, null), displayName, unit, value, counterType, interval, series, valueTags, EventType.Gauge, traceEvent, writtenEventArgs)
         {
         }
     }
@@ -146,7 +145,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
     {
         public BeginInstrumentReportingPayload(CounterMetadata counterMetadata, DateTime timestamp, TraceEvent traceEvent,
             EventWrittenEventArgs? writtenEventArgs)
-            : base(timestamp, counterMetadata, string.Empty, string.Empty, 0.0, CounterType.Metric, null, EventType.BeginInstrumentReporting,traceEvent, writtenEventArgs)
+            : base(timestamp, counterMetadata, string.Empty, string.Empty, 0.0, CounterType.Metric, null, EventType.BeginInstrumentReporting, traceEvent, writtenEventArgs)
         {
         }
     }
@@ -155,7 +154,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
     {
         public CounterEndedPayload(CounterMetadata counterMetadata, DateTime timestamp, TraceEvent traceEvent,
             EventWrittenEventArgs? writtenEventArgs)
-            : base(timestamp, counterMetadata, string.Empty, string.Empty, 0.0, CounterType.Metric, null, EventType.CounterEnded,traceEvent, writtenEventArgs)
+            : base(timestamp, counterMetadata, string.Empty, string.Empty, 0.0, CounterType.Metric, null, EventType.CounterEnded, traceEvent, writtenEventArgs)
         {
         }
     }
@@ -164,7 +163,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
     {
         public RatePayload(CounterMetadata counterMetadata, string displayName, string displayUnits, string valueTags, double value, double intervalSecs, DateTime timestamp, TraceEvent traceEvent,
             EventWrittenEventArgs? writtenEventArgs) :
-            base(timestamp, counterMetadata, displayName, displayUnits, value, CounterType.Rate, valueTags, EventType.Rate,traceEvent, writtenEventArgs)
+            base(timestamp, counterMetadata, displayName, displayUnits, value, CounterType.Rate, valueTags, EventType.Rate, traceEvent, writtenEventArgs)
         {
             // In case these properties are not provided, set them to appropriate values.
             string counterName = string.IsNullOrEmpty(displayName) ? counterMetadata.CounterName : displayName;
@@ -211,7 +210,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
     {
         public ErrorPayload(string errorMessage, DateTime timestamp, EventType eventType, TraceEvent traceEvent,
             EventWrittenEventArgs? writtenEventArgs)
-            : base(timestamp, new(), string.Empty, string.Empty, 0.0, CounterType.Metric, null, eventType,traceEvent,writtenEventArgs)
+            : base(timestamp, new(), string.Empty, string.Empty, 0.0, CounterType.Metric, null, eventType, traceEvent, writtenEventArgs)
         {
             ErrorMessage = errorMessage;
         }
@@ -286,9 +285,9 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
 
         public static bool IsNonFatalError(this EventType eventType)
         {
-            return IsError(eventType)
-                && !IsTracingError(eventType)
-                && !IsSessionStartupError(eventType);
+            return eventType.IsError()
+                && !eventType.IsTracingError()
+                && !eventType.IsSessionStartupError();
         }
 
         public static bool IsTracingError(this EventType eventType)

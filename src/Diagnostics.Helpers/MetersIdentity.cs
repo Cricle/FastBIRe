@@ -1,10 +1,8 @@
-﻿using Diagnostics.Helpers;
-
-namespace Tracker
+﻿namespace Diagnostics.Helpers
 {
     public readonly struct MetersIdentity
     {
-        public MetersIdentity(IEventSampleCreator eventSampleCreator,string name)
+        public MetersIdentity(IEventSampleCreator eventSampleCreator, string name)
         {
             Name = name;
             EventSampleCreator = eventSampleCreator;

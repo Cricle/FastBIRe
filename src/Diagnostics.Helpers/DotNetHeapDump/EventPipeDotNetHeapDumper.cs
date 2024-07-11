@@ -7,13 +7,12 @@ using System.Diagnostics.Tracing;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Graphs;
 using Microsoft.Diagnostics.NETCore.Client;
 using Microsoft.Diagnostics.Tracing;
 using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Parsers.Clr;
 
-namespace Microsoft.Diagnostics.Tools.GCDump
+namespace Diagnostics.Helpers.DotNetHeapDump
 {
     public static class EventPipeDotNetHeapDumper
     {
@@ -136,12 +135,14 @@ namespace Microsoft.Diagnostics.Tools.GCDump
                 }, false))
                 {
                     log.WriteLine("{0,5:n1}s: Flushing the type table", getElapsed().TotalSeconds);
-                    typeFlushSession.Source.AllEvents += (traceEvent) => {
+                    typeFlushSession.Source.AllEvents += (traceEvent) =>
+                    {
                         if (!fDone)
                         {
                             fDone = true;
                             Task.Run(
-                                () => {
+                                () =>
+                                {
                                     typeFlushSession.EndSession();
                                     typeFlushSession.Source.StopProcessing();
                                 });
@@ -157,7 +158,7 @@ namespace Microsoft.Diagnostics.Tools.GCDump
                 log.WriteLine("{0,5:n1}s: Requesting a .NET Heap Dump", getElapsed().TotalSeconds);
 
                 using EventPipeSessionController gcDumpSession = new(processId, new List<EventPipeProvider> {
-                    new EventPipeProvider("Microsoft-Windows-DotNETRuntime", EventLevel.Verbose, (long)(ClrTraceEventParser.Keywords.GCHeapSnapshot))
+                    new EventPipeProvider("Microsoft-Windows-DotNETRuntime", EventLevel.Verbose, (long)ClrTraceEventParser.Keywords.GCHeapSnapshot)
                 });
                 log.WriteLine("{0,5:n1}s: gcdump EventPipe Session started", getElapsed().TotalSeconds);
 
@@ -216,7 +217,8 @@ namespace Microsoft.Diagnostics.Tools.GCDump
                 }
 
                 // Set up a separate thread that will listen for EventPipe events coming back telling us we succeeded.
-                Task readerTask = Task.Run(() => {
+                Task readerTask = Task.Run(() =>
+                {
                     // cancelled before we began
                     if (ct.IsCancellationRequested)
                     {
@@ -259,7 +261,8 @@ namespace Microsoft.Diagnostics.Tools.GCDump
                     }
                 }
 
-                Task stopTask = Task.Run(() => {
+                Task stopTask = Task.Run(() =>
+                {
                     log.WriteLine("{0,5:n1}s: Shutting down gcdump EventPipe session", getElapsed().TotalSeconds);
                     gcDumpSession.EndSession();
                     log.WriteLine("{0,5:n1}s: gcdump EventPipe session shut down", getElapsed().TotalSeconds);
@@ -319,7 +322,7 @@ namespace Microsoft.Diagnostics.Tools.GCDump
 
         public int PID => _pid;
 
-        public EventPipeSessionController(int pid,  List<EventPipeProvider> providers, bool requestRundown = true)
+        public EventPipeSessionController(int pid, List<EventPipeProvider> providers, bool requestRundown = true)
         {
 
             _pid = pid;

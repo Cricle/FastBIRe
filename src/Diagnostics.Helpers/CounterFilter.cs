@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Microsoft.Diagnostics.Monitoring.EventPipe
+namespace Diagnostics.Helpers
 {
     public sealed class CounterFilter
     {
@@ -33,7 +33,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
         public void AddFilter(string providerName, string[] counters, float? intervalSeconds = null)
         {
             _enabledCounters[providerName] = (
-                IntervalMilliseconds: (intervalSeconds.HasValue ? SecondsToMilliseconds(intervalSeconds.Value) : null),
+                IntervalMilliseconds: intervalSeconds.HasValue ? SecondsToMilliseconds(intervalSeconds.Value) : null,
                 CounterNames: new List<string>(counters ?? Array.Empty<string>()));
         }
 

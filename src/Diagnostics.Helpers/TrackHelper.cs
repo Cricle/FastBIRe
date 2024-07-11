@@ -1,5 +1,4 @@
 ﻿#pragma warning disable CA1416
-using Diagnostics.Helpers;
 using Microsoft.Diagnostics.NETCore.Client;
 using Microsoft.Win32;
 using System;
@@ -12,7 +11,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Tracker
+namespace Diagnostics.Helpers
 {
     public static class FullTrackHelper
     {
@@ -114,7 +113,7 @@ namespace Tracker
         public static async Task WriteGcDumpAsync(TextWriter writer, int processId)
         {
             GcDumpHelper.TryCollectMemoryGraph(processId, 10_000, null, out var mg, default);
-            await GcDumpHelper.WriteAsync(mg, writer);
+            await mg.WriteAsync(writer);
         }
         public static Task WriteStackAsync(TextWriter writer, int processId)
         {
@@ -153,7 +152,7 @@ namespace Tracker
         }
         private static async Task<MetersResult> CreateMetersAsync(int processId, MetersIdentity identity, TimeSpan delayTime)
         {
-            var meters = EventSampleCreatorCreateHelper.GetIntervalSample(identity.EventSampleCreator, processId, TimeSpan.FromSeconds(1));
+            var meters = identity.EventSampleCreator.GetIntervalSample(processId, TimeSpan.FromSeconds(1));
             await Task.Delay(delayTime);
             return new MetersResult(identity, meters.Counter.ToString() ?? string.Empty);
         }
@@ -171,7 +170,7 @@ namespace Tracker
                     using var key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, Environment.Is64BitOperatingSystem ? RegistryView.Registry64 : RegistryView.Registry32);
                     var procName = key.OpenSubKey("HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0");
                     var val = procName?.GetValue("ProcessorNameString")?.ToString()?.Trim();
-                    return $"{procName}, {(mem.ullTotalVirtual / 1024 / 1024.0):f5}Gb";
+                    return $"{procName}, {mem.ullTotalVirtual / 1024 / 1024.0:f5}Gb";
                 }
                 else if (Environment.OSVersion.Platform == PlatformID.Unix)
                 {
@@ -212,7 +211,7 @@ namespace Tracker
                                 break;
                             }
                         }
-                        return $"{modelName}, {(physicalMem / 1024 / 1024.0):f5}Gb";
+                        return $"{modelName}, {physicalMem / 1024 / 1024.0:f5}Gb";
                     }
                 }
                 return "Unknow";

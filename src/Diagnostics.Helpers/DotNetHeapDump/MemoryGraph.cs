@@ -8,7 +8,7 @@ using Address = System.UInt64;
 
 // Copy of version in Microsoft/PerfView
 
-namespace Graphs
+namespace Diagnostics.Helpers.DotNetHeapDump
 {
     public class MemoryGraph : Graph, IFastSerializable
     {
@@ -152,7 +152,7 @@ namespace Graphs
 
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            base.FromStream(deserializer);
+            FromStream(deserializer);
             // Read in the Memory addresses of each object
             long addressCount = m_isVeryLargeGraph ? deserializer.ReadInt64() : deserializer.ReadInt();
             m_nodeAddresses = new SegmentedList<ulong>(SegmentSize, addressCount);

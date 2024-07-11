@@ -10,11 +10,14 @@ namespace Diagnostics.Helpers.Models
     {
         public RuntimeSnapshot(string? fileName, Version? version, IList<ThreadSnapshot> threads, ThreadPoolSnapshot? threadPool)
         {
+            Time = DateTime.Now;
             FileName = fileName;
             Version = version;
             Threads = threads;
             ThreadPool = threadPool;
         }
+
+        public DateTime Time { get; }
 
         public string? FileName { get; set; }
 
@@ -43,13 +46,18 @@ namespace Diagnostics.Helpers.Models
         {
             var module = runtime.ClrInfo.ModuleInfo;
             var threadPool = runtime.ThreadPool;
-            var threadInfos = runtime.Threads.Select(ThreadSnapshot.Create).ToList();
+            var threads = new ThreadSnapshot[runtime.Threads.Length];
+            for (int i = 0; i < runtime.Threads.Length; i++)
+            {
+                var thread = runtime.Threads[i];
+                threads[i] = ThreadSnapshot.Create(thread);
+            }
             ThreadPoolSnapshot? threadPoolSnapshot = null;
             if (threadPool != null)
             {
                 threadPoolSnapshot = ThreadPoolSnapshot.Create(threadPool);
             }
-            return new RuntimeSnapshot(module.FileName, module.Version, threadInfos, threadPoolSnapshot);
+            return new RuntimeSnapshot(module.FileName, module.Version, threads, threadPoolSnapshot);
         }
     }
 }

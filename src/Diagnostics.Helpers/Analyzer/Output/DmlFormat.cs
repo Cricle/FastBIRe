@@ -4,7 +4,7 @@
 using System.Text;
 using System.Xml.Linq;
 
-namespace Microsoft.Diagnostics.ExtensionCommands.Output
+namespace Diagnostics.Helpers.Analyzer.Output
 {
     internal abstract class DmlFormat
     {

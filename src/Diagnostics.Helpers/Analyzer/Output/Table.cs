@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.Diagnostics.ExtensionCommands.Output
+namespace Diagnostics.Helpers.Analyzer.Output
 {
     internal class Table
     {
@@ -165,7 +165,7 @@ namespace Microsoft.Diagnostics.ExtensionCommands.Output
 
                     int remainder = column.Width - displayLength;
                     int right = remainder >> 1;
-                    int left = right + (remainder % 2);
+                    int left = right + remainder % 2;
 
                     sb.Append(' ', left);
                     sb.Append(toWrite);

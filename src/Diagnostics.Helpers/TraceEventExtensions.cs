@@ -1,7 +1,6 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using Diagnostics.Helpers;
 using Microsoft.Diagnostics.Tracing;
 using System;
 using System.Collections.Generic;
@@ -10,7 +9,7 @@ using System.Diagnostics.Tracing;
 using System.Globalization;
 using System.Text;
 
-namespace Microsoft.Diagnostics.Monitoring.EventPipe
+namespace Diagnostics.Helpers
 {
     public class CounterConfiguration
     {
@@ -33,7 +32,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
     internal record struct ProviderAndCounter(string ProviderName, string CounterName);
     public static class InnerEventExtensions
     {
-        public static bool TryGetCounterPayload<T>(this Instrument instrument,T measurement, ReadOnlySpan<KeyValuePair<string,object?>> tags, out ICounterPayload? payload)
+        public static bool TryGetCounterPayload<T>(this Instrument instrument, T measurement, ReadOnlySpan<KeyValuePair<string, object?>> tags, out ICounterPayload? payload)
         {
             double value;
             if (measurement is double d)
@@ -48,14 +47,14 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             payload = new EventCounterPayload(
                     DateTime.Now,
                     instrument.Name,
-                    instrument.Name, 
+                    instrument.Name,
                     instrument.Description,
                     instrument.Unit,
                     value,
                     CounterType.Metric,
                     -1,
                     -1,
-                    MakeTagString(instrument.Tags,tags),
+                    MakeTagString(instrument.Tags, tags),
                     null,
                     null);
 
@@ -77,11 +76,11 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
                 s.Append('\"');
             }
         }
-        private static string MakeTagString(IEnumerable<KeyValuePair<string,object?>>? tags, ReadOnlySpan<KeyValuePair<string, object?>> otherTags)
+        private static string MakeTagString(IEnumerable<KeyValuePair<string, object?>>? tags, ReadOnlySpan<KeyValuePair<string, object?>> otherTags)
         {
             var s = new StringBuilder();
             s.Append('{');
-            if (tags!=null)
+            if (tags != null)
             {
                 var isFirst = true;
                 foreach (var item in tags)
@@ -109,7 +108,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
                         {
                             s.Append(',');
                         }
-                    AppendItem(s, item);
+                        AppendItem(s, item);
                     }
                 }
             }
@@ -121,7 +120,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
         {
             if ("EventCounters".Equals(eventArgs.EventName))
             {
-                IDictionary<string, object> payloadFields = (IDictionary<string, object>)(eventArgs.Payload[0]);
+                IDictionary<string, object> payloadFields = (IDictionary<string, object>)eventArgs.Payload[0];
 
                 //Make sure we are part of the requested series. If multiple clients request metrics, all of them get the metrics.
                 string series = payloadFields["Series"].ToString();
@@ -199,8 +198,8 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
 
             if ("EventCounters".Equals(traceEvent.EventName))
             {
-                IDictionary<string, object> payloadVal = (IDictionary<string, object>)(traceEvent.PayloadValue(0));
-                IDictionary<string, object> payloadFields = (IDictionary<string, object>)(payloadVal["Payload"]);
+                IDictionary<string, object> payloadVal = (IDictionary<string, object>)traceEvent.PayloadValue(0);
+                IDictionary<string, object> payloadFields = (IDictionary<string, object>)payloadVal["Payload"];
 
                 //Make sure we are part of the requested series. If multiple clients request metrics, all of them get the metrics.
                 string series = payloadFields["Series"].ToString();
@@ -336,7 +335,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
             // the value might be an empty string indicating no measurement was provided this collection interval
             if (double.TryParse(lastValueText, NumberStyles.Number | NumberStyles.Float, CultureInfo.InvariantCulture, out double lastValue))
             {
-                payload = new GaugePayload(GetCounterMetadata(meterName, instrumentName), null, unit, tags, lastValue, obj.TimeStamp, obj,null);
+                payload = new GaugePayload(GetCounterMetadata(meterName, instrumentName), null, unit, tags, lastValue, obj.TimeStamp, obj, null);
             }
             else
             {
@@ -375,7 +374,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
                 string meterTags = (string)traceEvent.PayloadValue(8);
                 string meterScopeHash = (string)traceEvent.PayloadValue(9);
 
-                payload = new BeginInstrumentReportingPayload(GetCounterMetadata(meterName, instrumentName, meterTags, instrumentTags, meterScopeHash), traceEvent.TimeStamp,traceEvent, null);
+                payload = new BeginInstrumentReportingPayload(GetCounterMetadata(meterName, instrumentName, meterTags, instrumentTags, meterScopeHash), traceEvent.TimeStamp, traceEvent, null);
             }
         }
 
@@ -598,7 +597,7 @@ namespace Microsoft.Diagnostics.Monitoring.EventPipe
 
             if (TryCreateSharedSessionConfiguredIncorrectlyMessage(obj, clientId, out string message))
             {
-                payload = new ErrorPayload(message.ToString(), obj.TimeStamp, EventType.MultipleSessionsConfiguredIncorrectlyError,obj, null);
+                payload = new ErrorPayload(message.ToString(), obj.TimeStamp, EventType.MultipleSessionsConfiguredIncorrectlyError, obj, null);
 
                 inactiveSharedSessions.Add(clientId);
             }
