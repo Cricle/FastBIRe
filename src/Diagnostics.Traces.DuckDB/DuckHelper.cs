@@ -8,11 +8,12 @@ namespace Diagnostics.Traces.DuckDB
 {
     internal static class DuckHelper
     {
-        public static unsafe string WrapValue<T>(T? input)
+        public static unsafe void WrapValue<T>(ref ValueStringBuilder builder,T? input)
         {
             if (input == null || Equals(input, DBNull.Value))
             {
-                return "NULL";
+                builder.Append("NULL");
+                return;
             }
             else if (input is string || input is Guid)
             {
@@ -21,91 +22,176 @@ namespace Diagnostics.Traces.DuckDB
                 {
                     str = str.Replace("'", "''");
                 }
-                return $"'{str}'";
+                builder.Append('\'');
+                builder.Append(str);
+                builder.Append('\'');
+                return;
             }
             else if (input is DateTime dt)
             {
                 if (dt.Date == dt)
                 {
-                    return $"'{dt:yyyy-MM-dd}'";
+                    builder.AppendDate(dt);
+                    return;
                 }
-                return $"'{dt:yyyy-MM-dd HH:mm:ss.ffff}'";
+                builder.Append('\'');
+                builder.AppendDateTime(dt);
+                builder.Append('.');
+                builder.Append(dt.Millisecond.ToString());
+                builder.Append('\'');
+                return;
             }
             else if (input is DateTimeOffset timeOffset)
             {
-                return $"'{timeOffset:yyyy-MM-dd HH:mm:ss.ffff}'";
+                builder.Append('\'');
+                builder.Append(timeOffset.ToString("yyyy-MM-dd HH:mm:ss.ffff"));
+                builder.Append('\'');
+                return;
             }
             else if (input is byte[] buffer)
             {
-                return $"0x{BitConverter.ToString(buffer).Replace("-", string.Empty)}";
+                builder.Append("0x");
+                builder.Append(BitConverter.ToString(buffer).Replace("-", string.Empty));
+                return;
             }
             else if (input is IEnumerable<KeyValuePair<string, object?>> arrayObject)
             {
-                return MapAsString(arrayObject);
+                MapAsString(ref builder, arrayObject);
+                return;
             }
             else if (input is IEnumerable<KeyValuePair<string, string?>> arrayString)
             {
-                return MapAsString(arrayString);
+                MapAsString(ref builder, arrayString);
+                return;
             }
             else if (input is IEnumerable<ActivityEvent> events)
             {
-                return MapAsString(events);
+                MapAsString(ref builder, events);
+                return;
             }
             else if (input is IEnumerable<ActivityLink> links)
             {
-                return MapAsString(links);
+                MapAsString(ref builder, links);
+                return;
             }
             else if (input is ActivityContext context)
             {
-                return MapAsString(context);
+                MapAsString(ref builder, context);
+                return;
             }
             else if (input is ReadOnlyTagCollection tags)
             {
-                return MapAsString(tags);
+                MapAsString(ref builder, tags);
+                return;
             }
             else if (input is IDictionary dictionary)
             {
-                return MapAsString(dictionary);
+                MapAsString(ref builder, dictionary);
+                return;
             }
             else if (input is bool b)
             {
-                return b ? "true" : "false";
+                if (b)
+                {
+                    builder.Append("true");
+                }
+                else
+                {
+                    builder.Append("false");
+                }
+                return;
             }
             else if (input is double d)
-            {
+            {                
                 if (double.IsPositiveInfinity(d))
                 {
-                    return "'Infinity'::DOUBLE";
+                    builder.Append("'Infinity'::DOUBLE");
+                    return;
                 }
                 else if (double.IsNegativeInfinity(d))
                 {
-                    return "'-Infinity'::DOUBLE";
+                    builder.Append("'-Infinity'::DOUBLE");
+                    return;
                 }
                 else if (double.IsNaN(d))
                 {
-                    return "'NaN'::DOUBLE";
+                    builder.Append("'NaN'::DOUBLE");
+                    return;
                 }
+#if !NETSTANDARD2_0
+                Span<char> doubleBuffer = stackalloc char[256];
+                if (d.TryFormat(doubleBuffer,out var written))
+                {
+                    builder.Append(doubleBuffer.Slice(0, written));
+                    return;
+                }
+#endif
             }
             else if (input is float f)
             {
                 if (float.IsPositiveInfinity(f))
                 {
-                    return "'Infinity'::FLOAT";
+                    builder.Append("'Infinity'::FLOAT");
+                    return;
                 }
                 else if (float.IsNegativeInfinity(f))
                 {
-                    return "'-Infinity'::FLOAT";
+                    builder.Append("'-Infinity'::FLOAT");
+                    return;
                 }
                 else if (float.IsNaN(f))
                 {
-                    return "'NaN'::FLOAT";
+                    builder.Append("'-NaN'::FLOAT");
+                    return;
+                }
+#if !NETSTANDARD2_0
+                Span<char> numBuffer = stackalloc char[256];
+                if (f.TryFormat(numBuffer, out var written))
+                {
+                    builder.Append(numBuffer.Slice(0, written));
+                    return;
+                }
+#endif
+            }
+#if !NETSTANDARD2_0
+            else if (input is int i)
+            {
+                Span<char> numBuffer = stackalloc char[11];
+                if (i.TryFormat(numBuffer, out var written))
+                {
+                    builder.Append(numBuffer.Slice(0, written));
+                    return;
                 }
             }
+            else if (input is long l)
+            {
+                Span<char> numBuffer = stackalloc char[20];
+                if (l.TryFormat(numBuffer, out var written))
+                {
+                    builder.Append(numBuffer.Slice(0, written));
+                    return;
+                }
+            }
+            else if (input is short s)
+            {
+                Span<char> numBuffer = stackalloc char[6];
+                if (s.TryFormat(numBuffer, out var written))
+                {
+                    builder.Append(numBuffer.Slice(0, written));
+                    return;
+                }
+            }
+#endif
             else if (input is Enum e)
             {
-                return Enum.Format(typeof(T), e, "D");
+                builder.Append(Enum.Format(TypeCache<T>.type, e, "D"));
+                return;
             }
-            return input.ToString()!;
+            builder.Append(input.ToString()!);
+        }
+        static class TypeCache<T>
+        {
+            public static readonly Type type = typeof(T);
         }
         private static void MapAsString(ref ValueStringBuilder s, MetricType metricType, in MetricPoint point)
         {
@@ -113,16 +199,16 @@ namespace Diagnostics.Traces.DuckDB
             if (metricType == MetricType.Histogram || metricType == MetricType.ExponentialHistogram)
             {
                 s.Append("'value':NULL,'sum':");
-                s.Append(WrapValue(point.GetHistogramSum()));
+                WrapValue(ref s, point.GetHistogramSum());
                 s.Append(",'count':");
-                s.Append(WrapValue(point.GetHistogramCount()));
+                WrapValue(ref s, point.GetHistogramCount());
                 s.Append(',');
                 if (point.TryGetHistogramMinMaxValues(out double min, out double max))
                 {
                     s.Append("'min':");
-                    s.Append(WrapValue(min));
+                    WrapValue(ref s, min);
                     s.Append(",'max':");
-                    s.Append(WrapValue(max));
+                    WrapValue(ref s, max);
                     s.Append(',');
                 }
                 else
@@ -145,33 +231,33 @@ namespace Diagnostics.Traces.DuckDB
                         if (isFirstIteration)
                         {
                             s.Append("'rangeLeft':");
-                            s.Append(WrapValue(double.NegativeInfinity) + "::DOUBLE");
+                            WrapValue(ref s, double.NegativeInfinity);
                             s.Append(",'rangeRight':");
-                            s.Append(WrapValue(histogramMeasurement.ExplicitBound));
+                            WrapValue(ref s, histogramMeasurement.ExplicitBound);
 
                             s.Append(",'bucketCount':");
-                            s.Append(WrapValue(histogramMeasurement.BucketCount));
+                            WrapValue(ref s,histogramMeasurement.BucketCount);
                             previousExplicitBound = histogramMeasurement.ExplicitBound;
                             isFirstIteration = false;
                         }
                         else
                         {
                             s.Append("'rangeLeft':");
-                            s.Append(WrapValue(previousExplicitBound));
+                            WrapValue(ref s,previousExplicitBound);
                             s.Append(",'rangeRight':");
 
                             if (histogramMeasurement.ExplicitBound != double.PositiveInfinity)
                             {
-                                s.Append(WrapValue(histogramMeasurement.ExplicitBound));
+                                WrapValue(ref s,histogramMeasurement.ExplicitBound);
                                 previousExplicitBound = histogramMeasurement.ExplicitBound;
                             }
                             else
                             {
-                                s.Append(WrapValue(double.PositiveInfinity) + "::DOUBLE");
+                                WrapValue(ref s, double.PositiveInfinity);
                             }
 
                             s.Append(",'bucketCount':");
-                            s.Append(WrapValue(histogramMeasurement.BucketCount));
+                            WrapValue(ref s,histogramMeasurement.BucketCount);
                         }
                         s.Append("}");
                     }
@@ -181,7 +267,7 @@ namespace Diagnostics.Traces.DuckDB
                 {
                     var exponentialHistogramData = point.GetExponentialHistogramData();
                     s.Append("'histogram':NULL,zeroCount':");
-                    s.Append(WrapValue(exponentialHistogramData.ZeroCount));
+                    WrapValue(ref s,exponentialHistogramData.ZeroCount);
                     s.Append("'buckets':ARRAY [");
 
                     var scale = exponentialHistogramData.Scale;
@@ -200,11 +286,11 @@ namespace Diagnostics.Traces.DuckDB
                         }
                         s.Append("{");
                         s.Append("\"lowerBound\":");
-                        s.Append(WrapValue(Base2ExponentialBucketHistogramHelper.CalculateLowerBoundary(offset, scale)));
+                        WrapValue(ref s,Base2ExponentialBucketHistogramHelper.CalculateLowerBoundary(offset, scale));
                         s.Append(",\"upperBound\":");
-                        s.Append(WrapValue(Base2ExponentialBucketHistogramHelper.CalculateLowerBoundary(offset, scale)));
+                        WrapValue(ref s, Base2ExponentialBucketHistogramHelper.CalculateLowerBoundary(offset, scale));
                         s.Append(",\"bucketCount\":");
-                        s.Append(WrapValue(bucketCount));
+                        WrapValue(ref s, bucketCount);
                         s.Append("}");
                     }
                     s.Append("]");
@@ -219,32 +305,32 @@ namespace Diagnostics.Traces.DuckDB
                 {
                     if (metricType.IsSum())
                     {
-                        s.Append(WrapValue(point.GetSumDouble()));
+                        WrapValue(ref s, point.GetSumDouble());
                     }
                     else
                     {
-                        s.Append(WrapValue(point.GetGaugeLastValueDouble()));
+                        WrapValue(ref s, point.GetGaugeLastValueDouble());
                     }
                 }
                 else if (metricType.IsLong())
                 {
                     if (metricType.IsSum())
                     {
-                        s.Append(WrapValue(point.GetSumLong()));
+                        WrapValue(ref s, point.GetSumLong());
                     }
                     else
                     {
-                        s.Append(WrapValue(point.GetGaugeLastValueLong()));
+                        WrapValue(ref s, point.GetGaugeLastValueLong());
                     }
                 }
                 s.Append(",'sum':NULL,'min':NULL,'max':NULL,'count':NULL,'histogram':NULL,'zeroBucketCount':NULL,'buckets':NULL,");
             }
             s.Append("'startTime':");
-            s.Append(WrapValue(point.StartTime));
+            WrapValue(ref s, point.StartTime);
             s.Append(",'endTime':");
-            s.Append(WrapValue(point.StartTime));
+            WrapValue(ref s, point.StartTime);
             s.Append(",'tags':");
-            s.Append(WrapValue(point.Tags));
+            WrapValue(ref s, point.Tags);
             s.Append("}");
         }
         internal static void MapAsString(ref ValueStringBuilder s, MetricType metricType, in MetricPointsAccessor points)
@@ -265,34 +351,31 @@ namespace Diagnostics.Traces.DuckDB
             }
             s.Append(']');
         }
-        private static string MapAsString(in ActivityContext context)
+        private static void MapAsString(ref ValueStringBuilder builder, in ActivityContext context)
         {
-            using var s = new ValueStringBuilder();
-            s.Append("{");
-            s.Append("'traceId':");
-            s.Append(WrapValue(context.TraceId.ToString()));
-            s.Append(",'traceState':");
-            s.Append(WrapValue(context.TraceState));
-            s.Append(",'traceFlags':");
-            s.Append(WrapValue(context.TraceFlags));
-            s.Append(",'isRemote':");
-            s.Append(WrapValue(context.IsRemote));
-            s.Append(",'spanId':");
-            s.Append(WrapValue(context.SpanId.ToString()));
-            s.Append('}');
-            return s.ToString();
+            builder.Append("{'traceId':");
+            WrapValue(ref builder,context.TraceId.ToString());
+            builder.Append(",'traceState':");
+            WrapValue(ref builder, context.TraceState);
+            builder.Append(",'traceFlags':");
+            WrapValue(ref builder, context.TraceFlags);
+            builder.Append(",'isRemote':");
+            WrapValue(ref builder, context.IsRemote);
+            builder.Append(",'spanId':");
+            WrapValue(ref builder, context.SpanId.ToString());
+            builder.Append('}');
         }
 
-        private static string MapAsString(IEnumerable<ActivityLink> links)
+        private static void MapAsString(ref ValueStringBuilder builder, IEnumerable<ActivityLink> links)
         {
             if (!links.Any())
             {
-                return "ARRAY []";
+                builder.Append("ARRAY []");
+                return;
             }
 
             var isFirst = true;
-            using var s = new ValueStringBuilder();
-            s.Append("ARRAY [");
+            builder.Append("ARRAY [");
             foreach (var item in links)
             {
                 if (isFirst)
@@ -301,30 +384,28 @@ namespace Diagnostics.Traces.DuckDB
                 }
                 else
                 {
-                    s.Append(',');
+                    builder.Append(',');
                 }
-                s.Append("{");
-                s.Append("'context':");
-                s.Append(WrapValue(item.Context));
-                s.Append(",'tags':");
-                s.Append(WrapValue(item.Tags));
-                s.Append("}");
+                builder.Append("{'context':");
+                WrapValue(ref builder,item.Context);
+                builder.Append(",'tags':");
+                WrapValue(ref builder,item.Tags);
+                builder.Append("}");
             }
 
-            s.Append(']');
-            return s.ToString();
+            builder.Append(']');
 
         }
-        private static string MapAsString(IEnumerable<ActivityEvent> events)
+        private static void MapAsString(ref ValueStringBuilder builder, IEnumerable<ActivityEvent> events)
         {
             if (!events.Any())
             {
-                return "ARRAY []";
+                builder.Append("ARRAY []");
+                return;
             }
 
             var isFirst = true;
-            using var s = new ValueStringBuilder();
-            s.Append("ARRAY [");
+            builder.Append("ARRAY [");
             foreach (var item in events)
             {
                 if (isFirst)
@@ -333,31 +414,28 @@ namespace Diagnostics.Traces.DuckDB
                 }
                 else
                 {
-                    s.Append(',');
+                    builder.Append(',');
                 }
-                s.Append("{");
-                s.Append("'name':");
-                s.Append(WrapValue(item.Name));
-                s.Append(",'timestamp':");
-                s.Append(WrapValue(item.Timestamp));
-                s.Append(",'tags':");
-                s.Append(WrapValue(item.Tags));
-                s.Append("}");
+                builder.Append("{'name':");
+                WrapValue(ref builder,item.Name);
+                builder.Append(",'timestamp':");
+                WrapValue(ref builder, item.Timestamp);
+                builder.Append(",'tags':");
+                WrapValue(ref builder, item.Tags);
+                builder.Append("}");
             }
-            //s.Remove(s.Length - 1, 1);
-            s.Append(']');
-            return s.ToString();
+            builder.Append(']');
         }
-        private static string MapAsString(in ReadOnlyTagCollection tags)
+        private static void MapAsString(ref ValueStringBuilder builder, in ReadOnlyTagCollection tags)
         {
             if (tags.Count == 0)
             {
-                return "MAP {}";
+                builder.Append("MAP {}");
+                return;
             }
             var isFirst = true;
-            using var s = new ValueStringBuilder();
             var addedSet = new HashSet<string>();
-            s.Append("MAP {");
+            builder.Append("MAP {");
             foreach (var item in tags)
             {
                 if (!addedSet.Add(item.Key))
@@ -370,26 +448,25 @@ namespace Diagnostics.Traces.DuckDB
                 }
                 else
                 {
-                    s.Append(',');
+                    builder.Append(',');
                 }
-                s.Append(WrapValue(item.Key));
-                s.Append(':');
-                s.Append(WrapValue(item.Value?.ToString()));
+                WrapValue(ref builder, item.Key);
+                builder.Append(':');
+                WrapValue(ref builder, item.Value);
             }
             //s.Remove(s.Length - 1, 1);
-            s.Append('}');
-            return s.ToString();
+            builder.Append('}');
         }
-        private static string MapAsString<T>(IEnumerable<KeyValuePair<string, T>> arrayObject)
+        private static void MapAsString<T>(ref ValueStringBuilder builder, IEnumerable<KeyValuePair<string, T>> arrayObject)
         {
             if (!arrayObject.Any())
             {
-                return "MAP {}";
+                builder.Append("MAP {}");
+                return;
             }
             var isFirst = true;
-            using var s = new ValueStringBuilder();
             var addedSet = new HashSet<string>();
-            s.Append("MAP {");
+            builder.Append("MAP {");
             foreach (var item in arrayObject)
             {
                 if (!addedSet.Add(item.Key))
@@ -402,26 +479,24 @@ namespace Diagnostics.Traces.DuckDB
                 }
                 else
                 {
-                    s.Append(',');
+                    builder.Append(',');
                 }
-                s.Append(WrapValue(item.Key));
-                s.Append(':');
-                s.Append(WrapValue(item.Value?.ToString()));
+                WrapValue(ref builder, item.Key);
+                builder.Append(':');
+                WrapValue(ref builder, item.Value);
             }
-            //s.Remove(s.Length-1, 1);
-            s.Append('}');
-            return s.ToString();
+            builder.Append('}');
         }
-        private static string MapAsString(IDictionary arrayObject)
+        private static void MapAsString(ref ValueStringBuilder builder, IDictionary arrayObject)
         {
             if (arrayObject.Count == 0)
             {
-                return "MAP {}";
+                builder.Append("MAP {}");
+                return;
             }
             var isFirst = true;
-            using var s = new ValueStringBuilder();
             var addedSet=new HashSet<string>();
-            s.Append("MAP {");
+            builder.Append("MAP {");
             foreach (KeyValuePair<object, object?> item in arrayObject)
             {
                 if (item.Key == null)
@@ -439,15 +514,13 @@ namespace Diagnostics.Traces.DuckDB
                 }
                 else
                 {
-                    s.Append(',');
+                    builder.Append(',');
                 }
-                s.Append(WrapValue(key));
-                s.Append(':');
-                s.Append(WrapValue(item.Value?.ToString()));
+                WrapValue(ref builder, key);
+                builder.Append(':');
+                WrapValue(ref builder, item.Value);
             }
-            //s.Remove(s.Length-1, 1);
-            s.Append('}');
-            return s.ToString();
+            builder.Append('}');
         }
     }
 }

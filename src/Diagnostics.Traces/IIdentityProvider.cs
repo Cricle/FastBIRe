@@ -9,6 +9,8 @@
     {
         public static readonly GetIdentityResult<TIdentity> Fail = new GetIdentityResult<TIdentity>(default, false);
 
+        public static readonly GetIdentityResult<TIdentity> SucceedEmptyIdentity = new GetIdentityResult<TIdentity>(default, true);
+
         internal GetIdentityResult(TIdentity? identity, bool succeed)
         {
             Identity = identity;

@@ -101,42 +101,42 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append('(');
                 if ((mode & SaveLogModes.Timestamp) != 0)
                 {
-                    s.Append(DuckHelper.WrapValue(item.Timestamp));
+                    DuckHelper.WrapValue(ref s,item.Timestamp);
                     s.Append(',');
                 }
                 if ((mode & SaveLogModes.LogLevel) != 0)
                 {
-                    s.Append(DuckHelper.WrapValue(item.LogLevel));
+                    DuckHelper.WrapValue(ref s,item.LogLevel);
                     s.Append(',');
                 }
                 if ((mode & SaveLogModes.CategoryName) != 0)
                 {
-                    s.Append(DuckHelper.WrapValue(item.CategoryName));
+                    DuckHelper.WrapValue(ref s, item.CategoryName);
                     s.Append(',');
                 }
                 if ((mode & SaveLogModes.TraceId) != 0)
                 {
-                    s.Append(DuckHelper.WrapValue(item.TraceId.ToString()));
+                    DuckHelper.WrapValue(ref s, item.TraceId.ToString());
                     s.Append(',');
                 }
                 if ((mode & SaveLogModes.SpanId) != 0)
                 {
-                    s.Append(DuckHelper.WrapValue(item.SpanId.ToString()));
+                    DuckHelper.WrapValue(ref s, item.SpanId.ToString());
                     s.Append(',');
                 }
                 if ((mode & SaveLogModes.Attributes) != 0)
                 {
-                    s.Append(DuckHelper.WrapValue(item.Attributes));
+                    DuckHelper.WrapValue(ref s, item.Attributes);
                     s.Append(',');
                 }
                 if ((mode & SaveLogModes.FormattedMessage) != 0)
                 {
-                    s.Append(DuckHelper.WrapValue(item.FormattedMessage));
+                    DuckHelper.WrapValue(ref s, item.FormattedMessage);
                     s.Append(',');
                 }
                 if ((mode & SaveLogModes.Body) != 0)
                 {
-                    s.Append(DuckHelper.WrapValue(item.Body));
+                    DuckHelper.WrapValue(ref s, item.Body);
                     s.Append(',');
                 }
                 s._chars.RemoveLast(1);
@@ -169,139 +169,139 @@ namespace Diagnostics.Traces.DuckDB
                 if ((mode & SaveActivityModes.Id) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Id));
+                    DuckHelper.WrapValue(ref s, item.Id);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.Status) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Status));
+                    DuckHelper.WrapValue(ref s, item.Status);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.StatusDescription) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.StatusDescription));
+                    DuckHelper.WrapValue(ref s, item.StatusDescription);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.HasRemoteParent) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.HasRemoteParent));
+                    DuckHelper.WrapValue(ref s, item.HasRemoteParent);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.Kind) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Kind));
+                    DuckHelper.WrapValue(ref s, item.Kind);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.OperationName) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.OperationName));
+                    DuckHelper.WrapValue(ref s, item.OperationName);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.DisplayName) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.DisplayName));
+                    DuckHelper.WrapValue(ref s, item.DisplayName);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.SourceName) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Source.Name));
+                    DuckHelper.WrapValue(ref s, item.Source.Name);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.SourceVersion) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Source.Version));
+                    DuckHelper.WrapValue(ref s, item.Source.Version);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.Duration) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Duration.TotalMilliseconds));
+                    DuckHelper.WrapValue(ref s, item.Duration.TotalMilliseconds);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.StartTimeUtc) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.StartTimeUtc));
+                    DuckHelper.WrapValue(ref s, item.StartTimeUtc);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.ParentId) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.ParentId));
+                    DuckHelper.WrapValue(ref s, item.ParentId);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.RootId) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.RootId));
+                    DuckHelper.WrapValue(ref s, item.RootId);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.Tags) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Tags));
+                    DuckHelper.WrapValue(ref s, item.Tags);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.Events) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Events));
+                    DuckHelper.WrapValue(ref s, item.Events);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.Links) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Links));
+                    DuckHelper.WrapValue(ref s, item.Links);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.Baggage) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Baggage));
+                    DuckHelper.WrapValue(ref s, item.Baggage);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.Context) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Context));
+                    DuckHelper.WrapValue(ref s, item.Context);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.TraceStateString) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.TraceStateString));
+                    DuckHelper.WrapValue(ref s, item.TraceStateString);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.SpanId) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.SpanId.ToString()));
+                    DuckHelper.WrapValue(ref s, item.SpanId.ToString());
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.TraceId) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.TraceId.ToString()));
+                    DuckHelper.WrapValue(ref s, item.TraceId.ToString());
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.Recorded) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Recorded));
+                    DuckHelper.WrapValue(ref s, item.Recorded);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.ActivityTraceFlags) != 0)
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.ActivityTraceFlags));
+                    DuckHelper.WrapValue(ref s, item.ActivityTraceFlags);
                     s.Append(',');
                 }
                 if ((mode & SaveActivityModes.ParentSpanId) != 0)
@@ -312,7 +312,7 @@ namespace Diagnostics.Traces.DuckDB
                     }
                     else
                     {
-                        s.Append(DuckHelper.WrapValue(item.ParentSpanId.ToString()));
+                        DuckHelper.WrapValue(ref s, item.ParentSpanId.ToString());
                     }
                     s.Append(',');
                 }
@@ -402,61 +402,61 @@ namespace Diagnostics.Traces.DuckDB
                 s.Append('(');
                 if (mode.HasFlag(SaveExceptionModes.TraceId))
                 {
-                    s.Append(DuckHelper.WrapValue(item.TraceId?.ToString()));
+                    DuckHelper.WrapValue(ref s, item.TraceId?.ToString());
                     s.Append(',');
                 }
                 if (mode.HasFlag(SaveExceptionModes.SpanId))
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.SpanId?.ToString()));
+                   DuckHelper.WrapValue(ref s, item.SpanId?.ToString());
                     s.Append(',');
                 }
                 if (mode.HasFlag(SaveExceptionModes.CreateTime))
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.CreateTime));
+                    DuckHelper.WrapValue(ref s, item.CreateTime);
                     s.Append(',');
                 }
                 if (mode.HasFlag(SaveExceptionModes.TypeName))
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Exception.GetType().FullName));
+                   DuckHelper.WrapValue(ref s, item.Exception.GetType().FullName);
                     s.Append(',');
                 }
                 if (mode.HasFlag(SaveExceptionModes.Message))
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Exception.Message));
+                    DuckHelper.WrapValue(ref s, item.Exception.Message);
                     s.Append(',');
                 }
                 if (mode.HasFlag(SaveExceptionModes.HelpLink))
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Exception.HelpLink));
+                    DuckHelper.WrapValue(ref s, item.Exception.HelpLink);
                     s.Append(',');
                 }
                 if (mode.HasFlag(SaveExceptionModes.HResult))
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Exception.HResult));
+                    DuckHelper.WrapValue(ref s, item.Exception.HResult);
                     s.Append(',');
                 }
                 if (mode.HasFlag(SaveExceptionModes.Data))
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Exception.Data));
+                    DuckHelper.WrapValue(ref s, item.Exception.Data);
                     s.Append(',');
                 }
                 if (mode.HasFlag(SaveExceptionModes.StackTrace))
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Exception.StackTrace));
+                    DuckHelper.WrapValue(ref s, item.Exception.StackTrace);
                     s.Append(',');
                 }
                 if (mode.HasFlag(SaveExceptionModes.InnerException))
                 {
 
-                    s.Append(DuckHelper.WrapValue(item.Exception.InnerException?.ToString()));
+                    DuckHelper.WrapValue(ref s, item.Exception.InnerException?.ToString());
                     s.Append(',');
                 }
                 s._chars.RemoveLast(1);
@@ -491,23 +491,23 @@ namespace Diagnostics.Traces.DuckDB
                         s.Append(',');
                     }
                     s.Append('(');
-                    s.Append(DuckHelper.WrapValue(item.Name));
+                    DuckHelper.WrapValue(ref s, item.Name);
                     s.Append(',');
-                    s.Append(DuckHelper.WrapValue(item.Unit));
+                    DuckHelper.WrapValue(ref s, item.Unit);
                     s.Append(',');
-                    s.Append(DuckHelper.WrapValue(item.MetricType));
+                    DuckHelper.WrapValue(ref s, item.MetricType);
                     s.Append(',');
-                    s.Append(DuckHelper.WrapValue(item.Temporality));
+                    DuckHelper.WrapValue(ref s, item.Temporality);
                     s.Append(',');
-                    s.Append(DuckHelper.WrapValue(item.Description));
+                    DuckHelper.WrapValue(ref s, item.Description);
                     s.Append(',');
-                    s.Append(DuckHelper.WrapValue(item.MeterName));
+                    DuckHelper.WrapValue(ref s, item.MeterName);
                     s.Append(',');
-                    s.Append(DuckHelper.WrapValue(item.MeterVersion));
+                    DuckHelper.WrapValue(ref s, item.MeterVersion);
                     s.Append(',');
-                    s.Append(DuckHelper.WrapValue(item.MeterTags));
+                    DuckHelper.WrapValue(ref s, item.MeterTags);
                     s.Append(',');
-                    s.Append(DuckHelper.WrapValue(DateTime.Now));
+                    DuckHelper.WrapValue(ref s, DateTime.Now);
                     s.Append(',');
                     DuckHelper.MapAsString(ref s, item.MetricType, item.GetMetricPoints());
 

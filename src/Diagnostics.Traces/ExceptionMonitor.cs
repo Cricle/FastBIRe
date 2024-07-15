@@ -21,7 +21,7 @@ namespace Diagnostics.Traces
         private void OnFirstChanceException(object? sender, FirstChanceExceptionEventArgs e)
         {
             var activity = Activity.Current;
-            if (CatchMode == ExceptionCatchMode.OnlyHasActivity && activity == null)
+            if (CatchMode == ExceptionCatchMode.OnlyHasActivity && (activity == null || activity.IsStopped))
             {
                 return;
             }

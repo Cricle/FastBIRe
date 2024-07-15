@@ -54,7 +54,7 @@
         Recorded = Id << 21,
         ActivityTraceFlags = Id << 22,
         ParentSpanId = Id << 23,
-        Mini = Status | Kind | OperationName | DisplayName | SourceName | Duration | StartTimeUtc | ParentId | RootId | Tags | Events | SpanId | TraceId | ActivityTraceFlags | ParentSpanId,
+        Mini = Status | OperationName | DisplayName | SourceName | Duration | StartTimeUtc | ParentId | RootId | Tags | Events | SpanId | TraceId | ActivityTraceFlags | ParentSpanId,
         All = Id | Status | StatusDescription | HasRemoteParent | Kind | OperationName | DisplayName | SourceName | SourceVersion | Duration | StartTimeUtc | ParentId | RootId | Tags | Events | Links | Baggage | Context | TraceStateString | SpanId | TraceId | Recorded | ActivityTraceFlags | ParentSpanId
     }
 }
