@@ -14,9 +14,9 @@ namespace Diagnostics.Helpers
             GetThreadString(thread, builder, runtime, withDos);
             return builder.ToString();
         }
-        public static ThreadSnapshot GetThreadSnapshot(this ClrThread thread)
+        public static ThreadSnapshot GetThreadSnapshot(this ClrThread thread, ThreadMode threadMode= ThreadMode.Full, int maxFrame = 3)
         {
-            return ThreadSnapshot.Create(thread);
+            return ThreadSnapshot.Create(thread,threadMode,maxFrame);
         }
         public static void GetThreadString(this ClrThread thread, StringBuilder builder, ClrRuntime runtime, bool withDos)
         {

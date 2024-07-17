@@ -1,8 +1,47 @@
-﻿using Microsoft.Diagnostics.Runtime;
+﻿using Diagnostics.Helpers.Models;
+using Microsoft.Diagnostics.Runtime;
 using System;
 
 namespace Diagnostics.Helpers
 {
+    public class LongStackCaptcher:IDisposable
+    {
+        public static LongStackCaptcher Create(DataTarget dataTarget, bool leaveDataTargetNoDispose = true)
+        {
+            return new LongStackCaptcher(dataTarget, new StackSnapshot(dataTarget.ClrVersions[0]), leaveDataTargetNoDispose);
+        }
+
+        public LongStackCaptcher(DataTarget dataTarget, StackSnapshot snapshot, bool leaveDataTargetNoDispose)
+        {
+            DataTarget = dataTarget;
+            Snapshot = snapshot;
+            Runtime = Snapshot.ClrInfo.CreateRuntime();
+            LeaveDataTargetNoDispose = leaveDataTargetNoDispose;
+        }
+
+        public DataTarget DataTarget { get; }
+
+        public StackSnapshot Snapshot { get; }
+
+        public ClrRuntime Runtime { get; }
+
+        public bool LeaveDataTargetNoDispose { get; }
+
+        public RuntimeSnapshot GetSnapshot(ThreadMode threadMode= ThreadMode.None,int maxFrame=3)
+        {
+            Runtime.FlushCachedData();
+            return RuntimeSnapshot.Create(Runtime, threadMode, maxFrame);
+        }
+
+        public void Dispose()
+        {
+            Runtime.Dispose();
+            if (!LeaveDataTargetNoDispose)
+            {
+                DataTarget.Dispose();
+            }
+        }
+    }
     public static class StackHelper
     {
         //https://github.com/microsoft/clrmd/blob/main/src/Samples/ClrStack/ClrStack.cs

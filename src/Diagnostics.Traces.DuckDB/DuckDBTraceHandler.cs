@@ -5,7 +5,8 @@ using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.IO.Compression;
+using System.Reflection.Emit;
 using ValueBuffer;
 
 namespace Diagnostics.Traces.DuckDB
@@ -34,53 +35,65 @@ namespace Diagnostics.Traces.DuckDB
 
         private void AppendLogRecord(IEnumerator<LogRecord> logs)
         {
-            var count = 0;
-            DatabaseSelector.UsingDatabaseResult(res =>
+            var c = DatabaseSelector.UsingDatabaseResult(res =>
             {
+                var count = 0;
                 var mode = res.SaveLogModes;
                 using (var appender = res.Connection.CreateAppender("logs"))
                 {
                     while (logs.MoveNext())
                     {
-                        if (LogIdentityProvider != null && !LogIdentityProvider.GetIdentity(logs.Current).Succeed)
+                        var current = logs.Current;
+                        if (LogIdentityProvider != null && !LogIdentityProvider.GetIdentity(current).Succeed)
                         {
                             continue;
                         }
                         var row = appender.CreateRow();
                         if ((mode & SaveLogModes.Timestamp) != 0)
                         {
-                            row.AppendValue(logs.Current.Timestamp);
+                            row.AppendValue(current.Timestamp);
                         }
                         if ((mode & SaveLogModes.LogLevel) != 0)
                         {
-                            row.AppendValue((short)logs.Current.LogLevel);
+                            row.AppendValue((short)current.LogLevel);
                         }
                         if ((mode & SaveLogModes.CategoryName) != 0)
                         {
-                            row.AppendValue(logs.Current.CategoryName);
+                            row.AppendValue(current.CategoryName);
                         }
                         if ((mode & SaveLogModes.TraceId) != 0)
                         {
-                            row.AppendValue(logs.Current.TraceId.ToString());
+                            row.AppendValue(current.TraceId.ToString());
                         }
                         if ((mode & SaveLogModes.SpanId) != 0)
                         {
-                            row.AppendValue(logs.Current.SpanId.ToString());
+                            row.AppendValue(current.SpanId.ToString());
                         }
                         if ((mode & SaveLogModes.FormattedMessage) != 0)
                         {
-                            row.AppendValue(logs.Current.FormattedMessage);
+                            if (string.IsNullOrEmpty(current.FormattedMessage))
+                            {
+                                row.AppendNullValue();
+                            }
+                            else
+                            {
+                                using (var r = GzipHelper.Compress(current.FormattedMessage!))
+                                {
+                                    row.AppendValue(r.Span);
+                                }
+                            }
                         }
                         if ((mode & SaveLogModes.Body) != 0)
                         {
-                            row.AppendValue(logs.Current.Body);
+                            row.AppendValue(current.Body);
                         }
                         row.EndRow();
                         count++;
                     }
                 }
+                return count;
             });
-            DatabaseSelector.ReportInserted(count);
+            DatabaseSelector.ReportInserted(c);
         }
 
         private ValueStringBuilder? BuildSql(IEnumerator<LogRecord> logs)

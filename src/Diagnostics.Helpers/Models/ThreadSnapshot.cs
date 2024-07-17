@@ -1,4 +1,5 @@
 ﻿using Microsoft.Diagnostics.Runtime;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -54,12 +55,30 @@ namespace Diagnostics.Helpers.Models
             return s.ToString();
         }
 
-        public static ThreadSnapshot Create(ClrThread thread)
+        public static ThreadSnapshot Create(ClrThread thread, ThreadMode threadMode,int maxFrame=3)
         {
-            var frames = new List<ThreadStackFrame>();
-            foreach (var item in thread.EnumerateStackTrace())
+            IReadOnlyList<ThreadStackFrame> frames;
+            if (threadMode == ThreadMode.Full)
             {
-                frames.Add(ThreadStackFrame.Create(item));
+                var fs = new List<ThreadStackFrame>();
+                foreach (var item in thread.EnumerateStackTrace())
+                {
+                    fs.Add(ThreadStackFrame.Create(item));
+                }
+                frames = fs;
+            }
+            else
+            {
+                var max = maxFrame;
+                var fs = new List<ThreadStackFrame>(maxFrame);
+                using (var enu= thread.EnumerateStackTrace().GetEnumerator())
+                {
+                    while (enu.MoveNext()&&max-->0)
+                    {
+                        fs.Add(ThreadStackFrame.Create(enu.Current));
+                    }
+                }
+                frames = fs;
             }
             return new ThreadSnapshot(
                 thread.OSThreadId,

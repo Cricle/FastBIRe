@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS ""logs""(
     spanId VARCHAR,
     attributes MAP(VARCHAR,VARCHAR),
     formattedMessage VARCHAR,
-    body VARCHAR
+    body BLOB
 );
 ";
         private const string InitFullSqlActivities = @"

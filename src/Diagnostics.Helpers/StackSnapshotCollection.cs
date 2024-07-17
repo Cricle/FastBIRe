@@ -22,13 +22,13 @@ namespace Diagnostics.Helpers
         {
             DataTarget.Dispose();
         }
-        public IEnumerable<RuntimeSnapshot> GetSnapshots()
+        public IEnumerable<RuntimeSnapshot> GetSnapshots(ThreadMode threadMode = ThreadMode.Full, int maxFrame = 3)
         {
             foreach (var item in Stacks)
             {
                 using (var runtime = item.ClrInfo.CreateRuntime())
                 {
-                    yield return RuntimeSnapshot.Create(runtime);
+                    yield return RuntimeSnapshot.Create(runtime, threadMode, maxFrame);
                 }
             }
         }

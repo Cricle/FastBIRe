@@ -1,7 +1,6 @@
 ﻿using Microsoft.Diagnostics.Runtime;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace Diagnostics.Helpers.Models
@@ -42,15 +41,19 @@ namespace Diagnostics.Helpers.Models
             }
             return s.ToString();
         }
-        public static RuntimeSnapshot Create(ClrRuntime runtime)
+        public static RuntimeSnapshot Create(ClrRuntime runtime, ThreadMode threadMode = ThreadMode.Full, int maxFrame = 3)
         {
             var module = runtime.ClrInfo.ModuleInfo;
             var threadPool = runtime.ThreadPool;
-            var threads = new ThreadSnapshot[runtime.Threads.Length];
-            for (int i = 0; i < runtime.Threads.Length; i++)
+            var threads = Array.Empty<ThreadSnapshot>();
+            if (threadMode != ThreadMode.None)
             {
-                var thread = runtime.Threads[i];
-                threads[i] = ThreadSnapshot.Create(thread);
+                threads = new ThreadSnapshot[runtime.Threads.Length];
+                for (int i = 0; i < runtime.Threads.Length; i++)
+                {
+                    var thread = runtime.Threads[i];
+                    threads[i] = ThreadSnapshot.Create(thread, threadMode, maxFrame);
+                }
             }
             ThreadPoolSnapshot? threadPoolSnapshot = null;
             if (threadPool != null)

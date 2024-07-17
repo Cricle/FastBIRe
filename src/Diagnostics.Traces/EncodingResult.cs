@@ -1,31 +1,45 @@
 ﻿using System.Buffers;
-using System.Runtime.CompilerServices;
+using System.IO.Compression;
+using System.Text;
+using ValueBuffer;
 
 namespace Diagnostics.Traces
 {
-    public readonly struct EncodingResult : IDisposable
+    public static class GzipHelper
     {
-        public readonly byte[] Buffers;
-
-        public readonly int Count;
-
-        public Span<byte> Span => Buffers.AsSpan(0, Count);
-
-        public Memory<byte> Memory => Buffers.AsMemory(0, Count);
-
-        internal EncodingResult(byte[] buffers, int count)
+        public static GzipCompressResult Compress(string str, Encoding? encoding = null, CompressionLevel level = CompressionLevel.Fastest)
         {
-            Buffers = buffers;
-            Count = count;
+            using (var end = EncodingHelper.SharedEncoding(str, encoding ?? Encoding.UTF8))
+            {
+                return Compress(end.Buffers, 0, end.Count, level);
+            }
         }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Dispose()
+        public static GzipCompressResult Compress(byte[] result, int offset, int count, CompressionLevel level = CompressionLevel.Fastest)
         {
-            ArrayPool<byte>.Shared.Return(Buffers);
-        }
-        public override string ToString()
-        {
-            return $"{{Count: {Count}}}";
+            var stream = new ValueBufferMemoryStream();
+            try
+            {
+                var gzip = new DeflateStream(stream, level);
+                gzip.Write(result, offset, count);
+                gzip.Flush();
+
+                ref ValueList<byte> buffer = ref stream.Buffer;
+                var shouldReturn = buffer.BufferSlotIndex != 0;
+                var copyBuffer = buffer.DangerousGetArray(0);
+                var size = buffer.Size;
+                if (shouldReturn)
+                {
+                    copyBuffer = ArrayPool<byte>.Shared.Rent(size);
+                    buffer.ToArray(copyBuffer);
+                }
+                return new GzipCompressResult(stream, gzip, shouldReturn, copyBuffer, size);
+            }
+            catch (Exception)
+            {
+                stream.Dispose();
+                throw;
+            }
         }
     }
+
 }

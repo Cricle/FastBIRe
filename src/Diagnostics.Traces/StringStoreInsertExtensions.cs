@@ -1,5 +1,4 @@
 ﻿using System.IO.Compression;
-using System.Text;
 
 namespace Diagnostics.Traces
 {
@@ -14,40 +13,48 @@ namespace Diagnostics.Traces
             return stringStore.InsertAsync(new BytesStoreValue(value));
         }
 
-        private static byte[] GetGzipBuffer(byte[] value, int offset, int length, CompressionLevel level)
+        public static void InsertGzip(this IBytesStore stringStore, byte[] value, int offset, int length, CompressionLevel level = CompressionLevel.Optimal)
         {
-            using (var mem = new MemoryStream())
-            using (var gzip = new GZipStream(mem, level))
+            using (var gzipResult = GzipHelper.Compress(value, offset, length, level))
             {
-                gzip.Write(value, offset, length);
-                gzip.Flush();
-                return mem.ToArray();
+                stringStore.Insert(new BytesStoreValue(gzipResult.Result,0,gzipResult.Count));
             }
         }
-
-        public static void InsertGzip(this IBytesStore stringStore, byte[] value,int offset,int length, CompressionLevel level = CompressionLevel.Optimal)
+        public static async Task InsertGzipAsync(this IBytesStore stringStore, byte[] value, int offset, int length, CompressionLevel level = CompressionLevel.Optimal)
         {
-            stringStore.Insert(new BytesStoreValue(GetGzipBuffer(value,offset,length, level)));
-        }
-        public static Task InsertGzipAsync(this IBytesStore stringStore, byte[] value, int offset, int length, CompressionLevel level = CompressionLevel.Optimal)
-        {
-            return stringStore.InsertAsync(new BytesStoreValue(GetGzipBuffer(value,offset,length, level)));
+            using (var gzipResult = GzipHelper.Compress(value, offset, length, level))
+            {
+                await stringStore.InsertAsync(new BytesStoreValue(gzipResult.Result,0,gzipResult.Count));
+            }
         }
         public static void InsertGzip(this IBytesStore stringStore, byte[] value, CompressionLevel level = CompressionLevel.Optimal)
         {
-            stringStore.Insert(new BytesStoreValue(GetGzipBuffer(value, 0, value.Length, level)));
+            using (var gzipResult = GzipHelper.Compress(value, 0, value.Length, level))
+            {
+                stringStore.Insert(new BytesStoreValue(gzipResult.Result,0,gzipResult.Count));
+            }
         }
-        public static Task InsertGzipAsync(this IBytesStore stringStore, byte[] value, CompressionLevel level = CompressionLevel.Optimal)
+        public static async Task InsertGzipAsync(this IBytesStore stringStore, byte[] value, CompressionLevel level = CompressionLevel.Optimal)
         {
-            return stringStore.InsertAsync(new BytesStoreValue(GetGzipBuffer(value, 0, value.Length, level)));
+            using (var gzipResult = GzipHelper.Compress(value, 0, value.Length, level))
+            {
+                await stringStore.InsertAsync(new BytesStoreValue(gzipResult.Result,0,gzipResult.Count));
+            }
         }
         public static void InsertGzip(this IBytesStore stringStore, string value, CompressionLevel level = CompressionLevel.Optimal)
         {
-            InsertGzip(stringStore, Encoding.UTF8.GetBytes(value), level);
+            using (var gzipResult = GzipHelper.Compress(value, level:level))
+            {
+                stringStore.Insert(new BytesStoreValue(gzipResult.Result, 0, gzipResult.Count));
+
+            }
         }
-        public static Task InsertGzipAsync(this IBytesStore stringStore, string value, CompressionLevel level = CompressionLevel.Optimal)
+        public static async Task InsertGzipAsync(this IBytesStore stringStore, string value, CompressionLevel level = CompressionLevel.Optimal)
         {
-            return InsertGzipAsync(stringStore, Encoding.UTF8.GetBytes(value), level);
+            using (var gzipResult = GzipHelper.Compress(value, level: level))
+            {
+                await stringStore.InsertAsync(new BytesStoreValue(gzipResult.Result,0,gzipResult.Count));
+            }
         }
 
         public static void InsertMany(this IBytesStore stringStore, IEnumerable<string> strings)

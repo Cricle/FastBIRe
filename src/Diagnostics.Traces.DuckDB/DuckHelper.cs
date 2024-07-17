@@ -2,6 +2,7 @@
 using OpenTelemetry.Metrics;
 using System.Collections;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using ValueBuffer;
 
 namespace Diagnostics.Traces.DuckDB
@@ -10,17 +11,18 @@ namespace Diagnostics.Traces.DuckDB
     {
         public static unsafe void WrapValue<T>(ref ValueStringBuilder builder,T? input)
         {
-            if (input == null || Equals(input, DBNull.Value))
+            if (input ==null || DBNull.Value.Equals(input))
             {
                 builder.Append("NULL");
                 return;
             }
-            else if (input is string || input is Guid)
+            else if (input is string || input is Guid||input is Exception)
             {
                 var str = input.ToString();
-                if (!string.IsNullOrEmpty(str) && str.AsSpan().IndexOf('\'') != -1)
+                var sp = str.AsSpan();
+                if (!sp.IsEmpty && sp.IndexOf('\'') != -1)
                 {
-                    str = str.Replace("'", "''");
+                    str = str!.Replace("'", "''");
                 }
                 builder.Append('\'');
                 builder.Append(str);
@@ -187,7 +189,7 @@ namespace Diagnostics.Traces.DuckDB
                 builder.Append(Enum.Format(TypeCache<T>.type, e, "D"));
                 return;
             }
-            builder.Append(input.ToString()!);
+            builder.Append(input?.ToString()!);
         }
         static class TypeCache<T>
         {

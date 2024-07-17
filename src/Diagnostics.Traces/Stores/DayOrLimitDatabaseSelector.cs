@@ -18,13 +18,14 @@ namespace Diagnostics.Traces.Stores
             public DatabaseManager(long limitCount, Func<TResult> databaseCreator, IList<IUndefinedDatabaseAfterSwitched<TResult>> afterSwitcheds, IList<IUndefinedResultInitializer<TResult>> initializers)
             {
                 locker = new SpinLock();
-                LimitCount = limitCount;
+                this.limitCount = limitCount;
                 DatabaseCreator = databaseCreator;
                 AfterSwitcheds = afterSwitcheds;
                 Initializers = initializers;
             }
+            private readonly long limitCount;
 
-            public long LimitCount { get; }
+            public long LimitCount => limitCount;
 
             public Func<TResult> DatabaseCreator { get; }
 
@@ -53,7 +54,7 @@ namespace Diagnostics.Traces.Stores
                 }
                 try
                 {
-                    if (!checkNeeds || (result == null || DateTime.Now.Date != lastCreateTime.Date || inserted > LimitCount))
+                    if (!checkNeeds || (result == null || DateTime.Now.Date != lastCreateTime.Date || inserted > limitCount))
                     {
                         lastCreateTime = DateTime.Now;
                         var old = result;
@@ -124,7 +125,7 @@ namespace Diagnostics.Traces.Stores
 
             public void ReportInserted(int count)
             {
-                if (Interlocked.Add(ref inserted, count) > LimitCount)
+                if (Interlocked.Add(ref inserted, count) > limitCount)
                 {
                     Switch();
                 }
@@ -144,7 +145,7 @@ namespace Diagnostics.Traces.Stores
             public void UnsafeReportInserted(int count)
             {
                 inserted += count;
-                if (inserted > LimitCount)
+                if (inserted > limitCount)
                 {
                     Switch(useLocker:false);
                 }

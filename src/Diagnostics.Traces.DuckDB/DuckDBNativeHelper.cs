@@ -55,14 +55,14 @@ namespace Diagnostics.Traces.DuckDB
         private static void ThrowDuckExcpetion(ref DuckDBResult result)
         {
             var str = NativeMethods.Query.DuckDBResultError(ref result).ToManagedString();
-            throw new DuckTraceDBException(str,  DuckDBState.Error);
+            throw new DuckTraceDBException(str, DuckDBState.Error);
 
         }
         public static unsafe long DuckDBQuery(DuckDBNativeConnection connection, in ValueStringBuilder builder)
         {
             var lst = builder._chars;
             var count = Encoding.UTF8.GetMaxByteCount(lst.Size);
-            var intPtr = Marshal.AllocCoTaskMem(count+1);
+            var intPtr = Marshal.AllocCoTaskMem(count + 1);
             using var handler = new SafeUnmanagedMemoryHandle(intPtr);
             var offset = 0;
             for (int i = 0; i < lst.BufferSlotIndex; i++)
