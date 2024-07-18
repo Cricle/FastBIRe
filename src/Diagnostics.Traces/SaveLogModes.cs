@@ -1,5 +1,62 @@
 ﻿namespace Diagnostics.Traces
 {
+    public static class SaveModeValues
+    {
+        public static readonly IReadOnlyList<SaveLogModes> AllSaveLogModes =
+        [
+             SaveLogModes.Timestamp,
+             SaveLogModes.LogLevel,
+             SaveLogModes.CategoryName,
+             SaveLogModes.TraceId,
+             SaveLogModes.SpanId,
+             SaveLogModes.Attributes,
+             SaveLogModes.FormattedMessage,
+             SaveLogModes.Body
+        ];
+
+        public static readonly IReadOnlyList<SaveExceptionModes> AllSaveExceptionModes = 
+        [
+           SaveExceptionModes.TraceId ,
+           SaveExceptionModes.SpanId ,
+           SaveExceptionModes.CreateTime ,
+           SaveExceptionModes.TypeName ,
+           SaveExceptionModes.Message ,
+           SaveExceptionModes.HelpLink ,
+           SaveExceptionModes.HResult ,
+           SaveExceptionModes.Data ,
+           SaveExceptionModes.StackTrace ,
+           SaveExceptionModes.InnerException ,
+        ];
+
+        public static readonly IReadOnlyList<SaveActivityModes> AllSaveActivityModes =
+        [
+            SaveActivityModes.Id ,
+            SaveActivityModes.Status ,
+            SaveActivityModes.StatusDescription ,
+            SaveActivityModes.HasRemoteParent ,
+            SaveActivityModes.Kind ,
+            SaveActivityModes.OperationName ,
+            SaveActivityModes.DisplayName ,
+            SaveActivityModes.SourceName ,
+            SaveActivityModes.SourceVersion ,
+            SaveActivityModes.Duration ,
+            SaveActivityModes.StartTimeUtc ,
+            SaveActivityModes.ParentId ,
+            SaveActivityModes.RootId ,
+            SaveActivityModes.Tags ,
+            SaveActivityModes.Events ,
+            SaveActivityModes.Links ,
+            SaveActivityModes.Baggage ,
+            SaveActivityModes.Context ,
+            SaveActivityModes.TraceStateString ,
+            SaveActivityModes.SpanId ,
+            SaveActivityModes.TraceId ,
+            SaveActivityModes.Recorded ,
+            SaveActivityModes.ActivityTraceFlags ,
+            SaveActivityModes.ParentSpanId ,
+        ];
+    }
+
     public enum SaveLogModes
     {
         Timestamp = 1,

@@ -4,21 +4,15 @@ using DuckDB.NET.Native;
 
 namespace Diagnostics.Traces.DuckDB
 {
-    public class DuckDBDatabaseCreatedResult : IDatabaseCreatedResult, IDisposable
+    public class DuckDBDatabaseCreatedResult : DatabaseCreatedResultBase
     {
         public DuckDBDatabaseCreatedResult(DuckDBConnection connection, string? filePath, string key)
+            :base(filePath,key)
         {
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-            FilePath = filePath;
-            Root = new object();
-            Key = key;
         }
 
-        private int disposedCount;
-
         private DuckDBNativeConnection? nativeConnection;
-
-        public object Root { get; }
 
         public DuckDBConnection Connection { get; }
 
@@ -34,22 +28,9 @@ namespace Diagnostics.Traces.DuckDB
             }
         }
 
-        public SaveLogModes SaveLogModes { get; set; } = SaveLogModes.All;
-
-        public SaveExceptionModes SaveExceptionModes { get; set; } = SaveExceptionModes.All;
-
-        public SaveActivityModes SaveActivityModes { get; set; } = SaveActivityModes.All;
-
-        public string? FilePath { get; }
-
-        public string Key { get; }
-
-        public void Dispose()
+        protected override void OnDisposed()
         {
-            if (Interlocked.Increment(ref disposedCount) == 1)
-            {
-                Connection.Dispose();
-            }
+            Connection.Dispose();
         }
     }
 }

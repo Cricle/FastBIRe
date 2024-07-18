@@ -33,7 +33,7 @@ namespace Diagnostics.Traces.DuckDB
 
         public override int Count()
         {
-            return DatabaseSelector.UsingDatabaseResult(Name, static (res,tableName) =>
+            return DatabaseSelector.UsingDatabaseResult(Name, static (res, tableName) =>
             {
                 var sql = $"SELECT COUNT(*) FROM \"{tableName}\"";
                 using (var command = res.Connection.CreateCommand())
@@ -56,10 +56,10 @@ namespace Diagnostics.Traces.DuckDB
 
         public override void InsertMany(IEnumerable<BytesStoreValue> strings)
         {
-            var count = 0;
-            DatabaseSelector.UsingDatabaseResult(strings, (r, s) =>
+            var count = DatabaseSelector.UsingDatabaseResult(strings, (r, s) =>
             {
-                using (var appender=r.Connection.CreateAppender(Name))
+                var count = 0;
+                using (var appender = r.Connection.CreateAppender(Name))
                 {
                     foreach (var item in s)
                     {
@@ -70,6 +70,7 @@ namespace Diagnostics.Traces.DuckDB
                         count++;
                     }
                 }
+                return count;
             });
             DatabaseSelector.ReportInserted(count);
         }

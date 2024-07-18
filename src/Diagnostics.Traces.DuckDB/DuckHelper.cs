@@ -330,7 +330,7 @@ namespace Diagnostics.Traces.DuckDB
             s.Append("'startTime':");
             WrapValue(ref s, point.StartTime);
             s.Append(",'endTime':");
-            WrapValue(ref s, point.StartTime);
+            WrapValue(ref s, point.EndTime);
             s.Append(",'tags':");
             WrapValue(ref s, point.Tags);
             s.Append("}");

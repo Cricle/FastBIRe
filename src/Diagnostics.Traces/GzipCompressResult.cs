@@ -24,6 +24,13 @@ namespace Diagnostics.Traces
 
         public Span<byte> Span => new Span<byte>(Result, 0, Count);
 
+        public byte[] ToArray()
+        {
+            var buffer = new byte[Count];
+            Span.CopyTo(buffer);
+            return buffer;
+        }
+
         public void Dispose()
         {
             if (shouldReturn)

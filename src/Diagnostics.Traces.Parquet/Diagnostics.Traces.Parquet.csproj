@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<Import Project="..\..\eng\pkg.props" />
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;netstandard2.1</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<PackageId>Fast.Diagnostics.Traces.Parquet</PackageId>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(PublishAot)'!='' or $(PublishSingleFile)!=''">
+		<TargetFrameworks>net8.0;</TargetFrameworks>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="ParquetSharp" Version="15.0.2.1" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Diagnostics.Traces\Diagnostics.Traces.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="../Diagnostics.Traces/Base2ExponentialBucketHistogramHelper.cs"></Compile>
+		<Compile Include="../FastBIRe/OneEnumerable.cs"></Compile>
+	</ItemGroup>
+</Project>

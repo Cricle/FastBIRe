@@ -5,8 +5,6 @@ using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using System.Diagnostics;
-using System.IO.Compression;
-using System.Reflection.Emit;
 using ValueBuffer;
 
 namespace Diagnostics.Traces.DuckDB
