@@ -1,8 +1,5 @@
 ﻿using Diagnostics.Traces.Stores;
 using FastBIRe;
-using System;
-using System.Buffers;
-using System.Security.Cryptography;
 using ValueBuffer;
 
 namespace Diagnostics.Traces.Parquet
@@ -21,19 +18,7 @@ namespace Diagnostics.Traces.Parquet
 
         public override int Count()
         {
-            return DatabaseSelector.UsingDatabaseResult(static (res) =>
-            {
-                using (var reader = res.GetReader())
-                {
-                    var c = 0;
-                    var groupCount = reader.Operator.FileMetaData.NumRowGroups;
-                    for (int i = 0; i < groupCount; i++)
-                    {
-                        c += (int)reader.Operator.RowGroup(i).MetaData.NumRows;
-                    }
-                    return c;
-                }
-            });
+            throw new NotSupportedException();
         }
 
         public override void Dispose()
@@ -68,9 +53,8 @@ namespace Diagnostics.Traces.Parquet
             }
             DatabaseSelector.UsingDatabaseResult(strings, (res, v) =>
             {
-                using (var writer = res.GetWriter())
+                using (var group = res.Writer.AppendRowGroup())
                 {
-                    using var group = writer.Operator.AppendRowGroup();
                     if (dts.BufferSlotIndex == 0 && vls.BufferSlotIndex == 0)
                     {
                         var arrdt = dts.DangerousGetArray(0);

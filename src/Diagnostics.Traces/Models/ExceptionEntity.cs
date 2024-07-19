@@ -16,7 +16,7 @@
 
         public int HResult { get; set; }
 
-        public Dictionary<string, string>? Data { get; set; }
+        public Dictionary<string, string?>? Data { get; set; }
 
         public string? StackTrace { get; set; }
 

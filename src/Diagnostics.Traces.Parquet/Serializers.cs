@@ -1,4 +1,5 @@
-﻿using OpenTelemetry.Metrics;
+﻿using Diagnostics.Traces.Models;
+using OpenTelemetry.Metrics;
 using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json;
@@ -6,6 +7,15 @@ using System.Text.Json.Serialization;
 
 namespace Diagnostics.Traces.Parquet
 {
+    [JsonSerializable(typeof(Dictionary<string, string?>))]
+    internal partial class DictionaryStringStringJsonSerializerContext : JsonSerializerContext { }
+    [JsonSerializable(typeof(List<ActivityEventEntity>))]
+    internal partial class ActivityEventEntitysJsonSerializerContext : JsonSerializerContext { }
+    [JsonSerializable(typeof(List<ActivityLinkEntity>))]
+    internal partial class ActivityLinkEntitysJsonSerializerContext : JsonSerializerContext { }
+    [JsonSerializable(typeof(ActivityLinkContextEntity))]
+    internal partial class ActivityLinkContextEntityJsonSerializerContext : JsonSerializerContext { }
+
     internal class MetricPointsAccessorJsonConverter : JsonConverter<Metric>
     {
         public static readonly MetricPointsAccessorJsonConverter Instance = new MetricPointsAccessorJsonConverter();
@@ -141,7 +151,7 @@ namespace Diagnostics.Traces.Parquet
             writer.WriteEndArray();
         }
     }
-    internal class AttributeJsonConverter : JsonConverter<IReadOnlyList<KeyValuePair<string, object?>>>
+    internal class AttributeJsonConverter : JsonConverter<IEnumerable<KeyValuePair<string, object?>>>
     {
         public static readonly AttributeJsonConverter Instance = new AttributeJsonConverter();
 
@@ -150,12 +160,12 @@ namespace Diagnostics.Traces.Parquet
             Converters = { Instance },
         };
 
-        public override IReadOnlyList<KeyValuePair<string, object?>>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override IEnumerable<KeyValuePair<string, object?>>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             throw new NotImplementedException();
         }
 
-        public override void Write(Utf8JsonWriter writer, IReadOnlyList<KeyValuePair<string, object?>> value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, IEnumerable<KeyValuePair<string, object?>> value, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             if (value != null)
@@ -168,7 +178,7 @@ namespace Diagnostics.Traces.Parquet
             writer.WriteEndObject();
         }
     }
-    internal class TagsJsonConverter : JsonConverter<IReadOnlyList<KeyValuePair<string, string?>>>
+    internal class TagsJsonConverter : JsonConverter<IEnumerable<KeyValuePair<string, string?>>>
     {
         public static readonly TagsJsonConverter Instance = new TagsJsonConverter();
 
@@ -177,12 +187,12 @@ namespace Diagnostics.Traces.Parquet
             Converters = { Instance },
         };
 
-        public override IReadOnlyList<KeyValuePair<string, string?>>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override IEnumerable<KeyValuePair<string, string?>>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             throw new NotImplementedException();
         }
 
-        public override void Write(Utf8JsonWriter writer, IReadOnlyList<KeyValuePair<string, string?>> value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, IEnumerable<KeyValuePair<string, string?>> value, JsonSerializerOptions options)
         {
             writer.WriteStartObject();
             if (value != null)

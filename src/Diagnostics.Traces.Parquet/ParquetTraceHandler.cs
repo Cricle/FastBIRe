@@ -1,13 +1,10 @@
 ﻿using Diagnostics.Generator.Core;
-using Diagnostics.Traces.Models;
 using Diagnostics.Traces.Stores;
 using FastBIRe;
-using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using ParquetSharp;
-using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -20,7 +17,6 @@ namespace Diagnostics.Traces.Parquet
     {
         public ParquetTraceHandler(IUndefinedDatabaseSelector<ParquetDatabaseCreatedResult>? activityDatabaseSelector,
             IUndefinedDatabaseSelector<ParquetDatabaseCreatedResult>? logsDatabaseSelector,
-            IUndefinedDatabaseSelector<ParquetDatabaseCreatedResult>? exceptionsDatabaseSelector,
             IUndefinedDatabaseSelector<ParquetDatabaseCreatedResult>? metricDatabaseSelector,
             IUndefinedDatabaseSelector<ParquetDatabaseCreatedResult>? exceptionDatabaseSelector,
             IIdentityProvider<TIdentity, Activity>? activityIdentityProvider,
@@ -29,7 +25,6 @@ namespace Diagnostics.Traces.Parquet
         {
             ActivityDatabaseSelector = activityDatabaseSelector;
             LogsDatabaseSelector = logsDatabaseSelector;
-            ExceptionsDatabaseSelector = exceptionsDatabaseSelector;
             MetricDatabaseSelector = metricDatabaseSelector;
             ExceptionDatabaseSelector = exceptionDatabaseSelector;
 
@@ -40,7 +35,6 @@ namespace Diagnostics.Traces.Parquet
 
         public IUndefinedDatabaseSelector<ParquetDatabaseCreatedResult>? ActivityDatabaseSelector { get; }
         public IUndefinedDatabaseSelector<ParquetDatabaseCreatedResult>? LogsDatabaseSelector { get; }
-        public IUndefinedDatabaseSelector<ParquetDatabaseCreatedResult>? ExceptionsDatabaseSelector { get; }
         public IUndefinedDatabaseSelector<ParquetDatabaseCreatedResult>? MetricDatabaseSelector { get; }
         public IUndefinedDatabaseSelector<ParquetDatabaseCreatedResult>? ExceptionDatabaseSelector { get; }
 
@@ -124,8 +118,7 @@ namespace Diagnostics.Traces.Parquet
             }
             LogsDatabaseSelector.UsingDatabaseResult(res =>
             {
-                using (var writer = res.GetWriter())
-                using (var appender = writer.Operator.AppendBufferedRowGroup())
+                using (var appender = res.Writer.AppendBufferedRowGroup())
                 {
                     var idx = 0;
                     if (timestamps.Size != 0)
@@ -199,8 +192,7 @@ namespace Diagnostics.Traces.Parquet
 
                 MetricDatabaseSelector.UsingDatabaseResult(res =>
                 {
-                    using (var writer = res.GetWriter())
-                    using (var appender = writer.Operator.AppendBufferedRowGroup())
+                    using (var appender = res.Writer.AppendBufferedRowGroup())
                     {
                         var idx = 0;
                         WriteColumn(in name, appender.Column(idx++).LogicalWriter<string?>());
@@ -289,33 +281,33 @@ namespace Diagnostics.Traces.Parquet
                     innerException.Add(item.Exception.InnerException?.ToString());
                 }
 
-                ExceptionDatabaseSelector.UsingDatabaseResult(res =>
-                {
-                    using (var writer = res.GetWriter())
-                    using (var appender = writer.Operator.AppendBufferedRowGroup())
-                    {
-                        var idx = 0;
-                        if (traceId.Size != 0)
-                            WriteColumn(in traceId, appender.Column(idx++).LogicalWriter<string?>());
-                        if (spanId.Size != 0)
-                            WriteColumn(in spanId, appender.Column(idx++).LogicalWriter<string?>());
-                        if (createTime.Size != 0)
-                            WriteColumn(in createTime, appender.Column(idx++).LogicalWriter<DateTime>());
-                        if (typeName.Size != 0)
-                            WriteColumn(in typeName, appender.Column(idx++).LogicalWriter<string?>());
-                        if (message.Size != 0)
-                            WriteColumn(in message, appender.Column(idx++).LogicalWriter<string?>());
-                        if (helpLink.Size != 0)
-                            WriteColumn(in helpLink, appender.Column(idx++).LogicalWriter<string?>());
-                        if (hResult.Size != 0)
-                            WriteColumn(in hResult, appender.Column(idx++).LogicalWriter<int>());
-                        if (stackTrace.Size != 0)
-                            WriteColumn(in stackTrace, appender.Column(idx++).LogicalWriter<string?>());
-                        if (innerException.Size != 0)
-                            WriteColumn(in innerException, appender.Column(idx++).LogicalWriter<string?>());
-                    }
-                });
             }
+            ExceptionDatabaseSelector.UsingDatabaseResult(res =>
+            {
+                using (var appender = res.Writer.AppendBufferedRowGroup())
+                {
+                    var idx = 0;
+                    if (traceId.Size != 0)
+                        WriteColumn(in traceId, appender.Column(idx++).LogicalWriter<string?>());
+                    if (spanId.Size != 0)
+                        WriteColumn(in spanId, appender.Column(idx++).LogicalWriter<string?>());
+                    if (createTime.Size != 0)
+                        WriteColumn(in createTime, appender.Column(idx++).LogicalWriter<DateTime>());
+                    if (typeName.Size != 0)
+                        WriteColumn(in typeName, appender.Column(idx++).LogicalWriter<string?>());
+                    if (message.Size != 0)
+                        WriteColumn(in message, appender.Column(idx++).LogicalWriter<string?>());
+                    if (helpLink.Size != 0)
+                        WriteColumn(in helpLink, appender.Column(idx++).LogicalWriter<string?>());
+                    if (hResult.Size != 0)
+                        WriteColumn(in hResult, appender.Column(idx++).LogicalWriter<int>());
+                    if (stackTrace.Size != 0)
+                        WriteColumn(in stackTrace, appender.Column(idx++).LogicalWriter<string?>());
+                    if (innerException.Size != 0)
+                        WriteColumn(in innerException, appender.Column(idx++).LogicalWriter<string?>());
+                }
+            });
+
         }
         private void AppendActivities(IEnumerator<Activity> activities)
         {
@@ -474,8 +466,8 @@ namespace Diagnostics.Traces.Parquet
             }
             ActivityDatabaseSelector.UsingDatabaseResult(res =>
             {
-                using (var writer = res.GetWriter())
-                using (var appender = writer.Operator.AppendBufferedRowGroup())
+
+                using (var appender = res.Writer.AppendBufferedRowGroup())
                 {
                     var idx = 0;
                     if (ids.Size != 0)
@@ -526,6 +518,7 @@ namespace Diagnostics.Traces.Parquet
                         WriteColumn(in activityTraceFlags, appender.Column(idx++).LogicalWriter<int>());
                     if (parentSpanId.Size != 0)
                         WriteColumn(in parentSpanId, appender.Column(idx++).LogicalWriter<string?>());
+
                 }
             });
         }
@@ -575,6 +568,13 @@ namespace Diagnostics.Traces.Parquet
                 AppendExceptions(enu);
             }
             return Task.CompletedTask;
+        }
+        public override void Dispose()
+        {
+            LogsDatabaseSelector?.Dispose();
+            ExceptionDatabaseSelector?.Dispose();
+            MetricDatabaseSelector?.Dispose();
+            ActivityDatabaseSelector?.Dispose();
         }
     }
 }

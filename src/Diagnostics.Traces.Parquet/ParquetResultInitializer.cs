@@ -62,7 +62,14 @@ namespace Diagnostics.Traces.Parquet
             new DataField<string,SaveExceptionModes>("stackTrace",  SaveExceptionModes.StackTrace),
             new DataField<string,SaveExceptionModes>("innerException",  SaveExceptionModes.InnerException)
         ];
-
+        public static Column[] GetStringStoreColumns()
+        {
+            return
+            [
+                new Column<DateTime>("time"),
+                new Column<byte[]>("v"),
+            ];
+        }
         public static Column[] GetMeterColumns()
         {
             return

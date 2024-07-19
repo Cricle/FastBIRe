@@ -1,30 +1,15 @@
 ﻿using Diagnostics.Traces.Stores;
 using ParquetSharp;
-using ParquetSharp.IO;
 
 namespace Diagnostics.Traces.Parquet
 {
-    public readonly struct ParquetBox<T> : IDisposable
-        where T:IDisposable
-    {
-        internal ParquetBox(T @operator, Stream stream)
-        {
-            Operator = @operator;
-            Stream = stream;
-        }
-
-        public T Operator { get; }
-
-        public Stream Stream { get; }
-
-        public void Dispose()
-        {
-            Operator.Dispose();
-            Stream.Dispose();
-        }
-    }
     public class ParquetDatabaseCreatedResult : DatabaseCreatedResultBase
     {
+        ~ParquetDatabaseCreatedResult()
+        {
+            Close();
+        }
+
         public ParquetDatabaseCreatedResult(string filePath, string key, Column[] columns, Compression compression = Compression.Snappy)
             : base(filePath, key)
         {
@@ -36,21 +21,39 @@ namespace Diagnostics.Traces.Parquet
             this.columns = columns;
             Compression = compression;
         }
+        private ParquetFileWriter? writer;
+
+        public ParquetFileWriter Writer
+        {
+            get
+            {
+                if (writer==null)
+                {
+                    lock (Root)
+                    {
+                        if (writer==null)
+                        {
+                            writer = new ParquetFileWriter(FilePath, columns, Compression);
+                        }
+                    }
+                }
+                return writer;
+            }
+        }
 
         private readonly Column[] columns;
 
         public Compression Compression { get; }
 
-        public ParquetBox<ParquetFileWriter> GetWriter()
+        private void Close()
         {
-            var fs = File.Open(FilePath!, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-            return new ParquetBox<ParquetFileWriter>(new ParquetFileWriter(new ManagedOutputStream(fs), columns, Compression), fs);
+            writer?.Dispose();
         }
 
-        public ParquetBox<ParquetFileReader> GetReader()
+        protected override void OnDisposed()
         {
-            var fs = File.Open(FilePath!, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return new ParquetBox<ParquetFileReader>(new ParquetFileReader(new ManagedRandomAccessFile(fs)), fs);
+            Close();
+            GC.SuppressFinalize(this);
         }
     }
 }

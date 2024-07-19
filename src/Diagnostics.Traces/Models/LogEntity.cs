@@ -32,7 +32,7 @@ namespace Diagnostics.Traces.Models
 
         public string? SpanId { get; set; }
 
-        public Dictionary<string, string>? Attributes { get; set; }
+        public Dictionary<string, string?>? Attributes { get; set; }
 
         public string? FormattedMessage { get; set; }
 

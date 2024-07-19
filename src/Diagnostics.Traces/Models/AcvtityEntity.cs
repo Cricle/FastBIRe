@@ -44,13 +44,13 @@ namespace Diagnostics.Traces.Models
 
         public string? RootId { get; set; }
 
-        public Dictionary<string, string>? Tags { get; set; }
+        public Dictionary<string, string?>? Tags { get; set; }
 
         public List<ActivityEventEntity>? Events { get; set; }
 
         public List<ActivityLinkEntity>? Links { get; set; }
 
-        public Dictionary<string, string>? Baggage { get; set; }
+        public Dictionary<string, string?>? Baggage { get; set; }
 
         public ActivityLinkContextEntity? Context { get; set; }
 
