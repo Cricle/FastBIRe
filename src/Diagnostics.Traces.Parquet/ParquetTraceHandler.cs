@@ -12,6 +12,21 @@ using ValueBuffer;
 
 namespace Diagnostics.Traces.Parquet
 {
+    internal static class logicalWriteExtensions
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteColumn<T>(this LogicalColumnWriter<T> writer, in ValueList<T> datas)
+        {
+            using (writer)
+            {
+                for (int i = 0; i < datas.BufferSlotIndex; i++)
+                {
+                    var span = datas.GetSlot(i);
+                    writer.WriteBatch(span);
+                }
+            }
+        }
+    }
     public class ParquetTraceHandler<TIdentity> : TraceHandlerBase<TIdentity>, IBatchOperatorHandler<TraceExceptionInfo>
         where TIdentity : IEquatable<TIdentity>
     {
@@ -61,6 +76,7 @@ namespace Diagnostics.Traces.Parquet
             using var formattedMessages = new ValueList<string?>();
             using var bodys = new ValueList<string?>();
 
+            var count = 0;
             while (logs.MoveNext())
             {
                 var item = logs.Current;
@@ -115,6 +131,7 @@ namespace Diagnostics.Traces.Parquet
                 {
                     bodys.Add(item.Body);
                 }
+                count++;
             }
             LogsDatabaseSelector.UsingDatabaseResult(res =>
             {
@@ -139,18 +156,12 @@ namespace Diagnostics.Traces.Parquet
                         WriteColumn(in bodys, appender.Column(idx++).LogicalWriter<string?>());
                 }
             });
+            LogsDatabaseSelector.ReportInserted(count);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void WriteColumn<T>(in ValueList<T> datas, LogicalColumnWriter<T> writer)
         {
-            using (writer)
-            {
-                for (int i = 0; i < datas.BufferSlotIndex; i++)
-                {
-                    var span = datas.GetSlot(i);
-                    writer.WriteBatch(span);
-                }
-            }
+            writer.WriteColumn(datas);
         }
         private void AppendMetrics(IEnumerator<Metric> metrics)
         {
@@ -207,6 +218,7 @@ namespace Diagnostics.Traces.Parquet
                         WriteColumn(in points, appender.Column(idx++).LogicalWriter<string?>());
                     }
                 });
+                MetricDatabaseSelector.ReportInserted(name.Size);
             }
         }
         private void AppendExceptions(IEnumerator<TraceExceptionInfo> exceptions)
@@ -227,6 +239,7 @@ namespace Diagnostics.Traces.Parquet
             using var stackTrace = new ValueList<string?>();
             using var innerException = new ValueList<string?>();
 
+            var count = 0;
             while (exceptions.MoveNext())
             {
                 var item = exceptions.Current;
@@ -280,7 +293,7 @@ namespace Diagnostics.Traces.Parquet
                 {
                     innerException.Add(item.Exception.InnerException?.ToString());
                 }
-
+                count++;
             }
             ExceptionDatabaseSelector.UsingDatabaseResult(res =>
             {
@@ -307,6 +320,7 @@ namespace Diagnostics.Traces.Parquet
                         WriteColumn(in innerException, appender.Column(idx++).LogicalWriter<string?>());
                 }
             });
+            ExceptionDatabaseSelector.ReportInserted(count);
 
         }
         private void AppendActivities(IEnumerator<Activity> activities)
@@ -342,6 +356,7 @@ namespace Diagnostics.Traces.Parquet
             using var activityTraceFlags = new ValueList<int>();
             using var parentSpanId = new ValueList<string?>();
 
+            var count = 0;
             while (activities.MoveNext())
             {
                 var item = activities.Current;
@@ -463,6 +478,7 @@ namespace Diagnostics.Traces.Parquet
                         parentSpanId.Add(item.ParentSpanId.ToString());
                     }
                 }
+                count++;
             }
             ActivityDatabaseSelector.UsingDatabaseResult(res =>
             {
@@ -521,6 +537,7 @@ namespace Diagnostics.Traces.Parquet
 
                 }
             });
+            ActivityDatabaseSelector.ReportInserted(count);
         }
         public override void Handle(Activity input)
         {

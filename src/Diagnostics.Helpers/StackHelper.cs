@@ -27,7 +27,7 @@ namespace Diagnostics.Helpers
 
         public bool LeaveDataTargetNoDispose { get; }
 
-        public RuntimeSnapshot GetSnapshot(ThreadMode threadMode= ThreadMode.None,int maxFrame=3)
+        public RuntimeSnapshot GetSnapshot(ThreadMode threadMode= ThreadMode.Mini,int maxFrame=10)
         {
             Runtime.FlushCachedData();
             return RuntimeSnapshot.Create(Runtime, threadMode, maxFrame);

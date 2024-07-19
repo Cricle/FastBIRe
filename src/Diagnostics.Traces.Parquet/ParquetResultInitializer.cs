@@ -86,7 +86,6 @@ namespace Diagnostics.Traces.Parquet
                 new Column<string>("points"),
             ];
         }
-
         public static Column[] GetActivityColumns(SaveActivityModes mode)
         {
             return CreateColumns(mode, InitActivityFields);

@@ -1,5 +1,25 @@
 ﻿namespace Diagnostics.Traces.Stores
 {
+    public class DelegateDatabaseSelectorFactory<TResult, TInput> : IUndefinedDatabaseSelectorFactory<TResult, TInput>
+        where TResult : IDatabaseCreatedResult
+    {
+        public DelegateDatabaseSelectorFactory(Func<TInput, IUndefinedDatabaseSelector<TResult>> creator)
+        {
+            Creator = creator;
+        }
+
+        public Func<TInput, IUndefinedDatabaseSelector<TResult>> Creator { get; }
+
+        public IUndefinedDatabaseSelector<TResult> Create(TInput input)
+        {
+            return Creator(input);
+        }
+    }
+    public interface IUndefinedDatabaseSelectorFactory<TResult,TInput>
+        where TResult : IDatabaseCreatedResult
+    {
+        IUndefinedDatabaseSelector<TResult> Create(TInput input);
+    }
     public interface IUndefinedDatabaseSelector<TResult> : IDisposable
         where TResult:IDatabaseCreatedResult
     {
