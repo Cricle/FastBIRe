@@ -4,6 +4,6 @@
     {
         public ActivityLinkContextEntity Context { get; set; }
 
-        public Dictionary<string, string>? Tags { get; set; }
+        public Dictionary<string, string?>? Tags { get; set; }
     }
 }

@@ -25,7 +25,7 @@ namespace Diagnostics.Traces
             {
                 return;
             }
-            exceptionOperator.Add(new TraceExceptionInfo(e.Exception, activity?.TraceId, activity?.SpanId));
+            exceptionOperator.Add(new TraceExceptionInfo(e.Exception, activity?.TraceId.ToString(), activity?.SpanId.ToString()));
         }
 
         private readonly BatchBufferOperator<TraceExceptionInfo> exceptionOperator;

@@ -2,9 +2,9 @@
 
 namespace Diagnostics.Traces
 {
-    public readonly record struct TraceExceptionInfo
+    public record struct TraceExceptionInfo
     {
-        public TraceExceptionInfo(Exception exception, ActivityTraceId? traceId, ActivitySpanId? spanId)
+        public TraceExceptionInfo(Exception exception, string? traceId, string? spanId)
         {
             Exception = exception;
             TraceId = traceId;
@@ -12,12 +12,12 @@ namespace Diagnostics.Traces
             CreateTime = DateTime.Now;
         }
 
-        public Exception Exception { get; }
+        public Exception Exception { get; set; }
 
-        public ActivityTraceId? TraceId { get; }
+        public string? TraceId { get; set; }
 
-        public ActivitySpanId? SpanId { get; }
+        public string? SpanId { get; set; }
 
-        public DateTime CreateTime { get; }
+        public DateTime CreateTime { get; set; }
     }
 }

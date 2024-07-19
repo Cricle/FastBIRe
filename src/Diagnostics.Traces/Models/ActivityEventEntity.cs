@@ -6,6 +6,6 @@
 
         public DateTime Timestamp { get; set; }
 
-        public Dictionary<string, string>? Tags { get; set; }
+        public Dictionary<string, string?>? Tags { get; set; }
     }
 }
