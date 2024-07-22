@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<Import Project="..\..\eng\pkg.props" />
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net8.0;netstandard2.1</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<PackageId>Fast.Diagnostics.Traces.Mini</PackageId>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(PublishAot)'!='' or $(PublishSingleFile)!=''">
+		<TargetFrameworks>net8.0;</TargetFrameworks>
+	</PropertyGroup>
+	<ItemGroup>
+	  <PackageReference Include="K4os.Hash.xxHash" Version="1.0.8" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Diagnostics.Traces\Diagnostics.Traces.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Include="../FastBIRe/OneEnumerable.cs"></Compile>
+	</ItemGroup>
+
+</Project>

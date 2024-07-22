@@ -35,5 +35,7 @@ namespace Diagnostics.Traces.Serialization
             Stream.Flush();
             return true;
         }
+
+        public bool CanWrite(int length) => true;
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace Diagnostics.Traces.Serialization
 {
-    public class StreamMiniReadSerializer : IMiniReadSerializer
+    public class StreamMiniReadSerializer : IMiniReadSerializer, IDisposable
     {
         public StreamMiniReadSerializer(Stream stream)
         {
@@ -9,13 +9,20 @@
 
         public Stream Stream { get; }
 
-        public bool? CanRead(int length)
+        public bool CanSeek => Stream.CanSeek;
+
+        public bool CanRead(int length)
         {
             if (Stream.CanSeek)
             {
                 return Stream.Position + length < Stream.Length;
             }
-            return null;
+            throw new InvalidOperationException("The stream can't seek");
+        }
+
+        public void Dispose()
+        {
+            Stream.Dispose();
         }
 
         public void Read(Span<byte> buffer)

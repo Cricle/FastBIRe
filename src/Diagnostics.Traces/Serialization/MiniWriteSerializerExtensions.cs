@@ -78,39 +78,39 @@ namespace Diagnostics.Traces.Serialization
         }
         public static void WriteException(this IMiniWriteSerializer serializer, in TraceExceptionInfo info, SaveExceptionModes mode)
         {
-            if (mode.HasFlag(SaveExceptionModes.TraceId))
+            if ((mode& SaveExceptionModes.TraceId)!=0)
             {
                 serializer.Write(info.TraceId?.ToString());
             }
-            if (mode.HasFlag(SaveExceptionModes.SpanId))
+            if ((mode & SaveExceptionModes.SpanId) != 0)
             {
                 serializer.Write(info.SpanId?.ToString());
             }
-            if (mode.HasFlag(SaveExceptionModes.CreateTime))
+            if ((mode & SaveExceptionModes.CreateTime) != 0)
             {
                 serializer.Write(info.CreateTime);
             }
-            if (mode.HasFlag(SaveExceptionModes.TypeName))
+            if ((mode & SaveExceptionModes.TypeName) != 0)
             {
                 serializer.Write(info.Exception.GetType().FullName);
             }
-            if (mode.HasFlag(SaveExceptionModes.Message))
+            if ((mode & SaveExceptionModes.Message) != 0)
             {
                 serializer.Write(info.Exception.Message);
             }
-            if (mode.HasFlag(SaveExceptionModes.HelpLink))
+            if ((mode & SaveExceptionModes.HelpLink) != 0)
             {
                 serializer.Write(info.Exception.HelpLink);
             }
-            if (mode.HasFlag(SaveExceptionModes.HResult))
+            if ((mode & SaveExceptionModes.HResult) != 0)
             {
                 serializer.Write(info.Exception.HResult);
             }
-            if (mode.HasFlag(SaveExceptionModes.StackTrace))
+            if ((mode & SaveExceptionModes.StackTrace) != 0)
             {
                 serializer.Write(info.Exception.StackTrace);
             }
-            if (mode.HasFlag(SaveExceptionModes.InnerException))
+            if ((mode & SaveExceptionModes.InnerException) != 0)
             {
                 serializer.Write(info.Exception.InnerException?.ToString());
             }

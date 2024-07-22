@@ -351,11 +351,11 @@ namespace Diagnostics.Traces.DuckDB
                         var row = appender.CreateRow();
                         if (mode.HasFlag(SaveExceptionModes.TraceId))
                         {
-                            row.AppendValue(ex.Current.TraceId.ToString());
+                            row.AppendValue(ex.Current.TraceId);
                         }
                         if (mode.HasFlag(SaveExceptionModes.SpanId))
                         {
-                            row.AppendValue(ex.Current.SpanId.ToString());
+                            row.AppendValue(ex.Current.SpanId);
                         }
                         if (mode.HasFlag(SaveExceptionModes.CreateTime))
                         {

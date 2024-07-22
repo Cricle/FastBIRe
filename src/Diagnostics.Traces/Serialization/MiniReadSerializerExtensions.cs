@@ -61,6 +61,47 @@ namespace Diagnostics.Traces.Serialization
 
             return res;
         }
+        public static ExceptionEntity ReadException(this IMiniReadSerializer serializer, SaveExceptionModes mode)
+        {
+            var entity = new ExceptionEntity();
+            if ((mode & SaveExceptionModes.TraceId) != 0)
+            {
+                entity.TraceId = ReadString(serializer);
+            }
+            if ((mode & SaveExceptionModes.SpanId) != 0)
+            {
+                entity.SpanId= ReadString(serializer);
+            }
+            if ((mode & SaveExceptionModes.CreateTime) != 0)
+            {
+                entity.CreateTime = Read<DateTime>(serializer);
+            }
+            if ((mode & SaveExceptionModes.TypeName) != 0)
+            {
+                entity.TypeName = ReadString(serializer);
+            }
+            if ((mode & SaveExceptionModes.Message) != 0)
+            {
+                entity.Message = ReadString(serializer);
+            }
+            if ((mode & SaveExceptionModes.HelpLink) != 0)
+            {
+                entity.HelpLink = ReadString(serializer);
+            }
+            if ((mode & SaveExceptionModes.HResult) != 0)
+            {
+                entity.HResult = Read<int>(serializer);
+            }
+            if ((mode & SaveExceptionModes.StackTrace) != 0)
+            {
+                entity.StackTrace = ReadString(serializer);
+            }
+            if ((mode & SaveExceptionModes.InnerException) != 0)
+            {
+                entity.InnerException = ReadString(serializer);
+            }
+            return entity;
+        }
         public static AcvtityEntity ReadActivity(this IMiniReadSerializer serializer, SaveActivityModes mode)
         {
             var entity = new AcvtityEntity();
