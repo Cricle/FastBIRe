@@ -4,9 +4,9 @@ using System.Runtime.CompilerServices;
 namespace Diagnostics.Traces
 {
     //https://github.com/CommunityToolkit/dotnet/blob/main/src/CommunityToolkit.HighPerformance/Buffers/ArrayPoolBufferWriter%7BT%7D.cs
-    public sealed class ArrayPoolBufferWriter<T>:IDisposable
+    public sealed class ArrayPoolBufferWriter<T> : IDisposable
     {
-        private const int DefaultInitialBufferSize = 256;
+        private const int DefaultInitialBufferSize = 512;
 
         private readonly ArrayPool<T> pool;
 

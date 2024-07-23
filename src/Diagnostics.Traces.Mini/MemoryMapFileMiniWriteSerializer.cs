@@ -1,5 +1,4 @@
 ﻿using Diagnostics.Traces.Serialization;
-using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
 
 namespace Diagnostics.Traces.Mini
@@ -12,9 +11,9 @@ namespace Diagnostics.Traces.Mini
 
         public MiniWriteTraceHelper TraceHelper { get; }
 
-        public MemoryMapFileMiniWriteSerializer(MemoryMappedFile file,long capacity)
+        public MemoryMapFileMiniWriteSerializer(string filePath, long capacity)
         {
-            memoryMapFileManger = new MemoryMapFileManger(file, capacity);
+            memoryMapFileManger = new MemoryMapFileManger(filePath, capacity);
             memoryMapFileManger.Seek(TraceHeader.Size, SeekOrigin.Begin);
             TraceHelper = new MiniWriteTraceHelper(this);
         }

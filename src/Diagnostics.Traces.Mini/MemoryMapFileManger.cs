@@ -6,22 +6,37 @@ namespace Diagnostics.Traces.Mini
     internal unsafe class MemoryMapFileManger : IDisposable
     {
         private long writed;
-        private readonly MemoryMappedFile mappedFile;
-        private readonly MemoryMappedViewAccessor viewAccessor;
+        private long capacity;
+        private readonly long addCapacity;
+        private readonly string filePath;
+        private MemoryMappedFile mappedFile;
+        private MemoryMappedViewAccessor viewAccessor;
 
-        public MemoryMapFileManger(MemoryMappedFile mappedFile, long capacity)
+        public MemoryMapFileManger(string filePath, long capacity)
         {
-            this.mappedFile = mappedFile;
-            MappedFile = mappedFile;
-            Capacity = capacity;
+            addCapacity = capacity;
+            this.filePath = filePath;
+            mappedFile = MemoryMappedFile.CreateFromFile(filePath, FileMode.Create,null,capacity);
+            this.capacity = capacity;
             viewAccessor = mappedFile.CreateViewAccessor();
         }
 
-        public MemoryMappedFile MappedFile { get; }
+        public MemoryMappedFile MappedFile => mappedFile;
 
-        public long Capacity { get; }
+        public long Capacity => capacity;
 
         public long Writed => writed;
+
+        private void EnsureCapacity(long size)
+        {
+            if (writed + size >= capacity)
+            {
+                capacity += addCapacity;
+                Dispose();
+                mappedFile = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, null, capacity);
+                viewAccessor = mappedFile.CreateViewAccessor();
+            }
+        }
 
         public void Seek(int offset,SeekOrigin origin)
         {
@@ -31,7 +46,7 @@ namespace Diagnostics.Traces.Mini
             }
             else if (origin== SeekOrigin.End)
             {
-                writed = Capacity-offset;
+                writed = Capacity - offset;
             }
             else
             {
@@ -47,6 +62,7 @@ namespace Diagnostics.Traces.Mini
         public unsafe void WriteHead(ReadOnlySpan<byte> buffer)
         {
             byte* ptr = null;
+            EnsureCapacity(buffer.Length);
             viewAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref ptr);
             try
             {
@@ -60,6 +76,7 @@ namespace Diagnostics.Traces.Mini
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe bool TryWrite(ReadOnlySpan<byte> buffer)
         {
+            EnsureCapacity(buffer.Length);
             if (CanWrite(buffer.Length))
             {
                 byte* ptr=null;

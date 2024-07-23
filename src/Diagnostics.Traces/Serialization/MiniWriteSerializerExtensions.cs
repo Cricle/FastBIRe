@@ -320,6 +320,7 @@ namespace Diagnostics.Traces.Serialization
                 }
                 try
                 {
+                    //Error
                     var written = Encoding.UTF8.GetBytes((char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(value.AsSpan())),
                         value!.Length,
                         (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(sp)),
