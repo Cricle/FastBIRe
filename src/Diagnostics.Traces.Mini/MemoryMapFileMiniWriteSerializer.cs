@@ -1,11 +1,14 @@
 ﻿using Diagnostics.Traces.Serialization;
+using System.Buffers;
 using System.Runtime.CompilerServices;
+using ZstdSharp;
 
 namespace Diagnostics.Traces.Mini
 {
-    public class MemoryMapFileMiniWriteSerializer : IMiniWriteSerializer, IDisposable
+    public class MemoryMapFileMiniWriteSerializer : BufferMiniWriteSerializer
     {
         private readonly MemoryMapFileManger memoryMapFileManger;
+        private readonly Compressor compressor;
 
         public long Writed => memoryMapFileManger.Writed;
 
@@ -16,17 +19,35 @@ namespace Diagnostics.Traces.Mini
             memoryMapFileManger = new MemoryMapFileManger(filePath, capacity);
             memoryMapFileManger.Seek(TraceHeader.Size, SeekOrigin.Begin);
             TraceHelper = new MiniWriteTraceHelper(this);
+            compressor = new Compressor();
         }
 
-        public bool CanWrite(int length)
+        public override bool CanWrite(int length)
         {
             return memoryMapFileManger.CanWrite(length);
         }
-
-        public bool Flush()
+        protected override void WriteCore(ReadOnlySpan<byte> buffer)
         {
-            return true;
+            memoryMapFileManger.Write(buffer);
         }
+        protected override bool OnFlushScope()
+        {
+            if (bufferWriter!=null)
+            {
+                var sp = bufferWriter.WrittenSpan;
+                var bound = Compressor.GetCompressBound(sp.Length);
+                var buffer = ArrayPool<byte>.Shared.Rent(bound);
+                try
+                {
+
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                }
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteHead(TraceHeader header)
         {
@@ -35,18 +56,14 @@ namespace Diagnostics.Traces.Mini
             memoryMapFileManger.WriteHead(new ReadOnlySpan<byte>(buffer, TraceHeader.Size));
         }
 
-        public void Write(ReadOnlySpan<byte> buffer)
-        {
-            memoryMapFileManger.Write(buffer);
-        }
         public void Seek(int offset, SeekOrigin origin)
         {
             memoryMapFileManger.Seek(offset, origin);
         }
-
-        public void Dispose()
+        protected override void OnDisposed()
         {
             memoryMapFileManger.Dispose();
+            compressor.Dispose();
         }
     }
 }

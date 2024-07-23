@@ -16,17 +16,15 @@ namespace Diagnostics.Traces.Mini
 
         public IMiniWriteSerializer WriteSerializer => miniWriteSerializer;
 
-        private void Write<T, TMode>(Action<BufferMiniWriteSerializer, T, TMode> action, T value, TMode mode)
+        private void Write<T, TMode>(Action<IMiniWriteSerializer, T, TMode> action, T value, TMode mode)
             where TMode : struct, Enum
         {
-            using (var buffer = new BufferMiniWriteSerializer())
-            {
-                action(buffer, value, mode);
-                var sp = buffer.Writer.WrittenSpan;
-                var header = MiniSerializeHeader<TMode>.Create(sp, mode);
-                WriteHeader(header);
-                miniWriteSerializer.Write(sp);
-            }
+            miniWriteSerializer.TryEntryScope();
+            action(miniWriteSerializer, value, mode);
+            var sp = miniWriteSerializer.GetScopedBuffer();
+            var header = MiniSerializeHeader<TMode>.Create(sp, mode);
+            miniWriteSerializer.FlushScope();
+            WriteHeader(header);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private unsafe void WriteHeader<TMode>(in MiniSerializeHeader<TMode> header)

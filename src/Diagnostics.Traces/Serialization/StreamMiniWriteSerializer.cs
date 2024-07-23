@@ -1,9 +1,8 @@
 ﻿using System.Buffers;
-using System.Runtime.CompilerServices;
 
 namespace Diagnostics.Traces.Serialization
 {
-    public class StreamMiniWriteSerializer : IMiniWriteSerializer
+    public class StreamMiniWriteSerializer : BufferMiniWriteSerializer
     {
         public StreamMiniWriteSerializer(Stream stream)
         {
@@ -11,9 +10,8 @@ namespace Diagnostics.Traces.Serialization
         }
 
         public Stream Stream { get; }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(ReadOnlySpan<byte> buffer)
+        
+        protected override void WriteCore(ReadOnlySpan<byte> buffer)
         {
 #if NETSTANDARD2_0 || NET472
             var copy = ArrayPool<byte>.Shared.Rent(buffer.Length);
@@ -30,12 +28,8 @@ namespace Diagnostics.Traces.Serialization
             Stream.Write(buffer);
 #endif
         }
-        public bool Flush()
-        {
-            Stream.Flush();
-            return true;
-        }
 
-        public bool CanWrite(int length) => true;
+        public override bool CanWrite(int length) => true;
+
     }
 }
