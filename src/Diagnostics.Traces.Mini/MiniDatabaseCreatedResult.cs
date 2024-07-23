@@ -1,5 +1,4 @@
 ﻿using Diagnostics.Traces.Stores;
-using System.IO.MemoryMappedFiles;
 
 namespace Diagnostics.Traces.Mini
 {

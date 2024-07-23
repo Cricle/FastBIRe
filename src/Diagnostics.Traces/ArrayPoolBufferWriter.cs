@@ -36,7 +36,7 @@ namespace Diagnostics.Traces
             this.index = 0;
         }
 
-        public ReadOnlyMemory<T> WrittenMemory
+        public Memory<T> WrittenMemory
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
@@ -52,7 +52,7 @@ namespace Diagnostics.Traces
             }
         }
 
-        public ReadOnlySpan<T> WrittenSpan
+        public Span<T> WrittenSpan
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get

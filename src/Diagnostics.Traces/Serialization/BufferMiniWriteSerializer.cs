@@ -59,7 +59,7 @@
 
         protected abstract void WriteCore(ReadOnlySpan<byte> buffer);
 
-        public ReadOnlySpan<byte> GetScopedBuffer()
+        public Span<byte> GetScopedBuffer()
         {
             if (bufferWriter == null)
             {

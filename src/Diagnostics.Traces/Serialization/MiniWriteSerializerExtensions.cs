@@ -11,7 +11,7 @@ namespace Diagnostics.Traces.Serialization
     {
         private const int IntSize = sizeof(int);
 
-        private static void WriteContext(IMiniWriteSerializer serializer, in ActivityContext context)
+        private static void WriteContext(IWritableBuffer serializer, in ActivityContext context)
         {
             serializer.Write(context.TraceId.ToString());
             serializer.Write(context.SpanId.ToString());
@@ -19,7 +19,7 @@ namespace Diagnostics.Traces.Serialization
             serializer.Write(context.TraceState);
             serializer.Write(context.IsRemote);
         }
-        private static void WriteLinks(IMiniWriteSerializer serializer, IEnumerable<ActivityLink> links)
+        private static void WriteLinks(IWritableBuffer serializer, IEnumerable<ActivityLink> links)
         {
             var count = links.Count();
             serializer.Write(count);
@@ -30,7 +30,7 @@ namespace Diagnostics.Traces.Serialization
                 WriteTags(serializer, item.Tags);
             }
         }
-        private static void WriteEvents(IMiniWriteSerializer serializer, IEnumerable<ActivityEvent> @event)
+        private static void WriteEvents(IWritableBuffer serializer, IEnumerable<ActivityEvent> @event)
         {
             var count = @event.Count();
             serializer.Write(count);
@@ -42,7 +42,7 @@ namespace Diagnostics.Traces.Serialization
                 WriteTags(serializer, item.Tags);
             }
         }
-        private static void WriteTags(IMiniWriteSerializer serializer, IEnumerable<KeyValuePair<string, object?>>? tags)
+        private static void WriteTags(IWritableBuffer serializer, IEnumerable<KeyValuePair<string, object?>>? tags)
         {
             var count = 0;
             if (tags != null)
@@ -59,7 +59,7 @@ namespace Diagnostics.Traces.Serialization
                 }
             }
         }
-        private static void WriteTags(IMiniWriteSerializer serializer, IEnumerable<KeyValuePair<string, string?>>? tags)
+        private static void WriteTags(IWritableBuffer serializer, IEnumerable<KeyValuePair<string, string?>>? tags)
         {
             var count = 0;
             if (tags!=null)
@@ -76,7 +76,7 @@ namespace Diagnostics.Traces.Serialization
                 }
             }
         }
-        public static void WriteException(this IMiniWriteSerializer serializer, in TraceExceptionInfo info, SaveExceptionModes mode)
+        public static void WriteException(this IWritableBuffer serializer, in TraceExceptionInfo info, SaveExceptionModes mode)
         {
             if ((mode& SaveExceptionModes.TraceId)!=0)
             {
@@ -115,7 +115,7 @@ namespace Diagnostics.Traces.Serialization
                 serializer.Write(info.Exception.InnerException?.ToString());
             }
         }
-        public static void WriteActivity(this IMiniWriteSerializer serializer,Activity activity,SaveActivityModes mode)
+        public static void WriteActivity(this IWritableBuffer serializer,Activity activity,SaveActivityModes mode)
         {
             if ((mode & SaveActivityModes.Id) != 0)
             {
@@ -242,7 +242,7 @@ namespace Diagnostics.Traces.Serialization
             }
         }
 
-        public static void WriteLog(this IMiniWriteSerializer serializer,LogRecord record,SaveLogModes mode)
+        public static void WriteLog(this IWritableBuffer serializer,LogRecord record,SaveLogModes mode)
         {
             if ((mode & SaveLogModes.Timestamp) != 0)
             {
@@ -288,7 +288,7 @@ namespace Diagnostics.Traces.Serialization
             }
         }
 
-        public static unsafe void Write(this IMiniWriteSerializer serializer,string? value)
+        public static unsafe void Write(this IWritableBuffer serializer,string? value)
         {
             byte* lengthBuffer = stackalloc byte[IntSize];
 
@@ -336,7 +336,7 @@ namespace Diagnostics.Traces.Serialization
                 }
             }
         }
-        public static unsafe void Write<T>(this IMiniWriteSerializer serializer, in T value)
+        public static unsafe void Write<T>(this IWritableBuffer serializer, in T value)
             where T : unmanaged
         {
             byte* buffer = stackalloc byte[sizeof(T)];

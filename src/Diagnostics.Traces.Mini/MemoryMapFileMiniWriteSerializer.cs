@@ -1,14 +1,11 @@
 ﻿using Diagnostics.Traces.Serialization;
-using System.Buffers;
 using System.Runtime.CompilerServices;
-using ZstdSharp;
 
 namespace Diagnostics.Traces.Mini
 {
     public class MemoryMapFileMiniWriteSerializer : BufferMiniWriteSerializer
     {
         private readonly MemoryMapFileManger memoryMapFileManger;
-        private readonly Compressor compressor;
 
         public long Writed => memoryMapFileManger.Writed;
 
@@ -19,7 +16,6 @@ namespace Diagnostics.Traces.Mini
             memoryMapFileManger = new MemoryMapFileManger(filePath, capacity);
             memoryMapFileManger.Seek(TraceHeader.Size, SeekOrigin.Begin);
             TraceHelper = new MiniWriteTraceHelper(this);
-            compressor = new Compressor();
         }
 
         public override bool CanWrite(int length)
@@ -29,23 +25,6 @@ namespace Diagnostics.Traces.Mini
         protected override void WriteCore(ReadOnlySpan<byte> buffer)
         {
             memoryMapFileManger.Write(buffer);
-        }
-        protected override bool OnFlushScope()
-        {
-            if (bufferWriter!=null)
-            {
-                var sp = bufferWriter.WrittenSpan;
-                var bound = Compressor.GetCompressBound(sp.Length);
-                var buffer = ArrayPool<byte>.Shared.Rent(bound);
-                try
-                {
-
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(buffer);
-                }
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -63,7 +42,6 @@ namespace Diagnostics.Traces.Mini
         protected override void OnDisposed()
         {
             memoryMapFileManger.Dispose();
-            compressor.Dispose();
         }
     }
 }
