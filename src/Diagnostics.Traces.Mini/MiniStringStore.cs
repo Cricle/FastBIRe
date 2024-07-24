@@ -34,8 +34,9 @@ namespace Diagnostics.Traces.Mini
 
         public override unsafe void InsertMany(IEnumerable<BytesStoreValue> strings)
         {
-            DatabaseSelector.UsingDatabaseResult(strings, static (res, val) =>
+            var count=DatabaseSelector.UsingDatabaseResult(strings, static (res, val) =>
             {
+                var c = 0;
                 foreach (var item in val)
                 {
                     var sp = item.Value.AsSpan(item.Offset, item.Length);
@@ -55,8 +56,11 @@ namespace Diagnostics.Traces.Mini
                             res.Serializer.Write(zstdRes.Span);
                         }
                     }
+                    c++;
                 }
+                return c;
             });
+            DatabaseSelector.ReportInserted(count);
         }
     }
 }
