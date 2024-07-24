@@ -2,7 +2,6 @@
 using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Diagnostics.Traces.Serialization
@@ -320,10 +319,11 @@ namespace Diagnostics.Traces.Serialization
                 }
                 try
                 {
+                    fixed(char* valuePtr=value)
                     fixed (byte* destPtr = sp)
                     {
                         //Error
-                        var written = Encoding.UTF8.GetBytes((char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(value.AsSpan())),
+                        var written = Encoding.UTF8.GetBytes(valuePtr,
                             value!.Length,
                             destPtr,
                             length);
@@ -339,11 +339,12 @@ namespace Diagnostics.Traces.Serialization
                 }
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void Write<T>(this IWritableBuffer serializer, in T value)
             where T : unmanaged
         {
             byte* buffer = stackalloc byte[sizeof(T)];
-            *(T*)buffer = value;
+            Unsafe.Write(buffer, value);
             serializer.Write(new ReadOnlySpan<byte>(buffer, sizeof(T)));
         }
     }
