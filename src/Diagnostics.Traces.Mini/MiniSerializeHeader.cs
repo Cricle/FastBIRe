@@ -25,18 +25,21 @@ namespace Diagnostics.Traces.Mini
 
         public uint Hash;
 
-        public uint Size;
+        public int Size;
+
+        public DateTime Time;
 
         public TraceCompressMode CompressMode;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static MiniSerializeString Create(ReadOnlySpan<byte> buffer, TraceCompressMode compressMode)
+        public static unsafe MiniSerializeString Create(DateTime time,ReadOnlySpan<byte> buffer, TraceCompressMode compressMode)
         {
             return new MiniSerializeString
             {
                 Hash = XXH32.DigestOf(buffer),
-                Size = (uint)buffer.Length,
-                CompressMode = compressMode
+                Size = buffer.Length,
+                CompressMode = compressMode,
+                Time=time
             };
         }
 
@@ -49,7 +52,7 @@ namespace Diagnostics.Traces.Mini
 
         public uint Hash;
 
-        public uint Size;
+        public int Size;
 
         public TMode Mode;
 
@@ -61,7 +64,7 @@ namespace Diagnostics.Traces.Mini
             return new MiniSerializeHeader<TMode>
             {
                 Hash = XXH32.DigestOf(buffer),
-                Size = (uint)buffer.Length,
+                Size = buffer.Length,
                 Mode = mode,
                 CompressMode = compressMode
             };

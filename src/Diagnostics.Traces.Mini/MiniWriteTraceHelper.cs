@@ -66,7 +66,6 @@ namespace Diagnostics.Traces.Mini
 
         public void Dispose()
         {
-            compressor.Dispose();
             if (miniWriteSerializer is IDisposable disposable)
             {
                 disposable.Dispose();

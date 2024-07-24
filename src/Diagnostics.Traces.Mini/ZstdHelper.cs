@@ -15,5 +15,15 @@ namespace Diagnostics.Traces.Mini
                 return new ZstdCompressResult(buffer, writted);
             }
         }
+        public static ZstdCompressResult ReadZstd(ReadOnlySpan<byte> input, int level = 0)
+        {
+            using (var compressor = new Decompressor())
+            {
+                var len = Decompressor.GetDecompressedSize(input);
+                var buffer = ArrayPool<byte>.Shared.Rent((int)len);
+                var writted = compressor.Unwrap(input, buffer);
+                return new ZstdCompressResult(buffer, writted);
+            }
+        }
     }
 }

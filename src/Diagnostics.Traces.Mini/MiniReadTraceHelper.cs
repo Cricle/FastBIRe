@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace Diagnostics.Traces.Mini
 {
-    public class MiniReadTraceHelper : IDisposable
+    public class MiniReadTraceHelper : IMiniReadSerializer, IDisposable
     {
         private IMiniReadSerializer miniReadSerializer;
 
@@ -17,6 +17,8 @@ namespace Diagnostics.Traces.Mini
         }
 
         public IMiniReadSerializer MiniReadSerializer => miniReadSerializer;
+
+        public bool CanSeek => miniReadSerializer.CanSeek;
 
         public unsafe MiniSerializeHeader<TMode>? ReadHeader<TMode>()
             where TMode : struct, Enum
@@ -77,7 +79,7 @@ namespace Diagnostics.Traces.Mini
                 return null;
             }
             byte* buffer = stackalloc byte[TraceHeader.Size];
-            miniReadSerializer.Read(new Span<byte>(buffer,TraceHeader.Size));
+            miniReadSerializer.Read(new Span<byte>(buffer, TraceHeader.Size));
             return Unsafe.Read<TraceHeader>(buffer);
         }
         public MiniReadResult<LogEntity> ReadLog()
@@ -99,6 +101,16 @@ namespace Diagnostics.Traces.Mini
             {
                 disposable.Dispose();
             }
+        }
+
+        public bool CanRead(int length)
+        {
+            return miniReadSerializer.CanRead(length);
+        }
+
+        public void Read(Span<byte> buffer)
+        {
+            miniReadSerializer.Read(buffer);
         }
     }
 }

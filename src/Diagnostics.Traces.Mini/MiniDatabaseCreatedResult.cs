@@ -12,6 +12,7 @@ namespace Diagnostics.Traces.Mini
                 throw new ArgumentNullException(nameof(filePath));
             }
             Serializer = new MemoryMapFileMiniWriteSerializer(filePath, capacity);
+            Serializer.WriteHead(new TraceHeader { Count = TraceHeader.UnknowCount });
         }
 
         private long count;

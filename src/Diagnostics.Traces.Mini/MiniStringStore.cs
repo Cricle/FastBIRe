@@ -1,6 +1,7 @@
 ﻿using Diagnostics.Traces.Serialization;
 using Diagnostics.Traces.Stores;
 using FastBIRe;
+using System.Buffers;
 
 namespace Diagnostics.Traces.Mini
 {
@@ -31,7 +32,7 @@ namespace Diagnostics.Traces.Mini
             InsertMany(new OneEnumerable<BytesStoreValue>(value));
         }
 
-        public override void InsertMany(IEnumerable<BytesStoreValue> strings)
+        public override unsafe void InsertMany(IEnumerable<BytesStoreValue> strings)
         {
             DatabaseSelector.UsingDatabaseResult(strings, static (res, val) =>
             {
@@ -41,18 +42,16 @@ namespace Diagnostics.Traces.Mini
                     var compressMode = item.Length > 1024 ? TraceCompressMode.Zstd : TraceCompressMode.None;
                     if (compressMode == TraceCompressMode.None)
                     {
-                        var head = MiniSerializeString.Create(sp, compressMode);
+                        var head = MiniSerializeString.Create(item.Time,sp, compressMode);
                         res.Serializer.Write(head);
-                        res.Serializer.Write(item.Time);
                         res.Serializer.Write(sp);
                     }
                     else
                     {
                         using (var zstdRes = ZstdHelper.WriteZstd(sp))
                         {
-                            var head = MiniSerializeString.Create(zstdRes.Span, compressMode);
+                            var head = MiniSerializeString.Create(item.Time,zstdRes.Span, compressMode);
                             res.Serializer.Write(head);
-                            res.Serializer.Write(item.Time);
                             res.Serializer.Write(zstdRes.Span);
                         }
                     }
