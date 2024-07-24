@@ -7,16 +7,18 @@ namespace Diagnostics.Traces.Mini
     [StructLayout(LayoutKind.Sequential, Size = Size)]
     public struct TraceHeader
     {
+        public const int UnknowCount = -1;
+
         public const int Size = 256;
 
         public long Count;
     }
-    public enum TraceCompressMode:byte
+    public enum TraceCompressMode : byte
     {
-        None=0,
-        Zstd=1
+        None = 0,
+        Zstd = 1
     }
-    [StructLayout(LayoutKind.Sequential,Pack =1, Size = HeaderSize)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = HeaderSize)]
     public struct MiniSerializeHeader<TMode>
         where TMode : struct, Enum
     {
@@ -31,7 +33,7 @@ namespace Diagnostics.Traces.Mini
         public TraceCompressMode CompressMode;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static MiniSerializeHeader<TMode> Create(ReadOnlySpan<byte> buffer, TMode mode,TraceCompressMode compressMode)
+        public static MiniSerializeHeader<TMode> Create(ReadOnlySpan<byte> buffer, TMode mode, TraceCompressMode compressMode)
         {
             return new MiniSerializeHeader<TMode>
             {

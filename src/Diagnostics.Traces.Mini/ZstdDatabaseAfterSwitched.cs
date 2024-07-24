@@ -15,7 +15,7 @@ namespace Diagnostics.Traces.Mini
         }
         protected override Stream GetAfterStream(Stream stream)
         {
-            return new CompressionStream(stream, Level, leaveOpen: false);
+            return new CompressionStream(stream, Level);
         }
         protected override string FailGetConvertsionPath(string filePath)
         {

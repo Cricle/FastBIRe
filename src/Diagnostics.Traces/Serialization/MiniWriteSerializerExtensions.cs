@@ -62,7 +62,7 @@ namespace Diagnostics.Traces.Serialization
         private static void WriteTags(IWritableBuffer serializer, IEnumerable<KeyValuePair<string, string?>>? tags)
         {
             var count = 0;
-            if (tags!=null)
+            if (tags != null)
             {
                 count = tags.Count();
             }
@@ -78,7 +78,7 @@ namespace Diagnostics.Traces.Serialization
         }
         public static void WriteException(this IWritableBuffer serializer, in TraceExceptionInfo info, SaveExceptionModes mode)
         {
-            if ((mode& SaveExceptionModes.TraceId)!=0)
+            if ((mode & SaveExceptionModes.TraceId) != 0)
             {
                 serializer.Write(info.TraceId?.ToString());
             }
@@ -115,7 +115,7 @@ namespace Diagnostics.Traces.Serialization
                 serializer.Write(info.Exception.InnerException?.ToString());
             }
         }
-        public static void WriteActivity(this IWritableBuffer serializer,Activity activity,SaveActivityModes mode)
+        public static void WriteActivity(this IWritableBuffer serializer, Activity activity, SaveActivityModes mode)
         {
             if ((mode & SaveActivityModes.Id) != 0)
             {
@@ -187,11 +187,11 @@ namespace Diagnostics.Traces.Serialization
             }
             if ((mode & SaveActivityModes.Events) != 0)
             {
-                WriteEvents(serializer,activity.Events);
+                WriteEvents(serializer, activity.Events);
             }
             if ((mode & SaveActivityModes.Links) != 0)
             {
-                WriteLinks(serializer,activity.Links);
+                WriteLinks(serializer, activity.Links);
 
             }
             if ((mode & SaveActivityModes.Baggage) != 0)
@@ -242,7 +242,7 @@ namespace Diagnostics.Traces.Serialization
             }
         }
 
-        public static void WriteLog(this IWritableBuffer serializer,LogRecord record,SaveLogModes mode)
+        public static void WriteLog(this IWritableBuffer serializer, LogRecord record, SaveLogModes mode)
         {
             if ((mode & SaveLogModes.Timestamp) != 0)
             {
@@ -288,7 +288,7 @@ namespace Diagnostics.Traces.Serialization
             }
         }
 
-        public static unsafe void Write(this IWritableBuffer serializer,string? value)
+        public static unsafe void Write(this IWritableBuffer serializer, string? value)
         {
             byte* lengthBuffer = stackalloc byte[IntSize];
 
@@ -297,7 +297,7 @@ namespace Diagnostics.Traces.Serialization
             {
                 length = -1;
             }
-            else if(value!=string.Empty)
+            else if (value != string.Empty)
             {
                 length = Encoding.UTF8.GetByteCount(value);
             }
@@ -320,16 +320,19 @@ namespace Diagnostics.Traces.Serialization
                 }
                 try
                 {
-                    //Error
-                    var written = Encoding.UTF8.GetBytes((char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(value.AsSpan())),
-                        value!.Length,
-                        (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(sp)),
-                        length);
-                    serializer.Write(sp.Slice(0, written));
+                    fixed (byte* destPtr = sp)
+                    {
+                        //Error
+                        var written = Encoding.UTF8.GetBytes((char*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(value.AsSpan())),
+                            value!.Length,
+                            destPtr,
+                            length);
+                        serializer.Write(sp.Slice(0, written));
+                    }
                 }
                 finally
                 {
-                    if (returnBytes!=null)
+                    if (returnBytes != null)
                     {
                         ArrayPool<byte>.Shared.Return(returnBytes);
                     }

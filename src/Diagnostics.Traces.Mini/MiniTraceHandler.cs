@@ -17,6 +17,13 @@ namespace Diagnostics.Traces.Mini
             LogDatabaseSelector = logDatabaseSelector;
             ExceptionDatabaseSelector = exceptionDatabaseSelector;
         }
+        private bool writeHead;
+
+        public bool WriteHead
+        {
+            get => writeHead;
+            set => writeHead = value;
+        }
 
         public IUndefinedDatabaseSelector<MiniDatabaseCreatedResult>? ActivityDatabaseSelector { get; }
         public IUndefinedDatabaseSelector<MiniDatabaseCreatedResult>? LogDatabaseSelector { get; }
@@ -29,12 +36,15 @@ namespace Diagnostics.Traces.Mini
                 return;
             }
 
-            var c = ActivityDatabaseSelector.UsingDatabaseResult(enu, static (res, enu) =>
+            var c = ActivityDatabaseSelector.UsingDatabaseResult(enu, (res, enu) =>
             {
-                var count = 0;
+                var count =0;
                 while (enu.MoveNext())
                 {
-                    res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
+                    if (writeHead)
+                    {
+                        res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
+                    }
                     res.Serializer.TraceHelper.WriteActivity(enu.Current, res.SaveActivityModes);
                     count++;
                     res.AddCount();
@@ -50,12 +60,15 @@ namespace Diagnostics.Traces.Mini
                 return;
             }
 
-            var c = LogDatabaseSelector.UsingDatabaseResult(enu, static (res, enu) =>
+            var c = LogDatabaseSelector.UsingDatabaseResult(enu, (res, enu) =>
             {
                 var count = 0;
                 while (enu.MoveNext())
                 {
-                    res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
+                    if (writeHead)
+                    {
+                        res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
+                    }
                     res.Serializer.TraceHelper.WriteLog(enu.Current, res.SaveLogModes);
                     count++;
                     res.AddCount();
@@ -71,12 +84,15 @@ namespace Diagnostics.Traces.Mini
                 return;
             }
 
-            var c = ExceptionDatabaseSelector.UsingDatabaseResult(enu, static (res, enu) =>
+            var c = ExceptionDatabaseSelector.UsingDatabaseResult(enu, (res, enu) =>
             {
-                var count = 0;
+                var count =0;
                 while (enu.MoveNext())
                 {
-                    res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
+                    if (writeHead)
+                    {
+                        res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
+                    }
                     res.Serializer.TraceHelper.WriteException(enu.Current, res.SaveExceptionModes);
                     count++;
                     res.AddCount();
