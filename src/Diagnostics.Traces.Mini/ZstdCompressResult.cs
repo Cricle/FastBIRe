@@ -2,7 +2,7 @@
 
 namespace Diagnostics.Traces.Mini
 {
-    public readonly struct ZstdCompressResult:IDisposable
+    public readonly struct ZstdCompressResult : IDisposable
     {
         public readonly byte[] Result;
 

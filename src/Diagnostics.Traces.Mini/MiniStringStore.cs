@@ -42,7 +42,7 @@ namespace Diagnostics.Traces.Mini
                     var compressMode = item.Length > 1024 ? TraceCompressMode.Zstd : TraceCompressMode.None;
                     if (compressMode == TraceCompressMode.None)
                     {
-                        var head = MiniSerializeString.Create(item.Time,sp, compressMode);
+                        var head = MiniBytesStoreHeader.Create(item.Time,sp, compressMode);
                         res.Serializer.Write(head);
                         res.Serializer.Write(sp);
                     }
@@ -50,7 +50,7 @@ namespace Diagnostics.Traces.Mini
                     {
                         using (var zstdRes = ZstdHelper.WriteZstd(sp))
                         {
-                            var head = MiniSerializeString.Create(item.Time,zstdRes.Span, compressMode);
+                            var head = MiniBytesStoreHeader.Create(item.Time,zstdRes.Span, compressMode);
                             res.Serializer.Write(head);
                             res.Serializer.Write(zstdRes.Span);
                         }

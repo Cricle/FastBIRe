@@ -27,7 +27,7 @@ namespace Diagnostics.Traces.Mini
                 var needCompress = sp.Length <= 512;
                 if (needCompress)
                 {
-                    var header = MiniSerializeHeader<TMode>.Create(sp, mode, TraceCompressMode.None);
+                    var header = MiniDataHeader<TMode>.Create(sp, mode, TraceCompressMode.None);
                     WriteHeader(header);
                     miniWriteSerializer.Write(sp);
                 }
@@ -35,7 +35,7 @@ namespace Diagnostics.Traces.Mini
                 {
                     using (var zstdResult=ZstdHelper.WriteZstd(sp))
                     {
-                        var header = MiniSerializeHeader<TMode>.Create(zstdResult.Span, mode, TraceCompressMode.Zstd);
+                        var header = MiniDataHeader<TMode>.Create(zstdResult.Span, mode, TraceCompressMode.Zstd);
                         WriteHeader(header);
                         miniWriteSerializer.Write(zstdResult.Span);
                     }
@@ -43,12 +43,12 @@ namespace Diagnostics.Traces.Mini
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void WriteHeader<TMode>(in MiniSerializeHeader<TMode> header)
+        private unsafe void WriteHeader<TMode>(in MiniDataHeader<TMode> header)
             where TMode : struct, Enum
         {
-            byte* buffer = stackalloc byte[MiniSerializeHeader<TMode>.HeaderSize];
+            byte* buffer = stackalloc byte[MiniDataHeader<TMode>.HeaderSize];
             Unsafe.Write(buffer, header);
-            miniWriteSerializer.Write(new ReadOnlySpan<byte>(buffer, MiniSerializeHeader<TMode>.HeaderSize));
+            miniWriteSerializer.Write(new ReadOnlySpan<byte>(buffer, MiniDataHeader<TMode>.HeaderSize));
         }
 
         public void WriteLog(LogRecord log, SaveLogModes mode)

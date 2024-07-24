@@ -24,10 +24,25 @@ namespace Diagnostics.Traces.Mini
                 disposable.Dispose();
             }
         }
+        public IEnumerable<CounterValue> ReadCounters()
+        {
+            var helper = new MiniReadTraceHelper(MiniReadSerializer);
+            _ = helper.ReadHeader();
+            var head = helper.ReadCounterHeader();
+            while (true)
+            {
+                var result = helper.ReadCounterValue();
+                if (result == null)
+                {
+                    yield break;
+                }
+                yield return result.Value;
+            }
+        }
         public IEnumerable<BytesStoreValue> ReadBytesStoreValues()
         {
             var helper = new MiniReadTraceHelper(MiniReadSerializer);
-            var head = helper.ReadHead();
+            var head = helper.ReadHeader();
             while (true)
             {
                 var result = helper.ReadBytesStoreValue();
@@ -41,7 +56,7 @@ namespace Diagnostics.Traces.Mini
         public IEnumerable<AcvtityEntity> ReadActivities(IEnumerable<string>? traceIds = null)
         {
             var helper = new MiniReadTraceHelper(MiniReadSerializer);
-            var head = helper.ReadHead();
+            var head = helper.ReadHeader();
             while (true)
             {
                 var result = helper.ReadActivity();
@@ -57,7 +72,7 @@ namespace Diagnostics.Traces.Mini
         {
 
             var helper = new MiniReadTraceHelper(MiniReadSerializer);
-            var head = helper.ReadHead();
+            var head = helper.ReadHeader();
             while (true)
             {
                 var result = helper.ReadException();
@@ -72,7 +87,7 @@ namespace Diagnostics.Traces.Mini
         public IEnumerable<LogEntity> ReadLogs(IEnumerable<string>? traceIds = null)
         {
             var helper = new MiniReadTraceHelper(MiniReadSerializer);
-            var head = helper.ReadHead();
+            var head = helper.ReadHeader();
             while (true)
             {
                 var result = helper.ReadLog();

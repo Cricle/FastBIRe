@@ -14,7 +14,7 @@ namespace Diagnostics.Traces.Mini
         public MemoryMapFileMiniWriteSerializer(string filePath, long capacity)
         {
             memoryMapFileManger = new MemoryMapFileManger(filePath, capacity);
-            memoryMapFileManger.Seek(TraceHeader.Size, SeekOrigin.Begin);
+            memoryMapFileManger.Seek(TraceHeader.HeaderSize, SeekOrigin.Begin);
             TraceHelper = new MiniWriteTraceHelper(this);
         }
 
@@ -30,9 +30,9 @@ namespace Diagnostics.Traces.Mini
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteHead(TraceHeader header)
         {
-            byte* buffer = stackalloc byte[TraceHeader.Size];
+            byte* buffer = stackalloc byte[TraceHeader.HeaderSize];
             Unsafe.Write(buffer, header);
-            memoryMapFileManger.WriteHead(new ReadOnlySpan<byte>(buffer, TraceHeader.Size));
+            memoryMapFileManger.WriteHead(new ReadOnlySpan<byte>(buffer, TraceHeader.HeaderSize));
         }
 
         public void Seek(int offset, SeekOrigin origin)

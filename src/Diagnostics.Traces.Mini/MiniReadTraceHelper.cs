@@ -20,17 +20,17 @@ namespace Diagnostics.Traces.Mini
 
         public bool CanSeek => miniReadSerializer.CanSeek;
 
-        public unsafe MiniSerializeHeader<TMode>? ReadHeader<TMode>()
+        public unsafe MiniDataHeader<TMode>? ReadHeader<TMode>()
             where TMode : struct, Enum
         {
-            var canReadResult = miniReadSerializer.CanRead(MiniSerializeHeader<TMode>.HeaderSize);
+            var canReadResult = miniReadSerializer.CanRead(MiniDataHeader<TMode>.HeaderSize);
             if (!canReadResult)
             {
                 return null;
             }
-            byte* headerBuffer = stackalloc byte[MiniSerializeHeader<TMode>.HeaderSize];
-            miniReadSerializer.Read(new Span<byte>(headerBuffer, MiniSerializeHeader<TMode>.HeaderSize));
-            return Unsafe.Read<MiniSerializeHeader<TMode>>(headerBuffer);
+            byte* headerBuffer = stackalloc byte[MiniDataHeader<TMode>.HeaderSize];
+            miniReadSerializer.Read(new Span<byte>(headerBuffer, MiniDataHeader<TMode>.HeaderSize));
+            return Unsafe.Read<MiniDataHeader<TMode>>(headerBuffer);
         }
 
         private unsafe MiniReadResult<T> Read<T, TMode>(Func<ConstMiniReadSerializer, TMode, T> func)
@@ -72,15 +72,24 @@ namespace Diagnostics.Traces.Mini
             var entity = func(constReader, header.Value.Mode);
             return new MiniReadResult<T>(entity, MiniReadResultTypes.Succeed);
         }
-        public unsafe TraceHeader? ReadHead()
+        public unsafe TraceHeader? ReadHeader()
         {
-            if (!miniReadSerializer.CanRead(TraceHeader.Size))
+            return ReaHead<TraceHeader>(TraceHeader.HeaderSize);
+        }
+        public TraceCounterHeader? ReadCounterHeader()
+        {
+            return ReaHead<TraceCounterHeader>(TraceCounterHeader.HeaderSize);
+        }
+        protected unsafe T? ReaHead<T>(int size)
+            where T:unmanaged
+        {
+            if (!miniReadSerializer.CanRead(size))
             {
                 return null;
             }
-            byte* buffer = stackalloc byte[TraceHeader.Size];
-            miniReadSerializer.Read(new Span<byte>(buffer, TraceHeader.Size));
-            return Unsafe.Read<TraceHeader>(buffer);
+            byte* buffer = stackalloc byte[size];
+            miniReadSerializer.Read(new Span<byte>(buffer, size));
+            return Unsafe.Read<T>(buffer);
         }
         public MiniReadResult<LogEntity> ReadLog()
         {
