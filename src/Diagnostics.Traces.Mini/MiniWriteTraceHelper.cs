@@ -1,24 +1,21 @@
 ﻿using Diagnostics.Traces.Serialization;
 using OpenTelemetry.Logs;
-using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using ZstdSharp;
 
 namespace Diagnostics.Traces.Mini
 {
     public class MiniWriteTraceHelper : IDisposable
     {
         private IMiniWriteSerializer miniWriteSerializer;
-        private readonly Compressor compressor;
 
         public MiniWriteTraceHelper(IMiniWriteSerializer miniWriteSerializer)
         {
             this.miniWriteSerializer = miniWriteSerializer ?? throw new ArgumentNullException(nameof(miniWriteSerializer));
-            compressor = new Compressor();
         }
 
         public IMiniWriteSerializer WriteSerializer => miniWriteSerializer;
+
 
         private void Write<T, TMode>(Action<DefaultWritableBuffer, T, TMode> action, T value, TMode mode)
             where TMode : struct, Enum
@@ -36,19 +33,11 @@ namespace Diagnostics.Traces.Mini
                 }
                 else
                 {
-                    var len = Compressor.GetCompressBound(sp.Length);
-                    var buffer = ArrayPool<byte>.Shared.Rent(len);
-                    try
+                    using (var zstdResult=ZstdHelper.WriteZstd(sp))
                     {
-                        var writted = compressor.Wrap(sp, buffer);
-                        var needWrite = buffer.AsSpan(0, writted);
-                        var header = MiniSerializeHeader<TMode>.Create(needWrite, mode, TraceCompressMode.Zstd);
+                        var header = MiniSerializeHeader<TMode>.Create(zstdResult.Span, mode, TraceCompressMode.Zstd);
                         WriteHeader(header);
-                        miniWriteSerializer.Write(needWrite);
-                    }
-                    finally
-                    {
-                        ArrayPool<byte>.Shared.Return(buffer);
+                        miniWriteSerializer.Write(zstdResult.Span);
                     }
                 }
             }

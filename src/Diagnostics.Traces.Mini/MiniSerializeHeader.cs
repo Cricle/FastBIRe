@@ -19,6 +19,29 @@ namespace Diagnostics.Traces.Mini
         Zstd = 1
     }
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = HeaderSize)]
+    public struct MiniSerializeString
+    {
+        public const int HeaderSize = 9;
+
+        public uint Hash;
+
+        public uint Size;
+
+        public TraceCompressMode CompressMode;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static MiniSerializeString Create(ReadOnlySpan<byte> buffer, TraceCompressMode compressMode)
+        {
+            return new MiniSerializeString
+            {
+                Hash = XXH32.DigestOf(buffer),
+                Size = (uint)buffer.Length,
+                CompressMode = compressMode
+            };
+        }
+
+    }
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = HeaderSize)]
     public struct MiniSerializeHeader<TMode>
         where TMode : struct, Enum
     {
@@ -26,7 +49,7 @@ namespace Diagnostics.Traces.Mini
 
         public uint Hash;
 
-        public int Size;
+        public uint Size;
 
         public TMode Mode;
 
@@ -38,7 +61,7 @@ namespace Diagnostics.Traces.Mini
             return new MiniSerializeHeader<TMode>
             {
                 Hash = XXH32.DigestOf(buffer),
-                Size = buffer.Length,
+                Size = (uint)buffer.Length,
                 Mode = mode,
                 CompressMode = compressMode
             };
