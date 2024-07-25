@@ -56,6 +56,8 @@ namespace FastBIRe
 
         public string UpdateQueryViewFormat { get; set; } = DefaultUpdateQueryViewFormat;
 
+        public bool EnableDefaultCompare { get; set; }
+
         public string CreateTable(string table)
         {
             var migGen = DdlGeneratorFactory.MigrationGenerator();
@@ -213,6 +215,7 @@ namespace FastBIRe
                     if (@new != null)
                     {
                         x.Tag = true;
+                        x.DefaultValue = @new.DefaultValue;
                     }
                     var old = oldRefs.FirstOrDefault(y => y.Field == x.Name);
                     if (old != null)
@@ -450,7 +453,10 @@ namespace FastBIRe
                                 field = f;
                             }
                         }
-                        refTable.AddColumn(field, item.Type);
+                        var column=refTable.AddColumn(field, item.Type);
+                        column.Nullable = item.Nullable;
+                        column.Length = item.Length;
+                        column.DefaultValue = item.DefaultValue;
                     }
                     var constrain = new DatabaseConstraint();
                     constrain.ConstraintType = ConstraintType.PrimaryKey;

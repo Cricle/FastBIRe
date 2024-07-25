@@ -41,6 +41,8 @@ namespace FastBIRe
 
         public SqlType SqlType => Reader.SqlType!.Value;
 
+        public bool EnableDefaultCompare { get; set; }
+
         public int CommandTimeout { get; set; } = 10 * 60;
         public async Task<int> ExecuteNonQueryAsync(IEnumerable<string> sqls, CancellationToken token = default)
         {
@@ -125,10 +127,10 @@ namespace FastBIRe
         }
         public virtual void PrepareTable(DatabaseTable table)
         {
-            foreach (var item in table.Columns)
-            {
-                item.DefaultValue = null;
-            }
+            //foreach (var item in table.Columns)
+            //{
+            //    item.DefaultValue = null;
+            //}
         }
         public CompareWithModifyResult CompareWithModify(string tableId, Action<DatabaseTable> modify)
         {
@@ -150,7 +152,7 @@ namespace FastBIRe
             return new CompareWithModifyResult
             {
                 Type = CompareWithModifyResultTypes.Succeed,
-                Schemas = new CompareSchemas(schemaOld, schemaNew)
+                Schemas = new CompareSchemas(schemaOld, schemaNew) { EnableDefaultCompare= EnableDefaultCompare }
             };
         }
 
