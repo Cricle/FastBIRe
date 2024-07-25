@@ -27,7 +27,7 @@
                 offset += buffer.Length;
                 return;    
             }
-            throw new ArgumentOutOfRangeException($"The buffer size is {bufferLength}, but the buffer is {buffer.Length}");
+            throw new ArgumentOutOfRangeException("buffer",$"The buffer size is {bufferLength}, but the buffer is {buffer.Length}");
         }
     }
 }

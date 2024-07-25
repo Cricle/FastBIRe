@@ -67,10 +67,21 @@ namespace Diagnostics.Traces.Mini
             {
                 return new MiniReadResult<T>(MiniReadResultTypes.HashError);
             }
-
-            var constReader = new ConstMiniReadSerializer((byte*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(buffer)), buffer.Length);
-            var entity = func(constReader, header.Value.Mode);
-            return new MiniReadResult<T>(entity, MiniReadResultTypes.Succeed);
+            if (header.Value.CompressMode == TraceCompressMode.Zstd)
+            {
+                using (var zstdResult = ZstdHelper.ReadZstd(buffer))
+                {
+                    var constReader = new ConstMiniReadSerializer((byte*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(zstdResult.Span)), zstdResult.Length);
+                    var entity = func(constReader, header.Value.Mode);
+                    return new MiniReadResult<T>(entity, MiniReadResultTypes.Succeed);
+                }
+            }
+            else
+            {
+                var constReader = new ConstMiniReadSerializer((byte*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(buffer)), buffer.Length);
+                var entity = func(constReader, header.Value.Mode);
+                return new MiniReadResult<T>(entity, MiniReadResultTypes.Succeed);
+            }
         }
         public unsafe TraceHeader? ReadHeader()
         {
