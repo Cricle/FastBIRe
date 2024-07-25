@@ -71,11 +71,11 @@ namespace Diagnostics.Traces.Mini
         {
             if (databaseSelector.TryGetValue(name, out var selector))
             {
-                var count = selector.Selector.UsingDatabaseResult(values, (res, val) =>
+                var count = selector.Selector.UsingDatabaseResult((res) =>
                 {
                     var now = DateTime.Now;
                     var c = 0;
-                    foreach (var row in val)
+                    foreach (var row in values)
                     {
                         var size = sizeof(double) * selector.ColumnCount;
                         var sharedBuffer = ArrayPool<byte>.Shared.Rent(size);
