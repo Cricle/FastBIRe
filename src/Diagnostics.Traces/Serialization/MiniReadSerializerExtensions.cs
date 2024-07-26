@@ -102,9 +102,9 @@ namespace Diagnostics.Traces.Serialization
             }
             return entity;
         }
-        public static AcvtityEntity ReadActivity(this IMiniReadSerializer serializer, SaveActivityModes mode)
+        public static ActivityEntity ReadActivity(this IMiniReadSerializer serializer, SaveActivityModes mode)
         {
-            var entity = new AcvtityEntity();
+            var entity = new ActivityEntity();
             if ((mode & SaveActivityModes.Id) != 0)
             {
                 entity.Id = ReadString(serializer);

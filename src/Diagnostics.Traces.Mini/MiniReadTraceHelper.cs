@@ -87,9 +87,21 @@ namespace Diagnostics.Traces.Mini
         {
             return ReaHead<TraceHeader>(TraceHeader.HeaderSize);
         }
-        public TraceCounterHeader? ReadCounterHeader()
+        public TraceCounterHeader? ReadCounterHeader(out List<string>? columnNames)
         {
-            return ReaHead<TraceCounterHeader>(TraceCounterHeader.HeaderSize);
+            columnNames = null;
+            var header= ReaHead<TraceCounterHeader>(TraceCounterHeader.HeaderSize);
+
+            if (header != null)
+            {
+                columnNames = new List<string>(header.Value.FieldCount);
+                for (int i = 0; i < header.Value.FieldCount; i++)
+                {
+                    columnNames.Add(MiniReadSerializer.ReadString()!);
+                }
+            }
+
+            return header;
         }
         protected unsafe T? ReaHead<T>(int size)
             where T:unmanaged
@@ -106,9 +118,9 @@ namespace Diagnostics.Traces.Mini
         {
             return Read<LogEntity, SaveLogModes>(static (ser, mode) => ser.ReadLog(mode));
         }
-        public MiniReadResult<AcvtityEntity> ReadActivity()
+        public MiniReadResult<ActivityEntity> ReadActivity()
         {
-            return Read<AcvtityEntity, SaveActivityModes>(static (ser, mode) => ser.ReadActivity(mode));
+            return Read<ActivityEntity, SaveActivityModes>(static (ser, mode) => ser.ReadActivity(mode));
         }
         public MiniReadResult<ExceptionEntity> ReadException()
         {

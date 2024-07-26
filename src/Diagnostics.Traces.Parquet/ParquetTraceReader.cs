@@ -60,7 +60,7 @@ namespace Diagnostics.Traces.Parquet
                 }
             }
         }
-        public IEnumerable<AcvtityEntity> ReadActivities(IEnumerable<string>? traceIds = null)
+        public IEnumerable<ActivityEntity> ReadActivities(IEnumerable<string>? traceIds = null)
         {
             for (int i = 0; i < Reader.FileMetaData.NumRowGroups; i++)
             {
@@ -127,7 +127,7 @@ namespace Diagnostics.Traces.Parquet
                 }
                 for (long j = 0; j < group.MetaData.NumRows; j++)
                 {
-                    var entity = new AcvtityEntity();
+                    var entity = new ActivityEntity();
                     for (int q = 0; q < nodes.Length; q++)
                     {
                         var name = nodes[q].Name;

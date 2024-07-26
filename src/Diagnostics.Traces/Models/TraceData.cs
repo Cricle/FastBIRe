@@ -2,14 +2,14 @@
 {
     public class TraceData
     {
-        public TraceData(Dictionary<TraceKey, List<LogEntity>> logs, Dictionary<TraceKey, List<AcvtityEntity>> acvtities, Dictionary<TraceKey, List<ExceptionEntity>> exceptions)
+        public TraceData(Dictionary<TraceKey, List<LogEntity>> logs, Dictionary<TraceKey, List<ActivityEntity>> acvtities, Dictionary<TraceKey, List<ExceptionEntity>> exceptions)
         {
             Logs = logs;
             Acvtities = acvtities;
             Exceptions = exceptions;
         }
 
-        public static TraceData Create(IEnumerable<LogEntity> logs, IEnumerable<AcvtityEntity> acvtities, IEnumerable<ExceptionEntity> exceptions)
+        public static TraceData Create(IEnumerable<LogEntity> logs, IEnumerable<ActivityEntity> acvtities, IEnumerable<ExceptionEntity> exceptions)
         {
             var tlogs = logs.GroupBy(static x => x.GetTraceKey()).ToDictionary(static x => x.Key, static x => x.ToList());
             var tactivities = acvtities.GroupBy(static x => x.GetParentTraceKey()).ToDictionary(static x => x.Key, static x => x.ToList());
@@ -19,7 +19,7 @@
 
         public Dictionary<TraceKey, List<LogEntity>> Logs { get; }
 
-        public Dictionary<TraceKey, List<AcvtityEntity>> Acvtities { get; }
+        public Dictionary<TraceKey, List<ActivityEntity>> Acvtities { get; }
 
         public Dictionary<TraceKey, List<ExceptionEntity>> Exceptions { get; }
 
@@ -61,7 +61,7 @@
 
     public record class TraceTree
     {
-        public TraceTree(AcvtityEntity rootActivity)
+        public TraceTree(ActivityEntity rootActivity)
         {
             Activity = rootActivity;
             Nexts = new List<TraceTree>(0);
@@ -69,7 +69,7 @@
             Logs = new List<LogEntity>(0);
         }
 
-        public AcvtityEntity Activity { get; }
+        public ActivityEntity Activity { get; }
 
         public List<TraceTree> Nexts { get; }
 

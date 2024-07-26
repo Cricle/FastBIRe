@@ -4,19 +4,19 @@ using System.Text.Json.Serialization;
 
 namespace Diagnostics.Traces.Models
 {
-    [JsonSerializable(typeof(AcvtityEntity))]
+    [JsonSerializable(typeof(ActivityEntity))]
     [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
-    public partial class AcvtityEntityJsonSerializerContext : JsonSerializerContext
+    public partial class ActivityEntityJsonSerializerContext : JsonSerializerContext
     {
 
     }
-    [JsonSerializable(typeof(AcvtityEntity))]
+    [JsonSerializable(typeof(ActivityEntity))]
     [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-    public partial class AcvtityEntityIgnoreNullJsonSerializerContext : JsonSerializerContext
+    public partial class ActivityEntityIgnoreNullJsonSerializerContext : JsonSerializerContext
     {
 
     }
-    public record class AcvtityEntity : ITraceKeyProvider
+    public record class ActivityEntity : ITraceKeyProvider
     {
         public string? Id { get; set; }
 
@@ -80,7 +80,7 @@ namespace Diagnostics.Traces.Models
         }
         public string ToJson()
         {
-            return JsonSerializer.Serialize(this, AcvtityEntityJsonSerializerContext.Default.AcvtityEntity);
+            return JsonSerializer.Serialize(this, ActivityEntityJsonSerializerContext.Default.Options);
         }
     }
 }

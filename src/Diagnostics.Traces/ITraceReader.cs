@@ -4,7 +4,7 @@ namespace Diagnostics.Traces
 {
     public interface ITraceReader
     {
-        IEnumerable<AcvtityEntity> ReadActivities(IEnumerable<string>? traceIds = null);
+        IEnumerable<ActivityEntity> ReadActivities(IEnumerable<string>? traceIds = null);
 
         IEnumerable<ExceptionEntity> ReadExceptions(IEnumerable<string>? traceIds = null);
 

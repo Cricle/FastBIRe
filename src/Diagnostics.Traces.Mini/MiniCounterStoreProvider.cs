@@ -53,9 +53,13 @@ namespace Diagnostics.Traces.Mini
                 //Init head
                 selector.UnsafeUsingDatabaseResult(columns, static (res, col) =>
                 {
-                    var count = col.Count();
-                    var head = new TraceCounterHeader { FieldCount = count };
+                    var colLst = col.ToList();
+                    var head = new TraceCounterHeader { FieldCount = colLst.Count };
                     res.Serializer.Write(head);
+                    foreach (var item in colLst)
+                    {
+                        res.Serializer.Write(item.Name);
+                    }
                 });
                 databaseSelector.Add(name, new DatabaseEntity(selector, columns.Count()));
             }

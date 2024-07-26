@@ -28,7 +28,7 @@ namespace Diagnostics.Traces.Mini
         {
             var helper = new MiniReadTraceHelper(MiniReadSerializer);
             _ = helper.ReadHeader();
-            var head = helper.ReadCounterHeader();
+            var head = helper.ReadCounterHeader(out var columns);
             while (true)
             {
                 var result = helper.ReadCounterValue();
@@ -53,7 +53,7 @@ namespace Diagnostics.Traces.Mini
                 yield return result.Value;
             }
         }
-        public IEnumerable<AcvtityEntity> ReadActivities(IEnumerable<string>? traceIds = null)
+        public IEnumerable<ActivityEntity> ReadActivities(IEnumerable<string>? traceIds = null)
         {
             var helper = new MiniReadTraceHelper(MiniReadSerializer);
             var head = helper.ReadHeader();

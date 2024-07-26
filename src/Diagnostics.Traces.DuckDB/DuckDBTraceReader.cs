@@ -290,9 +290,9 @@ namespace Diagnostics.Traces.DuckDB
         #region Activities
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private AcvtityEntity ReadActivity(IDataRecord record)
+        private ActivityEntity ReadActivity(IDataRecord record)
         {
-            var activity = new AcvtityEntity
+            var activity = new ActivityEntity
             {
                 Links = new List<ActivityLinkEntity>(),
                 Events = new List<ActivityEventEntity>()
@@ -457,7 +457,7 @@ namespace Diagnostics.Traces.DuckDB
 
             return entity;
         }
-        public IEnumerable<AcvtityEntity> ReadActivities(string sql, IEnumerable<string>? traceIds = null)
+        public IEnumerable<ActivityEntity> ReadActivities(string sql, IEnumerable<string>? traceIds = null)
         {
             using (var comm = Connection.CreateCommand())
             {
@@ -471,7 +471,7 @@ namespace Diagnostics.Traces.DuckDB
                 }
             }
         }
-        public IEnumerable<AcvtityEntity> ReadActivities(IEnumerable<string>? traceIds = null)
+        public IEnumerable<ActivityEntity> ReadActivities(IEnumerable<string>? traceIds = null)
         {
             return ReadActivities(SelectActivities, traceIds);
         }
