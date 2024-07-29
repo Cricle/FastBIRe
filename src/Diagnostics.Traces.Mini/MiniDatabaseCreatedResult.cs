@@ -4,14 +4,14 @@ namespace Diagnostics.Traces.Mini
 {
     public class MiniDatabaseCreatedResult : DatabaseCreatedResultBase
     {
-        public MiniDatabaseCreatedResult(string filePath, string key,long capacity) 
+        public MiniDatabaseCreatedResult(string filePath, string key,long capacity,bool autoCapacity) 
             : base(filePath, key)
         {
             if (filePath is null)
             {
                 throw new ArgumentNullException(nameof(filePath));
             }
-            Serializer = new MemoryMapFileMiniWriteSerializer(filePath, capacity);
+            Serializer = new MemoryMapFileMiniWriteSerializer(filePath, capacity, autoCapacity);
             Serializer.WriteHead(new TraceHeader { Count = TraceHeader.UnknowCount });
         }
 

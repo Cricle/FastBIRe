@@ -15,7 +15,8 @@ namespace Diagnostics.Traces.Mini
             SaveLogModes saveLogMode = SaveLogModes.Mini,
             SaveExceptionModes saveExceptionModes = SaveExceptionModes.Mini,
             SaveActivityModes saveActivityModes = SaveActivityModes.Mini,
-            string? deleteRulesPattern = "*.zstd")
+            string? deleteRulesPattern = "*.zstd",
+            bool autoCapacity=true)
         {
             var dir = new DirectoryInfo(path);
             if (!dir.Exists)
@@ -26,7 +27,7 @@ namespace Diagnostics.Traces.Mini
             {
                 var fileName = fileNameProvider?.Invoke() ?? $"{DateTime.Now:yyyyMMddHHmmss}.{selectorName}.minitraces";
                 var full = Path.Combine(path, fileName);
-                var result = new MiniDatabaseCreatedResult(full, fileName, fileCapacity)
+                var result = new MiniDatabaseCreatedResult(full, fileName, fileCapacity, autoCapacity)
                 {
                     SaveLogModes = saveLogMode,
                     SaveExceptionModes = saveExceptionModes,

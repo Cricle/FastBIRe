@@ -1,4 +1,5 @@
 ﻿using Diagnostics.Generator.Core;
+using Diagnostics.Traces.Mini.Exceptions;
 using Diagnostics.Traces.Stores;
 using FastBIRe;
 using OpenTelemetry;
@@ -35,23 +36,32 @@ namespace Diagnostics.Traces.Mini
             {
                 return;
             }
-
-            var c = ActivityDatabaseSelector.UsingDatabaseResult(enu, (res, enu) =>
+            while (true)
             {
-                var count =0;
-                while (enu.MoveNext())
+                var scopeC = 0;
+                try
                 {
-                    if (writeHead)
+                    ActivityDatabaseSelector.UsingDatabaseResult(enu, (res, enu) =>
                     {
-                        res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
-                    }
-                    res.Serializer.TraceHelper.WriteActivity(enu.Current, res.SaveActivityModes);
-                    count++;
-                    res.AddCount();
+                        while (enu.MoveNext())
+                        {
+                            if (writeHead)
+                            {
+                                res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
+                            }
+                            res.Serializer.TraceHelper.WriteActivity(enu.Current, res.SaveActivityModes);
+                            scopeC++;
+                            res.AddCount();
+                        }
+                    });
+                    ActivityDatabaseSelector.ReportInserted(scopeC);
+                    break;
                 }
-                return count;
-            });
-            ActivityDatabaseSelector.ReportInserted(c);
+                catch (MemoryMapFileBufferFullException)
+                {
+                    ActivityDatabaseSelector.Flush();
+                }
+            }
         }
         private void AppendLogs(IEnumerator<LogRecord> enu)
         {
@@ -59,23 +69,32 @@ namespace Diagnostics.Traces.Mini
             {
                 return;
             }
-
-            var c = LogDatabaseSelector.UsingDatabaseResult(enu, (res, enu) =>
+            while (true)
             {
-                var count = 0;
-                while (enu.MoveNext())
+                var scopeC = 0;
+                try
                 {
-                    if (writeHead)
+                    LogDatabaseSelector.UsingDatabaseResult(enu, (res, enu) =>
                     {
-                        res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
-                    }
-                    res.Serializer.TraceHelper.WriteLog(enu.Current, res.SaveLogModes);
-                    count++;
-                    res.AddCount();
+                        while (enu.MoveNext())
+                        {
+                            if (writeHead)
+                            {
+                                res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
+                            }
+                            res.Serializer.TraceHelper.WriteLog(enu.Current, res.SaveLogModes);
+                            scopeC++;
+                            res.AddCount();
+                        }
+                    });
+                    LogDatabaseSelector.ReportInserted(scopeC);
+                    break;
                 }
-                return count;
-            });
-            LogDatabaseSelector.ReportInserted(c);
+                catch (MemoryMapFileBufferFullException)
+                {
+                    LogDatabaseSelector.Flush();
+                }
+            }
         }
         private void AppendExceptions(IEnumerator<TraceExceptionInfo> enu)
         {
@@ -83,23 +102,32 @@ namespace Diagnostics.Traces.Mini
             {
                 return;
             }
-
-            var c = ExceptionDatabaseSelector.UsingDatabaseResult(enu, (res, enu) =>
+            while (true)
             {
-                var count =0;
-                while (enu.MoveNext())
+                var scopeC = 0;
+                try
                 {
-                    if (writeHead)
+                    ExceptionDatabaseSelector.UsingDatabaseResult(enu, (res, enu) =>
                     {
-                        res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
-                    }
-                    res.Serializer.TraceHelper.WriteException(enu.Current, res.SaveExceptionModes);
-                    count++;
-                    res.AddCount();
+                        while (enu.MoveNext())
+                        {
+                            if (writeHead)
+                            {
+                                res.Serializer.WriteHead(new TraceHeader { Count = res.Count });
+                            }
+                            res.Serializer.TraceHelper.WriteException(enu.Current, res.SaveExceptionModes);
+                            scopeC++;
+                            res.AddCount();
+                        }
+                    });
+                    ExceptionDatabaseSelector.ReportInserted(scopeC);
+                    break;
                 }
-                return count;
-            });
-            ExceptionDatabaseSelector.ReportInserted(c);
+                catch (MemoryMapFileBufferFullException)
+                {
+                    ExceptionDatabaseSelector.Flush();
+                }
+            }
         }
 
         public override void Handle(Activity input)

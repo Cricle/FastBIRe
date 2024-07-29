@@ -11,9 +11,9 @@ namespace Diagnostics.Traces.Mini
 
         public MiniWriteTraceHelper TraceHelper { get; }
 
-        public MemoryMapFileMiniWriteSerializer(string filePath, long capacity)
+        public MemoryMapFileMiniWriteSerializer(string filePath, long capacity,bool autoCapacity)
         {
-            memoryMapFileManger = new MemoryMapFileManger(filePath, capacity);
+            memoryMapFileManger = new MemoryMapFileManger(filePath, capacity, autoCapacity);
             memoryMapFileManger.Seek(TraceHeader.HeaderSize, SeekOrigin.Begin);
             TraceHelper = new MiniWriteTraceHelper(this);
         }

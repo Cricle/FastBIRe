@@ -1,5 +1,9 @@
-﻿using System.IO.MemoryMappedFiles;
+﻿using Diagnostics.Traces.Mini.Exceptions;
+using Microsoft.Win32.SafeHandles;
+using System;
+using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
+using ZstdSharp.Unsafe;
 
 namespace Diagnostics.Traces.Mini
 {
@@ -9,16 +13,18 @@ namespace Diagnostics.Traces.Mini
         private long capacity;
         private readonly long addCapacity;
         private readonly string filePath;
+        private readonly bool autoCapacity;
         private MemoryMappedFile mappedFile;
         private MemoryMappedViewAccessor viewAccessor;
-
-        public MemoryMapFileManger(string filePath, long capacity)
+        private SafeMemoryMappedViewHandle SafeMemoryMappedViewHandle => viewAccessor.SafeMemoryMappedViewHandle;
+        public MemoryMapFileManger(string filePath, long capacity, bool autoCapacity)
         {
             addCapacity = capacity;
             this.filePath = filePath;
-            mappedFile = MemoryMappedFile.CreateFromFile(filePath, FileMode.Create,null,capacity);
+            mappedFile = MemoryMappedFile.CreateFromFile(filePath, FileMode.Create, null, capacity);
             this.capacity = capacity;
             viewAccessor = mappedFile.CreateViewAccessor();
+            this.autoCapacity = autoCapacity;
         }
 
         public MemoryMappedFile MappedFile => mappedFile;
@@ -31,6 +37,10 @@ namespace Diagnostics.Traces.Mini
         {
             if (writed + size >= capacity)
             {
+                if (!autoCapacity)
+                {
+                    ThrowNoEnoughMemory(size);
+                }
                 capacity += addCapacity;
                 Dispose();
                 mappedFile = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, null, capacity);
@@ -38,13 +48,13 @@ namespace Diagnostics.Traces.Mini
             }
         }
 
-        public void Seek(int offset,SeekOrigin origin)
+        public void Seek(int offset, SeekOrigin origin)
         {
-            if (origin== SeekOrigin.Begin)
+            if (origin == SeekOrigin.Begin)
             {
                 writed = offset;
             }
-            else if (origin== SeekOrigin.End)
+            else if (origin == SeekOrigin.End)
             {
                 writed = Capacity - offset;
             }
@@ -61,17 +71,21 @@ namespace Diagnostics.Traces.Mini
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void WriteHead(ReadOnlySpan<byte> buffer)
         {
-            byte* ptr = null;
             EnsureCapacity(buffer.Length);
-            viewAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref ptr);
+#if NET8_0_OR_GREATER
+            SafeMemoryMappedViewHandle.WriteSpan((ulong)writed, buffer);
+#else
+            byte* ptr = null;
+            SafeMemoryMappedViewHandle.AcquirePointer(ref ptr);
             try
             {
                 buffer.CopyTo(new Span<byte>(ptr, buffer.Length));
             }
             finally
             {
-                viewAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                SafeMemoryMappedViewHandle.ReleasePointer();
             }
+#endif
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe bool TryWrite(ReadOnlySpan<byte> buffer)
@@ -79,16 +93,20 @@ namespace Diagnostics.Traces.Mini
             EnsureCapacity(buffer.Length);
             if (CanWrite(buffer.Length))
             {
-                byte* ptr=null;
-                viewAccessor.SafeMemoryMappedViewHandle.AcquirePointer(ref ptr);
+#if NET8_0_OR_GREATER
+                SafeMemoryMappedViewHandle.WriteSpan((ulong)writed, buffer);
+#else
+                byte* ptr = null;
+                SafeMemoryMappedViewHandle.AcquirePointer(ref ptr);
                 try
                 {
                     buffer.CopyTo(new Span<byte>(ptr + writed, buffer.Length));
                 }
                 finally
                 {
-                    viewAccessor.SafeMemoryMappedViewHandle.ReleasePointer();
+                    SafeMemoryMappedViewHandle.ReleasePointer();
                 }
+#endif
                 writed += buffer.Length;
                 return true;
             }
@@ -100,8 +118,12 @@ namespace Diagnostics.Traces.Mini
         {
             if (!TryWrite(buffer))
             {
-                throw new InvalidOperationException("The buffer is full");
+                ThrowNoEnoughMemory(buffer.Length);
             }
+        }
+        private void ThrowNoEnoughMemory(long writeCount)
+        {
+            throw new MemoryMapFileBufferFullException($"The buffer is full, Capacity = {capacity}, written = {writed}, needs = {writeCount}", capacity, writed, writeCount);
         }
 
         public void Dispose()
