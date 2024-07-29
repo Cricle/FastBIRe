@@ -29,7 +29,7 @@ namespace Diagnostics.Generator.Internal
         {
             var nullableEnable = symbol.GetNullableContext(model);
             var visibility = GetVisiblity(symbol);
-            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol, out var nameSpaceStart, out var nameSpaceEnd);
+            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol,model, out var nameSpaceStart, out var nameSpaceEnd);
 
             var fullName = GeneratorTransformResult<ISymbol>.GetTypeFullName(symbol);
             var className = symbol.Name;
@@ -152,7 +152,7 @@ namespace Diagnostics.Generator.Internal
                     {onEventCommandExecutedCode}
                 }}
                 {interfaceBody}
-            }}
+            {nameSpaceEnd}
 #nullable restore
 #pragma warning restore
                 ";

@@ -57,7 +57,8 @@ namespace Diagnostics.Generator.Internal
 
             var nullableEnable = symbol.GetNullableContext(model);
             var visibility = ParserBase.GetVisiblity(symbol);
-            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol,out var nameSpaceStart, out var nameSpaceEnd);
+            
+            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol,model,out var nameSpaceStart, out var nameSpaceEnd);
 
             var fullName = GeneratorTransformResult<ISymbol>.GetTypeFullName(symbol);
             var @namespace = GeneratorTransformResult<ISymbol>.GetTypeFullName(symbol);
@@ -80,7 +81,7 @@ namespace Diagnostics.Generator.Internal
                 {{
                     {string.Join("\n", eventSourceEvents.Select(x => WriteMethodMap(symbol.IsStatic, x,model, ctxNullableEnd, withCallTog, instanceAccesstCode, callEventAtEnd, logMode, generateWithLog)))}
                 }}
-            }}
+            {nameSpaceEnd}
 #nullable restore
 #pragma warning restore
                 ";

@@ -14,7 +14,7 @@ namespace Diagnostics.Generator.Internal
             var symbol = (INamedTypeSymbol)node.SyntaxContext.TargetSymbol;
             var nullableEnable = symbol.GetNullableContext(node.SemanticModel);
             var visibility = GetVisiblity(symbol);
-            node.GetWriteNameSpace(out var nameSpaceStart, out var nameSpaceEnd);
+            node.GetWriteNameSpace(node.SemanticModel,out var nameSpaceStart, out var nameSpaceEnd);
 
             var fullName = node.GetTypeFullName();
             var className = symbol.Name;

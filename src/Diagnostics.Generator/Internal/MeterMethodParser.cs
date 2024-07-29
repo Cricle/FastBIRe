@@ -26,7 +26,7 @@ namespace Diagnostics.Generator.Internal
             var unsafeKeyword = classHasUnsafe ? "unsafe" : string.Empty;
             var visibility = GetVisiblity(symbol);
             var staticKeyword = symbol.IsStatic ? "static" : string.Empty;
-            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol, out var nameSpaceStart, out var nameSpaceEnd);
+            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol,node.SemanticModel, out var nameSpaceStart, out var nameSpaceEnd);
 
             var bodyBuilder = new StringBuilder();
             foreach (var item in methods)

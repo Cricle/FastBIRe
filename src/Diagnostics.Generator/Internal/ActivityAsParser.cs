@@ -25,7 +25,7 @@ namespace Diagnostics.Generator.Internal
         {
             var symbol = (INamedTypeSymbol)node.Value;
             var origin = symbol;
-            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol, out var nameSpaceStart, out var nameSpaceEnd);
+            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol, node.SemanticModel, out var nameSpaceStart, out var nameSpaceEnd);
             var attr = symbol.GetAttribute(Consts.ActivityAsAttribute.FullName)!;
             var target = attr.GetByNamed<ISymbol>(Consts.ActivityAsAttribute.TargetType);
             var isSelf = true;

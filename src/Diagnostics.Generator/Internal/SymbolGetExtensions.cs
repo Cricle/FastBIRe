@@ -9,6 +9,10 @@ namespace Diagnostics.Generator.Internal
     {
         public static NullableContext GetNullableContext(this ISymbol symbol, SemanticModel model)
         {
+            if (symbol.Locations.Length==0)
+            {
+                return NullableContext.Disabled;
+            }
             return model.GetNullableContext(symbol.Locations[0].SourceSpan.Start);
         }
         public static bool HasAttribute(this ISymbol symbol, string fullName)

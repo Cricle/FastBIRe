@@ -1,9 +1,7 @@
 ﻿using Diagnostics.Traces.Mini.Exceptions;
 using Microsoft.Win32.SafeHandles;
-using System;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
-using ZstdSharp.Unsafe;
 
 namespace Diagnostics.Traces.Mini
 {
