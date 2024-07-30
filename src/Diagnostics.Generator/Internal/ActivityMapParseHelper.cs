@@ -9,7 +9,7 @@ namespace Diagnostics.Generator.Internal
 {
     internal static class ActivityMapParseHelper
     {
-        public static bool TryWriteActivityMapCode(SourceProductionContext context,AttributeData mapToActivityAttr,ISymbol targetSymbol,IEnumerable<IMethodSymbol> methods,SemanticModel model, bool logMode, out string? code)
+        public static bool TryWriteActivityMapCode(SourceProductionContext context, AttributeData mapToActivityAttr, ISymbol targetSymbol, IEnumerable<IMethodSymbol> methods, SemanticModel model, bool logMode, out string? code)
         {
             //var attr = targetSymbol.GetAttribute(Consts.MapToActivityAttribute.FullName);
             var symbol = (INamedTypeSymbol)mapToActivityAttr!.GetByIndex<ISymbol>(0)!;
@@ -57,8 +57,8 @@ namespace Diagnostics.Generator.Internal
 
             var nullableEnable = symbol.GetNullableContext(model);
             var visibility = ParserBase.GetVisiblity(symbol);
-            
-            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol,model,out var nameSpaceStart, out var nameSpaceEnd);
+
+            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol, model, out var nameSpaceStart, out var nameSpaceEnd);
 
             var fullName = GeneratorTransformResult<ISymbol>.GetTypeFullName(symbol);
             var @namespace = GeneratorTransformResult<ISymbol>.GetTypeFullName(symbol);
@@ -66,11 +66,8 @@ namespace Diagnostics.Generator.Internal
             {
                 @namespace = "global::" + @namespace;
             }
-            var nullableEnd = symbol.IsReferenceType && (nullableEnable & NullableContext.Enabled) != 0 ? "?" : string.Empty;
 
-            var ctxNullableEnd = "?";
-
-            var generateWithLog= mapToActivityAttr!.GetByNamed<bool>(Consts.MapToActivityAttribute.GenerateWithLog);
+            var generateWithLog = mapToActivityAttr!.GetByNamed<bool>(Consts.MapToActivityAttribute.GenerateWithLog);
 
             code = @$"
 #pragma warning disable CS8604
@@ -79,7 +76,7 @@ namespace Diagnostics.Generator.Internal
                 [global::Diagnostics.Generator.Core.Annotations.ActivityMapToEventSourceAttribute(typeof(global::{source.ToString().TrimEnd('?')}),{eventSourceEvents.Count()})]
                 {visibility} partial class {symbol.Name}
                 {{
-                    {string.Join("\n", eventSourceEvents.Select(x => WriteMethodMap(symbol.IsStatic, x,model, ctxNullableEnd, withCallTog, instanceAccesstCode, callEventAtEnd, logMode, generateWithLog)))}
+                    {string.Join("\n", eventSourceEvents.Select(x => WriteMethodMap(symbol.IsStatic, x, model, withCallTog, instanceAccesstCode, callEventAtEnd, logMode, generateWithLog)))}
                 }}
             {nameSpaceEnd}
 #nullable restore
@@ -90,7 +87,7 @@ namespace Diagnostics.Generator.Internal
             return true;
         }
 
-        private static string WriteMethodMap(bool isStatic, IMethodSymbol method,SemanticModel model, string nullableEnd, bool withCallTog, string eventSource, bool callEventAtEnd,bool logMode,bool generateWithLog)
+        private static string WriteMethodMap(bool isStatic, IMethodSymbol method, SemanticModel model, bool withCallTog, string eventSource, bool callEventAtEnd, bool logMode, bool generateWithLog)
         {
             var visibility = GeneratorTransformResult<ISymbol>.GetAccessibilityString(method.DeclaredAccessibility);
             var staticKeyword = isStatic ? "static" : string.Empty;
@@ -115,7 +112,7 @@ tags = new global::System.Diagnostics.ActivityTagsCollection();
 {methodArgs}
 if(additionTags != null)
 {{
-    foreach(global::System.Collections.Generic.KeyValuePair<global::System.String, global::System.Object{nullableEnd}> tag in additionTags)
+    foreach(global::System.Collections.Generic.KeyValuePair<global::System.String, global::System.Object?> tag in additionTags)
     {{
          if (tag.Key != null)
         {{
@@ -170,12 +167,12 @@ if(additionTags != null)
                 tagCodes = s.ToString();
             }
 
-            var endsArgs = $"{additionArgs} global::System.DateTimeOffset timestamp = default, global::System.Collections.Generic.IEnumerable<global::System.Collections.Generic.KeyValuePair<global::System.String, global::System.Object{nullableEnd}>>{nullableEnd} additionTags = null,[global::System.Runtime.CompilerServices.CallerFilePathAttribute] string? filePath = null,[global::System.Runtime.CompilerServices.CallerMemberNameAttribute] string? memberName = null,[global::System.Runtime.CompilerServices.CallerLineNumberAttribute] int lineNumber = 0";
+            var endsArgs = $"{additionArgs} global::System.DateTimeOffset timestamp = default, global::System.Collections.Generic.IEnumerable<global::System.Collections.Generic.KeyValuePair<global::System.String, global::System.Object?>>? additionTags = null,[global::System.Runtime.CompilerServices.CallerFilePathAttribute] string? filePath = null,[global::System.Runtime.CompilerServices.CallerMemberNameAttribute] string? memberName = null,[global::System.Runtime.CompilerServices.CallerLineNumberAttribute] int lineNumber = 0";
 
             var eventSourceParInvokeJoinedNoConvert = string.Join(",", pars.Select(x => x.Name));
             var eventSourceParInvokeJoined = string.Join(",", pars.Select(x =>
             {
-                if (EventSourceHelper.IsExceptionType(model,x.Type))
+                if (EventSourceHelper.IsExceptionType(model, x.Type))
                 {
                     return $"{x.Name}?.ToString()";
                 }
@@ -187,14 +184,14 @@ if(additionTags != null)
             if (pars.Length != 0)
             {
                 invokeCodes = eventSourceParInvokeJoined + "," + invokeCodes;
-                invokeCodesNoConvert= eventSourceParInvokeJoinedNoConvert + "," + invokeCodesNoConvert;
+                invokeCodesNoConvert = eventSourceParInvokeJoinedNoConvert + "," + invokeCodesNoConvert;
             }
             //Debugger.Launch();
             var loggerMessageAttr = method.GetAttribute(Consts.LoggerMessageAttribute.FullName);
             var logMessageData = LoggerMessageData.FromAttribute(method.Name, loggerMessageAttr, method.GetAttribute(Consts.EventAttribute.FullName));
-            var eventId =logMessageData.EventId;
+            var eventId = logMessageData.EventId;
             var activityMapToEventAttr = $"[global::Diagnostics.Generator.Core.Annotations.ActivityMapToEventAttribute({eventId},\"{method.Name}\",new global::System.Type[]{{ {string.Join(",", pars.Select(x => $"typeof({x.Type.ToString().TrimEnd('?')})"))} }})]";
-            var argCode = $"global::System.Diagnostics.Activity{nullableEnd} activity, {endsArgs}";
+            var argCode = $"global::System.Diagnostics.Activity? activity, {endsArgs}";
 
             var callEventSourceCodes = string.Empty;
             if (withCallTog)
@@ -219,7 +216,7 @@ if({eventSource}.IsEnabled())
 
             var withLogCode = string.Empty;
 
-            if (logMode&&generateWithLog)
+            if (logMode && generateWithLog)
             {
                 var noActivityArgs = endsArgs;
                 var invokeCode = invokeArgsJoined.TrimEnd(',');
@@ -247,7 +244,7 @@ if({eventSource}.IsEnabled())
 
             string specialTagCodes = string.Empty;
             var specialAttr = method.GetAttribute(Consts.ActivitySpecialValueAttribute.FullName);
-            if (specialAttr!=null)
+            if (specialAttr != null)
             {
                 var hasFilePath = specialAttr.GetByNamed<bool>(Consts.ActivitySpecialValueAttribute.FilePath);
                 var hasMemberName = specialAttr.GetByNamed<bool>(Consts.ActivitySpecialValueAttribute.MemberName);
@@ -265,7 +262,7 @@ if({eventSource}.IsEnabled())
                 {
                     specialCodes.Add("tags.Add(\"special.linenumber\",lineNumber);");
                 }
-                if (specialCodes.Count!=0)
+                if (specialCodes.Count != 0)
                 {
                     specialTagCodes = $@"
 if(tags == null)
@@ -289,7 +286,7 @@ if(tags == null)
     {beginCallEventSourceCodes}
     if(activity != null)
     {{
-        global::System.Diagnostics.ActivityTagsCollection{nullableEnd} tags = null;
+        global::System.Diagnostics.ActivityTagsCollection? tags = null;
         {eventTagCodes}
         {specialTagCodes}
         activity.AddEvent(new global::System.Diagnostics.ActivityEvent(""{method.Name}"", timestamp, tags));

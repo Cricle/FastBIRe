@@ -11,5 +11,11 @@ namespace Diagnostics.Generator.Core.Annotations
         }
 
         public Type EventSourceType { get; }
+
+        //public bool GenerateIds { get; set; }
+
+        //public int GenerateIdStart { get; set; }
+
+        //public Accessibility GenerateIdClassAccessibility { get; set; }
     }
 }

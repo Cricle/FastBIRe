@@ -14,10 +14,10 @@ namespace Diagnostics.Generator.Internal
             var eventSourceSymbol = (INamedTypeSymbol)symbol.GetAttribute(Consts.MapToEventSourceAttribute.FullName)!.GetByIndex<ISymbol>(0)!;
 
             var methods = symbol.GetMembers().OfType<IMethodSymbol>()
-                .Where(x=> x.HasAttribute(Consts.EventAttribute.FullName)&&x.HasAttribute(Consts.LoggerMessageAttribute.FullName));
+                .Where(x => x.HasAttribute(Consts.EventAttribute.FullName) && x.HasAttribute(Consts.LoggerMessageAttribute.FullName));
 
             //Debugger.Launch();
-            if (EventSourceHelper.TryWriteCode(context, node.SemanticModel, eventSourceSymbol, true, methods, out var code))
+            if (EventSourceHelper.TryWriteCode(context, node.SemanticModel, eventSourceSymbol,symbol, true, methods, out var code))
             {
                 code = Helpers.FormatCode(code!);
                 context.AddSource($"{eventSourceSymbol.Name}.FromLog.g.cs", code);
@@ -26,11 +26,11 @@ namespace Diagnostics.Generator.Internal
                 //Debugger.Launch();
                 if (mapToActivityAttr != null)
                 {
-                    var activitySymbol=mapToActivityAttr.GetByIndex<ISymbol>(0);
+                    var activitySymbol = mapToActivityAttr.GetByIndex<ISymbol>(0);
                     var attr = symbol.GetAttribute(Consts.MapToActivityAttribute.FullName);
-                    if (ActivityMapParseHelper.TryWriteActivityMapCode(context, attr,eventSourceSymbol, methods, node.SemanticModel,true, out var mapToActivityCode))
+                    if (ActivityMapParseHelper.TryWriteActivityMapCode(context, attr, eventSourceSymbol, methods, node.SemanticModel, true, out var mapToActivityCode))
                     {
-                        context.AddSource($"{activitySymbol.Name}.LogActivityMap.g.cs", mapToActivityCode!);
+                        context.AddSource($"{activitySymbol!.Name}.LogActivityMap.g.cs", mapToActivityCode!);
                     }
                 }
             }

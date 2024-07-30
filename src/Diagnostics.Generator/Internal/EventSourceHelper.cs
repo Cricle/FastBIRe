@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -25,11 +26,11 @@ namespace Diagnostics.Generator.Internal
             var specialName = name.TrimStart('_');
             return char.ToUpper(specialName[0]) + specialName.Substring(1);
         }
-        public static bool TryWriteCode(SourceProductionContext context,SemanticModel model,INamedTypeSymbol symbol,bool logMode,IEnumerable<IMethodSymbol> methods,out string? outCode)
+        public static bool TryWriteCode(SourceProductionContext context, SemanticModel model, INamedTypeSymbol symbol,INamedTypeSymbol originSymbol, bool logMode, IEnumerable<IMethodSymbol> methods, out string? outCode)
         {
             var nullableEnable = symbol.GetNullableContext(model);
             var visibility = GetVisiblity(symbol);
-            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol,model, out var nameSpaceStart, out var nameSpaceEnd);
+            GeneratorTransformResult<ISymbol>.GetWriteNameSpace(symbol, model, out var nameSpaceStart, out var nameSpaceEnd);
 
             var fullName = GeneratorTransformResult<ISymbol>.GetTypeFullName(symbol);
             var className = symbol.Name;
@@ -38,14 +39,12 @@ namespace Diagnostics.Generator.Internal
             {
                 @namespace = "global::" + @namespace;
             }
-            var nullableEnd = symbol.IsReferenceType && (nullableEnable & NullableContext.Enabled) != 0 ? "?" : string.Empty;
 
-            var ctxNullableEnd = (nullableEnable & NullableContext.Enabled) != 0 ? "?" : string.Empty;
             var command = string.Empty;
             var hasCommand = false;
             if (!logMode)
             {
-                command = GenerateOnEventCommand(symbol, ctxNullableEnd, out var diagnostic);
+                command = GenerateOnEventCommand(symbol, out var diagnostic);
                 hasCommand = command != string.Empty;
                 if (diagnostic != null)
                 {
@@ -55,11 +54,11 @@ namespace Diagnostics.Generator.Internal
                 }
             }
             var methodBody = new StringBuilder();
-            var isEnable = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.FullName)?
-                .GetByNamed<bool>(Consts.EventSourceGenerateAttribute.UseIsEnable) ?? true;
+            var attr = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.FullName);
+            var isEnable = attr?.GetByNamed<bool>(Consts.EventSourceGenerateAttribute.UseIsEnable) ?? true;
             foreach (var item in methods)
             {
-                var str = GenerateMethod(model,item, isEnable, logMode, out var diag);
+                var str = GenerateMethod(model, item, isEnable, logMode, out var diag);
                 if (diag != null)
                 {
                     context.ReportDiagnostic(diag);
@@ -72,10 +71,9 @@ namespace Diagnostics.Generator.Internal
             var unsafeKeyword = classHasUnsafe ? "unsafe" : string.Empty;
             var interfaceBody = string.Empty;
             var imports = new List<string>();
-            var attr = symbol.GetAttribute(Consts.EventSourceGenerateAttribute.FullName)!;
             var singletonExpression = string.Empty;
 
-            if (!logMode&&attr.GetByNamed<bool>(Consts.EventSourceGenerateAttribute.GenerateSingleton))
+            if (!logMode && (attr?.GetByNamed<bool>(Consts.EventSourceGenerateAttribute.GenerateSingleton)??false))
             {
                 //Check if not exists EventSourceAccesstorInstanceAttribute
                 var accesstorInstances = symbol.GetMembers()
@@ -137,6 +135,55 @@ namespace Diagnostics.Generator.Internal
             {
                 onEventCommandExecutedCode = "[global::System.Diagnostics.Tracing.NonEventAttribute] partial void OnEventCommandExecuted(global::System.Diagnostics.Tracing.EventCommandEventArgs command);";
             }
+
+            var idScript = string.Empty;
+            var originAttr = originSymbol.GetAttribute(Consts.MapToEventSourceAttribute.FullName);
+            var isGenerateId = originAttr?.GetByNamed<bool>(Consts.MapToEventSourceAttribute.GenerateIds) ?? false;
+            if (isGenerateId)
+            {
+                //Debugger.Launch();
+                var start = originAttr?.GetByNamed<int?>(Consts.MapToEventSourceAttribute.GenerateIdStart) ?? 1;
+                var generateVisibility = originAttr?.GetByNamed<Accessibility?>(Consts.MapToEventSourceAttribute.GenerateIdClassAccessibility) ?? Accessibility.Internal;
+                var fields = new StringBuilder();
+
+                var currentId = start;
+                var idSet = new HashSet<int>();
+
+                var buildIdMethods = methods.Where(x => !x.HasAttribute(Consts.MapToEventSourceGenerateIdIgnoreAttribute.FullName)&&x.HasAttribute(Consts.EventAttribute.FullName)).ToList();
+                if (buildIdMethods.Count!=0)
+                {
+                    foreach (var item in buildIdMethods)
+                    {
+                        var specialId = item.GetAttribute(Consts.MapToEventSourceGenerateIdSpecialAttribute.FullName)?.GetByIndex<int>(0);
+                        if (specialId != null && !idSet.Add(specialId.Value))
+                        {
+                            context.ReportDiagnostic(Diagnostic.Create(Messages.EventIdHasUsed, item.Locations[0], specialId));
+                            outCode = null;
+                            return false;
+                        }
+                        if (specialId != null)
+                        {
+                            fields.AppendLine(@$"public const int {item.Name} = {specialId.Value};");
+                        }
+                        else
+                        {
+                            while (!idSet.Add(currentId))
+                            {
+                                currentId++;
+                            }
+                            fields.AppendLine(@$"public const int {item.Name} = {currentId};");
+                        }
+                    }
+                }
+                idScript = @$"
+{GeneratorTransformResult<ISymbol>.GetAccessibilityString(generateVisibility)} static class Ids
+{{
+    public const int IdCount = {buildIdMethods.Count};
+
+    {fields}
+}}
+";
+            }
             var code = @$"
 #pragma warning disable CS8604
 #nullable enable
@@ -150,6 +197,8 @@ namespace Diagnostics.Generator.Internal
 
                     {command}
                     {onEventCommandExecutedCode}
+
+                    {idScript}
                 }}
                 {interfaceBody}
             {nameSpaceEnd}
@@ -259,7 +308,7 @@ namespace Diagnostics.Generator.Internal
                     throw new NotSupportedException(type.ToString());
             }
         }
-        private static string GenerateOnEventCommand(INamedTypeSymbol symbol, string nullableTail, out Diagnostic? diagnostic)
+        private static string GenerateOnEventCommand(INamedTypeSymbol symbol, out Diagnostic? diagnostic)
         {
             var counter = symbol.GetMembers()
                 .OfType<IFieldSymbol>()
@@ -303,7 +352,7 @@ namespace Diagnostics.Generator.Internal
                     diagnostic = Diagnostic.Create(Messages.PollingCounterMustInputRate, item.Locations[0]);
                     return string.Empty;
                 }
-                if (type== CounterTypes.IncrementingPollingCounter&& IsIncrementingCounterType(item.Type))
+                if (type == CounterTypes.IncrementingPollingCounter && IsIncrementingCounterType(item.Type))
                 {
                     diagnostic = Diagnostic.Create(Messages.PollingCounterMustSimpleType, item.Locations[0]);
                     return string.Empty;
@@ -320,7 +369,7 @@ namespace Diagnostics.Generator.Internal
                 else
                 {
                     var counterName = item.Name + "Counter";
-                    addins.AppendFormat("private {0}{1} {2}; \n", typeName, nullableTail, counterName);
+                    addins.AppendFormat("private {0}? {1}; \n", typeName, counterName);
                     var specialName = GetSpecialName(item.Name);
 
                     var invokeBody = $"global::System.Threading.Interlocked.Read(ref {item.Name})";
@@ -422,7 +471,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             }
             return false;
         }
-        private static string GenerateMethod(SemanticModel model,IMethodSymbol method, bool useIsEnable, bool logMode, out Diagnostic? diagnostic)
+        private static string GenerateMethod(SemanticModel model, IMethodSymbol method, bool useIsEnable, bool logMode, out Diagnostic? diagnostic)
         {
             var pars = method.Parameters;
             if (logMode)
@@ -499,7 +548,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             }
             var argList = string.Join(",", pars.Select(x =>
             {
-                if (IsExceptionType(model,x.Type))
+                if (IsExceptionType(model, x.Type))
                 {
                     return $"global::System.String? {x.Name}";
                 }
@@ -534,7 +583,7 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
     {isEnableTop}
     {isEnableBegin}
         {datasDeclare}
-        {string.Join("\n", pars.Except(relatedActivityIds).Select((x, index)=>GenerateWrite(x,index,model)))}
+        {string.Join("\n", pars.Except(relatedActivityIds).Select((x, index) => GenerateWrite(x, index, model)))}
         {invokeMethod}
         {invokeParDeclare}
     {isEnableEnd}
@@ -544,9 +593,9 @@ protected override void OnEventCommand(global::System.Diagnostics.Tracing.EventC
             diagnostic = null;
             return s;
         }
-        private static string GenerateWrite(IParameterSymbol parameter, int index,SemanticModel model)
+        private static string GenerateWrite(IParameterSymbol parameter, int index, SemanticModel model)
         {
-            if (parameter.Type.SpecialType == SpecialType.System_String||IsExceptionType(model, parameter.Type))
+            if (parameter.Type.SpecialType == SpecialType.System_String || IsExceptionType(model, parameter.Type))
             {
                 return $@"
 datas[{index}] = new global::System.Diagnostics.Tracing.EventSource.EventData
@@ -630,7 +679,7 @@ datas[{index}] = new global::System.Diagnostics.Tracing.EventSource.EventData
                     eventPars.Append($",Message=\"{Message}\"");
                 }
             }
-            else 
+            else
             {
                 if (!string.IsNullOrEmpty(Message))
                     eventPars.Append($",Message=\"{Message}\"");
@@ -640,7 +689,7 @@ datas[{index}] = new global::System.Diagnostics.Tracing.EventSource.EventData
             return $"[System.Diagnostics.Tracing.EventAttribute({EventId}{eventPars})]";
         }
 
-        public static LoggerMessageData FromAttribute(string methodName,AttributeData? loggerMessageAttr,AttributeData? eventAttr)
+        public static LoggerMessageData FromAttribute(string methodName, AttributeData? loggerMessageAttr, AttributeData? eventAttr)
         {
             int? eventId = eventAttr?.GetByIndex<int>(0);
             int? level = null;

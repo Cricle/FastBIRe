@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Data;
+using System.Diagnostics;
 
 namespace Diagnostics.Generator
 {
@@ -123,6 +124,10 @@ namespace Diagnostics.Generator
         public static class MapToEventSourceAttribute
         {
             public const string FullName = "Diagnostics.Generator.Core.Annotations.MapToEventSourceAttribute";
+
+            public const string GenerateIds = "GenerateIds";
+            public const string GenerateIdStart = "GenerateIdStart";
+            public const string GenerateIdClassAccessibility = "GenerateIdClassAccessibility";
         }
         public static class MeterRecordAttribute
         {
@@ -157,6 +162,14 @@ namespace Diagnostics.Generator
         public static class ActivityAsIgnoreAttribute
         {
             public const string FullName = "Diagnostics.Generator.Core.Annotations.ActivityAsIgnoreAttribute";
+        }
+        public static class MapToEventSourceGenerateIdIgnoreAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.MapToEventSourceGenerateIdIgnoreAttribute";
+        }
+        public static class MapToEventSourceGenerateIdSpecialAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.MapToEventSourceGenerateIdSpecialAttribute";
         }
     }
 }

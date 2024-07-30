@@ -108,5 +108,9 @@ namespace Diagnostics.Generator
             "EventSourceGenerator",
             "Tag as self must not static", Category,
              DiagnosticSeverity.Error, true);
+        public static readonly DiagnosticDescriptor EventIdHasUsed = new DiagnosticDescriptor("DG0025",
+            "EventSourceGenerator",
+            "The special event id {0} has been used", Category,
+             DiagnosticSeverity.Error, true);
     }
 }
