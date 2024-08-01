@@ -231,7 +231,7 @@ namespace Diagnostics.Traces.Serialization
             {
                 if (activity.ParentSpanId.Equals(default))
                 {
-                    serializer.Write(null);
+                    serializer.WriteNull();
 
                 }
                 else
@@ -240,7 +240,10 @@ namespace Diagnostics.Traces.Serialization
                 }
             }
         }
-
+        public static void WriteNull(this IWritableBuffer serializer)
+        {
+            Write(serializer, (string?)null);
+        }
         public static void WriteLog(this IWritableBuffer serializer, LogRecord record, SaveLogModes mode)
         {
             if ((mode & SaveLogModes.Timestamp) != 0)

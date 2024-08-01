@@ -93,6 +93,8 @@ namespace Diagnostics.Generator.Internal
             var staticKeyword = isStatic ? "static" : string.Empty;
             var tags = method.GetAttributes(Consts.ActivityTagAttribute.FullName);
             var isNoEvent = method.HasAttribute(Consts.ActivityNoEventAttribute.FullName);
+            var setStatusAttr = method.GetAttribute(Consts.ActivityStatusAttribute.FullName);
+            var setStatus=setStatusAttr?.GetByIndex<int>(0);
             if (tags.Count == 0 && isNoEvent)
             {
                 return string.Empty;
@@ -273,6 +275,30 @@ if(tags == null)
 ";
                 }
             }
+
+            var setStatusCode = string.Empty;
+            if (setStatus != null)
+            {
+                var head = "global::System.Diagnostics.ActivityStatusCode.";
+                switch (setStatus.Value)
+                {
+                    case 1:head += "Ok"; break;
+                    case 2:head += "Error";break;
+                    default:
+                        head += "Unset"; break;
+                }
+                var description = "null";
+                if (setStatusAttr?.GetByNamed<bool?>(Consts.ActivityStatusAttribute.WithDescript) ?? false)
+                {
+                    //Has exception?
+                    var exceptionPar = method.Parameters.FirstOrDefault(x => EventSourceHelper.IsExceptionType(model, x.Type));
+                    if (exceptionPar!=null)
+                    {
+                        description = $"{exceptionPar.Name}?.Message";
+                    }
+                }
+                setStatusCode = $"activity.SetStatus({head},{description});";
+            }
             return $@"
 #region {method.Name}
 {activityMapToEventAttr}
@@ -290,6 +316,7 @@ if(tags == null)
         {eventTagCodes}
         {specialTagCodes}
         activity.AddEvent(new global::System.Diagnostics.ActivityEvent(""{method.Name}"", timestamp, tags));
+        {setStatusCode}
         {tagCodes}
         On{method.Name}(activity,{invokeArgsJoined}timestamp, additionTags);
     }}

@@ -16,7 +16,7 @@ namespace Diagnostics.Traces.Mini
         {
             return serializer.Read<MiniCounterHeader>();
         }
-        public unsafe static CounterValue? ReadCounterValue(this IMiniReadSerializer serializer)
+        public unsafe static CounterValue? ReadCounterValue(this IMiniReadSerializer serializer, string[] columns)
         {
             var head = ReadCounterValueHeader(serializer);
             if (head.Hash == 0 || head.Size % sizeof(double) != 0)
@@ -43,7 +43,7 @@ namespace Diagnostics.Traces.Mini
                         counterValues[i] = val;
                     }
                 }
-                return new CounterValue(head.Time, counterValues);
+                return new CounterValue(head.Time, counterValues,columns);
             }
             finally
             {

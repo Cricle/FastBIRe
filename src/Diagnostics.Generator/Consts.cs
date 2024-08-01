@@ -171,5 +171,11 @@ namespace Diagnostics.Generator
         {
             public const string FullName = "Diagnostics.Generator.Core.Annotations.MapToEventSourceGenerateIdSpecialAttribute";
         }
+        public static class ActivityStatusAttribute
+        {
+            public const string FullName = "Diagnostics.Generator.Core.Annotations.ActivityStatusAttribute";
+
+            public const string WithDescript = "WithDescript";
+        }
     }
 }

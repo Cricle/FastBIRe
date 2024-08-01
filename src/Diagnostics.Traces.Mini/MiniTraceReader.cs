@@ -27,11 +27,11 @@ namespace Diagnostics.Traces.Mini
         public IEnumerable<CounterValue> ReadCounters()
         {
             var helper = new MiniReadTraceHelper(MiniReadSerializer);
-            _ = helper.ReadHeader();
+            var h = helper.ReadHeader();
             var head = helper.ReadCounterHeader(out var columns);
             while (true)
             {
-                var result = helper.ReadCounterValue();
+                var result = helper.ReadCounterValue(columns!);
                 if (result == null)
                 {
                     yield break;

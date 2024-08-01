@@ -87,17 +87,17 @@ namespace Diagnostics.Traces.Mini
         {
             return ReaHead<TraceHeader>(TraceHeader.HeaderSize);
         }
-        public TraceCounterHeader? ReadCounterHeader(out List<string>? columnNames)
+        public TraceCounterHeader? ReadCounterHeader(out string[]? columnNames)
         {
             columnNames = null;
             var header= ReaHead<TraceCounterHeader>(TraceCounterHeader.HeaderSize);
 
             if (header != null)
             {
-                columnNames = new List<string>(header.Value.FieldCount);
+                columnNames = new string[header.Value.FieldCount];
                 for (int i = 0; i < header.Value.FieldCount; i++)
                 {
-                    columnNames.Add(MiniReadSerializer.ReadString()!);
+                    columnNames[i]=(MiniReadSerializer.ReadString()!);
                 }
             }
 

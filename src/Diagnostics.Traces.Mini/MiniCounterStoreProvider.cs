@@ -97,6 +97,7 @@ namespace Diagnostics.Traces.Mini
                                 {
                                     Unsafe.Write(ptr + offset * sizeof(double), item.Value);
                                 }
+                                offset++;
                             }
                             var writted = sharedBuffer.AsSpan(0, size);
 
