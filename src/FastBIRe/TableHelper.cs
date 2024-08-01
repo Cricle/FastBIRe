@@ -11,7 +11,7 @@ namespace FastBIRe
 
         public SqlType SqlType { get; }
 
-        public string CreateIndex(string name, string table, string[] fields, bool[]? descs = null)
+        public string CreateIndex(string name, string table, string[] fields, bool[]? descs = null,bool unique=false)
         {
             var fs = new List<string>();
             for (int i = 0; i < fields.Length; i++)
@@ -26,7 +26,12 @@ namespace FastBIRe
                     fs.Add($"{Wrap(field)} {(descs[i] ? "DESC" : "ASC")}");
                 }
             }
-            return $"CREATE INDEX {Wrap(name)} ON {Wrap(table)} ({string.Join(",", fs)});";
+            var uniqueStr = string.Empty;
+            if (unique)
+            {
+                uniqueStr = "UNIQUE ";
+            }
+            return $"CREATE {uniqueStr}INDEX {Wrap(name)} ON {Wrap(table)} ({string.Join(",", fs)});";
         }
 
         private string Wrap(string input)

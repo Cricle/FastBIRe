@@ -32,15 +32,18 @@
 
         public int IndexOrder { get; set; }
 
+        public bool IndexUnique { get; set; }
+
         public bool Desc { get; set; }
 
         public string? DefaultValue { get; set; }
 
-        public TableColumnDefine SetIndex(string group, int order = 0, bool desc = false)
+        public TableColumnDefine SetIndex(string group, int order = 0, bool desc = false,bool indexUnique=false)
         {
             IndexGroup = group;
             IndexOrder = order;
             Desc = desc;
+            IndexUnique = indexUnique;
             return this;
         }
 

@@ -56,8 +56,6 @@ namespace FastBIRe
 
         public string UpdateQueryViewFormat { get; set; } = DefaultUpdateQueryViewFormat;
 
-        public bool EnableDefaultCompare { get; set; }
-
         public string CreateTable(string table)
         {
             var migGen = DdlGeneratorFactory.MigrationGenerator();
@@ -331,7 +329,7 @@ namespace FastBIRe
                     var idxName = MakeForceIndexName(x.Name, fields, item.OrderBy(y => y.IndexOrder).Select(x => x.Desc));
                     if (!x.Indexes.Any(y => y.Name == idxName))
                     {
-                        scripts.Add(TableHelper.CreateIndex(idxName, table, fields, item.OrderBy(y => y.IndexOrder).Select(y => y.Desc).ToArray()));
+                        scripts.Add(TableHelper.CreateIndex(idxName, table, fields, item.OrderBy(y => y.IndexOrder).Select(y => y.Desc).ToArray(), item.Any(x => x.IndexUnique)));
                     }
                     alls.Remove(idxName);
                 }
