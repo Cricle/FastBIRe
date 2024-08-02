@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Diagnostics.Traces.Mini
 {
-    [StructLayout(LayoutKind.Sequential, Size = HeaderSize)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = HeaderSize)]
     public struct TraceHeader
     {
         public const int UnknowCount = -1;
@@ -13,19 +13,17 @@ namespace Diagnostics.Traces.Mini
 
         public long Count;
     }
-    [StructLayout(LayoutKind.Sequential, Size = HeaderSize)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = HeaderSize)]
     public struct TraceCounterHeader
     {
         public const int HeaderSize = 64;
 
         public int FieldCount;
     }
-    [StructLayout(LayoutKind.Sequential, Size = HeaderSize)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1, Size = HeaderSize)]
     public struct MiniCounterHeader
     {
-        public const int HeaderSize = 20;
-
-        public int FieldCount;
+        public const int HeaderSize = 16;
 
         public uint Hash;
 
@@ -52,7 +50,7 @@ namespace Diagnostics.Traces.Mini
     [StructLayout(LayoutKind.Sequential, Pack = 1, Size = HeaderSize)]
     public struct MiniBytesStoreHeader
     {
-        public const int HeaderSize = 9;
+        public const int HeaderSize = 17;
 
         public uint Hash;
 
