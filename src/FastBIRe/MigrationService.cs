@@ -213,6 +213,8 @@ namespace FastBIRe
                     if (@new != null)
                     {
                         x.Tag = true;
+                        x.Length = @new.Length;
+                        x.Nullable = @new.Nullable;
                         x.DefaultValue = @new.DefaultValue;
                     }
                     var old = oldRefs.FirstOrDefault(y => y.Field == x.Name);
@@ -233,9 +235,13 @@ namespace FastBIRe
                             partColumns.Remove(name.Key);
                         }
                         var res = AddDateTimePartColumns(x, item.Field);
-                        foreach (var r in res)
+
+                        if (SqlType != SqlType.SQLite)
                         {
-                            scripts.Add($"UPDATE {helper.Wrap(x.Name)} SET {helper.Wrap(r.Key)} = {helper.ToRaw(r.Value, item.Field, true)};");
+                            foreach (var r in res)
+                            {
+                                scripts.Add($"UPDATE {helper.Wrap(x.Name)} SET {helper.Wrap(r.Key)} = {helper.ToRaw(r.Value, item.Field, true)};");
+                            }
                         }
                     }
                 }
@@ -320,6 +326,8 @@ namespace FastBIRe
                     x.AddColumn(col.Field, col.Type, x =>
                     {
                         x.Nullable = col.Nullable;
+                        x.DefaultValue = col.DefaultValue;
+                        x.Length = col.Length;
                     });
                 }
                 var alls = new HashSet<string>(x.Indexes.Where(y => y.Name.StartsWith(AutoGenForceIndexPrefx)).Select(y => y.Name).Except(affectIndexs));

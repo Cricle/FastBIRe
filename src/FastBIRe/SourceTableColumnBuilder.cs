@@ -73,7 +73,7 @@ namespace FastBIRe
             {
                 return rt;
             }
-            if (dbType == DbType.String && "text".Equals(rt, StringComparison.OrdinalIgnoreCase))
+            if (dbType == DbType.String&&!dataType.CreateFormat.Contains("{0}"))
             {
                 return dataType.TypeName;
             }

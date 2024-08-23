@@ -120,7 +120,6 @@ namespace FastBIRe
         {
             foreach (var item in columns)
             {
-                item.Length = null;
                 item.Precision = null;
                 item.Scale = null;
             }
