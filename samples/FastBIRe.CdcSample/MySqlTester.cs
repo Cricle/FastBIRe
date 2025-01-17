@@ -12,7 +12,7 @@ namespace FastBIRe.CdcSample
 
             var mysqlCfg = new MySqlConnectionStringBuilder(mysql.ConnectionString);
 
-            var mgr = new MySqlCdcManager(new DefaultScriptExecuter(mysql), MySqlCdcModes.Gtid);
+            var mgr = new MySqlCdcManager(new DefaultScriptExecuter(mysql), MySqlCdcModes.Binlog);
             //var ser =await mgr.GetCdcLogServiceAsync();
             //var all=await ser.GetAllAsync();
             //var last=await ser.GetLastAsync();

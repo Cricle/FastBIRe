@@ -24,17 +24,12 @@ namespace FastBIRe.Cdc.NpgSql.Checkpoints
         }
         public unsafe byte[] ToBytes()
         {
-            var buffer = new List<byte>();
             if (SequenceNumber != null)
             {
-                byte* data = stackalloc byte[NpgsqlLogSequenceNumberSize];
-                Unsafe.Write(data, SequenceNumber.Value);
-                for (int i = 0; i < NpgsqlLogSequenceNumberSize; i++)
-                {
-                    buffer.Add(*(data + i));
-                }
+                var data = new byte[NpgsqlLogSequenceNumberSize];
+                Unsafe.Write(Unsafe.AsPointer(ref MemoryMarshal.GetReference(data.AsSpan())), SequenceNumber.Value);
             }
-            return buffer.ToArray();
+            return Array.Empty<byte>();
         }
         public static unsafe PgSqlCheckpoint FromBytes(byte[] bytes)
         {
