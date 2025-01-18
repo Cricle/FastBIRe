@@ -2,7 +2,7 @@
 {
     public partial class TimescaleHelper
     {
-        public string ShowChunks(string tableName, string? older_than = null, string? newer_than = null)
+        public static string ShowChunks(string tableName, string? older_than = null, string? newer_than = null)
         {
             var args = new List<string>(0);
             if (!string.IsNullOrEmpty(older_than))
@@ -18,7 +18,7 @@
         }
 
 
-        public string DropChunks(string tableName,
+        public static string DropChunks(string tableName,
             string? older_than = null,
             string? newer_than = null,
             bool? verbose = null)
@@ -37,7 +37,7 @@
             }
             return sql + ")";
         }
-        public string ReorderChunks(string chunk,
+        public static string ReorderChunks(string chunk,
             string? index = null,
             bool? verbose = null)
         {
@@ -53,7 +53,7 @@
             }
             return sql + ")";
         }
-        public string MoveChunks(string chunk,
+        public static string MoveChunks(string chunk,
             string destination_tablespace,
             string index_destination_tablespace,
             string? reorder_index = null,
@@ -71,7 +71,7 @@
             }
             return sql + ")";
         }
-        public string AddReorderPolicy(string hypertable,
+        public static string AddReorderPolicy(string hypertable,
             string index_name,
             string initial_start,
             string timezone,
@@ -90,7 +90,7 @@
             }
             return sql + ")";
         }
-        public string RemoveReorderPolicy(string hypertable,
+        public static string RemoveReorderPolicy(string hypertable,
             bool? if_exists = null)
         {
             var args = new List<string>(0);
@@ -103,7 +103,7 @@
             }
             return sql + ")";
         }
-        public string AttachTablespace(string tablespace,
+        public static string AttachTablespace(string tablespace,
             string hypertable,
             bool? if_not_attached = null)
         {
@@ -117,7 +117,7 @@
             }
             return sql + ")";
         }
-        public string DetachTablespace(string tablespace,
+        public static string DetachTablespace(string tablespace,
             string? hypertable = null,
             bool? if_attached = null)
         {
@@ -133,20 +133,20 @@
             }
             return sql + ")";
         }
-        public string DetachTablespaces(string tablespace)
+        public static string DetachTablespaces(string tablespace)
         {
             return $"detach_tablespaces({tablespace})";
         }
-        public string ShowTablespaces(string hypertable)
+        public static string ShowTablespaces(string hypertable)
         {
             return $"show_tablespaces({hypertable})";
         }
-        public string SetChunkTimeInterval(string hypertable,
+        public static string SetChunkTimeInterval(string hypertable,
             string chunk_time_interval)
         {
             return $"set_chunk_time_interval({hypertable},{chunk_time_interval})";
         }
-        public string SetIntegerNowFunc(string main_table,
+        public static string SetIntegerNowFunc(string main_table,
             string integer_now_func,
             bool? replace_if_exists = null)
         {
@@ -160,7 +160,7 @@
             }
             return sql + ")";
         }
-        public string AddDimension(string hypertable,
+        public static string AddDimension(string hypertable,
             string column_name,
             string? number_partitions = null,
             string? chunk_time_interval = null,
@@ -183,23 +183,23 @@
             }
             return sql + ")";
         }
-        public string HypertableSize(string hypertable)
+        public static string HypertableSize(string hypertable)
         {
             return $"hypertable_size({hypertable})";
         }
-        public string HypertableDetailedSize(string hypertable)
+        public static string HypertableDetailedSize(string hypertable)
         {
             return $"hypertable_detailed_size({hypertable})";
         }
-        public string HypertableIndexSize(string hypertable)
+        public static string HypertableIndexSize(string hypertable)
         {
             return $"hypertable_index_size({hypertable})";
         }
-        public string ChunksDetailedSize(string hypertable)
+        public static string ChunksDetailedSize(string hypertable)
         {
             return $"chunks_detailed_size({hypertable})";
         }
-        public string CreateHypertable(string tableName, string timeColumn,
+        public static string CreateHypertable(string tableName, string timeColumn,
             string? partitioning_column = null,
             string? number_partitions = null,
             string? chunk_time_interval = null,

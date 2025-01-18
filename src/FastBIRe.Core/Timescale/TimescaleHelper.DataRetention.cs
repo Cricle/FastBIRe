@@ -2,7 +2,7 @@
 {
     public partial class TimescaleHelper
     {
-        public string AddRetentionPolicy(string relation,
+        public static string AddRetentionPolicy(string relation,
             string drop_after,
             string? initial_start = null,
             string? timezone = null,
@@ -22,7 +22,7 @@
             }
             return sql + ")";
         }
-        public string RemoveRetentionPolicy(string relation)
+        public static string RemoveRetentionPolicy(string relation)
         {
             return $"remove_retention_policy({relation})";
         }

@@ -1,4 +1,5 @@
-﻿using Diagnostics.Generator.Core.Annotations;
+﻿using Diagnostics.Generator.Core;
+using Diagnostics.Generator.Core.Annotations;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
 
@@ -11,7 +12,6 @@ namespace FastBIRe.Internals
     {
         public const string EventName = "FastBIRe.ScriptExecuter";
 
-#if !NETSTANDARD2_1
         [Counter("total-execute-count", CounterTypes.PollingCounter, DisplayName = "Execute command count (Total)")]
         private long totalExecute;
         [Counter("total-execute-fail", CounterTypes.PollingCounter, DisplayName = "Execute fail count (Total)")]
@@ -31,7 +31,6 @@ namespace FastBIRe.Internals
         private IncrementingEventCounter? readTime;
         [Counter("read-full-time", CounterTypes.IncrementingEventCounter, DisplayName = "Read full time", DisplayUnits = "ms", DisplayRateTimeScaleMs = 1000)]
         private IncrementingEventCounter? readFullTime;
-#endif
 
         private const EventKeywords KeyWords = EventKeywords.MicrosoftTelemetry | EventKeywords.EventLogClassic;
 
@@ -86,7 +85,6 @@ namespace FastBIRe.Internals
                     break;
                 case ScriptExecutState.Executed:
                     ScriptExecuterActivity.WriteExecuted(e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0);
-#if !NETSTANDARD2_1
                     IncrementTotalExecute();
                     if (executedTime != null && e.TraceUnit?.ExecutionTime != null)
                     {
@@ -96,7 +94,6 @@ namespace FastBIRe.Internals
                     {
                         executedFullTime.Increment(e.TraceUnit.Value.FullTime.Value.TotalMilliseconds);
                     }
-#endif
                     break;
                 case ScriptExecutState.ExecutedBatch:
                     ScriptExecuterActivity.WriteExecutedBatch(e.Command!.CommandTimeout, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0);
@@ -109,9 +106,7 @@ namespace FastBIRe.Internals
                     break;
                 case ScriptExecutState.Exception:
                     ScriptExecuterActivity.WriteException(e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.ExecuteException?.ToString());
-#if !NETSTANDARD2_1
                     IncrementTotalFail();
-#endif
                     Activity.Current?.SetStatus(ActivityStatusCode.Error, e.ExecuteException?.Message);
                     break;
                 case ScriptExecutState.Skip:
@@ -122,7 +117,6 @@ namespace FastBIRe.Internals
                     break;
                 case ScriptExecutState.EndReading:
                     ScriptExecuterActivity.WriteEndReading(e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0);
-#if !NETSTANDARD2_1
                     IncrementTotalRead();
                     if (readTime != null && e.TraceUnit?.ExecutionTime != null)
                     {
@@ -132,22 +126,17 @@ namespace FastBIRe.Internals
                     {
                         readFullTime.Increment(e.TraceUnit.Value.FullTime.Value.TotalMilliseconds);
                     }
-#endif
                     break;
                 case ScriptExecutState.BeginTransaction:
                     ScriptExecuterActivity.WriteBeginTranscation(e.Connection.ConnectionString, e.Connection.Database, e.GetScriptDebugString(), e.Transaction != null, e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, stackTrace);
                     break;
                 case ScriptExecutState.CommitedTransaction:
                     ScriptExecuterActivity.WriteCommitedTransaction(e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0);
-#if !NETSTANDARD2_1
                     IncrementTotalCommitTransaction();
-#endif
                     break;
                 case ScriptExecutState.RollbackedTransaction:
                     ScriptExecuterActivity.WriteRollbackedTransaction(e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0);
-#if !NETSTANDARD2_1
                     IncrementTotalRollbackTranscation();
-#endif
                     break;
                 default:
                     break;

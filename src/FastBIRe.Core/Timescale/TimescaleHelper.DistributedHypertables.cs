@@ -2,7 +2,7 @@
 {
     public partial class TimescaleHelper
     {
-        public string CreateDistributedHypertable(string relation,
+        public static string CreateDistributedHypertable(string relation,
             string time_column_name,
             string? partitioning_column = null,
             string? number_partitions = null,
@@ -49,7 +49,7 @@
             }
             return sql + ")";
         }
-        public string AddDataNode(string node_name,
+        public static string AddDataNode(string node_name,
             string host,
             string? database = null,
             string? port = null,
@@ -75,7 +75,7 @@
             }
             return sql + ")";
         }
-        public string AttachDataNode(string node_name,
+        public static string AttachDataNode(string node_name,
             string hypertable,
             string? repartition = null,
             bool? if_not_attached = null)
@@ -92,7 +92,7 @@
             }
             return sql + ")";
         }
-        public string AlterDataNode(string node_name,
+        public static string AlterDataNode(string node_name,
             string? host = null,
             string? database = null,
             string? port = null,
@@ -114,7 +114,7 @@
             }
             return sql + ")";
         }
-        public string DetachDataNode(string node_name,
+        public static string DetachDataNode(string node_name,
             string? hypertable = null,
             bool? if_attached = null,
             bool? force = null,
@@ -136,7 +136,7 @@
             }
             return sql + ")";
         }
-        public string DeleteDataNode(string node_name,
+        public static string DeleteDataNode(string node_name,
             bool? if_exists = null,
             bool? force = null,
             bool? repartition = null)
@@ -155,7 +155,7 @@
             }
             return sql + ")";
         }
-        public string DistributedExec(string query,
+        public static string DistributedExec(string query,
             string? node_list = null,
             bool? transactional = null)
         {
@@ -171,7 +171,7 @@
             }
             return sql + ")";
         }
-        public string SetNumberPartitions(string hypertable,
+        public static string SetNumberPartitions(string hypertable,
             string number_partitions,
             string? dimension_name = null)
         {
@@ -185,28 +185,28 @@
             }
             return sql + ")";
         }
-        public string SetReplicationFactor(string hypertable,
+        public static string SetReplicationFactor(string hypertable,
             string replication_factor)
         {
             return $"set_replication_factor({hypertable},{replication_factor})";
         }
-        public string CopyChunk(string chunk,
+        public static string CopyChunk(string chunk,
             string source_node,
             string destination_node)
         {
             return $"timescaledb_experimental.copy_chunk({chunk},{source_node},{destination_node})";
         }
-        public string MoveChunk(string chunk,
+        public static string MoveChunk(string chunk,
             string source_node,
             string destination_node)
         {
             return $"timescaledb_experimental.move_chunk({chunk},{source_node},{destination_node})";
         }
-        public string CleanupCopyChunkOperation(string operation_id)
+        public static string CleanupCopyChunkOperation(string operation_id)
         {
             return $"timescaledb_experimental.cleanup_copy_chunk_operation({operation_id})";
         }
-        public string CreateDistributedRestorePoint(string name)
+        public static string CreateDistributedRestorePoint(string name)
         {
             return $"create_distributed_restore_point({name})";
         }

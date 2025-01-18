@@ -2,7 +2,7 @@
 {
     public partial class TimescaleHelper
     {
-        public string AddCompressionPolicy(string hypertable,
+        public static string AddCompressionPolicy(string hypertable,
             string compress_after,
             string schedule_interval,
             string initial_start,
@@ -10,7 +10,7 @@
         {
             return $"add_compression_policy({hypertable},{compress_after},{schedule_interval},{initial_start},{timezone})";
         }
-        public string RemoveCompressionPolicy(string hypertable,
+        public static string RemoveCompressionPolicy(string hypertable,
             bool? if_exists = null)
         {
             var args = new List<string>(0);
@@ -23,7 +23,7 @@
             }
             return sql + ")";
         }
-        public string CompressChunk(string hypertable,
+        public static string CompressChunk(string hypertable,
             bool? if_not_compressed = null)
         {
             var args = new List<string>(0);
@@ -36,7 +36,7 @@
             }
             return sql + ")";
         }
-        public string DecompressChunk(string chunk_name,
+        public static string DecompressChunk(string chunk_name,
             bool? if_compressed = null)
         {
             var args = new List<string>(0);
@@ -49,7 +49,7 @@
             }
             return sql + ")";
         }
-        public string RecompressChunk(string chunk,
+        public static string RecompressChunk(string chunk,
             bool? if_not_compressed = null)
         {
             var args = new List<string>(0);
@@ -62,11 +62,11 @@
             }
             return sql + ")";
         }
-        public string HypertableCompressionStats(string hypertable)
+        public static string HypertableCompressionStats(string hypertable)
         {
             return $"hypertable_compression_stats({hypertable})";
         }
-        public string ChunkCompressionStats(string hypertable)
+        public static string ChunkCompressionStats(string hypertable)
         {
             return $"chunk_compression_stats({hypertable})";
         }

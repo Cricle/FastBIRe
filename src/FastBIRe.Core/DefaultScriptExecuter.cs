@@ -1,5 +1,4 @@
-﻿
-using FastBIRe.Internals;
+﻿using FastBIRe.Internals;
 using FastBIRe.Wrapping;
 using System.Data.Common;
 
@@ -46,12 +45,7 @@ namespace FastBIRe
         public DefaultScriptExecuter(DbConnection connection)
         {
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-            var sqlType = Convert(Connection.GetType().Name);
-            if (sqlType == null)
-            {
-                throw new NotSupportedException(connection.GetType().FullName);
-            }
-            SqlType = sqlType!.Value;
+            SqlType = Convert(Connection.GetType().Name) ?? throw new NotSupportedException(connection.GetType().FullName);
             Escaper = SqlType.GetEscaper();
             ScriptStated += OnScriptStated;
         }
@@ -139,6 +133,5 @@ namespace FastBIRe
         {
             return $"{{Connection: {Connection}}}";
         }
-
     }
 }

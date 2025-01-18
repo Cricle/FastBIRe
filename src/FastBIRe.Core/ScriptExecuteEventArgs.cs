@@ -1,6 +1,5 @@
 ﻿using System.Data.Common;
 using System.Diagnostics;
-using System.Net.NetworkInformation;
 using System.Text;
 
 namespace FastBIRe

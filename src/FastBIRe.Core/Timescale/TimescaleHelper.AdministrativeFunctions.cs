@@ -2,15 +2,15 @@
 {
     public partial class TimescaleHelper
     {
-        public string TimescaledbPreRestore()
+        public static string TimescaledbPreRestore()
         {
             return "timescaledb_pre_restore()";
         }
-        public string TimescaledbPostRestore()
+        public static string TimescaledbPostRestore()
         {
             return "timescaledb_post_restore()";
         }
-        public string GetTelemetryReport()
+        public static string GetTelemetryReport()
         {
             return "get_telemetry_report()";
         }

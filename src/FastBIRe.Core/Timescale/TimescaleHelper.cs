@@ -2,7 +2,7 @@
 
 namespace FastBIRe.Timescale
 {
-    public partial class TimescaleHelper
+    public static partial class TimescaleHelper
     {
         public const string Year = "year";
         public const string Month = "month";
@@ -12,15 +12,13 @@ namespace FastBIRe.Timescale
         public const string Second = "second";
         public const string Quarter = "quarter";
 
-        public static readonly TimescaleHelper Default = new TimescaleHelper();
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static string BoolToString(bool? b)
         {
             return b ?? false ? "true" : "false";
         }
 
-        public string CreateInterval(int value, string unit)
+        public static string CreateInterval(int value, string unit)
         {
             var unitStr = string.Empty;
             if (unit == Quarter)

@@ -2,7 +2,7 @@
 {
     public partial class TimescaleHelper
     {
-        public string CreateContinuousAggregate(string viewName,
+        public static string CreateContinuousAggregate(string viewName,
             string query,
             bool? materialized_only = null,
             bool? create_group_indexes = null,
@@ -29,7 +29,7 @@ WITH (timescaledb.continuous{with}) AS
 WITH {(noData ? "NO" : string.Empty)} DATA
 ";
         }
-        public string AlterContinuousAggregate(string viewName,
+        public static string AlterContinuousAggregate(string viewName,
             bool? materialized_only = null,
             bool? create_group_indexes = null,
             bool? finalized = null)
@@ -47,17 +47,17 @@ WITH {(noData ? "NO" : string.Empty)} DATA
             }
             return $@"ALTER MATERIALIZED VIEW {viewName} SET ({string.Join(",", args)})";
         }
-        public string DropContinuousAggregate(string viewName)
+        public static string DropContinuousAggregate(string viewName)
         {
             return $@"DROP MATERIALIZED VIEW {viewName}";
         }
-        public string RefreshContinuousAggregate(string continuous_aggregate,
+        public static string RefreshContinuousAggregate(string continuous_aggregate,
             string window_start,
             string window_end)
         {
             return $@"refresh_continuous_aggregate({continuous_aggregate},{window_start},{window_end})";
         }
-        public string AddContinuousAggregatePolicy(string continuous_aggregate,
+        public static string AddContinuousAggregatePolicy(string continuous_aggregate,
             string? start_offset = null,
             string? end_offset = null,
             string? schedule_interval = null,
@@ -93,7 +93,7 @@ WITH {(noData ? "NO" : string.Empty)} DATA
             }
             return sql + ")";
         }
-        public string AddPolicies(string relation,
+        public static string AddPolicies(string relation,
             bool? if_not_exists = null,
             string? refresh_start_offset = null,
             string? refresh_end_offset = null,
@@ -122,7 +122,7 @@ WITH {(noData ? "NO" : string.Empty)} DATA
             }
             return sql + ")";
         }
-        public string AlterPolicies(string relation,
+        public static string AlterPolicies(string relation,
             bool? if_not_exists = null,
             string? refresh_start_offset = null,
             string? refresh_end_offset = null,
@@ -151,11 +151,11 @@ WITH {(noData ? "NO" : string.Empty)} DATA
             }
             return sql + ")";
         }
-        public string ShowPolicies(string relation)
+        public static string ShowPolicies(string relation)
         {
             return $@"timescaledb_experimental.show_policies({relation})";
         }
-        public string RemoveContinuousAggregatePolicy(string continuous_aggregate,
+        public static string RemoveContinuousAggregatePolicy(string continuous_aggregate,
             bool? if_exists = null)
         {
             var args = new List<string>();
@@ -172,7 +172,7 @@ WITH {(noData ? "NO" : string.Empty)} DATA
             }
             return sql + ")";
         }
-        public string CaggMigrate(string cagg,
+        public static string CaggMigrate(string cagg,
             bool? @override = null,
             bool? drop_old = null)
         {
@@ -192,7 +192,7 @@ WITH {(noData ? "NO" : string.Empty)} DATA
             }
             return sql + ")";
         }
-        public string CaggMigrate(string relation,
+        public static string CaggMigrate(string relation,
             bool? if_exists = null,
             string? policy_names = null)
         {
@@ -212,7 +212,7 @@ WITH {(noData ? "NO" : string.Empty)} DATA
             }
             return sql + ")";
         }
-        public string RemoveAllPolicies(string relation,
+        public static string RemoveAllPolicies(string relation,
             bool? if_exists = null)
         {
             var args = new List<string>();

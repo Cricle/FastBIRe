@@ -2,7 +2,7 @@
 {
     public partial class TimescaleHelper
     {
-        public string AddJob(string proc,
+        public static string AddJob(string proc,
             string schedule_interval,
             string? config = null,
             string? initial_start = null,
@@ -31,7 +31,7 @@
             }
             return sql + ")";
         }
-        public string AlterJob(string job_id,
+        public static string AlterJob(string job_id,
             string? schedule_interval = null,
             string? max_runtime = null,
             string? max_retries = null,
@@ -68,11 +68,11 @@
             }
             return sql + ")";
         }
-        public string DeleteJob(string job_id)
+        public static string DeleteJob(string job_id)
         {
             return $"delete_job({job_id})";
         }
-        public string RunJob(string job_id)
+        public static string RunJob(string job_id)
         {
             return $"run_job({job_id})";
         }
