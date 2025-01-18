@@ -30,9 +30,9 @@ namespace FastBIRe
             {
                 throw new ArgumentException($"Table {tableName} not exists");
             }
-            return FromMarsk(table, reader.SqlType!.Value, columnMarsk);
+            return FromMarsk(table, (FSqlType)reader.SqlType!.Value, columnMarsk);
         }
-        public static TableWrapper FromMarsk(DatabaseTable table, SqlType sqlType, Predicate<DatabaseColumn>? columnMarsk = null)
+        public static TableWrapper FromMarsk(DatabaseTable table, FSqlType sqlType, Predicate<DatabaseColumn>? columnMarsk = null)
         {
             if (columnMarsk == null)
             {
@@ -48,7 +48,7 @@ namespace FastBIRe
             }
             return new TableWrapper(table, sqlType, selectmask);
         }
-        public TableWrapper(DatabaseTable table, SqlType sqlType, IReadOnlyList<int>? selectMask)
+        public TableWrapper(DatabaseTable table, FSqlType sqlType, IReadOnlyList<int>? selectMask)
         {
             Table = table;
             SqlType = sqlType;
@@ -100,7 +100,7 @@ namespace FastBIRe
 
         public string WrapTableName { get; }
 
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         public IReadOnlyList<ITableColumnSnapshot> KeysMask { get; }
 
@@ -117,8 +117,8 @@ namespace FastBIRe
             var valueJoined = GetSelectValueJoined(values);
             switch (SqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     {
                         var idMatchs = string.Join(" AND ", KeysMask.Select(x => $"target.{SqlType.Wrap(x.Name)} = source.{SqlType.Wrap(x.Name)}"));
                         return $@"MERGE {WrapTableName} AS target
@@ -130,22 +130,22 @@ WHEN NOT MATCHED THEN
     INSERT ({ColumnNameJoined})
     VALUES ({string.Join(", ", SelectsExceptKeyMask.Select((x) => $"source.{SqlType.Wrap(x.Name)}"))});";
                     }
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     {
                         return $@"INSERT INTO {WrapTableName} ({ColumnNameJoined})
 VALUES ({valueJoined})
 ON DUPLICATE KEY UPDATE {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{SqlType.Wrap(x.Name)} = VALUES({SqlType.Wrap(x.Name)})"))};";
                     }
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $@"INSERT OR REPLACE INTO {WrapTableName} ({ColumnNameJoined}) VALUES ({valueJoined});";
-                case SqlType.PostgreSql:
-                case SqlType.DuckDB:
+                case FSqlType.PostgreSql:
+                case FSqlType.DuckDB:
                     return $@"INSERT INTO {WrapTableName} ({ColumnNameJoined})
 VALUES ({valueJoined})
 ON CONFLICT ({string.Join(", ", KeysMask.Select(x => SqlType.Wrap(x.Name)))})
 DO UPDATE SET {string.Join(", ", SelectsExceptKeyMask.Select((x) => $"{SqlType.Wrap(x.Name)}=EXCLUDED.{SqlType.Wrap(x.Name)}"))};";
-                case SqlType.Oracle:
-                case SqlType.Db2:
+                case FSqlType.Oracle:
+                case FSqlType.Db2:
                 default:
                     return null;
             }

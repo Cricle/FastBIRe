@@ -70,7 +70,7 @@ namespace FastBIRe.Building
             return this;
         }
 
-        public string ToSql(SqlType sqlType)
+        public string ToSql(FSqlType sqlType)
         {
             var visitor = new SqlMetadataVisitor(sqlType);
             visitor.Visit(Metadatas, visitor.CreateContext(Metadatas));

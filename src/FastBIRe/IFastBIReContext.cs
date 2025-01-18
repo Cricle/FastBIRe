@@ -82,7 +82,7 @@ namespace FastBIRe
     }
     public interface IFastBIReContext : IDisposable
     {
-        SqlType SqlType { get; }
+        FSqlType SqlType { get; }
 
         IEscaper Escaper { get; }
 
@@ -136,14 +136,14 @@ namespace FastBIRe
                 Throws.ThrowTableNotFound(tableName);
             }
             var remoteTable = context.DatabaseReader.Table(tableName);
-            var ddlGen = new DdlGeneratorFactory(context.SqlType);
+            var ddlGen = new DdlGeneratorFactory((SqlType)context.SqlType);
             if (remoteTable == null)
             {
                 return new MigrationScriptResult(tableName, new[] { ddlGen.TableGenerator(localTable).Write() });
             }
             configRemoteTable?.Invoke(remoteTable);
             var comapreSchemas = CompareSchemas.FromTable(context.Executer.Connection.ConnectionString,
-                context.SqlType,
+                (SqlType)context.SqlType,
                 remoteTable,
                 localTable);
 

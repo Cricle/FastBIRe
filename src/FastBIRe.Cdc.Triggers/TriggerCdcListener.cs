@@ -17,7 +17,7 @@ namespace FastBIRe.Cdc.Mssql
             Options = options;
             ScriptExecuter = options.ScriptExecuter;
             DatabaseReader = new DatabaseReader(ScriptExecuter.Connection) { Owner = ScriptExecuter.Connection.Database };
-            SqlType = DatabaseReader.SqlType!.Value;
+            SqlType = (FSqlType)DatabaseReader.SqlType!.Value;
         }
 
         public IDbScriptExecuter ScriptExecuter { get; }
@@ -26,7 +26,7 @@ namespace FastBIRe.Cdc.Mssql
 
         public new TriggerGetCdcListenerOptions Options { get; }
 
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         public override ITableMapInfo? GetTableMapInfo(object id)
         {
@@ -143,7 +143,7 @@ namespace FastBIRe.Cdc.Mssql
         {
             var listener = (TriggerCdcListener)state!;
             var source = listener.TokenSource!;
-            var sqlType = listener.DatabaseReader.SqlType!.Value;
+            var sqlType = (FSqlType)listener.DatabaseReader.SqlType!.Value;
             var batchSize = (int)listener.Options.ReadBatch;
             var tables = listener.Options.TableNames!;
             var scriptExecuter = listener.Options.ScriptExecuter;

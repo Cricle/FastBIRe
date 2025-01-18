@@ -8,7 +8,7 @@ namespace FastBIRe.Querying
     /// </summary>
     public abstract record class MergeQueryRequest
     {
-        protected MergeQueryRequest(SqlType sqlType, DatabaseTable sourceTable, DatabaseTable destTable, IReadOnlyList<ITableFieldLink> noGroupLinks, IReadOnlyList<ITableFieldLink> groupLinks)
+        protected MergeQueryRequest(FSqlType sqlType, DatabaseTable sourceTable, DatabaseTable destTable, IReadOnlyList<ITableFieldLink> noGroupLinks, IReadOnlyList<ITableFieldLink> groupLinks)
         {
             SqlType = sqlType;
             NoGroupLinks = noGroupLinks;
@@ -25,7 +25,7 @@ namespace FastBIRe.Querying
         /// <summary>
         /// The sql type
         /// </summary>
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         /// <summary>
         /// The source table

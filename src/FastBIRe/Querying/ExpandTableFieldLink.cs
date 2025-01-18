@@ -15,7 +15,7 @@ namespace FastBIRe.Querying
         /// </summary>
         public IExpandResult ExpandResult { get; }
 
-        public override string FormatExpression(SqlType type, string? tableAlias)
+        public override string FormatExpression(FSqlType type, string? tableAlias)
         {
             string? formatExp;
             if (string.IsNullOrWhiteSpace(tableAlias))
@@ -30,7 +30,7 @@ namespace FastBIRe.Querying
         }
 
         /// <inheritdoc/>
-        public override string FormatSql(SqlType type, string? tableAlias)
+        public override string FormatSql(FSqlType type, string? tableAlias)
         {
             return $"{FormatExpression(type, tableAlias)} AS {type.Wrap(DestColumn.Name)}";
         }

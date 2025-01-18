@@ -7,7 +7,7 @@ namespace FastBIRe.Querying
     {
         private string GenerateColumnCompare(MergeQueryUpdateRequest request, ITableFieldLink x, string destTableAliasQuto, string tmpQuto)
         {
-            if (request.SqlType == SqlType.PostgreSql || request.SqlType == SqlType.DuckDB)
+            if (request.SqlType == FSqlType.PostgreSql || request.SqlType == FSqlType.DuckDB)
             {
                 if (x is DirectTableFieldLink direct)
                 {
@@ -48,7 +48,7 @@ namespace FastBIRe.Querying
             var sql = new StringBuilder();
             //UPDATE [dest] {AS destAlias}
             sql.Append($"UPDATE {destTableQuto}");
-            if (request.SqlType.Ors(SqlType.PostgreSql, SqlType.DuckDB, SqlType.MySql, SqlType.SQLite))
+            if (request.SqlType.Ors(FSqlType.PostgreSql, FSqlType.DuckDB, FSqlType.MySql, FSqlType.SQLite))
             {
                 sql.AppendLine($" AS {destTableAliasQuto}");
             }
@@ -57,9 +57,9 @@ namespace FastBIRe.Querying
                 sql.AppendLine();
             }
             var tmpQuto = request.Wrap("tmp");
-            var setPrefx = request.SqlType == SqlType.MySql ? $"{destTableAliasQuto}." : string.Empty;
+            var setPrefx = request.SqlType == FSqlType.MySql ? $"{destTableAliasQuto}." : string.Empty;
             var setString = string.Join(", ", request.NoGroupLinks.Select(x => $"{setPrefx}{request.Wrap(x.DestColumn.Name)} = {tmpQuto}.{request.Wrap(x.DestColumn.Name)}"));
-            if (request.SqlType != SqlType.MySql)
+            if (request.SqlType != FSqlType.MySql)
             {
                 sql.AppendLine($"SET {setString}");
             }
@@ -71,7 +71,7 @@ namespace FastBIRe.Querying
             var updateFrom = CompileUpdateFrom(request, updateSelect, destGroupOn, destGroupCheck, tmpQuto);
             sql.AppendLine(updateFrom);
 
-            if (request.SqlType == SqlType.MySql)
+            if (request.SqlType == FSqlType.MySql)
             {
                 sql.AppendLine($"SET {setString}");
             }
@@ -82,22 +82,22 @@ namespace FastBIRe.Querying
         {
             switch (request.SqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $@"FROM {request.Wrap(request.DestTable.Name)} AS {request.Wrap(DestTableAlias)} INNER JOIN (
 {updateSelect}
 ) AS {tmpQuto} ON {destGroupOn}
 AND (
 {destGroupCheck}
 )";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $@"INNER JOIN (
 {updateSelect}
 ) AS {tmpQuto} ON {destGroupOn}
 AND(
 {destGroupCheck}
 )";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $@"FROM (
 {updateSelect}
 ) AS {tmpQuto}
@@ -105,8 +105,8 @@ WHERE {destGroupOn}
 AND (
 {destGroupCheck}
 )";
-                case SqlType.DuckDB:
-                case SqlType.PostgreSql:
+                case FSqlType.DuckDB:
+                case FSqlType.PostgreSql:
                     return $@"FROM (
 {updateSelect}
 ) AS {tmpQuto}
@@ -114,8 +114,8 @@ WHERE {destGroupOn}
 AND(
 {destGroupCheck}
 )";
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     throw new NotSupportedException($"Only support sqlserver/mysql/sqlite/postgresql/duckdb");
             }

@@ -1,21 +1,19 @@
-﻿using DatabaseSchemaReader.DataSchema;
-
-namespace FastBIRe
+﻿namespace FastBIRe
 {
     public partial class FunctionMapper
     {
         public string? LastDay(string date)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"DATEADD(day, -1, DATEADD(month, DATEDIFF(month, 0, {date}) + 1, 0))";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"LAST_DAY({date})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"DATE(strftime('%Y-%m-', {date}) || '01', '+1 month', '-1 day')";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"DATE_TRUNC('month', {date}) + INTERVAL '1 month - 1 day'";
                 default:
                     return null;
@@ -23,16 +21,16 @@ namespace FastBIRe
         }
         public string? DayOfYear(string date)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"DATEPART(dayofyear, {date})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"DAYOFYEAR({date})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"STRFTIME('%j', {date})";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"EXTRACT(DOY FROM {date})";
                 default:
                     return null;
@@ -40,16 +38,16 @@ namespace FastBIRe
         }
         public string? Date(string year, string month, string day)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"DATEFROMPARTS({year}, {month}, {day})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"STR_TO_DATE(CONCAT({year}, '-', {month}, '-', {day}), '%Y-%m-%d')";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"DATE({year}|| '-'|| {month}|| '-'|| {day})";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"TO_DATE({year}|| '-'|| {month}|| '-'|| {day},'YYYY-MM-DD')";
                 default:
                     return null;
@@ -59,114 +57,114 @@ namespace FastBIRe
         //public string 
         public string DateDifSecond(string timeA, string timeB)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"DATEDIFF(SECOND, {timeA}, {timeB})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"TIMESTAMPDIFF(SECOND, {timeA},{timeB})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"strftime('%s', {timeB}) - strftime('%s', {timeA})";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"EXTRACT(EPOCH FROM ({timeB}::TIMESTAMP - {timeA}::TIMESTAMP))";
-                case SqlType.Oracle:
-                case SqlType.Db2:
+                case FSqlType.Oracle:
+                case FSqlType.Db2:
                 default:
                     return string.Empty;
             }
         }
         public string DateDifMinute(string timeA, string timeB)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"DATEDIFF(MINUTE, {timeA}, {timeB})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"TIMESTAMPDIFF(MINUTE, {timeA},{timeB})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"(strftime('%s', {timeB}) - strftime('%s', {timeA}))/60";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"FLOOR((EXTRACT(EPOCH FROM ({timeB}::TIMESTAMP - {timeA}::TIMESTAMP)))/60)";
-                case SqlType.Oracle:
-                case SqlType.Db2:
+                case FSqlType.Oracle:
+                case FSqlType.Db2:
                 default:
                     return string.Empty;
             }
         }
         public string DateDifHour(string timeA, string timeB)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"DATEDIFF(HOUR, {timeA}, {timeB})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"TIMESTAMPDIFF(HOUR, {timeA},{timeB})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"(strftime('%s', {timeB}) - strftime('%s', {timeA}))/60/60";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"FLOOR((EXTRACT(EPOCH FROM ({timeB}::TIMESTAMP - {timeA}::TIMESTAMP)))/60/60)";
-                case SqlType.Oracle:
-                case SqlType.Db2:
+                case FSqlType.Oracle:
+                case FSqlType.Db2:
                 default:
                     return string.Empty;
             }
         }
         public string DateDifDay(string timeA, string timeB)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"DATEDIFF(DAY, {timeA}, {timeB})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"TIMESTAMPDIFF(DAY, {timeA},{timeB})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"(strftime('%s', {timeB}) - strftime('%s', {timeA}))/60/60/24";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"FLOOR((EXTRACT(EPOCH FROM ({timeB}::TIMESTAMP - {timeA}::TIMESTAMP)))/60/60/24)";
-                case SqlType.Oracle:
-                case SqlType.Db2:
+                case FSqlType.Oracle:
+                case FSqlType.Db2:
                 default:
                     return string.Empty;
             }
         }
         public string DateDifMonth(string timeA, string timeB)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"DATEDIFF(MONTH, {timeA}, {timeB})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"TIMESTAMPDIFF(MONTH, {timeA},{timeB})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"((strftime('%Y',{timeB})-strftime('%Y',{timeA}))*12 + (strftime('%m',{timeB})-strftime('%m',{timeA})))";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"((DATE_PART('year',{timeB}::TIMESTAMP)-DATE_PART('year',{timeA}::TIMESTAMP))*12+(DATE_PART('month',{timeB}::TIMESTAMP)-DATE_PART('month',{timeA}::TIMESTAMP)))";
-                case SqlType.Oracle:
-                case SqlType.Db2:
+                case FSqlType.Oracle:
+                case FSqlType.Db2:
                 default:
                     return string.Empty;
             }
         }
         public string DateDifYear(string timeA, string timeB)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"DATEDIFF(YEAR, {timeA}, {timeB})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"TIMESTAMPDIFF(YEAR, {timeA},{timeB})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"(strftime('%Y',{timeB})-strftime('%Y',{timeA}))";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"(DATE_PART('year',{timeB}::TIMESTAMP)-DATE_PART('year',{timeA}::TIMESTAMP))";
-                case SqlType.Oracle:
-                case SqlType.Db2:
+                case FSqlType.Oracle:
+                case FSqlType.Db2:
                 default:
                     return string.Empty;
             }
@@ -185,16 +183,16 @@ END
         }
         public string? DateAdd(string time, string num, string unit)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"DATEADD({unit}, {num}, {time})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"DATE_ADD({time}, INTERVAL {num} {unit})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"DATE({time}, '{num} {unit}')";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"{time} + INTERVAL '{num} {unit}'";
                 default:
                     return null;
@@ -202,11 +200,11 @@ END
         }
         public string Day(string time)
         {
-            if (SqlType == SqlType.SQLite)
+            if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%d', {time})";
             }
-            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            else if (FSqlType == FSqlType.SqlServer || FSqlType == FSqlType.SqlServerCe)
             {
                 return $"DATEPART(day,{time})";
             }
@@ -214,15 +212,15 @@ END
         }
         public string DayTo(string time)
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return $"CONVERT(VARCHAR(10),{time} ,120)";
             }
-            else if (SqlType == SqlType.SQLite)
+            else if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%Y-%m-%d', {time})";
             }
-            else if (SqlType == SqlType.PostgreSql)
+            else if (FSqlType == FSqlType.PostgreSql)
             {
                 return $"LEFT(date_trunc('day',{time})::VARCHAR,10)";
             }
@@ -230,7 +228,7 @@ END
         }
         public string? DayFull(string time)
         {
-            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            if (FSqlType == FSqlType.DuckDB || FSqlType == FSqlType.PostgreSql)
             {
                 return $"DATE_TRUNC('day',{time})";
             }
@@ -238,15 +236,15 @@ END
         }
         public string HourTo(string time)
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return $"CONVERT(VARCHAR(13),{time} ,120)";
             }
-            else if (SqlType == SqlType.SQLite)
+            else if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%Y-%m-%d %H', {time})";
             }
-            else if (SqlType == SqlType.PostgreSql)
+            else if (FSqlType == FSqlType.PostgreSql)
             {
                 return $"LEFT(date_trunc('hour',{time})::VARCHAR,13)";
             }
@@ -254,7 +252,7 @@ END
         }
         public string? HourFull(string time)
         {
-            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            if (FSqlType == FSqlType.DuckDB || FSqlType == FSqlType.PostgreSql)
             {
                 return $"DATE_TRUNC('hour',{time})";
             }
@@ -262,15 +260,15 @@ END
         }
         public string SecondTo(string time)
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return $"CONVERT(VARCHAR(19),{time} ,120)";
             }
-            else if (SqlType == SqlType.SQLite)
+            else if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%Y-%m-%d %H:%M:%s', {time})";
             }
-            else if (SqlType == SqlType.PostgreSql)
+            else if (FSqlType == FSqlType.PostgreSql)
             {
                 return $"LEFT(date_trunc('second',{time})::VARCHAR,19)";
             }
@@ -278,15 +276,15 @@ END
         }
         public string MinuteTo(string time)
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return $"CONVERT(VARCHAR(16),{time} ,120)";
             }
-            else if (SqlType == SqlType.SQLite)
+            else if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%Y-%m-%d %H:%M', {time})";
             }
-            else if (SqlType == SqlType.PostgreSql)
+            else if (FSqlType == FSqlType.PostgreSql)
             {
                 return $"LEFT(date_trunc('minute',{time})::VARCHAR,16)";
             }
@@ -294,7 +292,7 @@ END
         }
         public string? MinuteFull(string time)
         {
-            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            if (FSqlType == FSqlType.DuckDB || FSqlType == FSqlType.PostgreSql)
             {
                 return $"DATE_TRUNC('minute',{time})";
             }
@@ -302,15 +300,15 @@ END
         }
         public string WeekTo(string time)
         {
-            if (SqlType == SqlType.SQLite)
+            if (FSqlType == FSqlType.SQLite)
             {
                 return $"date({time}, 'weekday 0', '-6 day')||' 00:00:00'";
             }
-            else if (SqlType == SqlType.SqlServer)
+            else if (FSqlType == FSqlType.SqlServer)
             {
                 return $"DATEADD(WEEK, DATEDIFF(WEEK, 0, CONVERT(DATETIME, {time}, 120) - 1), 0)";
             }
-            else if (SqlType == SqlType.PostgreSql)
+            else if (FSqlType == FSqlType.PostgreSql)
             {
                 return $"(date_trunc('day',{time}) - ((EXTRACT(DOW FROM {time})::INTEGER+6)%7 || ' days')::INTERVAL)::timestamp with time zone";
             }
@@ -325,7 +323,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
         }
         public string? WeekFull(string time)
         {
-            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            if (FSqlType == FSqlType.DuckDB || FSqlType == FSqlType.PostgreSql)
             {
                 return $"DATE_TRUNC('week',{time})";
             }
@@ -333,7 +331,7 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
         }
         public string QuarterFull(string time)
         {
-            if (SqlType == SqlType.SQLite)
+            if (FSqlType == FSqlType.SQLite)
             {
                 return $@"
     STRFTIME('%Y', {time})||'-'||(CASE 
@@ -343,11 +341,11 @@ SELECT '2022-01-30 00:00:00'::timestamp - ((EXTRACT(DOW FROM '2022-01-30 00:00:0
     END)||'-01 00:00:00'
 ";
             }
-            else if (SqlType == SqlType.SqlServer)
+            else if (FSqlType == FSqlType.SqlServer)
             {
                 return $"DATEADD(qq, DATEDIFF(qq, 0, {time}), 0)";
             }
-            else if (SqlType == SqlType.PostgreSql)
+            else if (FSqlType == FSqlType.PostgreSql)
             {
                 return $"date_trunc('quarter', {time}::TIMESTAMP)";
             }
@@ -365,11 +363,11 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string Year(string time)
         {
-            if (SqlType == SqlType.SQLite)
+            if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%Y', {time})";
             }
-            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            else if (FSqlType == FSqlType.SqlServer || FSqlType == FSqlType.SqlServerCe)
             {
                 return $"DATEPART(year,{time})";
             }
@@ -377,7 +375,7 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string? YearFull(string time)
         {
-            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            if (FSqlType == FSqlType.DuckDB || FSqlType == FSqlType.PostgreSql)
             {
                 return $"DATE_TRUNC('year',{time})";
             }
@@ -385,15 +383,15 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string MonthTo(string time)
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return $"CONVERT(VARCHAR(7),{time} ,120)";
             }
-            else if (SqlType == SqlType.SQLite)
+            else if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%Y-%m', {time})";
             }
-            else if (SqlType == SqlType.PostgreSql)
+            else if (FSqlType == FSqlType.PostgreSql)
             {
                 return $"LEFT(date_trunc('month',{time})::VARCHAR,7)";
             }
@@ -401,7 +399,7 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string? MonthFull(string time)
         {
-            if (SqlType == SqlType.DuckDB || SqlType == SqlType.PostgreSql)
+            if (FSqlType == FSqlType.DuckDB || FSqlType == FSqlType.PostgreSql)
             {
                 return $"DATE_TRUNC('month',{time})";
             }
@@ -409,15 +407,15 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string YearTo(string time)
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return $"CONVERT(VARCHAR(4),{time} ,120)";
             }
-            else if (SqlType == SqlType.SQLite)
+            else if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%Y', {time})";
             }
-            else if (SqlType == SqlType.PostgreSql)
+            else if (FSqlType == FSqlType.PostgreSql)
             {
                 return $"LEFT(date_trunc('year',{time})::VARCHAR,4)";
             }
@@ -425,11 +423,11 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string Month(string time)
         {
-            if (SqlType == SqlType.SQLite)
+            if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%m', {time})";
             }
-            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            else if (FSqlType == FSqlType.SqlServer || FSqlType == FSqlType.SqlServerCe)
             {
                 return $"DATEPART(month,{time})";
             }
@@ -437,11 +435,11 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string Hour(string time)
         {
-            if (SqlType == SqlType.SQLite)
+            if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%H', {time})";
             }
-            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            else if (FSqlType == FSqlType.SqlServer || FSqlType == FSqlType.SqlServerCe)
             {
                 return $"DATEPART(hour,{time})";
             }
@@ -449,11 +447,11 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string Minute(string time)
         {
-            if (SqlType == SqlType.SQLite)
+            if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%M', {time})";
             }
-            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            else if (FSqlType == FSqlType.SqlServer || FSqlType == FSqlType.SqlServerCe)
             {
                 return $"DATEPART(minute,{time})";
             }
@@ -461,54 +459,54 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string Quarter(string time)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"DATEPART(QUARTER, {time})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"QUARTER({time})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return @$"CASE
     WHEN strftime('%m', {time}) BETWEEN '01' AND '03' THEN 1
     WHEN strftime('%m', {time}) BETWEEN '04' AND '06' THEN 2
     WHEN strftime('%m', {time}) BETWEEN '07' AND '09' THEN 3
     ELSE 4
     END";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"EXTRACT(QUARTER FROM {time})";
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     return string.Empty;
             }
         }
         public string Week(string time)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"DATEPART(WEEK, {time})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"WEEK({time})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"strftime('%W', {time})";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"EXTRACT(WEEK FROM {time})";
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     return string.Empty;
             }
         }
         public string Second(string time)
         {
-            if (SqlType == SqlType.SQLite)
+            if (FSqlType == FSqlType.SQLite)
             {
                 return $"strftime('%S', {time})";
             }
-            else if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            else if (FSqlType == FSqlType.SqlServer || FSqlType == FSqlType.SqlServerCe)
             {
                 return $"DATEPART(second,{time})";
             }
@@ -516,10 +514,10 @@ SELECT date_trunc('quarter', '2023-10-23'::TIMESTAMP);--pgsql
         }
         public string? NetWorkDays(string timeA, string timeB, IEnumerable<string> times)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     {
                         return $@"
 SELECT COUNT(*)
@@ -533,7 +531,7 @@ FROM (
 ) AS [___NetWorkDays]
 ";
                     }
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     {
                         return $@"
 SELECT COUNT(*)
@@ -552,7 +550,7 @@ FROM (
 ) AS `___NetWorkDays`
 ";
                     }
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     {
                         return $@"
 SELECT COUNT(*) FROM (
@@ -565,7 +563,7 @@ SELECT COUNT(*) FROM (
 )
 ";
                     }
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     {
                         return $@"
 SELECT COUNT(*)
@@ -586,61 +584,61 @@ FROM (
         }
         public string Now()
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return "strftime('%Y-%m-%d %H:%M:%S', 'now', 'localtime')";
-                case SqlType.SqlServer:
+                case FSqlType.SqlServer:
                     return "GETDATE()";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return "CURRENT_TIMESTAMP";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                 default:
                     return "NOW()";
             }
         }
         public string NowWithMill()
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return "strftime('%Y-%m-%d %H:%M:%f', 'now', 'localtime')";
-                case SqlType.SqlServer:
+                case FSqlType.SqlServer:
                     return "GETDATE()";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return "NOW()";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                 default:
                     return "NOW(3)";
             }
         }
         public string ToDay()
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return "strftime('%Y-%m-%d 00:00:00', 'now', 'localtime')";
-                case SqlType.SqlServer:
+                case FSqlType.SqlServer:
                     return "CONVERT(DATETIME,CONVERT(VARCHAR(10),GETDATE(),120)+' 00:00:00',120)";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return "CAST(CURRENT_DATE||' 00:00:00' AS TIMESTAMP)";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                 default:
                     return "CAST(CONCAT(DATE_FORMAT(NOW(),'%Y-%m-%d'),' 00:00:00') AS DATETIME)";
             }
         }
         public string? Days(string timeA, string timeB)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"DATEDIFF(DAY, {timeA},{timeB})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"DATEDIFF({timeA}, {timeB})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"JULIANDAY({timeA}) - JULIANDAY({timeB})";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"DATE_PART('day', {timeA}::timestamp - {timeB}::timestamp)";
                 default:
                     return null;
@@ -648,10 +646,10 @@ FROM (
         }
         public string? Weakday(string time, string returnType)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer://@@DATEFIRST = ?
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer://@@DATEFIRST = ?
                     return $@" 
     CASE {returnType} 
         WHEN 1 THEN DATEPART(WEEKDAY, {time})
@@ -661,7 +659,7 @@ FROM (
         ELSE NULL
     END
 ";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $@"
     CASE {returnType} 
         WHEN 1 THEN DAYOFWEEK({time})
@@ -677,7 +675,7 @@ FROM (
         ELSE NULL
     END
 ";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $@"
 SELECT
     CASE {returnType}
@@ -694,7 +692,7 @@ SELECT
         ELSE NULL
     END
 ";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $@"
 SELECT 
     CASE {returnType}
@@ -711,16 +709,16 @@ SELECT
         }
         public string? WeakNum(string time)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"DATEPART(WEEK, {time})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"WEEK({time})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"STRFTIME('%W', {time})";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"EXTRACT(WEEK FROM DATE {time}::timestamp)";
                 default:
                     return null;
@@ -728,10 +726,10 @@ SELECT
         }
         public string? WorkDay(string time, string days, IEnumerable<string> holidays)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $@"
 SELECT COUNT(*)
 FROM(
@@ -742,11 +740,11 @@ WHERE type = 'P'
   AND DATEADD(day, number, {time}) NOT IN ({string.Join(",", holidays)})
   AND DATEPART(WEEKDAY, DATEADD(day, number, {time})) NOT IN (1, 7)
 ) AS [___WeakNum]";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"WEEK({time})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"STRFTIME('%W', {time})";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"EXTRACT(WEEK FROM DATE {time}::timestamp)";
                 default:
                     return null;

@@ -1,6 +1,4 @@
-﻿using DatabaseSchemaReader.DataSchema;
-
-namespace FastBIRe.Creating
+﻿namespace FastBIRe.Creating
 {
     public class DatabaseCreateAdapter : IDatabaseCreateAdapter
     {
@@ -145,22 +143,22 @@ END $$;",
         {
             return string.Format(DropTableSqlFormatIfExistsFormat, table);
         }
-        public static DatabaseCreateAdapter? Get(SqlType sqlType)
+        public static DatabaseCreateAdapter? Get(FSqlType sqlType)
         {
             switch (sqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return SqlServer;
-                case SqlType.Oracle:
+                case FSqlType.Oracle:
                     return Oracle;
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return MySql;
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return Sqlite;
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return PostgreSql;
-                case SqlType.DuckDB:
+                case FSqlType.DuckDB:
                     return DuckDb;
                 default:
                     return null;

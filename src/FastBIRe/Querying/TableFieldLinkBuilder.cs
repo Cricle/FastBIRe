@@ -48,7 +48,7 @@ namespace FastBIRe.Querying
             var destTable = reader.Table(destTableName);
             if (destTable == null)
                 Throws.ThrowTableNotFound(destTableName);
-            return new TableFieldLinkBuilder(sourceTable!, destTable!, FunctionMapper.Get(reader.SqlType!.Value)!);
+            return new TableFieldLinkBuilder(sourceTable!, destTable!, FunctionMapper.Get((FSqlType)reader.SqlType!.Value)!);
         }
     }
 }

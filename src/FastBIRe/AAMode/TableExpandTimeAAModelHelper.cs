@@ -48,7 +48,7 @@ namespace FastBIRe.AAMode
             if (request.WithDataMigration && cmp.Count != 0)
             {
                 //Some column migrate
-                var sqlType = reader.SqlType!.Value;
+                var sqlType = (FSqlType)reader.SqlType!.Value;
                 foreach (var item in affectColumns)
                 {
                     request.Scripts.Add($"UPDATE {sqlType.Wrap(request.TableName)} SET {sqlType.Wrap(item.Name)} = {item.FormatExpression(string.Empty)}");

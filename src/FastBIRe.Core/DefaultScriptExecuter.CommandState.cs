@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.Common;
+﻿using System.Data.Common;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace FastBIRe
 {
@@ -125,7 +122,7 @@ namespace FastBIRe
             {
                 Executer.ScriptStated?.Invoke(Executer, ScriptExecuteEventArgs.Executed(Executer.Connection, command, ScriptUnit!.Value, recordsAffected, Trace, Executer.dbTransaction));
             }
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
             public void RaiseCreateBatch(DbBatch batch)
             {
                 Executer.ScriptStated?.Invoke(Executer, ScriptExecuteEventArgs.CreatedBatch(Executer.Connection, ScriptUnits!, batch, Trace, Executer.dbTransaction));
@@ -170,14 +167,14 @@ namespace FastBIRe
             }
 #endif
             public void RaiseException(DbCommand? command
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 , DbBatch? batch
 #endif
                 , Exception exception)
             {
                 if (IsBatch)
                 {
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                     if (batch != null)
                     {
                         Executer.ScriptStated?.Invoke(Executer, ScriptExecuteEventArgs.Exception(Executer.Connection, batch, ScriptUnits!, exception, Trace, Executer.dbTransaction));

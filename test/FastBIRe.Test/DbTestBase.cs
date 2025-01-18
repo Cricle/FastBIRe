@@ -2,7 +2,7 @@
 {
     public abstract class DbTestBase
     {
-        public string Quto(SqlType type, string name)
+        public string Quto(FSqlType type, string name)
         {
             return type.Wrap(name);
         }

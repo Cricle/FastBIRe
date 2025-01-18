@@ -20,7 +20,7 @@ namespace FastBIRe.Farm
         {
             ScriptExecuter = scriptExecuter;
             DatabaseReader = databaseReader;
-            SqlType = databaseReader.SqlType!.Value;
+            SqlType = (FSqlType)databaseReader.SqlType!.Value;
             TableHelper = new TableHelper(SqlType);
             DatabaseCreateAdapter = SqlType.GetDatabaseCreateAdapter()!;
         }
@@ -31,7 +31,7 @@ namespace FastBIRe.Farm
 
         public DbConnection Connection => ScriptExecuter.Connection;
 
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         public TableHelper TableHelper { get; }
 
@@ -77,7 +77,7 @@ namespace FastBIRe.Farm
                 }
                 scripts.Add(DatabaseCreateAdapter.DropTableIfExists(copyTable.Name));
             }
-            var ddlFactory = new DdlGeneratorFactory(SqlType);
+            var ddlFactory = new DdlGeneratorFactory((SqlType)SqlType);
             var ddlTable = ddlFactory.TableGenerator(copyTable).Write();
             scripts.Add(ddlTable);
             return scripts;
@@ -150,7 +150,7 @@ namespace FastBIRe.Farm
                     var sb = new StringBuilder(header);
                     while (cur.MoveNext())
                     {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_1
                         sb.Append($"({string.Join(",", cur.Current.Select(x => SqlType.WrapValue(x)))})");
 #else
                         sb.Append('(');
@@ -181,7 +181,7 @@ namespace FastBIRe.Farm
         }
         public virtual async Task InsertAsync(string tableName, IEnumerable<string> columnNames, IEnumerable<object?> values, CancellationToken token = default)
         {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_1
             var sql = $"INSERT INTO {SqlType.Wrap(tableName)}({string.Join(",", columnNames.Select(x => SqlType.Wrap(x)))}) VALUES({string.Join(",", values.Select(x => SqlType.WrapValue(x)))})";
 #else
             var sb = new StringBuilder("INSERT INTO ");

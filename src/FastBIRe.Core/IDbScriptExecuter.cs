@@ -1,11 +1,11 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿
 using System.Data.Common;
 
 namespace FastBIRe
 {
     public interface IDbScriptExecuter : IDbScriptTransaction, IScriptExecuter
     {
-        SqlType SqlType { get; }
+        FSqlType SqlType { get; }
 
         DbConnection Connection { get; }
     }

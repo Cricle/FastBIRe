@@ -14,7 +14,7 @@ namespace FastBIRe.Triggering
         {
         }
 
-        public static EffectTriggerSettingItem Trigger(string field, SqlType sqlType)
+        public static EffectTriggerSettingItem Trigger(string field, FSqlType sqlType)
         {
             var qutoName = sqlType.Wrap(field);
             var triggerField = $"NEW.{qutoName}";

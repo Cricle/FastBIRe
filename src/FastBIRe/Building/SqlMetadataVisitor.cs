@@ -8,7 +8,7 @@ namespace FastBIRe.Building
 {
     public static class SqlMetadataVisitorToExtensions
     {
-        public static string ToSql(this IQueryMetadata metadata, SqlType sqlType)
+        public static string ToSql(this IQueryMetadata metadata, FSqlType sqlType)
         {
             var visitor = new SqlMetadataVisitor(sqlType);
             visitor.Visit(metadata, visitor.CreateContext(metadata));
@@ -25,7 +25,7 @@ namespace FastBIRe.Building
         private int? offset;
         private int? limit;
 
-        public SqlMetadataVisitor(SqlType sqlType)
+        public SqlMetadataVisitor(FSqlType sqlType)
         {
             SqlType = sqlType;
             Escaper = sqlType.GetEscaper();
@@ -33,7 +33,7 @@ namespace FastBIRe.Building
             TableHelper = sqlType.GetTableHelper()!;
         }
 
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         public IEscaper Escaper { get; }
 

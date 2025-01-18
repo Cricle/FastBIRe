@@ -1,4 +1,4 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿
 using FastBIRe.Functions;
 using FastBIRe.Wrapping;
 using System.Data;
@@ -8,27 +8,27 @@ namespace FastBIRe
 {
     public partial class FunctionMapper
     {
-        public static readonly FunctionMapper MySql = new FunctionMapper(SqlType.MySql);
-        public static readonly FunctionMapper Sqlite = new FunctionMapper(SqlType.SQLite);
-        public static readonly FunctionMapper PostgreSql = new FunctionMapper(SqlType.PostgreSql);
-        public static readonly FunctionMapper SqlServer = new FunctionMapper(SqlType.SqlServer);
+        public static readonly FunctionMapper MySql = new FunctionMapper(FSqlType.MySql);
+        public static readonly FunctionMapper Sqlite = new FunctionMapper(FSqlType.SQLite);
+        public static readonly FunctionMapper PostgreSql = new FunctionMapper(FSqlType.PostgreSql);
+        public static readonly FunctionMapper SqlServer = new FunctionMapper(FSqlType.SqlServer);
 
-        public static FunctionMapper? Get(SqlType sqlType)
+        public static FunctionMapper? Get(FSqlType sqlType)
         {
             switch (sqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return SqlServer;
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return MySql;
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return Sqlite;
-                case SqlType.DuckDB:
-                case SqlType.PostgreSql:
+                case FSqlType.DuckDB:
+                case FSqlType.PostgreSql:
                     return PostgreSql;
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     return null;
             }
@@ -62,15 +62,15 @@ namespace FastBIRe
             return sb.ToString();
         }
 
-        public FunctionMapper(SqlType sqlType)
+        public FunctionMapper(FSqlType sqlType)
         {
-            SqlType = sqlType;
+            FSqlType = sqlType;
             Escaper = sqlType.GetEscaper();
         }
 
         public IEscaper Escaper { get; }
 
-        public SqlType SqlType { get; }
+        public FSqlType FSqlType { get; }
 
         private string CastMySql(string input, DbType dbType)
         {
@@ -226,19 +226,19 @@ namespace FastBIRe
         }
         public string? Cast(string input, DbType dbType)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return CastSqlServer(input, dbType);
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return CastMySql(input, dbType);
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return CastSqlite(input, dbType);
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return CastPostgresql(input, dbType);
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     return null;
             }
@@ -250,7 +250,7 @@ namespace FastBIRe
         public string? Value<T>(T value)
         {
             var str = Escaper.WrapValue(value);
-            if (value is string && str != null && SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+            if (value is string && str != null && FSqlType == FSqlType.SqlServer || FSqlType == FSqlType.SqlServerCe)
             {
                 str = "N" + str;
             }
@@ -294,15 +294,15 @@ namespace FastBIRe
         }
         public string? Version()
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"@@VERSION";
-                case SqlType.PostgreSql:
-                case SqlType.MySql:
+                case FSqlType.PostgreSql:
+                case FSqlType.MySql:
                     return $"VERSION()";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"sqlite_version()";
                 default:
                     return null;
@@ -310,7 +310,7 @@ namespace FastBIRe
         }
         public string Coalesce(string input, string nullIf)
         {
-            if (SqlType == SqlType.SQLite)
+            if (FSqlType == FSqlType.SQLite)
             {
                 return $"IFNULL({input}, {nullIf})";
             }
@@ -318,40 +318,40 @@ namespace FastBIRe
         }
         public string? GuidString()
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return "NEWID()";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return "UUID()";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return "HEX(randomblob(16))";
-                case SqlType.DuckDB:
-                case SqlType.PostgreSql:
+                case FSqlType.DuckDB:
+                case FSqlType.PostgreSql:
                     return "gen_random_uuid()::text";
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     return null;
             }
         }
         public string? GuidBinary()
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return "NEWID()";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return "UUID_TO_BIN(UUID())";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return "randomblob(16)";
-                case SqlType.DuckDB:
-                case SqlType.PostgreSql:
+                case FSqlType.DuckDB:
+                case FSqlType.PostgreSql:
                     return "decode(replace(gen_random_uuid()::text, '-', ''), 'hex')";
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     return null;
             }

@@ -19,7 +19,7 @@ namespace FastBIRe.Benchmarks.Actions
         [GlobalSetup]
         public void Setup()
         {
-            connection = ConnectionProvider.GetDbMigration(SqlType.MySql, "sakila");
+            connection = ConnectionProvider.GetDbMigration(FSqlType.MySql, "sakila");
             scriptExecuter = new DefaultScriptExecuter(connection);
             _ = AddressObjectModel.Instance;
         }

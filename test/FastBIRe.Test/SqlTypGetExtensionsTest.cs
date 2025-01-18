@@ -8,33 +8,33 @@ namespace FastBIRe.Test
         [TestMethod]
         public void MethodWrapperSqlServer()
         {
-            Assert.AreEqual(DefaultEscaper.SqlServer, SqlTypGetExtensions.GetEscaper(SqlType.SqlServer));
-            Assert.AreEqual(DefaultEscaper.SqlServer, SqlTypGetExtensions.GetEscaper(SqlType.SqlServerCe));
+            Assert.AreEqual(DefaultEscaper.SqlServer, SqlTypGetExtensions.GetEscaper(FSqlType.SqlServer));
+            Assert.AreEqual(DefaultEscaper.SqlServer, SqlTypGetExtensions.GetEscaper(FSqlType.SqlServerCe));
         }
         [TestMethod]
         public void MethodWrapperMySql()
         {
-            Assert.AreEqual(DefaultEscaper.MySql, SqlTypGetExtensions.GetEscaper(SqlType.MySql));
+            Assert.AreEqual(DefaultEscaper.MySql, SqlTypGetExtensions.GetEscaper(FSqlType.MySql));
         }
         [TestMethod]
         public void MethodWrapperSqlite()
         {
-            Assert.AreEqual(DefaultEscaper.Sqlite, SqlTypGetExtensions.GetEscaper(SqlType.SQLite));
+            Assert.AreEqual(DefaultEscaper.Sqlite, SqlTypGetExtensions.GetEscaper(FSqlType.SQLite));
         }
         [TestMethod]
         public void MethodWrapperOracle()
         {
-            Assert.AreEqual(DefaultEscaper.Oracle, SqlTypGetExtensions.GetEscaper(SqlType.Oracle));
+            Assert.AreEqual(DefaultEscaper.Oracle, SqlTypGetExtensions.GetEscaper(FSqlType.Oracle));
         }
         [TestMethod]
         public void MethodWrapperPostgreSql()
         {
-            Assert.AreEqual(DefaultEscaper.PostgreSql, SqlTypGetExtensions.GetEscaper(SqlType.PostgreSql));
+            Assert.AreEqual(DefaultEscaper.PostgreSql, SqlTypGetExtensions.GetEscaper(FSqlType.PostgreSql));
         }
         [TestMethod]
         public void MethodWrapperOther()
         {
-            Assert.ThrowsException<NotSupportedException>(() => SqlTypGetExtensions.GetEscaper(SqlType.Db2));
+            Assert.ThrowsException<NotSupportedException>(() => SqlTypGetExtensions.GetEscaper(FSqlType.Db2));
         }
     }
 }

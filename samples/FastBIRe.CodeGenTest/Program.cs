@@ -49,7 +49,7 @@ internal class Program
 
     public static string CreateInsertSql()
     {
-        return StudentModel.Instance.CreateInsertSql(SqlType.SQLite, "student", new Student
+        return StudentModel.Instance.CreateInsertSql(FSqlType.SQLite, "student", new Student
         {
             Age = Random.Shared.Next(),
             Flag = Random.Shared.Next(),

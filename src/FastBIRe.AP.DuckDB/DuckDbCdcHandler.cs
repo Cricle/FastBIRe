@@ -41,7 +41,7 @@ namespace FastBIRe.AP.DuckDB
 
         public ICheckpointStorage CheckpointStorage { get; }
 
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         public DatabaseTable Table { get; }
 

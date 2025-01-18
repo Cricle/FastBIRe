@@ -2,19 +2,18 @@
 
 	<Import Project="..\..\eng\pkg.props" />
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
+		<TargetFramework>netstandard2.1</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
-		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<NoWarn>IDE0130</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Npgsql" Version="8.0.3" />
+	  <PackageReference Include="Fast.Diagnostics.Generator" Version="1.2.0-preview.60" />
 	</ItemGroup>
-
 	<ItemGroup>
-		<ProjectReference Include="..\FastBIRe.Cdc\FastBIRe.Cdc.csproj" />
+		<InternalsVisibleTo Include="FastBIRe"/>
 	</ItemGroup>
-
 </Project>

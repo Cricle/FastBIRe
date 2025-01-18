@@ -55,7 +55,7 @@ namespace FastBIRe
             return res;
         }
 
-        public static InterpolatedResult Parse(SqlType sqlType, FormattableString formattableString, string argPrefx = "p")
+        public static InterpolatedResult Parse(FSqlType sqlType, FormattableString formattableString, string argPrefx = "p")
         {
             var escaper = sqlType.GetEscaper();
             var inputArgs = formattableString.GetArguments();

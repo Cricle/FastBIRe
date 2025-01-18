@@ -41,7 +41,7 @@ namespace FastBIRe.Cdc.Triggers
         {
             ScriptExecuter = scriptExecuter;
             Reader = new DatabaseReader(scriptExecuter.Connection) { Owner = ScriptExecuter.Connection.Database };
-            SqlType = Reader.SqlType!.Value;
+            SqlType = (FSqlType)Reader.SqlType!.Value;
             TableHelper = SqlType.GetTableHelper()!;
             FunctionMapper = FunctionMapper.Get(SqlType)!;
             AffectTableNameGenerator = affectTableNameGenerator;
@@ -54,7 +54,7 @@ namespace FastBIRe.Cdc.Triggers
 
         public IDbScriptExecuter ScriptExecuter { get; }
 
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         public DatabaseReader Reader { get; }
 
@@ -95,12 +95,12 @@ namespace FastBIRe.Cdc.Triggers
 
         public Task<bool> IsDatabaseCdcEnableAsync(string databaseName, CancellationToken token = default)
         {
-            return Task.FromResult(SqlType != SqlType.DuckDB);
+            return Task.FromResult(SqlType != FSqlType.DuckDB);
         }
 
         public Task<bool> IsDatabaseSupportAsync(CancellationToken token = default)
         {
-            return Task.FromResult(SqlType != SqlType.DuckDB);
+            return Task.FromResult(SqlType != FSqlType.DuckDB);
         }
 
         public Task<int> RemoveOkedAsync(string tableName, int? batchSize, CancellationToken token = default)
@@ -127,7 +127,7 @@ namespace FastBIRe.Cdc.Triggers
                 {
                     var affectTriggerName = AffectTriggerNameGenerator.Create(new object[] { tableName, forDbActions[i].ToString() });
                     var triggerBody = string.Join("\n", CreateTriggerScripts(tableName, affectTableName, affectTriggerName, targetTable, forDbActions[i], true));
-                    ok &= targetTable.Triggers.Any(x => x.Name == affectTriggerName && (SqlType == SqlType.PostgreSql || SqlEqualityComparer.Equals(x.TriggerBody, triggerBody)));
+                    ok &= targetTable.Triggers.Any(x => x.Name == affectTriggerName && (SqlType == FSqlType.PostgreSql || SqlEqualityComparer.Equals(x.TriggerBody, triggerBody)));
                     if (!ok)
                     {
                         break;
@@ -147,7 +147,7 @@ namespace FastBIRe.Cdc.Triggers
             var key = "NEW";
             if (action == TriggerTypes.AfterDelete || action == TriggerTypes.BeforeDelete)
             {
-                if (SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe)
+                if (SqlType == FSqlType.SqlServer || SqlType == FSqlType.SqlServerCe)
                 {
                     key = "DELETED";
                 }
@@ -161,24 +161,24 @@ namespace FastBIRe.Cdc.Triggers
             string body = string.Empty;
             switch (SqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     body = $"INSERT INTO {SqlType.Wrap(affectTableName)}({columnJoined}) SELECT {columnOnlyJoined}, {FunctionMapper.NowWithMill()}, {SqlType.WrapValue((int)action)},{SqlType.WrapValue(false)},{FunctionMapper.GuidBinary()} FROM INSERTED;";
                     break;
-                case SqlType.MySql:
-                case SqlType.SQLite:
-                case SqlType.PostgreSql:
+                case FSqlType.MySql:
+                case FSqlType.SQLite:
+                case FSqlType.PostgreSql:
                     body = $"INSERT INTO {SqlType.Wrap(affectTableName)}({columnJoined}) VALUES ({valueJoined});";
                     break;
-                case SqlType.Db2:
-                case SqlType.DuckDB:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.DuckDB:
+                case FSqlType.Oracle:
                 default:
                     throw new NotSupportedException(SqlType.ToString());
             }
             if (onlyBody)
             {
-                if (SqlType == SqlType.MySql)
+                if (SqlType == FSqlType.MySql)
                 {
                     body = $"BEGIN {body} END;";
                 }
@@ -217,23 +217,23 @@ namespace FastBIRe.Cdc.Triggers
 
         public Task<bool?> TryEnableDatabaseCdcAsync(string databaseName, CancellationToken token = default)
         {
-            return Task.FromResult<bool?>(SqlType != SqlType.DuckDB);
+            return Task.FromResult<bool?>(SqlType != FSqlType.DuckDB);
         }
         private string GetDateTimeType()
         {
             switch (SqlType)
             {
-                case SqlType.MySql:
-                case SqlType.PostgreSql:
-                case SqlType.DuckDB:
+                case FSqlType.MySql:
+                case FSqlType.PostgreSql:
+                case FSqlType.DuckDB:
                     return $"datetime(3)";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return "TEXT";
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"datetime2";
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     throw new NotSupportedException(SqlType.ToString());
             }
@@ -242,18 +242,18 @@ namespace FastBIRe.Cdc.Triggers
         {
             switch (SqlType)
             {
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"BINARY(16)";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return "BLOB";
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"UNIQUEIDENTIFIER";
-                case SqlType.PostgreSql:
-                case SqlType.DuckDB:
+                case FSqlType.PostgreSql:
+                case FSqlType.DuckDB:
                     return "uuid";
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     throw new NotSupportedException(SqlType.ToString());
             }
@@ -290,7 +290,7 @@ namespace FastBIRe.Cdc.Triggers
             var targetTable = Reader.Table(tableName, ReadTypes.Columns, token);
             var affectTableName = AffectTableNameGenerator.Create(new[] { tableName });
             var table = CreateAffectTable(targetTable, affectTableName);
-            var createTableScript = new DdlGeneratorFactory(SqlType).TableGenerator(table).Write();
+            var createTableScript = new DdlGeneratorFactory((SqlType)SqlType).TableGenerator(table).Write();
             var scripts = new List<string> { createTableScript };
             if (table != null)
             {

@@ -48,7 +48,7 @@ namespace FastBIRe.AAMode
                     return;
                 }
                 //Drop the old table
-                var dropTableSql = reader.SqlType!.Value.GetDatabaseCreateAdapter()!
+                var dropTableSql = ((FSqlType)reader.SqlType!.Value).GetDatabaseCreateAdapter()!
                     .DropTableIfExists(effectTableName);
                 request.Scripts.Add(dropTableSql);
             }

@@ -5,13 +5,13 @@ namespace FastBIRe
 {
     public static class IndexByteLenHelper
     {
-        public static async Task<int> GetIndexByteLenAsync(DbConnection connection, SqlType sqlType, int timeOut = 60 * 5, CancellationToken token = default)
+        public static async Task<int> GetIndexByteLenAsync(DbConnection connection, FSqlType sqlType, int timeOut = 60 * 5, CancellationToken token = default)
         {
             string? sql;
             switch (sqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     sql = @"SELECT
     CASE WHEN CONVERT(NVARCHAR(128),SERVERPROPERTY('Edition')) LIKE '%Enterprise Edition%'
         THEN 900
@@ -24,18 +24,18 @@ namespace FastBIRe
         ELSE 400
     END AS max_index_length;";
                     break;
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     //768~3072
                     sql = "SHOW VARIABLES LIKE 'innodb_large_prefix';";
                     break;
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     sql = "PRAGMA page_size;";
                     break;
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     sql = "SELECT current_setting('block_size')::int * 32767;";
                     break;
-                case SqlType.Oracle:
-                case SqlType.Db2:
+                case FSqlType.Oracle:
+                case FSqlType.Db2:
                 default:
                     throw new NotSupportedException(sqlType.ToString());
             }
@@ -47,12 +47,12 @@ namespace FastBIRe
                 var scan = await command.ExecuteScalarAsync(token);
                 switch (sqlType)
                 {
-                    case SqlType.SqlServer:
-                    case SqlType.SqlServerCe:
-                    case SqlType.SQLite:
-                    case SqlType.PostgreSql:
+                    case FSqlType.SqlServer:
+                    case FSqlType.SqlServerCe:
+                    case FSqlType.SQLite:
+                    case FSqlType.PostgreSql:
                         return Convert.ToInt32(scan);
-                    case SqlType.MySql:
+                    case FSqlType.MySql:
                         if (scan == null)
                         {
                             return 768;

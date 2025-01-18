@@ -9,7 +9,7 @@ namespace FastBIRe.CdcSample
     {
         public async Task Start()
         {
-            var mysql = ConnectionProvider.GetDbMigration(DatabaseSchemaReader.DataSchema.SqlType.PostgreSql, "test1");
+            var mysql = ConnectionProvider.GetDbMigration(FSqlType.PostgreSql, "test1");
             var rconn = new LogicalReplicationConnection($"host=192.168.1.101;port=5432;username=postgres;password=Syc123456.;Database=test1");
             await rconn.Open();
 

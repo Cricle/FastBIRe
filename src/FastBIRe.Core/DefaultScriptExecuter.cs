@@ -1,4 +1,4 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿
 using FastBIRe.Internals;
 using FastBIRe.Wrapping;
 using System.Data.Common;
@@ -11,10 +11,42 @@ namespace FastBIRe
         {
             _ = ScriptExecuterEventSource.Instance;//Active event source
         }
+        private static FSqlType? Convert(string providerName)
+        {
+            if (string.IsNullOrEmpty(providerName)) return null;
+
+            if (providerName.Equals("System.Data.SqlClient", StringComparison.OrdinalIgnoreCase))
+                return FSqlType.SqlServer;
+            if (providerName.Equals("Microsoft.Data.SqlClient", StringComparison.OrdinalIgnoreCase))
+                return FSqlType.SqlServer;
+            if (providerName.IndexOf("SQLite", StringComparison.OrdinalIgnoreCase) != -1)
+            {
+                return FSqlType.SQLite;
+            }
+            if (providerName.IndexOf("Oracle", StringComparison.OrdinalIgnoreCase) != -1)
+            {
+                return FSqlType.Oracle;
+            }
+            if (providerName.IndexOf("MySql", StringComparison.OrdinalIgnoreCase) != -1)
+            {
+                return FSqlType.MySql;
+            }
+            if (providerName.Equals("System.Data.SqlServerCe.4.0", StringComparison.OrdinalIgnoreCase))
+                return FSqlType.SqlServerCe;
+            if (providerName.Equals("Npgsql", StringComparison.OrdinalIgnoreCase) ||
+                providerName.Equals("Devart.Data.PostgreSql", StringComparison.OrdinalIgnoreCase))
+                return FSqlType.PostgreSql;
+            if (providerName.Equals("IBM.Data.DB2", StringComparison.OrdinalIgnoreCase))
+                return FSqlType.Db2;
+            if (providerName.Equals("DuckDB.NET.Data", StringComparison.OrdinalIgnoreCase))
+                return FSqlType.DuckDB;
+
+            return null;
+        }
         public DefaultScriptExecuter(DbConnection connection)
         {
             Connection = connection ?? throw new ArgumentNullException(nameof(connection));
-            var sqlType = Connection.GetSqlType();
+            var sqlType = Convert(Connection.GetType().Name);
             if (sqlType == null)
             {
                 throw new NotSupportedException(connection.GetType().FullName);
@@ -31,7 +63,7 @@ namespace FastBIRe
 
         public DbConnection Connection { get; }
 
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         public IEscaper Escaper { get; }
 

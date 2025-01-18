@@ -19,7 +19,7 @@ namespace FastBIRe
         {
             this.executer = executer ?? throw new ArgumentNullException(nameof(executer));
             TableProvider = tableProvider ?? throw new ArgumentNullException(nameof(tableProvider));
-            SqlType = executer.SqlType;
+            SqlType = (FSqlType)executer.SqlType;
             Escaper = SqlType.GetEscaper();
         }
 
@@ -56,7 +56,7 @@ namespace FastBIRe
             }
         }
 
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         public DbConnection Connection => Executer.Connection;
 

@@ -2,7 +2,7 @@
 
 	<Import Project="..\..\eng\pkg.props" />
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net6.0;net7.0;net8.0</TargetFrameworks>
+		<TargetFrameworks>netstandard2.1;net6.0;net7.0;net8.0</TargetFrameworks>
 		<LangVersion>latest</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
@@ -20,6 +20,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\dbschemareader\DatabaseSchemaReader\DatabaseSchemaReader.csproj" />
 		<ProjectReference Include="../FastBIRe.ModelGen/FastBIRe.ModelGen.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" OutputItemType="None" />
+		<ProjectReference Include="..\FastBIRe.Core\FastBIRe.Core.csproj" />
 		<PackageReference Include="Fast.Diagnostics.Generator" Version="1.2.0-preview.60" />
 	</ItemGroup>
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

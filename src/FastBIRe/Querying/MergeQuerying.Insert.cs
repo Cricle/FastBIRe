@@ -44,7 +44,7 @@ namespace FastBIRe.Querying
                 var effectQuto = request.Wrap(request.EffectTable.Name);
                 var effectAsExp = $"{effectQuto} AS {effectTableAliasQuto}";
                 var effectWhere = string.Join(" AND ", request.EffectTable.Columns.Select(x => $"({sourceTableAliasQuto}.{request.Wrap(x.Name)} = {effectTableAliasQuto}.{request.Wrap(x.Name)} OR ({sourceTableAliasQuto}.{request.Wrap(x.Name)} IS NULL AND {effectTableAliasQuto}.{request.Wrap(x.Name)} IS NULL))"));
-                if (request.SqlType.Ors(SqlType.SqlServer, SqlType.SqlServerCe, SqlType.PostgreSql, SqlType.SQLite))
+                if (request.SqlType.Ors(FSqlType.SqlServer, FSqlType.SqlServerCe, FSqlType.PostgreSql, FSqlType.SQLite))
                 {
                     sql.AppendLine($"{sourceTableAsExp} WHERE EXISTS ( ");
                     sql.AppendLine($"SELECT 1 FROM {effectAsExp} WHERE {effectWhere}");
@@ -80,7 +80,7 @@ namespace FastBIRe.Querying
             var destTableAsExp = $"{destTableQuto} AS {destTableAliasQuto}";
             var groupLinkWhere = request.GroupLinks.Select(x => $"{x.FormatExpression(request.SqlType, sourceTableAlias)} = {destTableAliasQuto}.{request.Wrap(x.DestColumn.Name)}").ToList();
             var groupLinkStrings = string.Join(" AND ", groupLinkWhere);
-            if (request.SqlType.Ors(SqlType.SqlServer, SqlType.SqlServerCe, SqlType.PostgreSql, SqlType.SQLite) && request.UseEffectTable)
+            if (request.SqlType.Ors(FSqlType.SqlServer, FSqlType.SqlServerCe, FSqlType.PostgreSql, FSqlType.SQLite) && request.UseEffectTable)
             {
                 sql.Append(" AND ");
             }

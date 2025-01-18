@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Data;
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
 using System.Diagnostics.CodeAnalysis;
 #endif
 using System.Linq.Expressions;
@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 
 namespace FastBIRe
 {
-#if NETSTANDARD2_0
+#if NETSTANDARD2_1
     public static class ObjectMapper<T>
 #else
     public static class ObjectMapper<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.NonPublicConstructors | DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>

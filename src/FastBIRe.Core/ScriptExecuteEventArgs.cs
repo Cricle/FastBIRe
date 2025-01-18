@@ -72,7 +72,7 @@ namespace FastBIRe
             DbCommand? command,
             Exception? executeException,
             int? recordsAffected,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
             DbBatch? batch,
             DbBatchCommand? batchCommand,
 #endif
@@ -91,7 +91,7 @@ namespace FastBIRe
             }
             ExecuteException = executeException;
             RecordsAffected = recordsAffected;
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
             Batch = batch;
             BatchCommand = batchCommand;
 #endif
@@ -112,7 +112,7 @@ namespace FastBIRe
 
         public int? RecordsAffected { get; }
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
         public DbBatch? Batch { get; }
 
         public DbBatchCommand? BatchCommand { get; }
@@ -296,7 +296,7 @@ namespace FastBIRe
                 null,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif                
@@ -312,7 +312,7 @@ namespace FastBIRe
                 null,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif                
@@ -328,7 +328,7 @@ namespace FastBIRe
                 command,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -344,7 +344,7 @@ namespace FastBIRe
                 command,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -360,7 +360,7 @@ namespace FastBIRe
                 command,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -376,7 +376,7 @@ namespace FastBIRe
                 command,
                 null,
                 recordsAffected,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -392,7 +392,7 @@ namespace FastBIRe
                 command,
                 null,
                 recordsAffected,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -408,7 +408,7 @@ namespace FastBIRe
                 command,
                 exception,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -417,7 +417,7 @@ namespace FastBIRe
                 traceUnit,
                 dbTransaction);
         }
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
 
         public static ScriptExecuteEventArgs Exception(DbConnection connection,
             DbBatch dbBatch, IEnumerable<ScriptUnit> scriptUnits, Exception exception, TraceUnit traceUnit, DbTransaction? dbTransaction)
@@ -443,7 +443,7 @@ namespace FastBIRe
                 command,
                 exception,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -452,7 +452,7 @@ namespace FastBIRe
                 traceUnit,
                 dbTransaction);
         }
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
         public static ScriptExecuteEventArgs CreatedBatch(DbConnection connection, IEnumerable<ScriptUnit> scriptUnits, DbBatch batch, TraceUnit traceUnit, DbTransaction? dbTransaction)
         {
             return new ScriptExecuteEventArgs(ScriptExecutState.CreatedBatch,
@@ -503,7 +503,7 @@ namespace FastBIRe
                 null,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -519,7 +519,7 @@ namespace FastBIRe
                 null,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -535,7 +535,7 @@ namespace FastBIRe
                 command,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -551,7 +551,7 @@ namespace FastBIRe
                 command,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -567,7 +567,7 @@ namespace FastBIRe
                 null,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -583,7 +583,7 @@ namespace FastBIRe
                 null,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif
@@ -599,7 +599,7 @@ namespace FastBIRe
                 null,
                 null,
                 null,
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                 null,
                 null,
 #endif

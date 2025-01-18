@@ -1,4 +1,4 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿
 
 namespace FastBIRe
 {
@@ -10,7 +10,7 @@ namespace FastBIRe
         }
         public string True()
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return "1";
             }
@@ -18,7 +18,7 @@ namespace FastBIRe
         }
         public string False()
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return "0";
             }
@@ -26,7 +26,7 @@ namespace FastBIRe
         }
         public string And(IEnumerable<string> inputs)
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return $"CASE WHEN {string.Join(" AND ", inputs.Select(CaseInput))} THEN 1 ELSE 0 END";
             }
@@ -46,7 +46,7 @@ namespace FastBIRe
         }
         public string Or(IEnumerable<string> inputs)
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return $"CASE WHEN {string.Join(" OR ", inputs.Select(CaseInput))} THEN 1 ELSE 0 END";
             }
@@ -54,7 +54,7 @@ namespace FastBIRe
         }
         public string Not(string input)
         {
-            if (SqlType == SqlType.SqlServer)
+            if (FSqlType == FSqlType.SqlServer)
             {
                 return $"CASE WHEN {input}=1 THEN 0 ELSE 1 END";
             }

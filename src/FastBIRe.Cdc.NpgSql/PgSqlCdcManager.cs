@@ -136,7 +136,7 @@ namespace FastBIRe.Cdc.NpgSql
         }
         public Task<bool> IsReplicationSlotsExistsAsync(string database, string name, CancellationToken token = default)
         {
-            return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_replication_slots WHERE database={SqlType.PostgreSql.WrapValue(database)} AND slot_name={SqlType.PostgreSql.WrapValue(name)};", token: token);
+            return ScriptExecuter.ExistsAsync($"SELECT 1 FROM pg_replication_slots WHERE database={FSqlType.PostgreSql.WrapValue(database)} AND slot_name={FSqlType.PostgreSql.WrapValue(name)};", token: token);
         }
 
         public async Task<ICheckpoint?> GetLastCheckpointAsync(string databaseName, string tableName, CancellationToken token = default)

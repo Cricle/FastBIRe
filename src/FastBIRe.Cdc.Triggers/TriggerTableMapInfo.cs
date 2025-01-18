@@ -5,7 +5,7 @@ namespace FastBIRe.Cdc.Mssql
 {
     public class TriggerTableMapInfo : TableMapInfo
     {
-        public TriggerTableMapInfo(object id, string databaseName, string tableName, DatabaseTable table, SqlType sqlType)
+        public TriggerTableMapInfo(object id, string databaseName, string tableName, DatabaseTable table, FSqlType sqlType)
             : base(id, databaseName, tableName)
         {
             Table = table;

@@ -7,7 +7,7 @@ namespace FastBIRe.CdcSample
     {
         public async Task Start()
         {
-            var mssql = ConnectionProvider.GetDbMigration(DatabaseSchemaReader.DataSchema.SqlType.SqlServer, "test11");
+            var mssql = ConnectionProvider.GetDbMigration(FSqlType.SqlServer, "test11");
             var executer = new DefaultScriptExecuter(mssql);
             var comm = new MssqlCdcManager(executer);
             await comm.TryEnableDatabaseCdcAsync("test11");

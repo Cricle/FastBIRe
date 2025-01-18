@@ -1,4 +1,4 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿
 
 namespace FastBIRe
 {
@@ -70,15 +70,15 @@ namespace FastBIRe
         }
         public string? Rand()
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"RAND(CHECKSUM(NEWID()))";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"RAND()";
-                case SqlType.SQLite:
-                case SqlType.PostgreSql:
+                case FSqlType.SQLite:
+                case FSqlType.PostgreSql:
                     return $"RANDOM()";
                 default:
                     return null;
@@ -86,15 +86,15 @@ namespace FastBIRe
         }
         public string? RandBetween(string left, string right)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     return $"FLOOR(({right}-{left}+1)*RAND() + {left})";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"FLOOR(({right}-{left}+1)*RAND() + {left})";
-                case SqlType.SQLite:
-                case SqlType.PostgreSql:
+                case FSqlType.SQLite:
+                case FSqlType.PostgreSql:
                     return $"FLOOR(({right}-{left}+1)*RANDOM() + {left})";
                 default:
                     return null;
@@ -138,15 +138,15 @@ namespace FastBIRe
         }
         public string? Max(IEnumerable<string> inputs)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"SELECT MAX(value) FROM (VALUES {string.Join(",", inputs.Select(x => $"({x})"))}) AS t(value)";
-                case SqlType.PostgreSql:
-                case SqlType.MySql:
+                case FSqlType.PostgreSql:
+                case FSqlType.MySql:
                     return $"GREATEST({string.Join(",", inputs)})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"SELECT MAX(value) FROM ({string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS value" : string.Empty)}"))})";
                 default:
                     return null;
@@ -186,15 +186,15 @@ namespace FastBIRe
         }
         public string? Min(params string[] inputs)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"SELECT MIN(value) FROM (VALUES {string.Join(",", inputs.Select(x => $"({x})"))}) AS t(value)";
-                case SqlType.PostgreSql:
-                case SqlType.MySql:
+                case FSqlType.PostgreSql:
+                case FSqlType.MySql:
                     return $"LEAST({string.Join(",", inputs)})";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"SELECT MIN(value) FROM ({string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS value" : string.Empty)}"))})";
                 default:
                     return null;
@@ -202,10 +202,10 @@ namespace FastBIRe
         }
         public string? Median(params string[] inputs)
         {
-            switch (SqlType)
+            switch (FSqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $@"
 SELECT AVG(val)
 FROM 
@@ -219,7 +219,7 @@ FROM
 	WHERE t1.row_num IN ((SELECT COUNT(*) FROM (SELECT DISTINCT num FROM ({string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t) / 2 + 1, (SELECT COUNT(*) FROM (SELECT DISTINCT num FROM ({string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t) / 2 + ((SELECT COUNT(*) FROM (SELECT DISTINCT num FROM ({string.Join(" UNION ", inputs.Select((x, i) => $"SELECT {x} {(i == 0 ? "AS num" : string.Empty)}"))}) vals) t) % 2))
 ) t2
 ";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $@"SELECT AVG(val) AS median 
 FROM (
     SELECT val 
@@ -238,7 +238,7 @@ FROM (
     LIMIT 2
 ) t2
 ";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $@"
 SELECT AVG(val)
 FROM (
@@ -252,7 +252,7 @@ FROM (
   WHERE numbered_list.row_num IN (stats.floor_median, stats.ceil_median)
 ) subquery
 ";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $@"
 SELECT AVG(val)
 FROM 

@@ -141,7 +141,7 @@ USE [{dbName}];
 USE [{databaseName}];
 EXEC sys.sp_cdc_enable_table
   @source_schema = 'dbo',
-  @source_name = {SqlType.SqlServer.WrapValue(tableName)},
+  @source_name = {FSqlType.SqlServer.WrapValue(tableName)},
   @role_name = NULL;
 USE [{dbName}];
 ";
@@ -172,7 +172,7 @@ USE [{dbName}];
 USE [{databaseName}];
 EXEC sys.sp_cdc_disable_table
   @source_schema = 'dbo',
-  @source_name = {SqlType.SqlServer.WrapValue(tableName)},
+  @source_name = {FSqlType.SqlServer.WrapValue(tableName)},
   @capture_instance = 'ALL';
 USE [{dbName}];
 ";

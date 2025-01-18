@@ -4,26 +4,26 @@
     public class IndexByteLenHelperTest : DbTestBase
     {
         [TestMethod]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.PostgreSql)]
-        [DataRow(SqlType.SQLite)]
-        public async Task GetIndexByteLenAsync(SqlType sqlType)
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.PostgreSql)]
+        [DataRow(FSqlType.SQLite)]
+        public async Task GetIndexByteLenAsync(FSqlType sqlType)
         {
             var conn = databaseIniter.Get(sqlType);
             var len = await IndexByteLenHelper.GetIndexByteLenAsync(conn, sqlType);
             switch (sqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     Assert.AreEqual(1, len);
                     break;
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     Assert.AreEqual(768, len);
                     break;
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     Assert.AreEqual(4096, len);
                     break;
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     Assert.AreEqual(268427264, len);
                     break;
                 default:

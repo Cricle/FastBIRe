@@ -33,7 +33,7 @@ namespace FastBIRe.AAMode
             var equals = exists && TriggerIsEquals(reader, request, triggerName);
             if (exists && (!equals || OnlyDrop))
             {
-                var dropSqls = TriggerWriter.Drop(reader.SqlType!.Value, triggerName, request.ArchiveTable.Name);
+                var dropSqls = TriggerWriter.Drop((FSqlType)reader.SqlType!.Value, triggerName, request.ArchiveTable.Name);
                 request.AddScripts(dropSqls);
             }
             if (OnlyDrop)

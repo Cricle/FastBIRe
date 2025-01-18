@@ -72,7 +72,7 @@ namespace FastBIRe.AAMode
 
         public DatabaseTable Table => DatabaseReader.Table(TableName);
 
-        public SqlType SqlType => DatabaseReader.SqlType!.Value;
+        public FSqlType SqlType => (FSqlType)DatabaseReader.SqlType!.Value;
 
         public INameGenerator ExpandTriggerNameGenerator { get; }
 
@@ -94,7 +94,7 @@ namespace FastBIRe.AAMode
 
         public string UpdateTag { get; }
 
-        public FunctionMapper? FunctionMapper => FunctionMapper.Get(SqlType);
+        public FunctionMapper? FunctionMapper => FunctionMapper.Get((FSqlType)SqlType);
 
         public string PrimaryKeyName => PrimaryKeyNameGenerator.Create(new[] { TableName });
 
@@ -159,7 +159,7 @@ namespace FastBIRe.AAMode
             var extInsert = new EffectInsertTriggerAAModelHelper(EffectInsertTriggerNameGenerator, TriggerWriter);
             extInsert.TriggerDataStore = TriggerDataStore;
             extInsert.SqlEqualityComparer = SqlEqualityComparer;
-            extInsert.CheckRemote = SqlType != SqlType.PostgreSql;
+            extInsert.CheckRemote = SqlType != FSqlType.PostgreSql;
             helperDesc?.Invoke(extInsert);
             var request = new EffectTriggerAAModelRequest(sourceTable, destTable, effectTable);
             request.SettingItems.AddRange(effectTable.Columns.Select(x => EffectTriggerSettingItem.Trigger(x.Name, SqlType)));
@@ -169,7 +169,7 @@ namespace FastBIRe.AAMode
             var extUpdate = new EffectUpdateTriggerAAModelHelper(EffectUpdateTriggerNameGenerator, TriggerWriter);
             extUpdate.TriggerDataStore = TriggerDataStore;
             extUpdate.SqlEqualityComparer = SqlEqualityComparer;
-            extUpdate.CheckRemote = SqlType != SqlType.PostgreSql;
+            extUpdate.CheckRemote = SqlType != FSqlType.PostgreSql;
             helperDesc?.Invoke(extUpdate);
             request = new EffectTriggerAAModelRequest(sourceTable, destTable, effectTable);
             request.SettingItems.AddRange(effectTable.Columns.Select(x => EffectTriggerSettingItem.Trigger(x.Name, SqlType)));
@@ -189,7 +189,7 @@ namespace FastBIRe.AAMode
             var index = table.Indexes.FirstOrDefault(x => x.Name == name);
             if (index != null)
             {
-                var tableHelper = new TableHelper(SqlType);
+                var tableHelper = new TableHelper((FSqlType)SqlType);
                 return new[] { tableHelper.DropIndex(name, TableName) };
             }
             return Array.Empty<string>();
@@ -201,14 +201,14 @@ namespace FastBIRe.AAMode
             //Check the index exists
             var name = IndexNameGenerator.Create(new[] { TableName, field });
             var index = table.Indexes.FirstOrDefault(x => x.Name == name);
-            var tableHelper = new TableHelper(SqlType);
+            var tableHelper = new TableHelper((FSqlType)SqlType);
             if (index != null)
             {
                 //Check index ok?
                 if (index.Columns.Count == 1 &&
                     index.Columns[0].Name == field)
                 {
-                    if (SqlType == SqlType.SQLite)
+                    if (SqlType == FSqlType.SQLite)
                     {
                         return scripts;
                     }
@@ -229,11 +229,11 @@ namespace FastBIRe.AAMode
         {
             var scripts = new List<string>();
             var table = Table;
-            var ddl = new DdlGeneratorFactory(SqlType).MigrationGenerator();
+            var ddl = new DdlGeneratorFactory((SqlType)SqlType).MigrationGenerator();
             var pkName = PrimaryKeyName;
             if (table.PrimaryKey != null && table.PrimaryKey.Columns.Count != 0)
             {
-                var equals = SqlType == SqlType.SQLite || table.PrimaryKey.Name != pkName;
+                var equals = SqlType == FSqlType.SQLite || table.PrimaryKey.Name != pkName;
                 if (equals)
                 {
                     if (table.PrimaryKey.Columns.Count == columns.Count &&
@@ -286,7 +286,7 @@ namespace FastBIRe.AAMode
             if (!needReCreate)
             {
                 //Check remote if need
-                if (SqlType != SqlType.PostgreSql)
+                if (SqlType != FSqlType.PostgreSql)
                 {
                     if (!SqlEqualityComparer.Equals(trigger!.TriggerBody, nowScripts))
                     {
@@ -333,9 +333,9 @@ namespace FastBIRe.AAMode
 
             //Re read table 
             table = DatabaseReader.Table(TableName, ReadTypes.Columns | ReadTypes.CheckConstraints | ReadTypes.Pks);
-            var insertTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfInsert : TriggerTypes.BeforeInsert;
-            var updateTriggerTypes = SqlType == SqlType.SqlServer || SqlType == SqlType.SqlServerCe ? TriggerTypes.InsteadOfUpdate : TriggerTypes.BeforeUpdate;
-            if (SqlType == SqlType.SQLite)
+            var insertTriggerTypes = SqlType == FSqlType.SqlServer || SqlType == FSqlType.SqlServerCe ? TriggerTypes.InsteadOfInsert : TriggerTypes.BeforeInsert;
+            var updateTriggerTypes = SqlType == FSqlType.SqlServer || SqlType == FSqlType.SqlServerCe ? TriggerTypes.InsteadOfUpdate : TriggerTypes.BeforeUpdate;
+            if (SqlType == FSqlType.SQLite)
             {
                 insertTriggerTypes = TriggerTypes.AfterInsert;
                 updateTriggerTypes = TriggerTypes.AfterUpdate;
@@ -381,7 +381,7 @@ namespace FastBIRe.AAMode
                 return GetTableMigrationScript(changeFun, prepareTable);
             }
             var table = tableCreator();
-            var script = new DdlGeneratorFactory(SqlType).TableGenerator(table).Write();
+            var script = new DdlGeneratorFactory((SqlType)SqlType).TableGenerator(table).Write();
             return new[] { script };
         }
         public virtual IList<string> CreateTableIfNotExistsScript(Func<DatabaseTable> tableCreator)
@@ -391,7 +391,7 @@ namespace FastBIRe.AAMode
                 return Array.Empty<string>();
             }
             var table = tableCreator();
-            var script = new DdlGeneratorFactory(SqlType).TableGenerator(table).Write();
+            var script = new DdlGeneratorFactory((SqlType)SqlType).TableGenerator(table).Write();
             return new[] { script };
         }
         public virtual IList<string> GetTableMigrationScript(MigrationTableHandler changeFun, Action<DatabaseTable>? prepareTable = null)
@@ -401,7 +401,7 @@ namespace FastBIRe.AAMode
             prepareTable?.Invoke(oldTable);
             prepareTable?.Invoke(newTable);
             newTable = changeFun(oldTable, newTable);
-            var comp = CompareSchemas.FromTable(DatabaseReader.DatabaseSchema.ConnectionString, SqlType, oldTable, newTable).ExecuteResult();
+            var comp = CompareSchemas.FromTable(DatabaseReader.DatabaseSchema.ConnectionString, (SqlType)SqlType, oldTable, newTable).ExecuteResult();
             var scripts = comp.Select(x => x.Script).ToList();
             return scripts;
         }

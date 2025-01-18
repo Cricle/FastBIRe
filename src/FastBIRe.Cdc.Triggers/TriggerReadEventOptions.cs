@@ -1,10 +1,8 @@
-﻿using DatabaseSchemaReader.DataSchema;
-
-namespace FastBIRe.Cdc.Mssql
+﻿namespace FastBIRe.Cdc.Mssql
 {
     public class TriggerReadEventOptions
     {
-        public TriggerReadEventOptions(TriggerCdcListener listener, TriggerTableMapInfo table, SqlType sqlType, int batchSize)
+        public TriggerReadEventOptions(TriggerCdcListener listener, TriggerTableMapInfo table, FSqlType sqlType, int batchSize)
         {
             Listener = listener;
             Table = table;
@@ -16,7 +14,7 @@ namespace FastBIRe.Cdc.Mssql
 
         public TriggerTableMapInfo Table { get; }
 
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         public int BatchSize { get; }
     }

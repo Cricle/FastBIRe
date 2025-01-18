@@ -21,7 +21,7 @@ namespace FastBIRe.Builders
                 await context.Connection.OpenAsync();
             }
             var oldDatabase = context.Executer.Connection.Database;
-            var needsChangedDb = context.SqlType != SqlType.DuckDB && context.SqlType != SqlType.SQLite && database != oldDatabase && !string.IsNullOrWhiteSpace(oldDatabase);
+            var needsChangedDb = context.SqlType != FSqlType.DuckDB && context.SqlType != FSqlType.SQLite && database != oldDatabase && !string.IsNullOrWhiteSpace(oldDatabase);
 
             var adapter = context.SqlType.GetDatabaseCreateAdapter()!;
             var existsSql = adapter.CheckDatabaseExists(database);
@@ -31,14 +31,14 @@ namespace FastBIRe.Builders
                 if (needsChangedDb)
                 {
 
-#if NETSTANDARD2_0
+#if NETSTANDARD2_1
                         context.Executer.Connection.ChangeDatabase(database);
 #else
                     await context.Executer.Connection.ChangeDatabaseAsync(database);
 #endif
                 }
                 var tables = context.DatabaseReader.TablesQuickView();
-                var ddl = new DdlGeneratorFactory(context.SqlType);
+                var ddl = new DdlGeneratorFactory((SqlType)context.SqlType);
 
                 foreach (var item in context.TableProvider)
                 {
@@ -60,7 +60,7 @@ namespace FastBIRe.Builders
                 if (needsChangedDb)
                 {
 
-#if NETSTANDARD2_0
+#if NETSTANDARD2_1
                         context.Executer.Connection.ChangeDatabase(database);
 #else
                     await context.Executer.Connection.ChangeDatabaseAsync(database);

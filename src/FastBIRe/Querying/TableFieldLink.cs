@@ -10,8 +10,8 @@ namespace FastBIRe.Querying
         }
         public DatabaseColumn DestColumn { get; }
 
-        public abstract string FormatExpression(SqlType type, string? tableAlias);
+        public abstract string FormatExpression(FSqlType type, string? tableAlias);
 
-        public abstract string FormatSql(SqlType type, string? tableAlias);
+        public abstract string FormatSql(FSqlType type, string? tableAlias);
     }
 }

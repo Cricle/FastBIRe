@@ -20,7 +20,7 @@ namespace FastBIRe.Mig
     {
         static async Task Main(string[] args)
         {
-            var sqlType = SqlType.MySql;
+            var sqlType = FSqlType.MySql;
             var dbName = "test-1";
             using (var dbct = ConnectionProvider.GetDbMigration(sqlType, null))
             {
@@ -76,7 +76,7 @@ namespace FastBIRe.Mig
                 foreach (var item in vtb.Columns)
                 {
                     var column = new DatabaseColumn();
-                    item.ToDatabaseColumn(column, tableHelper.SqlType);
+                    item.ToDatabaseColumn(column, (SqlType)tableHelper.SqlType);
                     table.AddColumn(column);
                     if (item.PK)
                     {
@@ -98,7 +98,7 @@ namespace FastBIRe.Mig
                         column = new DatabaseColumn();
                         @new.AddColumn(column);
                     }
-                    item.ToDatabaseColumn(column, tableHelper.SqlType);
+                    item.ToDatabaseColumn(column, (SqlType)tableHelper.SqlType);
                 }
                 return @new;
             });
@@ -153,7 +153,7 @@ namespace FastBIRe.Mig
                 "guidang_affect"
             }));
             listner.EventRaised += Listner_EventRaised;
-            wrapper = new TableWrapper(table, SqlType.DuckDB, null);
+            wrapper = new TableWrapper(table, FSqlType.DuckDB, null);
             await listner.StartAsync();
         }
 

@@ -8,7 +8,7 @@ namespace FastBIRe.CdcSample
     {
         public async Task Start()
         {
-            var mysql = ConnectionProvider.GetDbMigration(DatabaseSchemaReader.DataSchema.SqlType.MySql, "ttt");
+            var mysql = ConnectionProvider.GetDbMigration(FSqlType.MySql, "ttt");
             var executer = new DefaultScriptExecuter(mysql);
             var tcdc = new TriggerCdcManager(executer);
             await tcdc.TryEnableTableCdcAsync("ttt", "guidang");

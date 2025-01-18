@@ -14,7 +14,7 @@ namespace FastBIRe.Querying
         /// </summary>
         public DatabaseColumn SourceColumn { get; }
 
-        public override string FormatExpression(SqlType type, string? tableAlias)
+        public override string FormatExpression(FSqlType type, string? tableAlias)
         {
             var aliasExp = string.Empty;
             if (!string.IsNullOrEmpty(tableAlias))
@@ -24,7 +24,7 @@ namespace FastBIRe.Querying
             return $"{aliasExp}{type.Wrap(SourceColumn.Name)}";
         }
 
-        public override string FormatSql(SqlType type, string? tableAlias)
+        public override string FormatSql(FSqlType type, string? tableAlias)
         {
             return $"{FormatExpression(type, tableAlias)} AS {type.Wrap(DestColumn.Name)}";
         }

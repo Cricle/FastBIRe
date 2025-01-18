@@ -6,7 +6,7 @@ namespace FastBIRe.Triggering
     public static class TriggerWriterEffectExtensions
     {
         public static IEnumerable<string> CreateTimeExpand(this ITriggerWriter triggerWriter,
-            SqlType sqlType,
+            FSqlType sqlType,
             string name,
             TriggerTypes type,
             DatabaseTable table,
@@ -29,7 +29,7 @@ namespace FastBIRe.Triggering
             return CreateExpand(triggerWriter!, sqlType, name, type, table, exps, hasIdentity);
         }
         public static IEnumerable<string> CreateExpand(this ITriggerWriter triggerWriter,
-            SqlType sqlType,
+            FSqlType sqlType,
             string name,
             TriggerTypes type,
             DatabaseTable table,
@@ -41,8 +41,8 @@ namespace FastBIRe.Triggering
             var when = string.Empty;
             switch (sqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     {
                         var identitySet = string.Empty;
                         var identitySetRestore = string.Empty;
@@ -121,23 +121,23 @@ UPDATE [{table.Name}] SET {string.Join(",", setList)} FROM INSERTED AS [NEW] WHE
                         }
                         break;
                     }
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     {
                         body = string.Join("\n", expandResults.Select(x => $"SET NEW.`{x.Name}` = CASE WHEN NEW.`{x.OriginName}` IS NULL THEN NULL ELSE {x.FormatExpression($"NEW.`{x.OriginName}`")} END;"));
                         break;
                     }
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     {
                         body = $"UPDATE `{table}` SET {string.Join(", ", expandResults.Select(x => $"`{x.Name}` = (CASE WHEN NEW.`{x.OriginName}` IS NULL THEN NULL ELSE {x.FormatExpression($"NEW.`{x.OriginName}`")} END)"))} WHERE `ROWID` = NEW.`ROWID`;";
                         break;
                     }
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     {
                         body = string.Join("\n", expandResults.Select(x => $"NEW.\"{x.Name}\" = CASE WHEN NEW.\"{x.OriginName}\" IS NULL THEN NULL ELSE {x.FormatExpression($"NEW.\"{x.OriginName}\"")} END;"));
                         break;
                     }
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     yield break;
             }
@@ -147,7 +147,7 @@ UPDATE [{table.Name}] SET {string.Join(",", setList)} FROM INSERTED AS [NEW] WHE
             }
         }
         public static IEnumerable<string> CreateEffect(this ITriggerWriter triggerWriter,
-            SqlType sqlType,
+            FSqlType sqlType,
             string name,
             TriggerTypes type,
             string sourceTable,
@@ -159,8 +159,8 @@ UPDATE [{table.Name}] SET {string.Join(",", setList)} FROM INSERTED AS [NEW] WHE
             var when = string.Empty;
             switch (sqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     {
                         var identitySet = string.Empty;
                         var identitySetRestore = string.Empty;
@@ -187,7 +187,7 @@ UPDATE [{table.Name}] SET {string.Join(",", setList)} FROM INSERTED AS [NEW] WHE
 ";
                         break;
                     }
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     {
                         body = $@"
 DECLARE has_row INT;
@@ -198,14 +198,14 @@ END IF;
 ";
                         break;
                     }
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     {
                         //TODO: when check
                         when = $"(NOT EXISTS (SELECT 1 FROM `{targetTable}` WHERE {string.Join(" AND ", settingItems.Select(x => x.Field).Distinct().Select(x => $"(`{x}` = `NEW`.`{x}` OR (`{x}` IS NULL AND `NEW`.`{x}` IS NULL))"))}))";
                         body = $@"INSERT INTO [{targetTable}] ({string.Join(",", settingItems.Select(x => $"[{x.Field}]"))}) VALUES({string.Join(",", settingItems.Select(x => x.Raw))});";
                         break;
                     }
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     {
                         body = $@"
 IF NOT EXISTS (SELECT 1 FROM ""{targetTable}"" WHERE {string.Join(" AND ", settingItems.Select(x => $"(\"{x.Field}\" = {x.Raw} OR (\"{x.Field}\" IS NULL AND {x.Raw} IS NULL))"))}) THEN
@@ -214,8 +214,8 @@ END IF;
 ";
                         break;
                     }
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     yield break;
             }

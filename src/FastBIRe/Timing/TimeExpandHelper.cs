@@ -7,33 +7,33 @@ namespace FastBIRe.Timing
     {
         public static readonly INameGenerator DefaultNameGenerator = new RegexNameGenerator("__${0}_{1}");
 
-        public static readonly TimeExpandHelper MySqlDefault = new TimeExpandHelper(SqlType.MySql);
-        public static readonly TimeExpandHelper SqlServerDefault = new TimeExpandHelper(SqlType.SqlServer);
-        public static readonly TimeExpandHelper SqliteDefault = new TimeExpandHelper(SqlType.SQLite);
-        public static readonly TimeExpandHelper PostgresqlDefault = new TimeExpandHelper(SqlType.PostgreSql);
+        public static readonly TimeExpandHelper MySqlDefault = new TimeExpandHelper(FSqlType.MySql);
+        public static readonly TimeExpandHelper SqlServerDefault = new TimeExpandHelper(FSqlType.SqlServer);
+        public static readonly TimeExpandHelper SqliteDefault = new TimeExpandHelper(FSqlType.SQLite);
+        public static readonly TimeExpandHelper PostgresqlDefault = new TimeExpandHelper(FSqlType.PostgreSql);
 
-        public static TimeExpandHelper? GetDefault(SqlType sqlType)
+        public static TimeExpandHelper? GetDefault(FSqlType sqlType)
         {
             switch (sqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return SqlServerDefault;
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return MySqlDefault;
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return SqliteDefault;
-                case SqlType.DuckDB:
-                case SqlType.PostgreSql:
+                case FSqlType.DuckDB:
+                case FSqlType.PostgreSql:
                     return PostgresqlDefault;
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     return null;
             }
         }
 
-        public TimeExpandHelper(SqlType sqlType)
+        public TimeExpandHelper(FSqlType sqlType)
             : this(FunctionMapper.Get(sqlType) ?? throw new NotSupportedException(sqlType.ToString()))
         {
 

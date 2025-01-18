@@ -4,11 +4,11 @@
     public class TableHelperTest : DbTestBase
     {
         [TestMethod]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        public void CreateIndexFieldsWithoutDesc(SqlType sqlType)
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.SqlServer)]
+        [DataRow(FSqlType.SQLite)]
+        [DataRow(FSqlType.PostgreSql)]
+        public void CreateIndexFieldsWithoutDesc(FSqlType sqlType)
         {
             var helper = new TableHelper(sqlType);
             var act = helper.CreateIndex("indexA", "table1", new string[] { "a1", "a2", "a3" });
@@ -16,11 +16,11 @@
             Assert.AreEqual(exp, act);
         }
         [TestMethod]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        public void CreateIndexFieldsWithFullDesc(SqlType sqlType)
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.SqlServer)]
+        [DataRow(FSqlType.SQLite)]
+        [DataRow(FSqlType.PostgreSql)]
+        public void CreateIndexFieldsWithFullDesc(FSqlType sqlType)
         {
             var helper = new TableHelper(sqlType);
             var act = helper.CreateIndex("indexA", "table1", new string[] { "a1", "a2", "a3" }, new bool[] { true, false, false });
@@ -28,11 +28,11 @@
             Assert.AreEqual(exp, act);
         }
         [TestMethod]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        public void CreateIndexFieldsWithAnyDesc(SqlType sqlType)
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.SqlServer)]
+        [DataRow(FSqlType.SQLite)]
+        [DataRow(FSqlType.PostgreSql)]
+        public void CreateIndexFieldsWithAnyDesc(FSqlType sqlType)
         {
             var helper = new TableHelper(sqlType);
             var act = helper.CreateIndex("indexA", "table1", new string[] { "a1", "a2", "a3" }, new bool[] { true, false });
@@ -40,28 +40,28 @@
             Assert.AreEqual(exp, act);
         }
         [TestMethod]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        public void DropIndex(SqlType sqlType)
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.SqlServer)]
+        [DataRow(FSqlType.SQLite)]
+        [DataRow(FSqlType.PostgreSql)]
+        public void DropIndex(FSqlType sqlType)
         {
             var helper = new TableHelper(sqlType);
             var act = helper.DropIndex("indexA", "table1");
             string exp = string.Empty;
             switch (sqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     exp = "DROP INDEX [table1].[indexA];";
                     break;
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     exp = "DROP INDEX `indexA` ON `table1`;";
                     break;
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     exp = "DROP INDEX `indexA`;";
                     break;
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     exp = "DROP INDEX \"indexA\";";
                     break;
                 default:

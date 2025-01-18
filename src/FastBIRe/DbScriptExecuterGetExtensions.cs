@@ -14,11 +14,11 @@ namespace FastBIRe
         public static SqlType GetRequiredSqlType(this DbConnection connection)
         {
             var sqlType = GetSqlType(connection) ?? throw new NotSupportedException(connection.GetType().FullName);
-            return sqlType;
+            return (SqlType)sqlType;
         }
-        public static SqlType? GetSqlType(this DbConnection connection)
+        public static FSqlType? GetSqlType(this DbConnection connection)
         {
-            return ProviderToSqlType.Convert(connection.GetType().Namespace);
+            return (FSqlType?)ProviderToSqlType.Convert(connection.GetType().Namespace);
         }
         public static DatabaseReader CreateReader(this IDbScriptExecuter dbScriptExecuter)
         {

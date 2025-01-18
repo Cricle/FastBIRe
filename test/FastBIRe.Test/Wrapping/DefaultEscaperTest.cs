@@ -5,25 +5,25 @@ namespace FastBIRe.Test.Wrapping
     [TestClass]
     public class DefaultEscaperTest
     {
-        private IEscaper GetEscaper(SqlType sqlType)
+        private IEscaper GetEscaper(FSqlType sqlType)
         {
             IEscaper escaper = null!;
             switch (sqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     escaper = DefaultEscaper.SqlServer;
                     break;
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     escaper = DefaultEscaper.MySql;
                     break;
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     escaper = DefaultEscaper.Sqlite;
                     break;
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     escaper = DefaultEscaper.PostgreSql;
                     break;
-                case SqlType.DuckDB:
+                case FSqlType.DuckDB:
                     escaper = DefaultEscaper.DuckDB;
                     break;
             }
@@ -31,50 +31,50 @@ namespace FastBIRe.Test.Wrapping
         }
 
         [TestMethod]
-        [DataRow(SqlType.SqlServer, "field", "[field]")]
-        [DataRow(SqlType.SqlServerCe, "field", "[field]")]
-        [DataRow(SqlType.MySql, "field", "`field`")]
-        [DataRow(SqlType.SQLite, "field", "`field`")]
-        [DataRow(SqlType.PostgreSql, "field", "\"field\"")]
-        [DataRow(SqlType.DuckDB, "field", "\"field\"")]
-        public void Quto(SqlType sqlType, string input, string exp)
+        [DataRow(FSqlType.SqlServer, "field", "[field]")]
+        [DataRow(FSqlType.SqlServerCe, "field", "[field]")]
+        [DataRow(FSqlType.MySql, "field", "`field`")]
+        [DataRow(FSqlType.SQLite, "field", "`field`")]
+        [DataRow(FSqlType.PostgreSql, "field", "\"field\"")]
+        [DataRow(FSqlType.DuckDB, "field", "\"field\"")]
+        public void Quto(FSqlType sqlType, string input, string exp)
         {
             var escaper = GetEscaper(sqlType);
             Assert.AreEqual(exp, escaper!.Quto(input));
         }
         [TestMethod]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SqlServerCe)]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        [DataRow(SqlType.DuckDB)]
-        public void WrapValueNULL(SqlType sqlType)
+        [DataRow(FSqlType.SqlServer)]
+        [DataRow(FSqlType.SqlServerCe)]
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.SQLite)]
+        [DataRow(FSqlType.PostgreSql)]
+        [DataRow(FSqlType.DuckDB)]
+        public void WrapValueNULL(FSqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
             Assert.AreEqual("NULL", escaper!.WrapValue<object>(null));
             Assert.AreEqual("NULL", escaper!.WrapValue(DBNull.Value));
         }
         [TestMethod]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SqlServerCe)]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        [DataRow(SqlType.DuckDB)]
-        public void WrapValueString(SqlType sqlType)
+        [DataRow(FSqlType.SqlServer)]
+        [DataRow(FSqlType.SqlServerCe)]
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.SQLite)]
+        [DataRow(FSqlType.PostgreSql)]
+        [DataRow(FSqlType.DuckDB)]
+        public void WrapValueString(FSqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
             Assert.AreEqual("'hello world'", escaper!.WrapValue("hello world"));
         }
         [TestMethod]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SqlServerCe)]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        [DataRow(SqlType.DuckDB)]
-        public void WrapValueStringWithQutoMask(SqlType sqlType)
+        [DataRow(FSqlType.SqlServer)]
+        [DataRow(FSqlType.SqlServerCe)]
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.SQLite)]
+        [DataRow(FSqlType.PostgreSql)]
+        [DataRow(FSqlType.DuckDB)]
+        public void WrapValueStringWithQutoMask(FSqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
             Assert.AreEqual("'hello'' world'", escaper!.WrapValue("hello' world"));
@@ -82,30 +82,30 @@ namespace FastBIRe.Test.Wrapping
         [TestMethod]
         public void MySqlWrapValueStringWithQuto()
         {
-            var escaper = GetEscaper(SqlType.MySql);
+            var escaper = GetEscaper(FSqlType.MySql);
             Assert.AreEqual("'\\\\a'", escaper!.WrapValue("\\a"));
         }
         [TestMethod]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SqlServerCe)]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        [DataRow(SqlType.DuckDB)]
-        public void WrapValueGuid(SqlType sqlType)
+        [DataRow(FSqlType.SqlServer)]
+        [DataRow(FSqlType.SqlServerCe)]
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.SQLite)]
+        [DataRow(FSqlType.PostgreSql)]
+        [DataRow(FSqlType.DuckDB)]
+        public void WrapValueGuid(FSqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
             var guid = Guid.Parse("94F80767-3B2C-483C-A588-4D360910FBFA");
             Assert.AreEqual($"'{guid}'", escaper!.WrapValue(guid));
         }
         [TestMethod]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SqlServerCe)]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        [DataRow(SqlType.DuckDB)]
-        public void WrapValueDateTime(SqlType sqlType)
+        [DataRow(FSqlType.SqlServer)]
+        [DataRow(FSqlType.SqlServerCe)]
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.SQLite)]
+        [DataRow(FSqlType.PostgreSql)]
+        [DataRow(FSqlType.DuckDB)]
+        public void WrapValueDateTime(FSqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
             var dt = new DateTime(2023, 9, 26, 22, 23, 24);
@@ -114,32 +114,32 @@ namespace FastBIRe.Test.Wrapping
             Assert.AreEqual("'2023-09-26'", escaper!.WrapValue(dt));
         }
         [TestMethod]
-        [DataRow(SqlType.SqlServer)]
-        [DataRow(SqlType.SqlServerCe)]
-        [DataRow(SqlType.MySql)]
-        [DataRow(SqlType.SQLite)]
-        [DataRow(SqlType.PostgreSql)]
-        [DataRow(SqlType.DuckDB)]
-        public void WrapValueBytes(SqlType sqlType)
+        [DataRow(FSqlType.SqlServer)]
+        [DataRow(FSqlType.SqlServerCe)]
+        [DataRow(FSqlType.MySql)]
+        [DataRow(FSqlType.SQLite)]
+        [DataRow(FSqlType.PostgreSql)]
+        [DataRow(FSqlType.DuckDB)]
+        public void WrapValueBytes(FSqlType sqlType)
         {
             var escaper = GetEscaper(sqlType);
             var buffers = new byte[] { 1, 2, 3, 0xFF };
             Assert.AreEqual("0x010203FF", escaper!.WrapValue(buffers));
         }
         [TestMethod]
-        [DataRow(SqlType.SqlServer, true, "1")]
-        [DataRow(SqlType.SqlServer, false, "0")]
-        [DataRow(SqlType.SqlServerCe, true, "1")]
-        [DataRow(SqlType.SqlServerCe, false, "0")]
-        [DataRow(SqlType.MySql, true, "1")]
-        [DataRow(SqlType.MySql, false, "0")]
-        [DataRow(SqlType.SQLite, true, "1")]
-        [DataRow(SqlType.SQLite, false, "0")]
-        [DataRow(SqlType.PostgreSql, true, "true")]
-        [DataRow(SqlType.PostgreSql, false, "false")]
-        [DataRow(SqlType.DuckDB, true, "true")]
-        [DataRow(SqlType.DuckDB, false, "false")]
-        public void WrapValueBoolean(SqlType sqlType, bool val, string act)
+        [DataRow(FSqlType.SqlServer, true, "1")]
+        [DataRow(FSqlType.SqlServer, false, "0")]
+        [DataRow(FSqlType.SqlServerCe, true, "1")]
+        [DataRow(FSqlType.SqlServerCe, false, "0")]
+        [DataRow(FSqlType.MySql, true, "1")]
+        [DataRow(FSqlType.MySql, false, "0")]
+        [DataRow(FSqlType.SQLite, true, "1")]
+        [DataRow(FSqlType.SQLite, false, "0")]
+        [DataRow(FSqlType.PostgreSql, true, "true")]
+        [DataRow(FSqlType.PostgreSql, false, "false")]
+        [DataRow(FSqlType.DuckDB, true, "true")]
+        [DataRow(FSqlType.DuckDB, false, "false")]
+        public void WrapValueBoolean(FSqlType sqlType, bool val, string act)
         {
             var escaper = GetEscaper(sqlType);
             Assert.AreEqual(act, escaper!.WrapValue(val));

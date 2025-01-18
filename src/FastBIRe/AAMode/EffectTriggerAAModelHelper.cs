@@ -16,7 +16,7 @@ namespace FastBIRe.AAMode
         protected virtual IEnumerable<string> GetTriggerScripts(DatabaseReader reader, EffectTriggerAAModelRequest request, string triggerName)
         {
             var triggerTypes = GetTriggerTypes();
-            return TriggerWriter.CreateEffect(reader.SqlType!.Value,
+            return TriggerWriter.CreateEffect((FSqlType)reader.SqlType!.Value,
                 triggerName,
                 triggerTypes,
                 request.ArchiveTable.Name,

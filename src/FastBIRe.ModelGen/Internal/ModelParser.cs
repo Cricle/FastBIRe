@@ -277,15 +277,15 @@ return $""UPDATE {{escaper.Quto(tableName)}} SET {string.Join(", ",props.Except(
                             yield return To(reader);
                         }}
                     }}
-                    public global::System.String CreateDeleteByKeySql(global::DatabaseSchemaReader.DataSchema.SqlType sqlType, global::System.String tableName, {fullName} instance)
+                    public global::System.String CreateDeleteByKeySql(global::FastBIRe.FSqlType sqlType, global::System.String tableName, {fullName} instance)
                     {{
                         {deleteByKeyBody}
                     }}
-                    public global::System.String CreateUpdateByKeySql(global::DatabaseSchemaReader.DataSchema.SqlType sqlType, global::System.String tableName, {fullName} instance)
+                    public global::System.String CreateUpdateByKeySql(global::FastBIRe.FSqlType sqlType, global::System.String tableName, {fullName} instance)
                     {{
                         {updateByKeyBody}
                     }}
-                    public global::System.String CreateInsertSql(global::DatabaseSchemaReader.DataSchema.SqlType sqlType, global::System.String tableName, {fullName} instance,global::System.Boolean skipAutoNumber=true)
+                    public global::System.String CreateInsertSql(global::FastBIRe.FSqlType sqlType, global::System.String tableName, {fullName} instance,global::System.Boolean skipAutoNumber=true)
                     {{
                         global::FastBIRe.Wrapping.IEscaper escaper = global::FastBIRe.SqlTypGetExtensions.GetEscaper(sqlType);
                         if(skipAutoNumber)

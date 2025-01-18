@@ -48,7 +48,7 @@ namespace FastBIRe
             catch (Exception ex)
             {
                 s.RaiseException(command
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                     , null
 #endif
                     , ex);
@@ -62,7 +62,7 @@ namespace FastBIRe
                 return 0;
             }
             stackTrace ??= GetStackTrace();
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
             var res = BatchExecuteAdo(scripts, stackTrace, argss);
             if (res != null)
             {
@@ -98,7 +98,7 @@ namespace FastBIRe
                 catch (Exception ex)
                 {
                     s.RaiseException(command
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                         , null
 #endif
                         , ex);
@@ -128,7 +128,7 @@ namespace FastBIRe
             }
             return res;
         }
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
         protected int? BatchExecuteAdo(IEnumerable<string> scripts, StackTrace? stackTrace, IEnumerable<IEnumerable<KeyValuePair<string, object?>>>? argss = null, DbTransaction? transaction = null)
         {
             var s = new CommandState(this, stackTrace, CreateScriptUnits(scripts, argss));
@@ -198,7 +198,7 @@ namespace FastBIRe
                 catch (Exception ex)
                 {
                     s.RaiseException(command
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                        , null
 #endif
                         , ex);

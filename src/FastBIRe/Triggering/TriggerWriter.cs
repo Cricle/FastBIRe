@@ -16,7 +16,7 @@ namespace FastBIRe.Triggering
 
         public INameGenerator PostgresqlFunctionNameGenerator { get; }
 
-        public virtual string GetTriggerName(TriggerTypes type, SqlType sqlType)
+        public virtual string GetTriggerName(TriggerTypes type, FSqlType sqlType)
         {
             switch (type)
             {
@@ -47,21 +47,21 @@ namespace FastBIRe.Triggering
                     return string.Empty;
             }
         }
-        public virtual IEnumerable<string> Drop(SqlType sqlType, string name, string table)
+        public virtual IEnumerable<string> Drop(FSqlType sqlType, string name, string table)
         {
             switch (sqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     yield return $"DROP TRIGGER IF EXISTS [{name}];";
                     break;
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     yield return $"DROP TRIGGER IF EXISTS `{name}`;";
                     break;
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     yield return $"DROP TRIGGER IF EXISTS `{name}`;";
                     break;
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     var pgFunName = PostgresqlFunctionNameGenerator.Create(new[] { name });
                     yield return $@"DO $$ 
 BEGIN 
@@ -71,19 +71,19 @@ BEGIN
 END $$;";
                     yield return $"DROP FUNCTION IF EXISTS \"{pgFunName}\";";
                     break;
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     yield break;
             }
         }
-        public virtual IEnumerable<string> Create(SqlType sqlType, string name, TriggerTypes type, string table, string body, string? when)
+        public virtual IEnumerable<string> Create(FSqlType sqlType, string name, TriggerTypes type, string table, string body, string? when)
         {
             var hasWhen = !string.IsNullOrWhiteSpace(when);
             switch (sqlType)
             {
-                case SqlType.SqlServer:
-                case SqlType.SqlServerCe:
+                case FSqlType.SqlServer:
+                case FSqlType.SqlServerCe:
                     {
                         if (hasWhen)
                         {
@@ -101,7 +101,7 @@ END;
 ";
                         break;
                     }
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     {
                         if (hasWhen)
                         {
@@ -118,7 +118,7 @@ END;
 ";
                         break;
                     }
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     {
                         var whenStr = string.Empty;
                         if (hasWhen)
@@ -134,7 +134,7 @@ END;
 ";
                         break;
                     }
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     {
                         var funName = PostgresqlFunctionNameGenerator.Create(new object[] { name });
                         string whenStr;
@@ -163,8 +163,8 @@ EXECUTE FUNCTION {funName}();
 ";
                         break;
                     }
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     yield break;
             }

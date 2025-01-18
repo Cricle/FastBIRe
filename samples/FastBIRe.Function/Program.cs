@@ -7,7 +7,7 @@ namespace FastBIRe.Function
         static void Main(string[] args)
         {
             _ = TableHelper.Sqlite;
-            var dbTypes = new SqlType[] { SqlType.MySql, SqlType.SQLite, SqlType.PostgreSql, SqlType.SqlServer };
+            var dbTypes = new FSqlType[] { FSqlType.MySql, FSqlType.SQLite, FSqlType.PostgreSql, FSqlType.SqlServer };
             foreach (var item in dbTypes)
             {
                 var fun = FunctionMapper.Get(item)!;

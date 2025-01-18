@@ -1,5 +1,4 @@
-﻿using Diagnostics.Generator.Core;
-using Diagnostics.Generator.Core.Annotations;
+﻿using Diagnostics.Generator.Core.Annotations;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
 
@@ -12,7 +11,7 @@ namespace FastBIRe.Internals
     {
         public const string EventName = "FastBIRe.ScriptExecuter";
 
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
         [Counter("total-execute-count", CounterTypes.PollingCounter, DisplayName = "Execute command count (Total)")]
         private long totalExecute;
         [Counter("total-execute-fail", CounterTypes.PollingCounter, DisplayName = "Execute fail count (Total)")]
@@ -87,7 +86,7 @@ namespace FastBIRe.Internals
                     break;
                 case ScriptExecutState.Executed:
                     ScriptExecuterActivity.WriteExecuted(e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.RecordsAffected ?? 0);
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                     IncrementTotalExecute();
                     if (executedTime != null && e.TraceUnit?.ExecutionTime != null)
                     {
@@ -110,7 +109,7 @@ namespace FastBIRe.Internals
                     break;
                 case ScriptExecutState.Exception:
                     ScriptExecuterActivity.WriteException(e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0, e.ExecuteException?.ToString());
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                     IncrementTotalFail();
 #endif
                     Activity.Current?.SetStatus(ActivityStatusCode.Error, e.ExecuteException?.Message);
@@ -123,7 +122,7 @@ namespace FastBIRe.Internals
                     break;
                 case ScriptExecutState.EndReading:
                     ScriptExecuterActivity.WriteEndReading(e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0);
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                     IncrementTotalRead();
                     if (readTime != null && e.TraceUnit?.ExecutionTime != null)
                     {
@@ -140,13 +139,13 @@ namespace FastBIRe.Internals
                     break;
                 case ScriptExecutState.CommitedTransaction:
                     ScriptExecuterActivity.WriteCommitedTransaction(e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0);
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                     IncrementTotalCommitTransaction();
 #endif
                     break;
                 case ScriptExecutState.RollbackedTransaction:
                     ScriptExecuterActivity.WriteRollbackedTransaction(e.TraceUnit?.ExecutionTime?.TotalMilliseconds ?? 0, e.TraceUnit?.FullTime?.TotalMilliseconds ?? 0);
-#if !NETSTANDARD2_0
+#if !NETSTANDARD2_1
                     IncrementTotalRollbackTranscation();
 #endif
                     break;

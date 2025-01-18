@@ -55,6 +55,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.ModelGen", "src\Fa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastBIRe.CodeGenTest", "samples\FastBIRe.CodeGenTest\FastBIRe.CodeGenTest.csproj", "{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastBIRe.Core", "src\FastBIRe.Core\FastBIRe.Core.csproj", "{6C7A54E7-99D5-4C04-87C4-B373912F9279}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -223,6 +225,14 @@ Global
 		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.net45|Any CPU.Build.0 = Debug|Any CPU
 		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DBA5CF5E-1603-4F06-ABD5-B95C58E493E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C7A54E7-99D5-4C04-87C4-B373912F9279}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C7A54E7-99D5-4C04-87C4-B373912F9279}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C7A54E7-99D5-4C04-87C4-B373912F9279}.Net4|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C7A54E7-99D5-4C04-87C4-B373912F9279}.Net4|Any CPU.Build.0 = Debug|Any CPU
+		{6C7A54E7-99D5-4C04-87C4-B373912F9279}.net45|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C7A54E7-99D5-4C04-87C4-B373912F9279}.net45|Any CPU.Build.0 = Debug|Any CPU
+		{6C7A54E7-99D5-4C04-87C4-B373912F9279}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C7A54E7-99D5-4C04-87C4-B373912F9279}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

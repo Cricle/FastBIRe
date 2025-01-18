@@ -27,18 +27,18 @@ namespace FastBIRe.Test
             postgresql = jobj["Postgresql"]!.ToString();
         }
 
-        public DbConnection Get(SqlType sqlType)
+        public DbConnection Get(FSqlType sqlType)
         {
             switch (sqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return SqlServer();
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return MySql();
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return Sqlite();
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return PostgreSql();
                 default:
                     throw new NotSupportedException(sqlType.ToString());

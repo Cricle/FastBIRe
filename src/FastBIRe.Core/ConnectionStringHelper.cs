@@ -1,4 +1,4 @@
-﻿using DatabaseSchemaReader.DataSchema;
+﻿
 using System.Text.RegularExpressions;
 
 namespace FastBIRe
@@ -13,7 +13,7 @@ namespace FastBIRe
         {
             return databaseSqlServerRegex.Replace(sqliteRegex.Replace(databaseRegex.Replace(connectString, ";"), ";"), ";");
         }
-        public static string SetDatabase(string connectString, string database, SqlType sqlType)
+        public static string SetDatabase(string connectString, string database, FSqlType sqlType)
         {
             string repl;
             if (!connectString.EndsWith(";"))
@@ -22,8 +22,8 @@ namespace FastBIRe
             }
             switch (sqlType)
             {
-                case SqlType.SQLite:
-                case SqlType.DuckDB:
+                case FSqlType.SQLite:
+                case FSqlType.DuckDB:
                     repl = $"Data Source={database};";
                     break;
                 default:

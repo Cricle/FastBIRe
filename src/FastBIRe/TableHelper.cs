@@ -6,13 +6,13 @@ namespace FastBIRe
 {
     public class TableHelper
     {
-        public static readonly TableHelper MySql = new TableHelper(SqlType.MySql);
-        public static readonly TableHelper SqlServer = new TableHelper(SqlType.SqlServer);
+        public static readonly TableHelper MySql = new TableHelper(FSqlType.MySql);
+        public static readonly TableHelper SqlServer = new TableHelper(FSqlType.SqlServer);
         public static readonly TableHelper MariaDB = MySql;
-        public static readonly TableHelper Sqlite = new TableHelper(SqlType.SQLite);
-        public static readonly TableHelper Oracle = new TableHelper(SqlType.Oracle);
-        public static readonly TableHelper PostgreSql = new TableHelper(SqlType.PostgreSql);
-        public static readonly TableHelper DuckDB = new TableHelper(SqlType.DuckDB);
+        public static readonly TableHelper Sqlite = new TableHelper(FSqlType.SQLite);
+        public static readonly TableHelper Oracle = new TableHelper(FSqlType.Oracle);
+        public static readonly TableHelper PostgreSql = new TableHelper(FSqlType.PostgreSql);
+        public static readonly TableHelper DuckDB = new TableHelper(FSqlType.DuckDB);
 
         private static readonly char[] goLineTrimChars = new char[] { ' ', ';', '\r', '\n' };
 
@@ -46,12 +46,12 @@ namespace FastBIRe
             return lst;
         }
 
-        public TableHelper(SqlType sqlType)
+        public TableHelper(FSqlType sqlType)
         {
             SqlType = sqlType;
         }
 
-        public SqlType SqlType { get; }
+        public FSqlType SqlType { get; }
 
         public string CreateIndex(string name, string table, string[] fields, bool[]? descs = null)
         {
@@ -75,13 +75,13 @@ namespace FastBIRe
         {
             switch (SqlType)
             {
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"DROP INDEX {SqlType.Wrap(name)} ON {SqlType.Wrap(table)};";
-                case SqlType.SqlServer:
+                case FSqlType.SqlServer:
                     return $"DROP INDEX {SqlType.Wrap(table)}.{SqlType.Wrap(name)};";
-                case SqlType.SQLite:
-                case SqlType.PostgreSql:
-                case SqlType.DuckDB:
+                case FSqlType.SQLite:
+                case FSqlType.PostgreSql:
+                case FSqlType.DuckDB:
                     return $"DROP INDEX {SqlType.Wrap(name)};";
                 default:
                     return string.Empty;
@@ -95,8 +95,8 @@ namespace FastBIRe
             }
             switch (SqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     {
                         if (skip != null && take != null)
                         {
@@ -108,7 +108,7 @@ namespace FastBIRe
                         }
                         return $"OFFSET 0 ROWS FETCH NEXT {take} ROWS ONLY";
                     }
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     {
                         if (skip != null && take != null)
                         {
@@ -120,7 +120,7 @@ namespace FastBIRe
                         }
                         return $"LIMIT 0, {take}";
                     }
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     {
                         if (skip != null && take != null)
                         {
@@ -132,8 +132,8 @@ namespace FastBIRe
                         }
                         return $"LIMIT {take} OFFSET 0";
                     }
-                case SqlType.DuckDB:
-                case SqlType.PostgreSql:
+                case FSqlType.DuckDB:
+                case FSqlType.PostgreSql:
                     {
                         if (skip != null && take != null)
                         {
@@ -168,18 +168,18 @@ namespace FastBIRe
         {
             switch (SqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return "EXEC sp_msforeachtable 'ALTER TABLE ? WITH CHECK CHECK CONSTRAINT ALL';";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return "SET FOREIGN_KEY_CHECKS = 1;";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return "PRAGMA foreign_keys=on;";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return "SET session_replication_role = origin;";
-                case SqlType.DuckDB:
-                case SqlType.Oracle:
-                case SqlType.Db2:
+                case FSqlType.DuckDB:
+                case FSqlType.Oracle:
+                case FSqlType.Db2:
                 default:
                     return null;
             }
@@ -188,18 +188,18 @@ namespace FastBIRe
         {
             switch (SqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return "EXEC sp_msforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return "SET FOREIGN_KEY_CHECKS=0;";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return "PRAGMA foreign_keys=off;";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return "SET session_replication_role = replica;";
-                case SqlType.DuckDB:
-                case SqlType.Oracle:
-                case SqlType.Db2:
+                case FSqlType.DuckDB:
+                case FSqlType.Oracle:
+                case FSqlType.Db2:
                 default:
                     return null;
             }
@@ -233,7 +233,7 @@ namespace FastBIRe
             var tables = reader.AllTables();
             var refs = sortTheTableByRef ? DatabaseHelper.SortTable(tables) : TableRef.CreateRange(tables);
             var dbAdapter = SqlType.GetDatabaseCreateAdapter()!;
-            var ddl = new DdlGeneratorFactory(SqlType);
+            var ddl = new DdlGeneratorFactory((SqlType)SqlType);
             for (int i = 0; i < refs.Count; i++)
             {
                 var @ref = refs[i];
@@ -274,7 +274,7 @@ namespace FastBIRe
             if (sql == null)
             {
                 databaseReader ??= new DatabaseReader(scriptExecuter.Connection) { Owner = scriptExecuter.Connection.Database };
-                ddlGeneratorFactory ??= new DdlGeneratorFactory(SqlType);
+                ddlGeneratorFactory ??= new DdlGeneratorFactory((SqlType)SqlType);
                 var tableDef = databaseReader.Table(table);
                 string? ddl = null;
                 if (tableDef != null)
@@ -292,20 +292,20 @@ namespace FastBIRe
                 {
                     switch (SqlType)
                     {
-                        case SqlType.MySql:
+                        case FSqlType.MySql:
                             result = e.Reader.GetString(1);
                             break;
-                        case SqlType.DuckDB:
-                        case SqlType.SQLite:
-                        case SqlType.PostgreSql:
+                        case FSqlType.DuckDB:
+                        case FSqlType.SQLite:
+                        case FSqlType.PostgreSql:
                             result = e.Reader.GetString(0);
                             break;
-                        case SqlType.SqlServer:
-                        case SqlType.SqlServerCe:
+                        case FSqlType.SqlServer:
+                        case FSqlType.SqlServerCe:
                             result = e.Reader.GetString(0);
                             break;
-                        case SqlType.Oracle:
-                        case SqlType.Db2:
+                        case FSqlType.Oracle:
+                        case FSqlType.Db2:
                         default:
                             break;
                     }
@@ -335,18 +335,18 @@ namespace FastBIRe
         {
             switch (SqlType)
             {
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"SHOW CREATE TABLE `{table}`;";
-                case SqlType.DuckDB:
-                case SqlType.SQLite:
+                case FSqlType.DuckDB:
+                case FSqlType.SQLite:
                     return $"SELECT sql FROM sqlite_master WHERE type = 'table' AND name = '{table}';";
-                case SqlType.PostgreSql:
+                case FSqlType.PostgreSql:
                     return $"SELECT pg_get_tabledef('public','{table}',false)";
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"EXEC sp_GetDDL '{table}'";
-                case SqlType.Db2:
-                case SqlType.Oracle:
+                case FSqlType.Db2:
+                case FSqlType.Oracle:
                 default:
                     break;
             }
@@ -357,19 +357,19 @@ namespace FastBIRe
         {
             switch (SqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"ALTER INDEX ALL ON [{table}] REBUILD;";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"OPTIMIZE TABLE `{table}`;";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return "VACUUM;";
-                case SqlType.DuckDB:
-                case SqlType.PostgreSql:
+                case FSqlType.DuckDB:
+                case FSqlType.PostgreSql:
                     return $"VACUUM FULL \"{table}\";";
-                case SqlType.Oracle:
+                case FSqlType.Oracle:
                     return $"ALTER TABLE TRUNCATE TABLE \"{table}\" MOVE;";
-                case SqlType.Db2:
+                case FSqlType.Db2:
                     return $"REORG TABLE \"{table}\";";
                 default:
                     throw new NotSupportedException(SqlType.ToString());
@@ -392,19 +392,19 @@ namespace FastBIRe
         {
             switch (SqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"TRUNCATE TABLE [{table}];";
-                case SqlType.MySql:
+                case FSqlType.MySql:
                     return $"DELETE FROM `{table}`;";
-                case SqlType.SQLite:
+                case FSqlType.SQLite:
                     return $"DELETE FROM `{table}`;";
-                case SqlType.PostgreSql:
-                case SqlType.DuckDB:
+                case FSqlType.PostgreSql:
+                case FSqlType.DuckDB:
                     return $"TRUNCATE TABLE \"{table}\";";
-                case SqlType.Oracle:
+                case FSqlType.Oracle:
                     return $"TRUNCATE TABLE \"{table}\";";
-                case SqlType.Db2:
+                case FSqlType.Db2:
                     return $"TRUNCATE TABLE \"{table}\";";
                 default:
                     throw new NotSupportedException(SqlType.ToString());
@@ -417,19 +417,19 @@ namespace FastBIRe
         }
         public string DropView(string viewName)
         {
-            if (SqlType == SqlType.Db2 || SqlType == SqlType.Oracle)
+            if (SqlType == FSqlType.Db2 || SqlType == FSqlType.Oracle)
             {
                 return string.Empty;
             }
             var qutoViewName = SqlType.Wrap(viewName);
             switch (SqlType)
             {
-                case SqlType.SqlServerCe:
-                case SqlType.SqlServer:
+                case FSqlType.SqlServerCe:
+                case FSqlType.SqlServer:
                     return $"IF EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'{viewName}')) DROP VIEW {qutoViewName};";
-                case SqlType.MySql:
-                case SqlType.SQLite:
-                case SqlType.PostgreSql:
+                case FSqlType.MySql:
+                case FSqlType.SQLite:
+                case FSqlType.PostgreSql:
                     return $"DROP VIEW IF EXISTS {qutoViewName};";
                 default:
                     return string.Empty;
